@@ -7,3 +7,6 @@
 [submodule "pipelines/scrnaseq/upstream"]
 	path = pipelines/scrnaseq/upstream
 	url = https://github.com/nf-core/scrnaseq.git
+[submodule "pipelines/fetchngs/upstream"]
+	path = pipelines/fetchngs/upstream
+	url = https://github.com/nf-core/fetchngs.git

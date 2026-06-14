@@ -2,3 +2,4 @@
 rnaseq	https://github.com/nf-core/rnaseq.git	latest-release
 sarek	https://github.com/nf-core/sarek.git	latest-release
 scrnaseq	https://github.com/nf-core/scrnaseq.git	latest-release
+fetchngs	https://github.com/nf-core/fetchngs.git	latest-release

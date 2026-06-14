@@ -1,5 +1,10 @@
 [
   {
+    "description": "Pipeline to fetch metadata and raw FastQ files from public databases",
+    "name": "fetchngs",
+    "version": "1.12.0"
+  },
+  {
     "description": "RNA sequencing analysis pipeline for gene/isoform quantification and extensive quality control.",
     "name": "rnaseq",
     "version": "3.26.0"
