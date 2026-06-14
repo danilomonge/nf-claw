@@ -1,0 +1,28 @@
+import shutil
+from pathlib import Path
+
+from librarian import write_skill, check_drift
+
+FIX = Path(__file__).parent / "fixtures"
+
+
+def _seed(tmp_path, name):
+    up = tmp_path / "pipelines" / name / "upstream"
+    up.mkdir(parents=True)
+    for f in ("main.nf", "nextflow.config"):
+        (up / f).write_text("x")
+    shutil.copy(FIX / name / "nextflow_schema.json", up / "nextflow_schema.json")
+    return tmp_path / "pipelines"
+
+
+def test_no_drift_when_freshly_generated(tmp_path):
+    pdir = _seed(tmp_path, "mini")
+    write_skill.generate("mini", pipelines_dir=pdir)
+    assert check_drift.check(pdir) == []
+
+
+def test_drift_when_skill_edited(tmp_path):
+    pdir = _seed(tmp_path, "mini")
+    write_skill.generate("mini", pipelines_dir=pdir)
+    (pdir / "mini" / "skill.md").write_text("hand-edited\n")
+    assert any("stale" in d for d in check_drift.check(pdir))
