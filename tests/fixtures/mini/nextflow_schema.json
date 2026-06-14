@@ -1,0 +1,38 @@
+{
+  "title": "nf-core/mini",
+  "description": "Synthetic pipeline schema for unit tests.",
+  "definitions": {
+    "input_output_options": {
+      "title": "Input/output options",
+      "properties": {
+        "input": {
+          "type": "string",
+          "format": "file-path",
+          "description": "Path to comma-separated samplesheet."
+        },
+        "outdir": {
+          "type": "string",
+          "format": "directory-path",
+          "description": "Output directory."
+        }
+      },
+      "required": ["input", "outdir"]
+    },
+    "reference_genome_options": {
+      "title": "Reference genome options",
+      "properties": {
+        "fasta": {
+          "type": "string",
+          "format": "file-path",
+          "description": "Path to genome FASTA."
+        },
+        "aligner": {
+          "type": "string",
+          "default": "star",
+          "enum": ["star", "hisat2"],
+          "description": "Alignment tool."
+        }
+      }
+    }
+  }
+}

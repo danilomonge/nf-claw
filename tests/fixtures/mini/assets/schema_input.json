@@ -1,0 +1,10 @@
+{
+  "items": {
+    "properties": {
+      "sample": {"type": "string"},
+      "fastq_1": {"type": "string", "format": "file-path"},
+      "fastq_2": {"type": "string", "format": "file-path"}
+    },
+    "required": ["sample", "fastq_1"]
+  }
+}

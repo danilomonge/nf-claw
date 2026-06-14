@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nfclaw"
+version = "1.0.0"
+description = "A self-maintaining, token-minimal library of nf-core pipelines for AI agents."
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+yaml = ["pyyaml>=6"]
+
+[project.scripts]
+nfclaw = "runner.cli:main"
+
+[tool.setuptools]
+packages = ["runner", "librarian"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

@@ -1,0 +1,21 @@
+{
+  "title": "nf-core/mininoinput",
+  "description": "Synthetic schema without a samplesheet (no assets/schema_input.json).",
+  "definitions": {
+    "general": {
+      "title": "General options",
+      "properties": {
+        "outdir": {
+          "type": "string",
+          "format": "directory-path",
+          "description": "Output directory."
+        },
+        "genome": {
+          "type": "string",
+          "description": "iGenomes reference key."
+        }
+      },
+      "required": ["outdir"]
+    }
+  }
+}
