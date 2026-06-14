@@ -1,0 +1,36 @@
+# librarian/write_catalog.py
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+from runner import discovery
+
+
+def generate(*, pipelines_dir: Path, out_md: Path, out_json: Path) -> None:
+    rows = [{"name": p.name,
+             "version": p.frontmatter.get("version", ""),
+             "description": p.frontmatter.get("description", "")}
+            for p in discovery.discover(pipelines_dir)]
+    out_json.write_text(json.dumps(rows, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    lines = ["# Pipeline catalog", "",
+             f"{len(rows)} nf-core pipelines. Grep this file for a keyword, then read "
+             "`pipelines/<name>/skill.md`.", "",
+             "| pipeline | version | description |", "|---|---|---|"]
+    lines += [f"| `{r['name']}` | {r['version']} | {r['description']} |" for r in rows]
+    out_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="librarian.write_catalog")
+    parser.add_argument("--pipelines-dir", default="pipelines")
+    args = parser.parse_args(argv)
+    generate(pipelines_dir=Path(args.pipelines_dir),
+             out_md=Path("catalog.md"), out_json=Path("catalog.json"))
+    print("wrote catalog.md and catalog.json")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
