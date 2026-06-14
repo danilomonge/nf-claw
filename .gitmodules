@@ -1,0 +1,9 @@
+[submodule "pipelines/rnaseq/upstream"]
+	path = pipelines/rnaseq/upstream
+	url = https://github.com/nf-core/rnaseq.git
+[submodule "pipelines/sarek/upstream"]
+	path = pipelines/sarek/upstream
+	url = https://github.com/nf-core/sarek.git
+[submodule "pipelines/scrnaseq/upstream"]
+	path = pipelines/scrnaseq/upstream
+	url = https://github.com/nf-core/scrnaseq.git

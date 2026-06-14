@@ -1,0 +1,24 @@
+name: auto-update
+on:
+  schedule:
+    - cron: "0 6 * * *"      # daily 06:00 UTC
+  workflow_dispatch:
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m librarian.update_pipelines --repo-root .
+      - run: python -m librarian.write_catalog
+      - uses: peter-evans/create-pull-request@v6
+        with:
+          branch: auto-update-pipelines
+          title: "chore: auto-update pipelines to latest releases"
+          commit-message: "chore: bump pipelines + regenerate context"
+          body: "Automated: bumped submodules to latest release tags and regenerated skill.md/reference.md/catalog."

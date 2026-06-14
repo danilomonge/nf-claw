@@ -1,0 +1,137 @@
+---
+name: scrnaseq
+version: 4.1.0
+commit: f7bf36d7c7e4bddc5302c3facd8d19ca83e22226
+---
+
+# scrnaseq — full parameter reference
+
+## cellranger_multi_options
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `--cellranger-multi-barcodes` | string |  | Additional samplesheet to provide information about multiplexed samples. See the 'Usage' section for more details. |
+| `--cellranger-vdj-index` | string |  | Specify a pre-built Cell Ranger index for VDJ analysis. |
+| `--fb-reference` | string |  | Provide a reference file for feature barcoding (e.g. antibody measurements). Please refer to the [Cell Ranger Feature Reference documentation](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/inputs/cr-feature-ref-csv) for more details. |
+| `--gex-barcode-sample-assignment` | string |  | This is only necessary to override Cell Ranger's default cell calling and tag calling steps. In most cases, you need to only use the `cellranger_multi_barcodes` parameter. Please refer to the [10x documentation](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/running-pipelines/cr-3p-multi#barcode-asst) for more information about this file. |
+| `--gex-cmo-set` | string |  | Provide a Cell Multiplexing Oligo (CMO) description file when working with multiplexed samples. This is only necessary if you with to override Cell Ranger's default CMO-set. Please refer to the [10x documentation](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/running-pipelines/cr-3p-multi#cmo-ref) about CMO references for more details. |
+| `--gex-frna-probe-set` | string |  | Provide a probe set for fixed RNA-seq profiling (used with FFPE samples). Please refer to the [10x documentation about probesets](https://www.10xgenomics.com/support/single-cell-gene-expression-flex/documentation/steps/probe-sets/chromium-frp-probe-set-files) for more details. |
+| `--gex-target-panel` | string |  | Provide a panel description for targeted sequencing. |
+| `--skip-cellrangermulti-vdjref` | boolean |  | Skip mkvdjref if not using VDJ data with cellranger/multi |
+| `--vdj-inner-enrichment-primers` | string |  | This argument takes a .txt file containing primer sequences that were used to enrich cDNA for V(D)J sequences. This is only necessary if you with to override Cell Ranger's defaults. |
+
+## cellranger_options
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `--cellranger-index` | string |  | Specify a pre-calculated cellranger index. Readily prepared indexes can be obtained from the 10x Genomics website. Provide the base directory of the index (e.g., '/PATH/TO/10X_REF/refdata-gex-GRCh38-2024-A/') |
+| `--skip-cellranger-renaming` | boolean |  | Should it skip the automatic renaming included in cellranger-related modules? |
+
+## cellrangerarc_options
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `--cellrangerarc-config` | string |  | Specify a config file to create the cellranger-arc index. |
+| `--cellrangerarc-reference` | string |  | Specify the genome reference name used in the config file to create a cellranger-arc index. |
+| `--motifs` | string |  | Specify a motif file to create a cellranger-arc index. Can be taken, e.g., from the JASPAR database. |
+
+## generic_options
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `--email-on-fail` | string |  | Email address for completion summary, only when pipeline fails. |
+| `--help` | ['boolean', 'string'] |  | Display the help message. |
+| `--help-full` | boolean |  | Display the full detailed help message. |
+| `--hook-url` | string |  | Incoming hook URL for messaging service |
+| `--max-multiqc-email-size` | string | 25.MB | File size limit when attaching MultiQC reports to summary emails. |
+| `--monochrome-logs` | boolean |  | Do not use coloured log outputs. |
+| `--multiqc-config` | string |  | Custom config file to supply to MultiQC. |
+| `--multiqc-logo` | string |  | Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file |
+| `--multiqc-methods-description` | string |  | Custom MultiQC yaml file containing HTML including a methods description. |
+| `--pipelines-testdata-base-path` | string | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
+| `--plaintext-email` | boolean |  | Send plain-text email instead of HTML. |
+| `--publish-dir-mode` | string | copy | Method used to save pipeline results to output directory. (one of: symlink, rellink, link, copy, copyNoFollow, move) |
+| `--show-hidden` | boolean |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
+| `--trace-report-suffix` | string |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
+| `--validate-params` | boolean | True | Boolean whether to validate parameters against the schema at runtime |
+| `--version` | boolean |  | Display version and exit. |
+
+## input_output_options
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `--email` | string |  | Email address for completion summary. |
+| `--input` | string |  | Path to comma-separated file containing information about the samples in the experiment. |
+| `--multiqc-title` | string |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
+| `--outdir` | string |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+
+## institutional_config_options
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `--config-profile-contact` | string |  | Institutional config contact information. |
+| `--config-profile-description` | string |  | Institutional config description. |
+| `--config-profile-name` | string |  | Institutional config name. |
+| `--config-profile-url` | string |  | Institutional config URL link. |
+| `--custom-config-base` | string | https://raw.githubusercontent.com/nf-core/configs/master | Base directory for Institutional configs. |
+| `--custom-config-version` | string | master | Git commit id for Institutional configs. |
+
+## kallisto_bus_options
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `--kallisto-index` | string |  | Specify a path to the precomputed Kallisto index. |
+| `--kb-t1c` | string |  | Specify a path to the cDNA transcripts-to-capture. |
+| `--kb-t2c` | string |  | Specify a path to the intron transcripts-to-capture. |
+| `--kb-workflow` | string | standard | Type of workflow. Use `nac` for an index type that can quantify nascent and mature RNA. Use `lamanno` for RNA velocity based on La Manno et al. 2018 logic. (default: standard) (one of: standard, lamanno, nac) |
+
+## mandatory_arguments
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `--aligner` | string | simpleaf | Name of the tool to use for scRNA (pseudo-) alignment. (one of: kallisto, star, simpleaf, cellranger, cellrangerarc, cellrangermulti) |
+| `--barcode-whitelist` | string |  | If not using the 10X Genomics platform, a custom barcode whitelist can be used with `--barcode_whitelist`. |
+| `--protocol` | string | auto | The protocol that was used to generate the single cell data, e.g. 10x Genomics v2 Chemistry.
+
+ Can be 'auto' (cellranger only), '10XV1', '10XV2', '10XV3', '10XV4', or any other protocol string that will get directly passed the respective aligner. |
+
+## reference_genome_options
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `--fasta` | string |  | Path to FASTA genome file. |
+| `--genome` | string |  | Name of iGenomes reference. |
+| `--gtf` | string |  | Reference GTF annotation file |
+| `--igenomes-base` | string | s3://ngi-igenomes/igenomes/ | Directory / URL base for iGenomes references. |
+| `--igenomes-ignore` | boolean |  | Do not load the iGenomes reference config. |
+| `--save-align-intermeds` | boolean |  | Specify this parameter to save the intermediate alignment files (STAR, CellRanger) to the results. |
+| `--save-reference` | boolean |  | Specify this parameter to save the indices created (STAR, Kallisto, Simpleaf) to the results. |
+| `--transcript-fasta` | string |  | A cDNA FASTA file |
+| `--txp2gene` | string |  | Path to transcript to gene mapping file. This allows the specification of a transcript to gene mapping file for Kallisto/BUS and Alevin-fry with AlevinQC. |
+
+## simpleaf_options
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `--simpleaf-index` | string |  | Path to pre-built Simpleaf index. |
+| `--simpleaf-umi-resolution` | string | cr-like | UMI resolution strategy to deduplicate UMIs. (one of: cr-like, cr-like-em, parsimony, parsimony-em, parsimony-gene, parsimony-gene-em) |
+
+## skip_tools
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `--skip-cellbender` | boolean |  | Skip cellbender empty drops filter subworkflow |
+| `--skip-emptydrops` | boolean |  |  |
+| `--skip-fastqc` | boolean |  | Skip FastQC |
+| `--skip-multiqc` | boolean |  | Skip MultiQC Report |
+
+## starsolo_options
+
+| parameter | type | default | description |
+|---|---|---|---|
+| `--seq-center` | string |  | Name of sequencing center for BAM read group tag. |
+| `--star-feature` | string | Gene | Quantification type of different transcriptomic feature. Use `GeneFull` on pre-mRNA count for single-nucleus RNA-seq reads. Use `Gene Velocyto` to generate RNA velocity matrix. (one of: Gene, GeneFull, Gene Velocyto) |
+| `--star-ignore-sjdbgtf` | string |  | Ignore the SJDB GTF file. |
+| `--star-index` | string |  | Specify a path to the precomputed STAR index. |
+
+<!-- Generated from nf-core/scrnaseq@f7bf36d7c7e4bddc5302c3facd8d19ca83e22226. Do not edit by hand. -->
