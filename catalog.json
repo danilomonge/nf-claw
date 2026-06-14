@@ -1,0 +1,17 @@
+[
+  {
+    "description": "RNA sequencing analysis pipeline for gene/isoform quantification and extensive quality control.",
+    "name": "rnaseq",
+    "version": "3.26.0"
+  },
+  {
+    "description": "An open-source analysis pipeline to detect germline or somatic variants from whole genome or targeted sequencing",
+    "name": "sarek",
+    "version": "3.8.1"
+  },
+  {
+    "description": "Pipeline for processing 10x Genomics single cell rnaseq data",
+    "name": "scrnaseq",
+    "version": "4.1.0"
+  }
+]
