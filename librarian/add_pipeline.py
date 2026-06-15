@@ -31,7 +31,6 @@ def gitmodules_text(sources: list[Source]) -> str:
         f'[submodule "pipelines/{s.name}/upstream"]\n'
         f"\tpath = pipelines/{s.name}/upstream\n"
         f"\turl = {s.url}\n"
-        f"\tbranch = master\n"
         for s in sources
     )
 
