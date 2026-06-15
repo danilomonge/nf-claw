@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/nf-claw-logo.png" alt="nf-claw logo" width="180">
+</p>
+
 # nf-claw
 
 A self-maintaining, token-minimal library of [nf-core](https://nf-co.re) pipelines for AI agents.
