@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/nf-claw-logo.png" alt="nf-claw logo" width="180">
+  <img src="docs/images/nf-claw-logo-with-text.png" alt="nf-claw" width="220">
 </p>
 
 # nf-claw
