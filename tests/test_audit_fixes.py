@@ -73,3 +73,15 @@ def test_inputs_section_named_columns_still_render_table():
     ))
     out = write_skill._inputs_section(insch)
     assert "| `sample` |" in out and "| `fastq_1` |" in out
+
+
+# --- F12: update_pipelines honours the sources.tsv policy column ---
+def test_update_pipelines_respects_policy(tmp_path, monkeypatch):
+    from librarian import update_pipelines
+    src = tmp_path / "sources.tsv"
+    src.write_text("a\thttps://x/a.git\tlatest-release\nb\thttps://x/b.git\tpinned\n")
+    bumped: list[str] = []
+    monkeypatch.setattr(update_pipelines, "bump",
+                        lambda name, url, root: (bumped.append(name), "1.0.0")[1])
+    update_pipelines.main(["--sources", str(src), "--repo-root", str(tmp_path)])
+    assert bumped == ["a"]   # only the latest-release pipeline is bumped; pinned 'b' is skipped

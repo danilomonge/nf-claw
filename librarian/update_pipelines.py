@@ -45,6 +45,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     root = Path(args.repo_root).resolve()
     for src in read_sources(Path(args.sources)):
+        if src.policy != "latest-release":
+            # Only "latest-release" pipelines are auto-bumped; anything else (e.g. a pinned
+            # version) is left untouched so the policy column in sources.tsv is honoured.
+            print(f"{src.name}: skipped (policy={src.policy}; not auto-bumped)")
+            continue
         try:
             tag = bump(src.name, src.url, root)
             print(f"{src.name}: {'bumped to ' + tag if tag else 'no release tag found'}")
