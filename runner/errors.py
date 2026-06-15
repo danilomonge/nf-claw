@@ -21,5 +21,12 @@ class NfclawError(Exception):
     details: dict[str, Any] = field(default_factory=dict)
 
     def __str__(self) -> str:
-        base = f"[{self.code.value}] {self.message}"
-        return f"{base}\n  fix: {self.fix}" if self.fix else base
+        lines = [f"[{self.code.value}] {self.message}"]
+        for key, value in self.details.items():
+            if isinstance(value, (list, tuple)):
+                lines += [f"  - {item}" for item in value]
+            else:
+                lines.append(f"  {key}: {value}")
+        if self.fix:
+            lines.append(f"  fix: {self.fix}")
+        return "\n".join(lines)
