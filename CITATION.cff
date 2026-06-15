@@ -1,9 +1,10 @@
 cff-version: 1.2.0
 message: >-
   nf-claw was created by Danilo Monge. It wraps the original nf-core community
-  pipelines and adapts code from ClawBio (created by Manuel Corpas). If you use
-  nf-claw, please cite it using the metadata below, together with Nextflow, the
-  nf-core framework, and the specific pipeline you ran (see references).
+  pipelines and adapts some files and its repository structure from ClawBio
+  (created by Manuel Corpas). If you use nf-claw, please cite it using the
+  metadata below, together with Nextflow, the nf-core framework, and the
+  specific pipeline you ran (see references).
 type: software
 title: "nf-claw: A self-maintaining, token-minimal library of nf-core pipelines for AI agents"
 version: 1.0.0
@@ -96,5 +97,6 @@ references:
     url: "https://clawbio.ai"
     license: MIT
     notes: >-
-      ClawBio — created by Manuel Corpas; nf-claw adapts code from this
-      MIT-licensed predecessor, whose copyright is retained in LICENSE.
+      ClawBio — created by Manuel Corpas; nf-claw adapts some files and its
+      repository structure from this MIT-licensed predecessor, whose copyright
+      is retained in LICENSE and NOTICE.

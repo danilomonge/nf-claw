@@ -1,0 +1,26 @@
+nf-claw — NOTICE
+
+nf-claw was created by Danilo Monge (Eberhard Karls Universität Tübingen) and is
+released under the MIT License (see LICENSE).
+
+It adapts some files and its overall repository structure from ClawBio
+(https://clawbio.ai), created by Manuel Corpas and released under the MIT
+License. As required by MIT, ClawBio's copyright notice is retained in LICENSE.
+
+The bioinformatics pipelines that nf-claw wraps come from the nf-core community
+(https://nf-co.re) as git submodules under pipelines/<name>/upstream/. Each
+upstream pipeline retains its own license and citation; see its
+pipelines/<name>/upstream/ (e.g. its LICENSE and CITATIONS.md).
+
+Provenance summary:
+- runner/ and librarian/ — pipeline runtime and maintenance tooling for nf-claw.
+- LICENSE, CITATION.cff, and the agent/human docs (CLAUDE.md, AGENTS.md,
+  README.md, CONTRIBUTING.md) started from ClawBio and were adapted/rewritten
+  for nf-claw.
+- pipelines/<name>/upstream/ — unmodified nf-core pipelines (pinned submodules).
+- catalog.*, pipelines/<name>/skill.md and reference.md — generated from each
+  pipeline's own nextflow_schema.json.
+
+ClawBio reference:
+  Corpas M. ClawBio: Bioinformatics-Native AI Agent Skill Library. Zenodo (2026).
+  https://doi.org/10.5281/zenodo.19420648

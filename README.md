@@ -38,7 +38,7 @@ with `git ls-remote --tags` (pure git, no APIs), checks it out, regenerates cont
 The drift gate guarantees committed context always matches the pinned submodule.
 
 ## Citation & attribution
-**nf-claw** was created by **Danilo Monge** (Eberhard Karls Universität Tübingen). It wraps the **original pipelines from [nf-core](https://nf-co.re)**, and **adapts code from [ClawBio](https://clawbio.ai)** — created by **Manuel Corpas** (MIT-licensed; his copyright is retained in [`LICENSE`](LICENSE)).
+**nf-claw** was created by **Danilo Monge** (Eberhard Karls Universität Tübingen). It wraps the **original pipelines from [nf-core](https://nf-co.re)**, and **adapts some files and its repository structure from [ClawBio](https://clawbio.ai)** — created by **Manuel Corpas** (MIT-licensed; his copyright is retained in [`LICENSE`](LICENSE), with provenance in [`NOTICE`](NOTICE)).
 
 If you use nf-claw, cite it via [`CITATION.cff`](CITATION.cff), together with the tools it builds on:
 - **Nextflow** (workflow engine) — Di Tommaso P, *et al.* Nextflow enables reproducible computational workflows. *Nat Biotechnol* **35**, 316–319 (2017). [doi:10.1038/nbt.3820](https://doi.org/10.1038/nbt.3820)
@@ -46,6 +46,6 @@ If you use nf-claw, cite it via [`CITATION.cff`](CITATION.cff), together with th
 - the **specific pipeline** you ran — each lists its own reference in `pipelines/<name>/upstream/CITATIONS.md`
 - **ClawBio** (the predecessor nf-claw adapts code from, by Manuel Corpas) — Corpas M. ClawBio: Bioinformatics-Native AI Agent Skill Library. Zenodo (2026). [doi:10.5281/zenodo.19420648](https://doi.org/10.5281/zenodo.19420648)
 
-nf-claw is MIT-licensed and includes portions adapted from ClawBio (© Manuel Corpas, MIT — see [`LICENSE`](LICENSE)); the nf-core pipelines it wraps are MIT, and Nextflow is Apache-2.0.
+nf-claw is MIT-licensed and includes parts adapted from ClawBio (© Manuel Corpas, MIT — see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE)); the nf-core pipelines it wraps are MIT, and Nextflow is Apache-2.0.
 
 Requires: git, Nextflow (Java 17+), Docker/Singularity.
