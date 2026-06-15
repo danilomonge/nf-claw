@@ -1,8 +1,9 @@
 cff-version: 1.2.0
 message: >-
-  If you use nf-claw, please cite it using the metadata below, together with
-  Nextflow and the nf-core framework (see references) and the specific nf-core
-  pipeline you ran.
+  nf-claw was created by Danilo Monge. It wraps the original nf-core community
+  pipelines and was inspired by ClawBio (created by Manuel Corpas). If you use
+  nf-claw, please cite it using the metadata below, together with Nextflow, the
+  nf-core framework, and the specific pipeline you ran (see references).
 type: software
 title: "nf-claw: A self-maintaining, token-minimal library of nf-core pipelines for AI agents"
 version: 1.0.0
@@ -29,10 +30,6 @@ authors:
   - family-names: Monge
     given-names: Danilo
     affiliation: "Eberhard Karls Universität Tübingen"
-  - family-names: Corpas
-    given-names: Manuel
-    orcid: "https://orcid.org/0000-0002-5765-9827"
-    affiliation: "University of Westminster"
 references:
   - type: article
     title: "The nf-core framework for community-curated bioinformatics pipelines"
@@ -62,6 +59,7 @@ references:
     start: 276
     end: 278
     doi: "10.1038/s41587-020-0439-x"
+    notes: "nf-core — the original community pipelines that nf-claw wraps."
   - type: article
     title: "Nextflow enables reproducible computational workflows"
     authors:
@@ -84,7 +82,7 @@ references:
     start: 316
     end: 319
     doi: "10.1038/nbt.3820"
-    notes: "Nextflow is licensed under Apache-2.0."
+    notes: "Nextflow — the workflow engine (Apache-2.0)."
   - type: software
     title: "ClawBio: Bioinformatics-Native AI Agent Skill Library"
     authors:
@@ -97,3 +95,4 @@ references:
     doi: "10.5281/zenodo.19420648"
     url: "https://clawbio.ai"
     license: MIT
+    notes: "ClawBio — created by Manuel Corpas; the predecessor project that inspired nf-claw."
