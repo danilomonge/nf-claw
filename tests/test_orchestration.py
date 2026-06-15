@@ -37,3 +37,20 @@ def test_full_run_invokes_execution(tmp_path, monkeypatch):
         profile="docker", params_file=None, cli_overrides={}, resume=False,
         demo=True, check_only=False, write_provenance=True, timeout_seconds=10)
     assert called.get("ran") and not res.checked_only
+
+
+def test_invalid_param_rejected_before_execution(tmp_path, monkeypatch):
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    ran: dict = {}
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: ran.setdefault("x", True))
+    with pytest.raises(NfclawError) as exc:
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+            profile="docker", params_file=None, cli_overrides={"aligner": "bowtie"},  # not in enum
+            resume=False, demo=True, check_only=False, write_provenance=False, timeout_seconds=10)
+    assert exc.value.code == ErrorCode.PARAMS_INVALID
+    assert "x" not in ran                                         # never reached execution
+    assert any("must be one of" in i for i in exc.value.details["issues"])

@@ -8,10 +8,25 @@ from runner.errors import ErrorCode, NfclawError
 from runner.schema import ParamSchema
 
 
-def typo_warnings(cli_overrides: dict[str, Any], schema: ParamSchema) -> list[str]:
+def validate_params(cli_overrides: dict[str, Any], schema: ParamSchema) -> list[str]:
+    """Deterministic, schema-driven validation of agent-supplied flags (errors, not heuristics).
+
+    Settles the two classes the schema makes unambiguous: unknown flags (not in the schema)
+    and values outside an enum's allowed set. Required-ness and types are left to nf-schema
+    at runtime, which handles the schema's conditionals correctly (so we never false-positive).
+    """
     known = schema.known_params()
-    return [f"unknown parameter '--{k.replace('_', '-')}' (not in pipeline schema)"
-            for k in cli_overrides if k not in known]
+    errors: list[str] = []
+    for key, value in cli_overrides.items():
+        flag = f"--{key.replace('_', '-')}"
+        if key not in known:
+            errors.append(f"unknown parameter '{flag}' (not in the pipeline schema)")
+        else:
+            param = schema.params[key]
+            if param.enum and str(value) not in param.enum:
+                errors.append(f"parameter '{flag}={value}' is not allowed; "
+                              f"must be one of: {', '.join(param.enum)}")
+    return errors
 
 
 def _load_params_file(path: Path) -> dict:

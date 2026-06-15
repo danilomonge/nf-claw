@@ -10,6 +10,7 @@ class ErrorCode(str, Enum):
     PIPELINE_NOT_FOUND = "pipeline_not_found"
     ENVIRONMENT = "environment"
     SAMPLESHEET_INVALID = "samplesheet_invalid"
+    PARAMS_INVALID = "params_invalid"
     EXECUTION_FAILED = "execution_failed"
 
 

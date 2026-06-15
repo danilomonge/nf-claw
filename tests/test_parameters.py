@@ -6,15 +6,21 @@ from runner import schema, parameters
 FIX = Path(__file__).parent / "fixtures"
 
 
-def test_typo_warning_for_unknown_param():
+def test_validate_params_flags_unknown():
     ps = schema.load_param_schema(FIX / "mini")
-    warns = parameters.typo_warnings({"alnger": "star"}, ps)
-    assert warns and "alnger" in warns[0]
+    errs = parameters.validate_params({"alnger": "star"}, ps)   # typo'd flag
+    assert errs and "alnger" in errs[0] and "unknown" in errs[0]
 
 
-def test_known_param_no_warning():
+def test_validate_params_accepts_known_and_valid_enum():
     ps = schema.load_param_schema(FIX / "mini")
-    assert parameters.typo_warnings({"aligner": "star"}, ps) == []
+    assert parameters.validate_params({"aligner": "star"}, ps) == []   # star is in the enum
+
+
+def test_validate_params_flags_value_outside_enum():
+    ps = schema.load_param_schema(FIX / "mini")
+    errs = parameters.validate_params({"aligner": "bowtie"}, ps)   # not in (star, hisat2)
+    assert errs and "must be one of" in errs[0] and "star" in errs[0]
 
 
 def test_compose_merges_and_writes_json(tmp_path):

@@ -36,8 +36,12 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
                               "Samplesheet failed validation.",
                               details={"issues": problems})
 
-    for warning in parameters.typo_warnings(cli_overrides, param_schema):
-        print(f"WARNING: {warning}")
+    param_errors = parameters.validate_params(cli_overrides, param_schema)
+    if param_errors:
+        raise NfclawError(ErrorCode.PARAMS_INVALID,
+                          "Parameters failed validation (fix before running).",
+                          fix="Use parameter names and allowed values from reference.md.",
+                          details={"issues": param_errors})
 
     composed_profile = nextflow_command.compose_profile(profile, demo=demo)
     issues = preflight.check_environment(profile=composed_profile, output_dir=outdir,
