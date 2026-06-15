@@ -1,23 +1,26 @@
 cff-version: 1.2.0
 message: >-
-  nf-claw was created by Danilo Monge. It wraps the original nf-core community
-  pipelines and adapts some files and its repository structure from ClawBio
+  nf-claw was created by Danilo Monge. The pipelines it serves are authored by
+  the nf-core community — the core of the library — and are wrapped unmodified;
+  nf-claw also adapts some files and its repository structure from ClawBio
   (created by Manuel Corpas). If you use nf-claw, please cite it using the
-  metadata below, together with Nextflow, the nf-core framework, and the
-  specific pipeline you ran (see references).
+  metadata below, together with Nextflow, the nf-core framework, and especially
+  the specific nf-core pipeline you ran (see references).
 type: software
 title: "nf-claw: A self-maintaining, token-minimal library of nf-core pipelines for AI agents"
 version: 1.0.0
 date-released: "2026-06-15"
 license: MIT
 abstract: >-
-  nf-claw turns nf-core pipelines into an agent-runnable library. Each pipeline is a
-  git submodule pinned to a release tag, paired with an auto-generated, token-minimal
-  skill.md (the exact run command and required inputs) and a full reference.md — every
-  fact is derived from the pipeline's own nextflow_schema.json, so nothing is hardcoded.
-  A generic runner executes any pipeline through a single command and records a
-  provenance bundle, while a scheduled pure-git workflow keeps every pipeline pinned to
-  its latest release and the generated context drift-free.
+  nf-claw turns nf-core pipelines into an agent-runnable library. The pipelines
+  themselves are authored by the nf-core community and wrapped unmodified as
+  git submodules pinned to a release tag; nf-claw pairs each with an
+  auto-generated, token-minimal skill.md (the exact run command and required
+  inputs) and a full reference.md — every fact derived from the pipeline's own
+  nextflow_schema.json, so nothing is hardcoded. A generic runner executes any
+  pipeline through a single command and records a provenance bundle, while a
+  scheduled pure-git workflow keeps every pipeline pinned to its latest release
+  and the generated context drift-free.
 keywords:
   - nextflow
   - nf-core
@@ -60,7 +63,10 @@ references:
     start: 276
     end: 278
     doi: "10.1038/s41587-020-0439-x"
-    notes: "nf-core — the original community pipelines that nf-claw wraps."
+    notes: >-
+      nf-core — the community that authors ALL the pipelines nf-claw wraps (the
+      core of the library). Also cite the specific pipeline you ran; each lists
+      its own reference under pipelines/<name>/upstream/ (CITATIONS.md).
   - type: article
     title: "Nextflow enables reproducible computational workflows"
     authors:
@@ -83,7 +89,7 @@ references:
     start: 316
     end: 319
     doi: "10.1038/nbt.3820"
-    notes: "Nextflow — the workflow engine (Apache-2.0)."
+    notes: "Nextflow — the workflow engine nf-core pipelines run on (Apache-2.0)."
   - type: software
     title: "ClawBio: Bioinformatics-Native AI Agent Skill Library"
     authors:
@@ -97,6 +103,7 @@ references:
     url: "https://clawbio.ai"
     license: MIT
     notes: >-
-      ClawBio — created by Manuel Corpas; nf-claw adapts some files and its
-      repository structure from this MIT-licensed predecessor, whose copyright
-      is retained in LICENSE and NOTICE.
+      ClawBio — created by Manuel Corpas; nf-claw adapts files and its repository
+      structure from this MIT-licensed predecessor (runner/ consolidates ClawBio's
+      nf-core wrappers; librarian/ repurposes its tooling). Copyright retained in
+      LICENSE and NOTICE.

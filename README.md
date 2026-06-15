@@ -38,7 +38,7 @@ with `git ls-remote --tags` (pure git, no APIs), checks it out, regenerates cont
 The drift gate guarantees committed context always matches the pinned submodule.
 
 ## Citation & attribution
-**nf-claw** was created by **Danilo Monge** (Eberhard Karls Universität Tübingen). It wraps the **original pipelines from [nf-core](https://nf-co.re)**, and **adapts some files and its repository structure from [ClawBio](https://clawbio.ai)** — created by **Manuel Corpas** (MIT-licensed; his copyright is retained in [`LICENSE`](LICENSE), with provenance in [`NOTICE`](NOTICE)).
+**The pipelines themselves are the work of the [nf-core](https://nf-co.re) community** — the heart of the library — and are wrapped **unmodified** as pinned git submodules; each keeps its own authors, license and citation. **nf-claw** (the wrapper/runtime) was created by **Danilo Monge** (Eberhard Karls Universität Tübingen), and **adapts some files and its repository structure from [ClawBio](https://clawbio.ai)** — created by **Manuel Corpas** (MIT; copyright retained in [`LICENSE`](LICENSE), provenance in [`NOTICE`](NOTICE)).
 
 If you use nf-claw, cite it via [`CITATION.cff`](CITATION.cff), together with the tools it builds on:
 - **Nextflow** (workflow engine) — Di Tommaso P, *et al.* Nextflow enables reproducible computational workflows. *Nat Biotechnol* **35**, 316–319 (2017). [doi:10.1038/nbt.3820](https://doi.org/10.1038/nbt.3820)
