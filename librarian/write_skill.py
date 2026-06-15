@@ -10,6 +10,11 @@ from runner.schema import InputSchema, Param, ParamSchema
 from runner.submodule import SubmoduleStatus
 
 
+def _cell(text: object) -> str:
+    """Collapse all whitespace (incl. newlines/tabs) and escape pipes so free text is safe inside a markdown table cell."""
+    return " ".join(str(text).split()).replace("|", "\\|")
+
+
 def _load_keywords(name: str, pipelines_dir: Path) -> list[str]:
     rp = pipelines_dir / name / "routing.yml"
     if rp.exists():
@@ -49,7 +54,7 @@ def _key_params(ps: ParamSchema) -> str:
         return "_No required parameters; see reference.md._\n"
     out = "| parameter | type | description |\n|---|---|---|\n"
     for p in keys[:20]:
-        out += f"| `--{p.name.replace('_', '-')}` | {p.type} | {p.description} |\n"
+        out += f"| `--{p.name.replace('_', '-')}` | {p.type} | {_cell(p.description)} |\n"
     return out
 
 
@@ -99,8 +104,8 @@ def _render_reference(name: str, st: SubmoduleStatus, ps: ParamSchema,
         for p in sorted(params, key=lambda x: x.name):
             default = "" if p.default is None else str(p.default)
             enum = f" (one of: {', '.join(p.enum)})" if p.enum else ""
-            out += (f"| `--{p.name.replace('_', '-')}` | {p.type} | {default} | "
-                    f"{p.description}{enum} |\n")
+            out += (f"| `--{p.name.replace('_', '-')}` | {p.type} | {_cell(default)} | "
+                    f"{_cell(f'{p.description}{enum}')} |\n")
         out += "\n"
     out += f"<!-- Generated from nf-core/{name}@{st.commit}. Do not edit by hand. -->\n"
     return out

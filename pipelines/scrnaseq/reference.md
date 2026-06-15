@@ -91,9 +91,7 @@ commit: f7bf36d7c7e4bddc5302c3facd8d19ca83e22226
 |---|---|---|---|
 | `--aligner` | string | simpleaf | Name of the tool to use for scRNA (pseudo-) alignment. (one of: kallisto, star, simpleaf, cellranger, cellrangerarc, cellrangermulti) |
 | `--barcode-whitelist` | string |  | If not using the 10X Genomics platform, a custom barcode whitelist can be used with `--barcode_whitelist`. |
-| `--protocol` | string | auto | The protocol that was used to generate the single cell data, e.g. 10x Genomics v2 Chemistry.
-
- Can be 'auto' (cellranger only), '10XV1', '10XV2', '10XV3', '10XV4', or any other protocol string that will get directly passed the respective aligner. |
+| `--protocol` | string | auto | The protocol that was used to generate the single cell data, e.g. 10x Genomics v2 Chemistry. Can be 'auto' (cellranger only), '10XV1', '10XV2', '10XV3', '10XV4', or any other protocol string that will get directly passed the respective aligner. |
 
 ## reference_genome_options
 

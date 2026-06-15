@@ -131,7 +131,7 @@ commit: 4bd2948f98c5bf7b785c91cf6708fffccab25467
 
 | parameter | type | default | description |
 |---|---|---|---|
-| `--bcftools-filter-criteria` | string | -f PASS,. | Filter criteria. Uses bcftools view filter options. To customize, follow instructions here: https://samtools.github.io/bcftools/bcftools.html#view  |
+| `--bcftools-filter-criteria` | string | -f PASS,. | Filter criteria. Uses bcftools view filter options. To customize, follow instructions here: https://samtools.github.io/bcftools/bcftools.html#view |
 | `--concatenate-vcfs` | boolean |  | Option for concatenating germline vcf-files. |
 | `--consensus-min-count` | integer | 2 | Minimum number of variant callers calling a variant for consensus results |
 | `--filter-vcfs` | boolean |  | Enable filtering of VCFs with bcftools view |
@@ -167,9 +167,7 @@ commit: 4bd2948f98c5bf7b785c91cf6708fffccab25467
 | `--chr-dir` | string |  | Path to chromosomes folder used with ControLFREEC. |
 | `--dbsnp` | string |  | Path to dbsnp file. |
 | `--dbsnp-tbi` | string |  | Path to dbsnp index. |
-| `--dbsnp-vqsr` | string |  | Label string for VariantRecalibration (haplotypecaller joint variant calling).
-
-If you use AWS iGenomes, this has already been set for you appropriately. |
+| `--dbsnp-vqsr` | string |  | Label string for VariantRecalibration (haplotypecaller joint variant calling). If you use AWS iGenomes, this has already been set for you appropriately. |
 | `--dict` | string |  | Path to FASTA dictionary file. |
 | `--dragmap` | string |  | Path to dragmap indices. |
 | `--fasta` | string |  | Path to FASTA genome file. |
@@ -201,7 +199,7 @@ If you use AWS iGenomes, this has already been set for you appropriately. |
 |---|---|---|---|
 | `--bbsplit-fasta-list` | string |  | Path to comma-separated file containing a list of reference genomes to filter reads against with BBSplit. You have to also explicitly set `--tools bbsplit` if you want to use BBSplit. |
 | `--bbsplit-index` | string |  | Path to directory or tar.gz archive for pre-built BBSplit index. |
-| `--group-by-umi-strategy` | string | Adjacency | Default strategy for fgbio UMI-based consensus read generation  (one of: Identity, Edit, Adjacency, Paired) |
+| `--group-by-umi-strategy` | string | Adjacency | Default strategy for fgbio UMI-based consensus read generation (one of: Identity, Edit, Adjacency, Paired) |
 | `--save-bbsplit-reads` | boolean |  | If this option is specified, FastQ files split by reference will be saved in the results directory. |
 | `--umi-base-skip` | integer |  | Number of bases to skip after the UMI(s) in the read when extracting with fastp. |
 | `--umi-in-read-header` | boolean |  | Move UMIs from fastq read headers to a tag prior to deduplication. |

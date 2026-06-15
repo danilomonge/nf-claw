@@ -22,7 +22,7 @@ commit: e7ca46272c8f9d5ceee3f71759f4ba551d3217a4
 | `--min-mapped-reads` | number | 5 | Minimum percentage of uniquely mapped reads below which samples are removed from further processing. |
 | `--pseudo-aligner` | string |  | Specifies the pseudo aligner to use - available options are 'salmon'. Runs in addition to '--aligner'. (one of: salmon, kallisto) |
 | `--pseudo-aligner-kmer-size` | integer | 31 | Kmer length passed to indexing step of pseudoaligners |
-| `--salmon-quant-libtype` | string |  |  Override Salmon library type inferred based on strandedness defined in meta object. (one of: A, IS, ISF, ISR, IU, MS, MSF, MSR, MU, OS, OSF, OSR, OU, SF, SR, U) |
+| `--salmon-quant-libtype` | string |  | Override Salmon library type inferred based on strandedness defined in meta object. (one of: A, IS, ISF, ISR, IU, MS, MSF, MSR, MU, OS, OSF, OSR, OU, SF, SR, U) |
 | `--seq-center` | string |  | Sequencing center information to be added to read group of BAM files. |
 | `--seq-platform` | string |  | Sequencing platform information to be added to read group of BAM files. |
 | `--star-ignore-sjdbgtf` | boolean |  | When using pre-built STAR indices do not re-extract and use splice junctions from the GTF file. |
