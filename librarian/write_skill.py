@@ -37,12 +37,16 @@ def _example_value(col_name: str, is_path: bool) -> str:
 def _inputs_section(insch: InputSchema | None) -> str:
     if insch is None:
         return "This pipeline does not use a samplesheet; configure inputs via parameters.\n"
+    named = [c for c in insch.columns if c.name]
+    if not named:
+        # A single unnamed column (e.g. nf-core/fetchngs id list): one value per line, no header.
+        return "Input is a plain text file with one value per line (no header).\n"
     head = "| column | type | required |\n|---|---|---|\n"
     rows = "".join(f"| `{c.name}` | {c.type} | {'yes' if c.required else 'no'} |\n"
-                   for c in insch.columns)
-    cols = [c.name for c in insch.columns]
+                   for c in named)
+    cols = [c.name for c in named]
     example = ",".join(cols) + "\n" + ",".join(
-        _example_value(c.name, c.is_path) for c in insch.columns)
+        _example_value(c.name, c.is_path) for c in named)
     return f"{head}{rows}\nExample `samplesheet.csv`:\n```csv\n{example}\n```\n"
 
 

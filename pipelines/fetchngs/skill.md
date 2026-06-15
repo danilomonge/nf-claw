@@ -20,15 +20,7 @@ nextflow run pipelines/fetchngs/upstream -r 1.12.0 -profile docker --input sampl
 ```
 
 ## Inputs
-| column | type | required |
-|---|---|---|
-| `` | string | no |
-
-Example `samplesheet.csv`:
-```csv
-
-value
-```
+Input is a plain text file with one value per line (no header).
 
 ## Key parameters
 | parameter | type | description |

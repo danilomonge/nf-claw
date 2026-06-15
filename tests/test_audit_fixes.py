@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 
 from librarian import check_drift, write_catalog, write_skill
-from runner.schema import Param, ParamSchema
+from runner.schema import Column, InputSchema, Param, ParamSchema
 
 FIX = Path(__file__).parent / "fixtures"
 
@@ -56,3 +56,20 @@ def test_check_drift_detects_stale_catalog(tmp_path):
     drift = check_drift.check(pdir)
     assert any("catalog.md" in d for d in drift)
     assert not any("pY/skill.md" in d for d in drift)        # skill.md itself is in sync
+
+
+# --- F11: unnamed-column input schema (e.g. fetchngs id list) renders cleanly ---
+def test_inputs_section_handles_unnamed_single_column():
+    insch = InputSchema(columns=(Column("", "string", False, "^SRR", False),))
+    out = write_skill._inputs_section(insch)
+    assert "one value per line" in out
+    assert "| `` |" not in out          # no broken empty-named table cell
+
+
+def test_inputs_section_named_columns_still_render_table():
+    insch = InputSchema(columns=(
+        Column("sample", "string", True, None, False),
+        Column("fastq_1", "string", True, None, True),
+    ))
+    out = write_skill._inputs_section(insch)
+    assert "| `sample` |" in out and "| `fastq_1` |" in out
