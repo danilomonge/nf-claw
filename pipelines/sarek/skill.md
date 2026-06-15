@@ -15,35 +15,34 @@ An open-source analysis pipeline to detect germline or somatic variants from who
 ```bash
 git submodule update --init pipelines/sarek/upstream   # first time only
 nfclaw run sarek --input samplesheet.csv --outdir results -profile docker
-# raw equivalent:
-nextflow run pipelines/sarek/upstream -r 3.8.1 -profile docker --input samplesheet.csv --outdir results
+# raw equivalent (the submodule is already pinned to this release, so no -r is needed):
+nextflow run pipelines/sarek/upstream -profile docker --input samplesheet.csv --outdir results
 ```
 
 ## Inputs
-| column | type | required |
-|---|---|---|
-| `patient` | string | yes |
-| `sample` | string | yes |
-| `sex` | string | no |
-| `status` | integer | no |
-| `lane` | integer or string | no |
-| `fastq_1` | string | no |
-| `fastq_2` | string | no |
-| `spring_1` | string | no |
-| `spring_2` | string | no |
-| `table` | string | no |
-| `cram` | string | no |
-| `crai` | string | no |
-| `bam` | string | no |
-| `bai` | string | no |
-| `contamination` | number | no |
-| `vcf` | string | no |
-| `variantcaller` | string | no |
+| column | type | required | allowed values |
+|---|---|---|---|
+| `patient` | string | yes |  |
+| `sample` | string | yes |  |
+| `sex` | string | no | XX, XY, NA |
+| `status` | integer | no | 0, 1 |
+| `lane` | integer or string | no |  |
+| `fastq_1` | string (file path) | no |  |
+| `fastq_2` | string (file path) | no |  |
+| `spring_1` | string (file path) | no |  |
+| `spring_2` | string (file path) | no |  |
+| `table` | string (file path) | no |  |
+| `cram` | string (file path) | no |  |
+| `crai` | string (file path) | no |  |
+| `bam` | string (file path) | no |  |
+| `bai` | string (file path) | no |  |
+| `contamination` | number | no |  |
+| `vcf` | string (file path) | no |  |
+| `variantcaller` | string | no |  |
 
-Example `samplesheet.csv`:
+The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
 patient,sample,sex,status,lane,fastq_1,fastq_2,spring_1,spring_2,table,cram,crai,bam,bai,contamination,vcf,variantcaller
-value,sample1,value,value,value,data/sample1_fastq_1.gz,data/sample1_fastq_2.gz,data/sample1_spring_1.gz,data/sample1_spring_2.gz,data/sample1_table.gz,data/sample1_cram.gz,data/sample1_crai.gz,data/sample1_bam.gz,data/sample1_bai.gz,value,data/sample1_vcf.gz,value
 ```
 
 ## Required parameters

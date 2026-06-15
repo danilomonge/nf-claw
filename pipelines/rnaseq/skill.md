@@ -15,27 +15,26 @@ RNA sequencing analysis pipeline for gene/isoform quantification and extensive q
 ```bash
 git submodule update --init pipelines/rnaseq/upstream   # first time only
 nfclaw run rnaseq --input samplesheet.csv --outdir results -profile docker
-# raw equivalent:
-nextflow run pipelines/rnaseq/upstream -r 3.26.0 -profile docker --input samplesheet.csv --outdir results
+# raw equivalent (the submodule is already pinned to this release, so no -r is needed):
+nextflow run pipelines/rnaseq/upstream -profile docker --input samplesheet.csv --outdir results
 ```
 
 ## Inputs
-| column | type | required |
-|---|---|---|
-| `sample` | string | yes |
-| `fastq_1` | string | yes |
-| `fastq_2` | string | no |
-| `strandedness` | string | yes |
-| `seq_platform` | string | no |
-| `seq_center` | string | no |
-| `genome_bam` | string | no |
-| `transcriptome_bam` | string | no |
-| `percent_mapped` | number | no |
+| column | type | required | allowed values |
+|---|---|---|---|
+| `sample` | string | yes |  |
+| `fastq_1` | string (file path) | yes |  |
+| `fastq_2` | string (file path) | no |  |
+| `strandedness` | string | yes | forward, reverse, unstranded, auto |
+| `seq_platform` | string | no |  |
+| `seq_center` | string | no |  |
+| `genome_bam` | string (file path) | no |  |
+| `transcriptome_bam` | string (file path) | no |  |
+| `percent_mapped` | number | no |  |
 
-Example `samplesheet.csv`:
+The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
 sample,fastq_1,fastq_2,strandedness,seq_platform,seq_center,genome_bam,transcriptome_bam,percent_mapped
-sample1,data/sample1_fastq_1.gz,data/sample1_fastq_2.gz,value,value,value,data/sample1_genome_bam.gz,data/sample1_transcriptome_bam.gz,value
 ```
 
 ## Required parameters

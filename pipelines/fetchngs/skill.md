@@ -15,8 +15,8 @@ Pipeline to fetch metadata and raw FastQ files from public databases
 ```bash
 git submodule update --init pipelines/fetchngs/upstream   # first time only
 nfclaw run fetchngs --input samplesheet.csv --outdir results -profile docker
-# raw equivalent:
-nextflow run pipelines/fetchngs/upstream -r 1.12.0 -profile docker --input samplesheet.csv --outdir results
+# raw equivalent (the submodule is already pinned to this release, so no -r is needed):
+nextflow run pipelines/fetchngs/upstream -profile docker --input samplesheet.csv --outdir results
 ```
 
 ## Inputs

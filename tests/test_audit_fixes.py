@@ -90,3 +90,29 @@ def test_update_pipelines_respects_policy(tmp_path, monkeypatch):
                         lambda name, url, root: (bumped.append(name), "1.0.0")[1])
     update_pipelines.main(["--sources", str(src), "--repo-root", str(tmp_path)])
     assert bumped == ["a"]   # only the latest-release pipeline is bumped; pinned 'b' is skipped
+
+
+# --- F13: samplesheet inputs are schema-faithful — allowed values shown, NO fabricated values ---
+def test_inputs_section_shows_enum_and_no_fabricated_values():
+    insch = InputSchema(columns=(
+        Column("sample", "string", True, None, False),
+        Column("sex", "string", False, None, False, enum=("XX", "XY", "NA")),
+        Column("fastq_1", "string", False, None, True),
+    ))
+    out = write_skill._inputs_section(insch)
+    assert "XX, XY, NA" in out                                   # enum → allowed values (a fact)
+    assert "string (file path)" in out                          # file-path columns marked
+    assert "data/sample1_" not in out and "sample1" not in out  # no invented values
+    csv = out.split("```csv\n")[1].split("```")[0].strip()
+    assert csv == "sample,sex,fastq_1"                           # csv block is the real header only
+
+
+def test_load_input_schema_captures_column_enum(tmp_path):
+    from runner import schema
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "schema_input.json").write_text(
+        '{"items": {"properties": {"status": {"type": "integer", "enum": [0, 1]}}, '
+        '"required": ["status"]}}')
+    insch = schema.load_input_schema(tmp_path)
+    col = insch.columns[0]
+    assert col.name == "status" and col.enum == ("0", "1")      # ints rendered as strings

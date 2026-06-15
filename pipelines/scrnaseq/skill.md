@@ -15,26 +15,25 @@ Pipeline for processing 10x Genomics single cell rnaseq data
 ```bash
 git submodule update --init pipelines/scrnaseq/upstream   # first time only
 nfclaw run scrnaseq --input samplesheet.csv --outdir results -profile docker
-# raw equivalent:
-nextflow run pipelines/scrnaseq/upstream -r 4.1.0 -profile docker --input samplesheet.csv --outdir results
+# raw equivalent (the submodule is already pinned to this release, so no -r is needed):
+nextflow run pipelines/scrnaseq/upstream -profile docker --input samplesheet.csv --outdir results
 ```
 
 ## Inputs
-| column | type | required |
-|---|---|---|
-| `sample` | string | yes |
-| `fastq_1` | string | yes |
-| `fastq_2` | string | yes |
-| `fastq_barcode` | string | no |
-| `expected_cells` | integer | no |
-| `seq_center` | string | no |
-| `sample_type` | string | no |
-| `feature_type` | string | no |
+| column | type | required | allowed values |
+|---|---|---|---|
+| `sample` | string | yes |  |
+| `fastq_1` | string (file path) | yes |  |
+| `fastq_2` | string (file path) | yes |  |
+| `fastq_barcode` | string | no |  |
+| `expected_cells` | integer | no |  |
+| `seq_center` | string | no |  |
+| `sample_type` | string | no | atac, gex |
+| `feature_type` | string | no | gex, vdj, ab, crispr, cmo |
 
-Example `samplesheet.csv`:
+The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
 sample,fastq_1,fastq_2,fastq_barcode,expected_cells,seq_center,sample_type,feature_type
-sample1,data/sample1_fastq_1.gz,data/sample1_fastq_2.gz,value,value,value,value,value
 ```
 
 ## Required parameters

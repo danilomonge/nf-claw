@@ -26,14 +26,6 @@ def _load_keywords(name: str, pipelines_dir: Path) -> list[str]:
     return [name, "nf-core", "nextflow"]
 
 
-def _example_value(col_name: str, is_path: bool) -> str:
-    if is_path:
-        return f"data/sample1_{col_name}.gz"
-    if col_name == "sample":
-        return "sample1"
-    return "value"
-
-
 def _inputs_section(insch: InputSchema | None) -> str:
     if insch is None:
         return "This pipeline does not use a samplesheet; configure inputs via parameters.\n"
@@ -41,13 +33,16 @@ def _inputs_section(insch: InputSchema | None) -> str:
     if not named:
         # A single unnamed column (e.g. nf-core/fetchngs id list): one value per line, no header.
         return "Input is a plain text file with one value per line (no header).\n"
-    head = "| column | type | required |\n|---|---|---|\n"
-    rows = "".join(f"| `{c.name}` | {c.type} | {'yes' if c.required else 'no'} |\n"
-                   for c in named)
-    cols = [c.name for c in named]
-    example = ",".join(cols) + "\n" + ",".join(
-        _example_value(c.name, c.is_path) for c in named)
-    return f"{head}{rows}\nExample `samplesheet.csv`:\n```csv\n{example}\n```\n"
+    head = "| column | type | required | allowed values |\n|---|---|---|---|\n"
+    rows = ""
+    for c in named:
+        typ = f"{c.type} (file path)" if c.is_path else c.type
+        allowed = ", ".join(c.enum) if c.enum else ""
+        rows += f"| `{c.name}` | {typ} | {'yes' if c.required else 'no'} | {_cell(allowed)} |\n"
+    header_line = ",".join(c.name for c in named)
+    return (f"{head}{rows}\n"
+            "The samplesheet is a CSV with this exact header; fill each value per the table above "
+            f"and `reference.md` (no example value is invented here):\n```csv\n{header_line}\n```\n")
 
 
 def _required_params(ps: ParamSchema) -> str:
@@ -93,8 +88,8 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         "## Run it\n```bash\n"
         f"git submodule update --init pipelines/{name}/upstream   # first time only\n"
         f"nfclaw run {name} --input samplesheet.csv --outdir results -profile docker\n"
-        "# raw equivalent:\n"
-        f"nextflow run pipelines/{name}/upstream -r {st.version} "
+        "# raw equivalent (the submodule is already pinned to this release, so no -r is needed):\n"
+        f"nextflow run pipelines/{name}/upstream "
         "-profile docker --input samplesheet.csv --outdir results\n```\n\n"
         f"## Inputs\n{_inputs_section(insch)}\n"
         f"## Required parameters\n{_required_params(ps)}\n"

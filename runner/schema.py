@@ -49,6 +49,7 @@ class Column:
     required: bool
     pattern: str | None
     is_path: bool
+    enum: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -130,11 +131,13 @@ def load_input_schema(repo: Path) -> InputSchema | None:
         for cname, cobj in props.items():
             if not isinstance(cobj, dict):
                 continue
+            enum = cobj.get("enum")
             cols.append(Column(
                 name=str(cname),
                 type=_type_of(cobj),
                 required=cname in required,
                 pattern=cobj.get("pattern"),
                 is_path=cobj.get("format") == "file-path",
+                enum=tuple(str(e) for e in enum) if isinstance(enum, list) else None,
             ))
     return InputSchema(columns=tuple(cols))
