@@ -14,6 +14,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - run: pip install -e .
       - run: python -m librarian.update_pipelines --repo-root .
       - run: python -m librarian.write_catalog
       - uses: peter-evans/create-pull-request@v6

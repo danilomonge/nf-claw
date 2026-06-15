@@ -21,8 +21,8 @@ def check_environment(*, profile: str, output_dir: Path, submodule: SubmoduleSta
         issues.append("profile uses singularity but singularity/apptainer not found")
     if "docker" in tokens and shutil.which("docker"):
         try:
-            ok = subprocess.run(["docker", "info"], capture_output=True).returncode == 0
-        except OSError:
+            ok = subprocess.run(["docker", "info"], capture_output=True, timeout=10).returncode == 0
+        except (OSError, subprocess.TimeoutExpired):
             ok = False
         if not ok:
             issues.append("docker daemon not responding (is Docker running?)")

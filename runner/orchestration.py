@@ -62,6 +62,6 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
     report = outputs.collect(outdir)
     if write_provenance:
         provenance.write(outdir=outdir, pipeline=name, command_str=cmd_str, submodule=st,
-                         input_paths=[p for p in (input_path,) if p], schema=param_schema)
+                         input_paths=[p for p in (input_path,) if p])
     return RunResult(command=cmd_str, outdir=outdir, checked_only=False,
                      outputs_report=report)

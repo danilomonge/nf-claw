@@ -8,7 +8,6 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-from runner.schema import ParamSchema
 from runner.submodule import SubmoduleStatus
 
 
@@ -30,8 +29,7 @@ def _nextflow_version() -> str:
 
 
 def write(*, outdir: Path, pipeline: str, command_str: str,
-          submodule: SubmoduleStatus, input_paths: list[Path],
-          schema: ParamSchema) -> Path:
+          submodule: SubmoduleStatus, input_paths: list[Path]) -> Path:
     prov = outdir / "provenance"
     prov.mkdir(parents=True, exist_ok=True)
 
