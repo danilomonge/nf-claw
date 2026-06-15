@@ -5,12 +5,15 @@ This repo is a library of nf-core pipelines. Each lives in `pipelines/<name>/`:
 
 ## To run a pipeline
 1. Find it: grep `catalog.json` (or `catalog.md`) for a keyword — do NOT read it whole.
-2. Read `pipelines/<name>/skill.md` — it has the exact command and inputs for the pinned version.
+2. Read `pipelines/<name>/skill.md` — the exact command, inputs, and required parameters for the pinned version.
 3. Run: `nfclaw run <name> --input samplesheet.csv --outdir results -profile docker`
    (raw fallback: `nextflow run pipelines/<name>/upstream -r <version> -profile docker ...`).
 
-Trust `skill.md` / `reference.md` over your own memory — they are generated from the pinned
-commit. Full parameters live in `pipelines/<name>/reference.md`. Only read `upstream/` for deep dives.
+Trust `skill.md` / `reference.md` over your own memory — they are generated from the pinned commit.
+To set any parameter beyond the essentials, look it up in `pipelines/<name>/reference.md` (the complete
+list, with allowed values) — do not invent a flag or value. `nfclaw run` rejects unknown flags and
+out-of-range values before it starts, and `nf-schema` validates the rest at runtime. Only read
+`upstream/` for deep dives.
 
 If a pipeline's `upstream/` is empty, initialise it first:
 `git submodule update --init pipelines/<name>/upstream`
