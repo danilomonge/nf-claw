@@ -38,29 +38,25 @@ sample,fastq_1,fastq_2,strandedness,seq_platform,seq_center,genome_bam,transcrip
 sample1,data/sample1_fastq_1.gz,data/sample1_fastq_2.gz,value,value,value,data/sample1_genome_bam.gz,data/sample1_transcriptome_bam.gz,value
 ```
 
-## Key parameters
-| parameter | type | description |
-|---|---|---|
-| `--input` | string | Path to the sample sheet (CSV) containing metadata about the experimental samples. |
-| `--outdir` | string | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--email` | string | Email address for completion summary. |
-| `--multiqc-title` | string | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
-| `--genome` | string | Name of a `params.genomes` catalogue entry (iGenomes or a user-defined catalogue). |
-| `--fasta` | string | Path to FASTA genome file. |
-| `--gtf` | string | Path to GTF annotation file. |
-| `--gff` | string | Path to GFF3 annotation file. |
-| `--gene-bed` | string | Path to BED file containing gene intervals. This will be created from the GTF file if not specified. |
-| `--transcript-fasta` | string | Path to FASTA transcriptome file. |
-| `--additional-fasta` | string | FASTA file to concatenate to genome FASTA file e.g. containing spike-in sequences. |
-| `--splicesites` | string | Splice sites file required for HISAT2. |
-| `--star-index` | string | Path to directory or tar.gz archive for pre-built STAR index. |
-| `--hisat2-index` | string | Path to directory or tar.gz archive for pre-built HISAT2 index. |
-| `--rsem-index` | string | Path to directory or tar.gz archive for pre-built RSEM index. |
-| `--salmon-index` | string | Path to directory or tar.gz archive for pre-built Salmon index. |
-| `--kallisto-index` | string | Path to directory or tar.gz archive for pre-built Kallisto index. |
-| `--bowtie2-index` | string | Path to directory or tar.gz archive for pre-built Bowtie2 index. |
-| `--gencode` | boolean | Specify if your GTF annotation is in GENCODE format. |
-| `--gffread-transcript-fasta` | boolean | Use gffread to generate transcript FASTA instead of RSEM. |
+## Required parameters
+| parameter | type | allowed values | description |
+|---|---|---|---|
+| `--input` | string |  | Path to the sample sheet (CSV) containing metadata about the experimental samples. |
+| `--outdir` | string |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+
+## Other parameters
+All other parameters are optional. Every one — with type, default and allowed values — is in [reference.md](reference.md), grouped as:
+- `alignment_options` (21 parameters)
+- `generic_options` (15 parameters)
+- `input_output_options` (4 parameters)
+- `institutional_config_options` (6 parameters)
+- `optional_outputs` (10 parameters)
+- `process_skipping_options` (22 parameters)
+- `quality_control` (9 parameters)
+- `read_filtering_options` (7 parameters)
+- `read_trimming_options` (4 parameters)
+- `reference_genome_options` (25 parameters)
+- `umi_options` (10 parameters)
 
 ## Outputs
 Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions).
@@ -71,6 +67,6 @@ nfclaw run rnaseq --demo --outdir results   # uses upstream -profile test
 ```
 
 ## Full reference
-Every parameter: [reference.md](reference.md) · upstream usage: https://github.com/nf-core/rnaseq/blob/3.26.0/docs/usage.md
+Every parameter — name, type, required, allowed values, default — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/rnaseq/blob/3.26.0/docs/usage.md
 
 <!-- Generated from nf-core/rnaseq@e7ca46272c8f9d5ceee3f71759f4ba551d3217a4. Do not edit by hand. -->

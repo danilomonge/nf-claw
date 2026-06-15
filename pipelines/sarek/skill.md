@@ -46,29 +46,26 @@ patient,sample,sex,status,lane,fastq_1,fastq_2,spring_1,spring_2,table,cram,crai
 value,sample1,value,value,value,data/sample1_fastq_1.gz,data/sample1_fastq_2.gz,data/sample1_spring_1.gz,data/sample1_spring_2.gz,data/sample1_table.gz,data/sample1_cram.gz,data/sample1_crai.gz,data/sample1_bam.gz,data/sample1_bai.gz,value,data/sample1_vcf.gz,value
 ```
 
-## Key parameters
-| parameter | type | description |
-|---|---|---|
-| `--step` | string | Starting step |
-| `--outdir` | string | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--input` | string | Path to comma-separated file containing information about the samples in the experiment. |
-| `--intervals` | string | Path to target bed file in case of whole exome or targeted sequencing or intervals file. |
-| `--no-intervals` | boolean | Disable usage of intervals. |
-| `--wes` | boolean | Enable when exome or panel data is provided. |
-| `--tools` | string | Tools to use for contamination removal, duplicate marking, variant calling and/or for annotation. |
-| `--skip-tools` | string | Disable specified tools. |
-| `--trim-fastq` | boolean | Run FastP for read trimming |
-| `--trim-nextseq` | boolean | Removing poly-G tails. |
-| `--save-trimmed` | boolean | Save trimmed FastQ file intermediates. |
-| `--save-split-fastqs` | boolean | If set, publishes split FASTQ files. Intended for testing purposes. |
-| `--umi-read-structure` | string | Specify UMI read structure for fgbio UMI consensus read generation |
-| `--umi-in-read-header` | boolean | Move UMIs from fastq read headers to a tag prior to deduplication. |
-| `--umi-location` | string | Location of the UMI(s) to be extracted with fastp. |
-| `--umi-length` | integer | Length of the UMI(s) in the read. |
-| `--umi-base-skip` | integer | Number of bases to skip after the UMI(s) in the read when extracting with fastp. |
-| `--umi-tag` | string | Tag detailing where UMIs are present inside the bam/cram file (e.g. RX). |
-| `--bbsplit-fasta-list` | string | Path to comma-separated file containing a list of reference genomes to filter reads against with BBSplit. You have to also explicitly set `--tools bbsplit` if you want to use BBSplit. |
-| `--bbsplit-index` | string | Path to directory or tar.gz archive for pre-built BBSplit index. |
+## Required parameters
+| parameter | type | allowed values | description |
+|---|---|---|---|
+| `--step` | string | mapping, markduplicates, prepare_recalibration, recalibrate, variant_calling, annotate | Starting step |
+| `--outdir` | string |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+
+## Other parameters
+All other parameters are optional. Every one — with type, default and allowed values — is in [reference.md](reference.md), grouped as:
+- `annotation` (33 parameters)
+- `fastq_preprocessing` (9 parameters)
+- `general_reference_genome_options` (5 parameters)
+- `generic_options` (18 parameters)
+- `input_output_options` (4 parameters)
+- `institutional_config_options` (10 parameters)
+- `main_options` (7 parameters)
+- `post_variant_calling` (10 parameters)
+- `preprocessing` (6 parameters)
+- `reference_genome_options` (35 parameters)
+- `umi_processing` (10 parameters)
+- `variant_calling` (25 parameters)
 
 ## Outputs
 Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions).
@@ -79,6 +76,6 @@ nfclaw run sarek --demo --outdir results   # uses upstream -profile test
 ```
 
 ## Full reference
-Every parameter: [reference.md](reference.md) · upstream usage: https://github.com/nf-core/sarek/blob/3.8.1/docs/usage.md
+Every parameter — name, type, required, allowed values, default — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/sarek/blob/3.8.1/docs/usage.md
 
 <!-- Generated from nf-core/sarek@4bd2948f98c5bf7b785c91cf6708fffccab25467. Do not edit by hand. -->

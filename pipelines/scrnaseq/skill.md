@@ -37,29 +37,26 @@ sample,fastq_1,fastq_2,fastq_barcode,expected_cells,seq_center,sample_type,featu
 sample1,data/sample1_fastq_1.gz,data/sample1_fastq_2.gz,value,value,value,value,value
 ```
 
-## Key parameters
-| parameter | type | description |
-|---|---|---|
-| `--input` | string | Path to comma-separated file containing information about the samples in the experiment. |
-| `--outdir` | string | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--email` | string | Email address for completion summary. |
-| `--multiqc-title` | string | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
-| `--barcode-whitelist` | string | If not using the 10X Genomics platform, a custom barcode whitelist can be used with `--barcode_whitelist`. |
-| `--skip-multiqc` | boolean | Skip MultiQC Report |
-| `--skip-fastqc` | boolean | Skip FastQC |
-| `--skip-cellbender` | boolean | Skip cellbender empty drops filter subworkflow |
-| `--skip-emptydrops` | boolean |  |
-| `--genome` | string | Name of iGenomes reference. |
-| `--fasta` | string | Path to FASTA genome file. |
-| `--transcript-fasta` | string | A cDNA FASTA file |
-| `--gtf` | string | Reference GTF annotation file |
-| `--save-reference` | boolean | Specify this parameter to save the indices created (STAR, Kallisto, Simpleaf) to the results. |
-| `--save-align-intermeds` | boolean | Specify this parameter to save the intermediate alignment files (STAR, CellRanger) to the results. |
-| `--txp2gene` | string | Path to transcript to gene mapping file. This allows the specification of a transcript to gene mapping file for Kallisto/BUS and Alevin-fry with AlevinQC. |
-| `--simpleaf-index` | string | Path to pre-built Simpleaf index. |
-| `--star-index` | string | Specify a path to the precomputed STAR index. |
-| `--star-ignore-sjdbgtf` | string | Ignore the SJDB GTF file. |
-| `--seq-center` | string | Name of sequencing center for BAM read group tag. |
+## Required parameters
+| parameter | type | allowed values | description |
+|---|---|---|---|
+| `--input` | string |  | Path to comma-separated file containing information about the samples in the experiment. |
+| `--outdir` | string |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+
+## Other parameters
+All other parameters are optional. Every one — with type, default and allowed values — is in [reference.md](reference.md), grouped as:
+- `cellranger_multi_options` (9 parameters)
+- `cellranger_options` (2 parameters)
+- `cellrangerarc_options` (3 parameters)
+- `generic_options` (16 parameters)
+- `input_output_options` (4 parameters)
+- `institutional_config_options` (6 parameters)
+- `kallisto_bus_options` (4 parameters)
+- `mandatory_arguments` (3 parameters)
+- `reference_genome_options` (9 parameters)
+- `simpleaf_options` (2 parameters)
+- `skip_tools` (4 parameters)
+- `starsolo_options` (4 parameters)
 
 ## Outputs
 Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions).
@@ -70,6 +67,6 @@ nfclaw run scrnaseq --demo --outdir results   # uses upstream -profile test
 ```
 
 ## Full reference
-Every parameter: [reference.md](reference.md) · upstream usage: https://github.com/nf-core/scrnaseq/blob/4.1.0/docs/usage.md
+Every parameter — name, type, required, allowed values, default — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/scrnaseq/blob/4.1.0/docs/usage.md
 
 <!-- Generated from nf-core/scrnaseq@f7bf36d7c7e4bddc5302c3facd8d19ca83e22226. Do not edit by hand. -->

@@ -23,8 +23,8 @@ def test_skill_md_has_fixed_sections(tmp_path):
     pdir = _seed(tmp_path, "mini")
     skill, ref = write_skill.generate("mini", pipelines_dir=pdir)
     text = skill.read_text()
-    for header in ("# mini", "## Run it", "## Inputs", "## Key parameters",
-                   "## Outputs", "## Demo", "## Full reference"):
+    for header in ("# mini", "## Run it", "## Inputs", "## Required parameters",
+                   "## Other parameters", "## Outputs", "## Demo", "## Full reference"):
         assert header in text
     assert "Do not edit by hand" in text
 
@@ -55,14 +55,16 @@ def test_no_samplesheet_graceful(tmp_path):
     assert "has_samplesheet: false" in text
 
 
-def test_key_params_excludes_hidden(tmp_path):
+def test_required_params_only(tmp_path):
     from runner.schema import Param, ParamSchema
-    # nf-core marks ~20 generic params (email, validation*, config_profile_*) hidden;
-    # those must not pollute skill.md "Key parameters" (the agent-facing essentials).
+    # skill.md lists ONLY schema-required params (a fact) — no heuristic "importance" guess.
     ps = ParamSchema(title="t", description="d", params={
-        "real_key": Param("real_key", "string", None, None, "real key", None, False, "input"),
+        "input": Param("input", "string", None, None, "samplesheet", None, True, "io"),
+        "step": Param("step", "string", "mapping", ("mapping", "markduplicates"), "start step", None, True, "main"),
+        "aligner": Param("aligner", "string", "star", ("star", "hisat2"), "aligner", None, False, "ref"),
         "email": Param("email", "string", None, None, "boilerplate", None, False, "generic", True),
     })
-    out = write_skill._key_params(ps)
-    assert "real-key" in out
-    assert "email" not in out
+    out = write_skill._required_params(ps)
+    assert "--input" in out and "--step" in out          # required → shown
+    assert "mapping, markduplicates" in out              # allowed values rendered for required enum
+    assert "aligner" not in out and "email" not in out   # optional → not shown

@@ -8,25 +8,30 @@ from runner.schema import Column, InputSchema, Param, ParamSchema
 FIX = Path(__file__).parent / "fixtures"
 
 
-# --- F10: key params follow schema order (important flags surface), not alphabetical ---
-def test_key_params_preserve_schema_order_not_alpha():
-    # zzz_important is defined BEFORE aaa_minor in schema order; both have no default.
+# --- F10 (revised): skill.md is deterministic — ONLY schema-required params + a group map.
+#     The earlier heuristic (required-or-no-default, schema order, cap 20) was removed: for
+#     scientific use the agent must not rely on a guessed "importance" subset. ---
+def test_required_params_lists_only_required_in_schema_order():
     ps = ParamSchema(title="t", description="d", params={
-        "zzz_important": Param("zzz_important", "string", None, None, "key flag", None, False, "main"),
-        "aaa_minor": Param("aaa_minor", "string", None, None, "minor flag", None, False, "advanced"),
+        "input": Param("input", "string", None, None, "ss", None, True, "io"),
+        "outdir": Param("outdir", "string", None, None, "out", None, True, "io"),
+        "aligner": Param("aligner", "string", "star", None, "no default but optional", None, False, "ref"),
     })
-    out = write_skill._key_params(ps)
-    # schema order keeps the important one first; an alphabetical sort would invert this.
-    assert out.index("zzz-important") < out.index("aaa-minor")
+    out = write_skill._required_params(ps)
+    assert "--input" in out and "--outdir" in out          # required → shown
+    assert "aligner" not in out                            # optional (even no-default) → not shown
+    assert out.index("--input") < out.index("--outdir")    # schema order preserved
 
 
-def test_key_params_required_first():
+def test_param_groups_maps_every_group_with_counts():
     ps = ParamSchema(title="t", description="d", params={
-        "optional_x": Param("optional_x", "string", None, None, "opt", None, False, "g"),
-        "req_y": Param("req_y", "string", None, None, "req", None, True, "g"),
+        "a": Param("a", "string", None, None, "x", None, True, "input_output"),
+        "b": Param("b", "string", "d", None, "y", None, False, "advanced"),
+        "c": Param("c", "string", "d", None, "z", None, False, "advanced"),
     })
-    out = write_skill._key_params(ps)
-    assert out.index("req-y") < out.index("optional-x")
+    out = write_skill._param_groups(ps)
+    assert "`input_output` (1 parameters)" in out
+    assert "`advanced` (2 parameters)" in out
 
 
 # --- F6: catalog.md escapes pipes in the description cell ---
