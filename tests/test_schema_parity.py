@@ -8,7 +8,7 @@ REPO = Path(__file__).resolve().parent.parent
 SAREK = REPO / "pipelines" / "sarek" / "upstream"
 ALLOWLIST = Path(__file__).parent / "fixtures" / "golden" / "sarek_allowlist.txt"
 
-# Flags that were wrapper CONTROLS in the old clawbio.py (not nf-core/sarek params);
+# Flags that were CONTROLS in the legacy Sarek wrapper (not nf-core/sarek params);
 # these are intentionally NOT in the pipeline schema.
 WRAPPER_CONTROLS = {
     "check", "resume", "arm", "gpu", "spark_profile", "mutect_profile",

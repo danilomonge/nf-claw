@@ -1,30 +1,27 @@
 cff-version: 1.2.0
-message: "If you use ClawBio, please cite it using the metadata from this file."
+message: "If you use nf-claw, please cite it using the metadata from this file."
 type: software
-title: "ClawBio: Bioinformatics-Native AI Agent Skill Library"
-version: 0.5.0
-date-released: "2026-04-04"
-doi: "10.5281/zenodo.19420648"
-url: "https://clawbio.ai"
-repository-code: "https://github.com/ClawBio/ClawBio"
+title: "nf-claw: A self-maintaining, token-minimal library of nf-core pipelines for AI agents"
+version: 1.0.0
+date-released: "2026-06-15"
 license: MIT
 abstract: >-
-  ClawBio is where biological AI gets its skills: a curated, reproducible,
-  open repository any agent can call. 42 executable bioinformatics skills
-  covering pharmacogenomics, variant annotation, fine-mapping, polygenic
-  risk scoring, single-cell RNA-seq, and more. Includes validation
-  infrastructure with Alzheimer's disease ground truth benchmark, mock
-  API server, swappable fine-mapping pipeline, and 687 automated tests.
+  nf-claw turns nf-core pipelines into an agent-runnable library. Each pipeline is a
+  git submodule pinned to a release tag, paired with an auto-generated, token-minimal
+  skill.md (the exact run command and required inputs) and a full reference.md — every
+  fact is derived from the pipeline's own nextflow_schema.json, so nothing is hardcoded.
+  A generic runner executes any pipeline through a single command and records a
+  provenance bundle, while a scheduled pure-git workflow keeps every pipeline pinned to
+  its latest release and the generated context drift-free.
 keywords:
+  - nextflow
+  - nf-core
   - bioinformatics
+  - pipelines
+  - workflows
   - AI agents
-  - genomics
-  - pharmacogenomics
-  - fine-mapping
-  - GWAS
-  - benchmark
-  - validation
-  - open source
+  - reproducibility
+  - automation
 authors:
   - family-names: Corpas
     given-names: Manuel

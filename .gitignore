@@ -26,29 +26,3 @@ results/
 
 # git worktrees (parallel agents)
 .worktrees/
-
-# legacy demo/benchmark data (slated for removal; not versioned)
-corpas-30x/
-bench_runs/
-
-# --- legacy ClawBio tree (pre-migration; gitignored to keep git fast on iCloud; removed in cleanup) ---
-/skills/
-/clawbio/
-/clawbio.py
-/scripts/
-/templates/
-/scaffold_skill.py
-/examples/
-/index.html
-/llms.txt
-/clawbio-manual.md
-/pytest.ini
-/uv.lock
-/docs/CLAWBIO-BRIEF.md
-/docs/skill-action-contract.md
-/docs/skill-intents.md
-/docs/tutorial-build-a-skill.ipynb
-/docs/tutorial-first-skill.ipynb
-/docs/demo-genome.md
-/docs/reference-genome.md
-/docs/reproducibility.md
