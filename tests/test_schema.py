@@ -29,3 +29,15 @@ def test_input_schema_columns():
 
 def test_no_input_schema_returns_none():
     assert schema.load_input_schema(FIX / "mini_no_input") is None
+
+
+def test_anyof_type_unioned(tmp_path):
+    import json
+    s = {"definitions": {"g": {"properties": {
+        "lane": {"anyOf": [{"type": "integer"}, {"type": "string"}], "description": "lane"},
+        "plain": {"type": "string"},
+    }}}}
+    (tmp_path / "nextflow_schema.json").write_text(json.dumps(s))
+    ps = schema.load_param_schema(tmp_path)
+    assert ps.params["lane"].type == "integer or string"   # was bare "string" before
+    assert ps.params["plain"].type == "string"

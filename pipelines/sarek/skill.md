@@ -26,7 +26,7 @@ nextflow run pipelines/sarek/upstream -r 3.8.1 -profile docker --input sampleshe
 | `sample` | string | yes |
 | `sex` | string | no |
 | `status` | integer | no |
-| `lane` | string | no |
+| `lane` | integer or string | no |
 | `fastq_1` | string | no |
 | `fastq_2` | string | no |
 | `spring_1` | string | no |

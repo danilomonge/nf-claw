@@ -56,6 +56,21 @@ class InputSchema:
     columns: tuple[Column, ...]
 
 
+def _type_of(obj: dict) -> str:
+    """Render a JSON-schema type, unioning anyOf/oneOf variants (e.g. 'integer or string')."""
+    t = obj.get("type")
+    if t:
+        return str(t)
+    for key in ("anyOf", "oneOf"):
+        variants = obj.get(key)
+        if isinstance(variants, list):
+            types = [str(v["type"]) for v in variants
+                     if isinstance(v, dict) and v.get("type")]
+            if types:
+                return " or ".join(dict.fromkeys(types))
+    return "string"
+
+
 def _iter_groups(data: dict) -> Iterator[tuple[str, dict]]:
     """Yield (group_name, group_object) for every parameter group.
 
@@ -86,7 +101,7 @@ def load_param_schema(repo: Path) -> ParamSchema:
             enum = pobj.get("enum")
             params[pname] = Param(
                 name=pname,
-                type=str(pobj.get("type", "string")),
+                type=_type_of(pobj),
                 default=pobj.get("default"),
                 enum=tuple(str(e) for e in enum) if isinstance(enum, list) else None,
                 description=str(pobj.get("description", "")),
@@ -117,7 +132,7 @@ def load_input_schema(repo: Path) -> InputSchema | None:
                 continue
             cols.append(Column(
                 name=str(cname),
-                type=str(cobj.get("type", "string")),
+                type=_type_of(cobj),
                 required=cname in required,
                 pattern=cobj.get("pattern"),
                 is_path=cobj.get("format") == "file-path",
