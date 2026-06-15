@@ -38,14 +38,14 @@ with `git ls-remote --tags` (pure git, no APIs), checks it out, regenerates cont
 The drift gate guarantees committed context always matches the pinned submodule.
 
 ## Citation & attribution
-**nf-claw** was created by **Danilo Monge** (Eberhard Karls Universität Tübingen). It wraps the **original pipelines from [nf-core](https://nf-co.re)**, and was **inspired by [ClawBio](https://clawbio.ai), created by Manuel Corpas**.
+**nf-claw** was created by **Danilo Monge** (Eberhard Karls Universität Tübingen). It wraps the **original pipelines from [nf-core](https://nf-co.re)**, and **adapts code from [ClawBio](https://clawbio.ai)** — created by **Manuel Corpas** (MIT-licensed; his copyright is retained in [`LICENSE`](LICENSE)).
 
 If you use nf-claw, cite it via [`CITATION.cff`](CITATION.cff), together with the tools it builds on:
 - **Nextflow** (workflow engine) — Di Tommaso P, *et al.* Nextflow enables reproducible computational workflows. *Nat Biotechnol* **35**, 316–319 (2017). [doi:10.1038/nbt.3820](https://doi.org/10.1038/nbt.3820)
 - **nf-core** (the original pipelines) — Ewels PA, *et al.* The nf-core framework for community-curated bioinformatics pipelines. *Nat Biotechnol* **38**, 276–278 (2020). [doi:10.1038/s41587-020-0439-x](https://doi.org/10.1038/s41587-020-0439-x)
 - the **specific pipeline** you ran — each lists its own reference in `pipelines/<name>/upstream/CITATIONS.md`
-- **ClawBio** (the predecessor that inspired nf-claw, by Manuel Corpas) — Corpas M. ClawBio: Bioinformatics-Native AI Agent Skill Library. Zenodo (2026). [doi:10.5281/zenodo.19420648](https://doi.org/10.5281/zenodo.19420648)
+- **ClawBio** (the predecessor nf-claw adapts code from, by Manuel Corpas) — Corpas M. ClawBio: Bioinformatics-Native AI Agent Skill Library. Zenodo (2026). [doi:10.5281/zenodo.19420648](https://doi.org/10.5281/zenodo.19420648)
 
-nf-claw and the nf-core pipelines it wraps are MIT-licensed (as is ClawBio; Nextflow is Apache-2.0).
+nf-claw is MIT-licensed and includes portions adapted from ClawBio (© Manuel Corpas, MIT — see [`LICENSE`](LICENSE)); the nf-core pipelines it wraps are MIT, and Nextflow is Apache-2.0.
 
 Requires: git, Nextflow (Java 17+), Docker/Singularity.

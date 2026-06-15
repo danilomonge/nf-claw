@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: >-
   nf-claw was created by Danilo Monge. It wraps the original nf-core community
-  pipelines and was inspired by ClawBio (created by Manuel Corpas). If you use
+  pipelines and adapts code from ClawBio (created by Manuel Corpas). If you use
   nf-claw, please cite it using the metadata below, together with Nextflow, the
   nf-core framework, and the specific pipeline you ran (see references).
 type: software
@@ -95,4 +95,6 @@ references:
     doi: "10.5281/zenodo.19420648"
     url: "https://clawbio.ai"
     license: MIT
-    notes: "ClawBio — created by Manuel Corpas; the predecessor project that inspired nf-claw."
+    notes: >-
+      ClawBio — created by Manuel Corpas; nf-claw adapts code from this
+      MIT-licensed predecessor, whose copyright is retained in LICENSE.
