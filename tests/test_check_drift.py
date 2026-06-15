@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 
-from librarian import write_skill, check_drift
+from librarian import write_skill, write_catalog, check_drift
 
 FIX = Path(__file__).parent / "fixtures"
 
@@ -18,6 +18,8 @@ def _seed(tmp_path, name):
 def test_no_drift_when_freshly_generated(tmp_path):
     pdir = _seed(tmp_path, "mini")
     write_skill.generate("mini", pipelines_dir=pdir)
+    write_catalog.generate(pipelines_dir=pdir,
+                           out_md=tmp_path / "catalog.md", out_json=tmp_path / "catalog.json")
     assert check_drift.check(pdir) == []
 
 

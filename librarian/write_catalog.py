@@ -14,11 +14,15 @@ def generate(*, pipelines_dir: Path, out_md: Path, out_json: Path) -> None:
              "description": p.frontmatter.get("description", "")}
             for p in discovery.discover(pipelines_dir)]
     out_json.write_text(json.dumps(rows, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    def _safe(text: object) -> str:  # keep free text safe inside a markdown table cell
+        return " ".join(str(text).split()).replace("|", "\\|")
+
     lines = ["# Pipeline catalog", "",
              f"{len(rows)} nf-core pipelines. Grep this file for a keyword, then read "
              "`pipelines/<name>/skill.md`.", "",
              "| pipeline | version | description |", "|---|---|---|"]
-    lines += [f"| `{r['name']}` | {r['version']} | {r['description']} |" for r in rows]
+    lines += [f"| `{r['name']}` | {r['version']} | {_safe(r['description'])} |" for r in rows]
     out_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

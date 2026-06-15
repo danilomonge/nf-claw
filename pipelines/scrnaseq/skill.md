@@ -42,24 +42,24 @@ sample1,data/sample1_fastq_1.gz,data/sample1_fastq_2.gz,value,value,value,value,
 |---|---|---|
 | `--input` | string | Path to comma-separated file containing information about the samples in the experiment. |
 | `--outdir` | string | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--barcode-whitelist` | string | If not using the 10X Genomics platform, a custom barcode whitelist can be used with `--barcode_whitelist`. |
-| `--cellranger-index` | string | Specify a pre-calculated cellranger index. Readily prepared indexes can be obtained from the 10x Genomics website. Provide the base directory of the index (e.g., '/PATH/TO/10X_REF/refdata-gex-GRCh38-2024-A/') |
-| `--cellranger-multi-barcodes` | string | Additional samplesheet to provide information about multiplexed samples. See the 'Usage' section for more details. |
-| `--cellranger-vdj-index` | string | Specify a pre-built Cell Ranger index for VDJ analysis. |
-| `--cellrangerarc-config` | string | Specify a config file to create the cellranger-arc index. |
-| `--cellrangerarc-reference` | string | Specify the genome reference name used in the config file to create a cellranger-arc index. |
-| `--config-profile-contact` | string | Institutional config contact information. |
-| `--config-profile-description` | string | Institutional config description. |
-| `--config-profile-name` | string | Institutional config name. |
-| `--config-profile-url` | string | Institutional config URL link. |
 | `--email` | string | Email address for completion summary. |
-| `--email-on-fail` | string | Email address for completion summary, only when pipeline fails. |
-| `--fasta` | string | Path to FASTA genome file. |
-| `--fb-reference` | string | Provide a reference file for feature barcoding (e.g. antibody measurements). Please refer to the [Cell Ranger Feature Reference documentation](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/inputs/cr-feature-ref-csv) for more details. |
+| `--multiqc-title` | string | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
+| `--barcode-whitelist` | string | If not using the 10X Genomics platform, a custom barcode whitelist can be used with `--barcode_whitelist`. |
+| `--skip-multiqc` | boolean | Skip MultiQC Report |
+| `--skip-fastqc` | boolean | Skip FastQC |
+| `--skip-cellbender` | boolean | Skip cellbender empty drops filter subworkflow |
+| `--skip-emptydrops` | boolean |  |
 | `--genome` | string | Name of iGenomes reference. |
-| `--gex-barcode-sample-assignment` | string | This is only necessary to override Cell Ranger's default cell calling and tag calling steps. In most cases, you need to only use the `cellranger_multi_barcodes` parameter. Please refer to the [10x documentation](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/running-pipelines/cr-3p-multi#barcode-asst) for more information about this file. |
-| `--gex-cmo-set` | string | Provide a Cell Multiplexing Oligo (CMO) description file when working with multiplexed samples. This is only necessary if you with to override Cell Ranger's default CMO-set. Please refer to the [10x documentation](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/running-pipelines/cr-3p-multi#cmo-ref) about CMO references for more details. |
-| `--gex-frna-probe-set` | string | Provide a probe set for fixed RNA-seq profiling (used with FFPE samples). Please refer to the [10x documentation about probesets](https://www.10xgenomics.com/support/single-cell-gene-expression-flex/documentation/steps/probe-sets/chromium-frp-probe-set-files) for more details. |
+| `--fasta` | string | Path to FASTA genome file. |
+| `--igenomes-ignore` | boolean | Do not load the iGenomes reference config. |
+| `--transcript-fasta` | string | A cDNA FASTA file |
+| `--gtf` | string | Reference GTF annotation file |
+| `--save-reference` | boolean | Specify this parameter to save the indices created (STAR, Kallisto, Simpleaf) to the results. |
+| `--save-align-intermeds` | boolean | Specify this parameter to save the intermediate alignment files (STAR, CellRanger) to the results. |
+| `--txp2gene` | string | Path to transcript to gene mapping file. This allows the specification of a transcript to gene mapping file for Kallisto/BUS and Alevin-fry with AlevinQC. |
+| `--simpleaf-index` | string | Path to pre-built Simpleaf index. |
+| `--star-index` | string | Specify a path to the precomputed STAR index. |
+| `--star-ignore-sjdbgtf` | string | Ignore the SJDB GTF file. |
 
 ## Outputs
 Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions).

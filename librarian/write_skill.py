@@ -47,13 +47,18 @@ def _inputs_section(insch: InputSchema | None) -> str:
 
 
 def _key_params(ps: ParamSchema) -> str:
-    keys: list[Param] = sorted(
-        (p for p in ps.params.values() if p.required or p.default in (None, "")),
-        key=lambda p: (not p.required, p.name))
-    if not keys:
+    # Candidates = params a user most likely must set: required, or with no sensible default.
+    # Preserve nf-core schema order (input/output + main options are defined before
+    # reference/advanced groups), required first — so the genuinely important flags surface
+    # instead of the alphabetically-earliest ones (e.g. sarek's --tools, not --ascat-alleles).
+    candidates: list[Param] = [
+        p for p in ps.params.values() if p.required or p.default in (None, "")
+    ]
+    ordered = [p for p in candidates if p.required] + [p for p in candidates if not p.required]
+    if not ordered:
         return "_No required parameters; see reference.md._\n"
     out = "| parameter | type | description |\n|---|---|---|\n"
-    for p in keys[:20]:
+    for p in ordered[:20]:
         out += f"| `--{p.name.replace('_', '-')}` | {p.type} | {_cell(p.description)} |\n"
     return out
 

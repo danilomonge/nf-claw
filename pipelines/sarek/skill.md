@@ -49,26 +49,26 @@ value,sample1,value,value,value,data/sample1_fastq_1.gz,data/sample1_fastq_2.gz,
 ## Key parameters
 | parameter | type | description |
 |---|---|---|
-| `--outdir` | string | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 | `--step` | string | Starting step |
-| `--ascat-alleles` | string | Path to ASCAT allele zip file. |
-| `--ascat-genome` | string | ASCAT genome. |
-| `--ascat-loci` | string | Path to ASCAT loci zip file. |
-| `--ascat-loci-gc` | string | Path to ASCAT GC content correction file. |
-| `--ascat-loci-rt` | string | Path to ASCAT RT (replictiming) correction file. |
-| `--ascat-ploidy` | number | Overwrite ASCAT ploidy. |
-| `--ascat-purity` | number | Overwrite ASCAT purity. |
+| `--outdir` | string | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| `--input` | string | Path to comma-separated file containing information about the samples in the experiment. |
+| `--input-restart` | string | Automatic retrieval for restart |
+| `--intervals` | string | Path to target bed file in case of whole exome or targeted sequencing or intervals file. |
+| `--no-intervals` | boolean | Disable usage of intervals. |
+| `--wes` | boolean | Enable when exome or panel data is provided. |
+| `--tools` | string | Tools to use for contamination removal, duplicate marking, variant calling and/or for annotation. |
+| `--skip-tools` | string | Disable specified tools. |
+| `--trim-fastq` | boolean | Run FastP for read trimming |
+| `--trim-nextseq` | boolean | Removing poly-G tails. |
+| `--save-trimmed` | boolean | Save trimmed FastQ file intermediates. |
+| `--save-split-fastqs` | boolean | If set, publishes split FASTQ files. Intended for testing purposes. |
+| `--umi-read-structure` | string | Specify UMI read structure for fgbio UMI consensus read generation |
+| `--umi-in-read-header` | boolean | Move UMIs from fastq read headers to a tag prior to deduplication. |
+| `--umi-location` | string | Location of the UMI(s) to be extracted with fastp. |
+| `--umi-length` | integer | Length of the UMI(s) in the read. |
+| `--umi-base-skip` | integer | Number of bases to skip after the UMI(s) in the read when extracting with fastp. |
+| `--umi-tag` | string | Tag detailing where UMIs are present inside the bam/cram file (e.g. RX). |
 | `--bbsplit-fasta-list` | string | Path to comma-separated file containing a list of reference genomes to filter reads against with BBSplit. You have to also explicitly set `--tools bbsplit` if you want to use BBSplit. |
-| `--bbsplit-index` | string | Path to directory or tar.gz archive for pre-built BBSplit index. |
-| `--bcftools-annotations` | string | A vcf file containing custom annotations to be used with bcftools annotate. Needs to be bgzipped. |
-| `--bcftools-annotations-tbi` | string | Index file for `bcftools_annotations` |
-| `--bcftools-columns` | string | Optional text file with list of columns to use from `bcftools_annotations`, one name per row |
-| `--bcftools-header-lines` | string | Text file with the header lines of `bcftools_annotations` |
-| `--build-only-index` | boolean | Only built references. |
-| `--bwa` | string | Path to BWA mem indices. |
-| `--bwamem2` | string | Path to bwa-mem2 mem indices. |
-| `--cf-chrom-len` | string | Specify a custom chromosome length file. |
-| `--cf-contamination-adjustment` | boolean | Overwrite Control-FREEC contaminationAdjustement |
 
 ## Outputs
 Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions).

@@ -35,24 +35,24 @@ value
 |---|---|---|
 | `--input` | string | File containing SRA/ENA/GEO/DDBJ identifiers one per line to download their associated metadata and FastQ files. |
 | `--outdir` | string | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--config-profile-contact` | string | Institutional config contact information. |
-| `--config-profile-description` | string | Institutional config description. |
-| `--config-profile-name` | string | Institutional config name. |
-| `--config-profile-url` | string | Institutional config URL link. |
+| `--ena-metadata-fields` | string | Comma-separated list of ENA metadata fields to fetch before downloading data. |
+| `--nf-core-pipeline` | string | Name of supported nf-core pipeline e.g. 'rnaseq'. A samplesheet for direct use with the pipeline will be created with the appropriate columns. |
+| `--skip-fastq-download` | boolean | Only download metadata for public data database ids and don't download the FastQ files. |
 | `--dbgap-key` | string | dbGaP repository key. |
 | `--email` | string | Email address for completion summary. |
-| `--email-on-fail` | string | Email address for completion summary, only when pipeline fails. |
-| `--ena-metadata-fields` | string | Comma-separated list of ENA metadata fields to fetch before downloading data. |
-| `--force-sratools-download` | boolean | This parameter has been deprecated. Please use '--download_method sratools' instead. |
+| `--config-profile-name` | string | Institutional config name. |
+| `--config-profile-description` | string | Institutional config description. |
+| `--config-profile-contact` | string | Institutional config contact information. |
+| `--config-profile-url` | string | Institutional config URL link. |
 | `--help` | boolean | Display help text. |
-| `--hook-url` | string | Incoming hook URL for messaging service |
-| `--monochrome-logs` | boolean | Do not use coloured log outputs. |
-| `--nf-core-pipeline` | string | Name of supported nf-core pipeline e.g. 'rnaseq'. A samplesheet for direct use with the pipeline will be created with the appropriate columns. |
+| `--version` | boolean | Display version and exit. |
+| `--email-on-fail` | string | Email address for completion summary, only when pipeline fails. |
 | `--plaintext-email` | boolean | Send plain-text email instead of HTML. |
-| `--skip-fastq-download` | boolean | Only download metadata for public data database ids and don't download the FastQ files. |
+| `--monochrome-logs` | boolean | Do not use coloured log outputs. |
+| `--hook-url` | string | Incoming hook URL for messaging service |
+| `--validationShowHiddenParams` | boolean | Show all params when using `--help` |
 | `--validationFailUnrecognisedParams` | boolean | Validation of parameters fails when an unrecognised parameter is found. |
 | `--validationLenientMode` | boolean | Validation of parameters in lenient more. |
-| `--validationShowHiddenParams` | boolean | Show all params when using `--help` |
 
 ## Outputs
 Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions).

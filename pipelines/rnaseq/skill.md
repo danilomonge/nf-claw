@@ -43,24 +43,24 @@ sample1,data/sample1_fastq_1.gz,data/sample1_fastq_2.gz,value,value,value,data/s
 |---|---|---|
 | `--input` | string | Path to the sample sheet (CSV) containing metadata about the experimental samples. |
 | `--outdir` | string | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--additional-fasta` | string | FASTA file to concatenate to genome FASTA file e.g. containing spike-in sequences. |
-| `--arm` | boolean | Use ARM architecture containers. |
-| `--bam-csi-index` | boolean | Create a CSI index for BAM files instead of the traditional BAI index. This will be required for genomes with larger chromosome sizes. |
-| `--bbsplit-fasta-list` | string | Path to comma-separated file containing a list of reference genomes to filter reads against with BBSplit. You have to also explicitly set `--skip_bbsplit false` if you want to use BBSplit. |
-| `--bbsplit-index` | string | Path to directory or tar.gz archive for pre-built BBSplit index. |
-| `--bowtie2-index` | string | Path to directory or tar.gz archive for pre-built Bowtie2 index. |
-| `--config-profile-contact` | string | Institutional config contact information. |
-| `--config-profile-description` | string | Institutional config description. |
-| `--config-profile-name` | string | Institutional config name. |
-| `--config-profile-url` | string | Institutional config URL link. |
-| `--contaminant-screening` | string | Tool to use for detecting contaminants in the selected screening reads - available options are 'sylph', 'kraken2', or 'kraken2_bracken' |
 | `--email` | string | Email address for completion summary. |
-| `--email-on-fail` | string | Email address for completion summary, only when pipeline fails. |
-| `--extra-bowtie2-align-args` | string | Extra arguments to pass to Bowtie2 alignment command in addition to defaults defined by the pipeline. Only available when using --aligner bowtie2_salmon. |
-| `--extra-fastp-args` | string | Extra arguments to pass to fastp command in addition to defaults defined by the pipeline. |
-| `--extra-kallisto-quant-args` | string | Extra arguments to pass to Kallisto quant command in addition to defaults defined by the pipeline. |
-| `--extra-salmon-quant-args` | string | Extra arguments to pass to Salmon quant command in addition to defaults defined by the pipeline. |
-| `--extra-star-align-args` | string | Extra arguments to pass to STAR alignment command in addition to defaults defined by the pipeline. Only available for the STAR-Salmon route. |
+| `--multiqc-title` | string | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
+| `--genome` | string | Name of a `params.genomes` catalogue entry (iGenomes or a user-defined catalogue). |
+| `--fasta` | string | Path to FASTA genome file. |
+| `--gtf` | string | Path to GTF annotation file. |
+| `--gff` | string | Path to GFF3 annotation file. |
+| `--gene-bed` | string | Path to BED file containing gene intervals. This will be created from the GTF file if not specified. |
+| `--transcript-fasta` | string | Path to FASTA transcriptome file. |
+| `--additional-fasta` | string | FASTA file to concatenate to genome FASTA file e.g. containing spike-in sequences. |
+| `--splicesites` | string | Splice sites file required for HISAT2. |
+| `--star-index` | string | Path to directory or tar.gz archive for pre-built STAR index. |
+| `--hisat2-index` | string | Path to directory or tar.gz archive for pre-built HISAT2 index. |
+| `--rsem-index` | string | Path to directory or tar.gz archive for pre-built RSEM index. |
+| `--salmon-index` | string | Path to directory or tar.gz archive for pre-built Salmon index. |
+| `--kallisto-index` | string | Path to directory or tar.gz archive for pre-built Kallisto index. |
+| `--bowtie2-index` | string | Path to directory or tar.gz archive for pre-built Bowtie2 index. |
+| `--gencode` | boolean | Specify if your GTF annotation is in GENCODE format. |
+| `--prokaryotic` | boolean | Enable prokaryotic mode for bacterial/archaeal RNA-seq data. |
 
 ## Outputs
 Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions).
