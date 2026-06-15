@@ -48,7 +48,7 @@ If you use nf-claw, cite it via [`CITATION.cff`](CITATION.cff), together with th
 - **Nextflow** (workflow engine) — Di Tommaso P, *et al.* Nextflow enables reproducible computational workflows. *Nat Biotechnol* **35**, 316–319 (2017). [doi:10.1038/nbt.3820](https://doi.org/10.1038/nbt.3820)
 - **nf-core** (the original pipelines) — Ewels PA, *et al.* The nf-core framework for community-curated bioinformatics pipelines. *Nat Biotechnol* **38**, 276–278 (2020). [doi:10.1038/s41587-020-0439-x](https://doi.org/10.1038/s41587-020-0439-x)
 - the **specific pipeline** you ran — each lists its own reference in `pipelines/<name>/upstream/CITATIONS.md`
-- **ClawBio** (the predecessor nf-claw adapts code from, by Manuel Corpas) — Corpas M. ClawBio: Bioinformatics-Native AI Agent Skill Library. Zenodo (2026). [doi:10.5281/zenodo.19420648](https://doi.org/10.5281/zenodo.19420648)
+- **ClawBio** (the predecessor nf-claw adapts files and structure from, by Manuel Corpas) — Corpas M. ClawBio: Bioinformatics-Native AI Agent Skill Library. Zenodo (2026). [doi:10.5281/zenodo.19420648](https://doi.org/10.5281/zenodo.19420648)
 
 nf-claw is MIT-licensed and includes parts adapted from ClawBio (© Manuel Corpas, MIT — see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE)); the nf-core pipelines it wraps are MIT, and Nextflow is Apache-2.0.
 
