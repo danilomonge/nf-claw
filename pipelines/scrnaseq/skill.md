@@ -51,7 +51,6 @@ sample1,data/sample1_fastq_1.gz,data/sample1_fastq_2.gz,value,value,value,value,
 | `--skip-emptydrops` | boolean |  |
 | `--genome` | string | Name of iGenomes reference. |
 | `--fasta` | string | Path to FASTA genome file. |
-| `--igenomes-ignore` | boolean | Do not load the iGenomes reference config. |
 | `--transcript-fasta` | string | A cDNA FASTA file |
 | `--gtf` | string | Reference GTF annotation file |
 | `--save-reference` | boolean | Specify this parameter to save the indices created (STAR, Kallisto, Simpleaf) to the results. |
@@ -60,6 +59,7 @@ sample1,data/sample1_fastq_1.gz,data/sample1_fastq_2.gz,value,value,value,value,
 | `--simpleaf-index` | string | Path to pre-built Simpleaf index. |
 | `--star-index` | string | Specify a path to the precomputed STAR index. |
 | `--star-ignore-sjdbgtf` | string | Ignore the SJDB GTF file. |
+| `--seq-center` | string | Name of sequencing center for BAM read group tag. |
 
 ## Outputs
 Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions).

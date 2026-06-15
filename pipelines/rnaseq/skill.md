@@ -60,7 +60,7 @@ sample1,data/sample1_fastq_1.gz,data/sample1_fastq_2.gz,value,value,value,data/s
 | `--kallisto-index` | string | Path to directory or tar.gz archive for pre-built Kallisto index. |
 | `--bowtie2-index` | string | Path to directory or tar.gz archive for pre-built Bowtie2 index. |
 | `--gencode` | boolean | Specify if your GTF annotation is in GENCODE format. |
-| `--prokaryotic` | boolean | Enable prokaryotic mode for bacterial/archaeal RNA-seq data. |
+| `--gffread-transcript-fasta` | boolean | Use gffread to generate transcript FASTA instead of RSEM. |
 
 ## Outputs
 Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions).

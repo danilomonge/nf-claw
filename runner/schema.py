@@ -16,6 +16,7 @@ class Param:
     fmt: str | None          # "file-path" | "directory-path" | None
     required: bool
     group: str
+    hidden: bool = False     # nf-core marks generic/boilerplate params (email, validation*, …) hidden
 
 
 @dataclass(frozen=True)
@@ -92,6 +93,7 @@ def load_param_schema(repo: Path) -> ParamSchema:
                 fmt=pobj.get("format"),
                 required=pname in required,
                 group=gname,
+                hidden=bool(pobj.get("hidden", False)),
             )
     return ParamSchema(
         title=str(data.get("title") or repo.name),

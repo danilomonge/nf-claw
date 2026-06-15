@@ -56,7 +56,8 @@ def _key_params(ps: ParamSchema) -> str:
     # reference/advanced groups), required first — so the genuinely important flags surface
     # instead of the alphabetically-earliest ones (e.g. sarek's --tools, not --ascat-alleles).
     candidates: list[Param] = [
-        p for p in ps.params.values() if p.required or p.default in (None, "")
+        p for p in ps.params.values()
+        if (p.required or p.default in (None, "")) and not p.hidden
     ]
     ordered = [p for p in candidates if p.required] + [p for p in candidates if not p.required]
     if not ordered:

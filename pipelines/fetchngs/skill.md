@@ -32,19 +32,6 @@ Input is a plain text file with one value per line (no header).
 | `--skip-fastq-download` | boolean | Only download metadata for public data database ids and don't download the FastQ files. |
 | `--dbgap-key` | string | dbGaP repository key. |
 | `--email` | string | Email address for completion summary. |
-| `--config-profile-name` | string | Institutional config name. |
-| `--config-profile-description` | string | Institutional config description. |
-| `--config-profile-contact` | string | Institutional config contact information. |
-| `--config-profile-url` | string | Institutional config URL link. |
-| `--help` | boolean | Display help text. |
-| `--version` | boolean | Display version and exit. |
-| `--email-on-fail` | string | Email address for completion summary, only when pipeline fails. |
-| `--plaintext-email` | boolean | Send plain-text email instead of HTML. |
-| `--monochrome-logs` | boolean | Do not use coloured log outputs. |
-| `--hook-url` | string | Incoming hook URL for messaging service |
-| `--validationShowHiddenParams` | boolean | Show all params when using `--help` |
-| `--validationFailUnrecognisedParams` | boolean | Validation of parameters fails when an unrecognised parameter is found. |
-| `--validationLenientMode` | boolean | Validation of parameters in lenient more. |
 
 ## Outputs
 Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions).

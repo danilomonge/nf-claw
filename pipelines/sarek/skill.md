@@ -52,7 +52,6 @@ value,sample1,value,value,value,data/sample1_fastq_1.gz,data/sample1_fastq_2.gz,
 | `--step` | string | Starting step |
 | `--outdir` | string | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 | `--input` | string | Path to comma-separated file containing information about the samples in the experiment. |
-| `--input-restart` | string | Automatic retrieval for restart |
 | `--intervals` | string | Path to target bed file in case of whole exome or targeted sequencing or intervals file. |
 | `--no-intervals` | boolean | Disable usage of intervals. |
 | `--wes` | boolean | Enable when exome or panel data is provided. |
@@ -69,6 +68,7 @@ value,sample1,value,value,value,data/sample1_fastq_1.gz,data/sample1_fastq_2.gz,
 | `--umi-base-skip` | integer | Number of bases to skip after the UMI(s) in the read when extracting with fastp. |
 | `--umi-tag` | string | Tag detailing where UMIs are present inside the bam/cram file (e.g. RX). |
 | `--bbsplit-fasta-list` | string | Path to comma-separated file containing a list of reference genomes to filter reads against with BBSplit. You have to also explicitly set `--tools bbsplit` if you want to use BBSplit. |
+| `--bbsplit-index` | string | Path to directory or tar.gz archive for pre-built BBSplit index. |
 
 ## Outputs
 Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions).

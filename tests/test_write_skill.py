@@ -53,3 +53,16 @@ def test_no_samplesheet_graceful(tmp_path):
     text = skill.read_text()
     assert "does not use a samplesheet" in text
     assert "has_samplesheet: false" in text
+
+
+def test_key_params_excludes_hidden(tmp_path):
+    from runner.schema import Param, ParamSchema
+    # nf-core marks ~20 generic params (email, validation*, config_profile_*) hidden;
+    # those must not pollute skill.md "Key parameters" (the agent-facing essentials).
+    ps = ParamSchema(title="t", description="d", params={
+        "real_key": Param("real_key", "string", None, None, "real key", None, False, "input"),
+        "email": Param("email", "string", None, None, "boilerplate", None, False, "generic", True),
+    })
+    out = write_skill._key_params(ps)
+    assert "real-key" in out
+    assert "email" not in out
