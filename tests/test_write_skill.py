@@ -2,6 +2,8 @@ import shutil
 from pathlib import Path
 
 from librarian import write_skill
+from runner.schema import Param, ParamSchema
+from runner.submodule import SubmoduleStatus
 
 FIX = Path(__file__).parent / "fixtures"
 
@@ -56,7 +58,6 @@ def test_no_samplesheet_graceful(tmp_path):
 
 
 def test_required_params_only(tmp_path):
-    from runner.schema import Param, ParamSchema
     # skill.md lists ONLY schema-required params (a fact) — no heuristic "importance" guess.
     ps = ParamSchema(title="t", description="d", params={
         "input": Param("input", "string", None, None, "samplesheet", None, True, "io"),
@@ -68,3 +69,22 @@ def test_required_params_only(tmp_path):
     assert "--input" in out and "--step" in out          # required → shown
     assert "mapping, markduplicates" in out              # allowed values rendered for required enum
     assert "aligner" not in out and "email" not in out   # optional → not shown
+
+
+# --- _cell: free text is collapsed to one line and pipe-escaped so tables never break ---
+def test_cell_collapses_whitespace_and_escapes_pipes():
+    assert write_skill._cell("a\n\nb") == "a b"
+    assert write_skill._cell("x  |  y") == "x \\| y"
+    assert write_skill._cell("p\tq\nr") == "p q r"
+
+
+def test_reference_row_is_single_line_and_pipe_safe():
+    st = SubmoduleStatus("t", Path("/x"), True, True, "1.0.0", "abc", ())
+    desc = "First sentence.\n\nSecond with a | pipe."
+    ps = ParamSchema(title="t", description="d", params={
+        "weird": Param("weird", "string", None, None, desc, None, False, "g"),
+    })
+    out = write_skill._render_reference("t", st, ps, None)
+    rows = [ln for ln in out.splitlines() if ln.startswith("| `--weird`")]
+    assert len(rows) == 1                                       # newlines didn't split the row
+    assert "First sentence. Second with a \\| pipe." in rows[0]  # collapsed + pipe escaped

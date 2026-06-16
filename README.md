@@ -15,6 +15,8 @@ correctly — no external lookups, no hallucinated flags.
 - `catalog.md` / `catalog.json` — the index of available pipelines
 - `sources.tsv` — the source list (name, url, version policy)
 
+Design details (the three zones and how generation stays drift-free): [`docs/architecture.md`](docs/architecture.md).
+
 ## Use
 ```bash
 nfclaw list                  # or: python -m runner list
@@ -35,11 +37,13 @@ Append a line to `sources.tsv` (`name<TAB>url<TAB>latest-release`), then:
 git submodule add <url> pipelines/<name>/upstream
 make build
 ```
+Full step-by-step, with the version-policy column and the checks to run, is in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## How it stays current
 `.github/workflows/auto-update.yml` runs on a schedule: it finds each pipeline's newest release
 with `git ls-remote --tags` (pure git, no APIs), checks it out, regenerates context, and opens a PR.
-The drift gate guarantees committed context always matches the pinned submodule.
+The drift gate guarantees committed context always matches the pinned submodule. More detail:
+[`docs/updating.md`](docs/updating.md).
 
 ## Citation & attribution
 **The pipelines themselves are the work of the [nf-core](https://nf-co.re) community** — the heart of the library — and are wrapped **unmodified** as pinned git submodules; each keeps its own authors, license and citation. **nf-claw** (the wrapper/runtime) was created by **Danilo Monge** (Eberhard Karls Universität Tübingen), and **adapts some files and its repository structure from [ClawBio](https://clawbio.ai)** — created by **Manuel Corpas** (MIT; copyright retained in [`LICENSE`](LICENSE), provenance in [`NOTICE`](NOTICE)).
