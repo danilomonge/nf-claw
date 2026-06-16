@@ -20,16 +20,16 @@ nextflow run pipelines/scrnaseq/upstream -profile docker --input samplesheet.csv
 ```
 
 ## Inputs
-| column | type | required | allowed values |
-|---|---|---|---|
-| `sample` | string | yes |  |
-| `fastq_1` | string (file path) | yes |  |
-| `fastq_2` | string (file path) | yes |  |
-| `fastq_barcode` | string | no |  |
-| `expected_cells` | integer | no |  |
-| `seq_center` | string | no |  |
-| `sample_type` | string | no | atac, gex |
-| `feature_type` | string | no | gex, vdj, ab, crispr, cmo |
+| column | type | required | allowed values | pattern |
+|---|---|---|---|---|
+| `sample` | string | yes |  | ^\S+$ |
+| `fastq_1` | string (file path) | yes |  | ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
+| `fastq_2` | string (file path) | yes |  | ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
+| `fastq_barcode` | string | no |  |  |
+| `expected_cells` | integer | no |  |  |
+| `seq_center` | string | no |  |  |
+| `sample_type` | string | no | atac, gex |  |
+| `feature_type` | string | no | gex, vdj, ab, crispr, cmo |  |
 
 The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
@@ -39,8 +39,8 @@ sample,fastq_1,fastq_2,fastq_barcode,expected_cells,seq_center,sample_type,featu
 ## Required parameters
 | parameter | type | allowed values | description |
 |---|---|---|---|
-| `--input` | string |  | Path to comma-separated file containing information about the samples in the experiment. |
-| `--outdir` | string |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| `--input` | string (file path) |  | Path to comma-separated file containing information about the samples in the experiment. |
+| `--outdir` | string (directory path) |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
 All other parameters are optional. Every one — with type, default and allowed values — is in [reference.md](reference.md), grouped as:

@@ -48,8 +48,13 @@ class Column:
     type: str
     required: bool
     pattern: str | None
-    is_path: bool
+    fmt: str | None = None          # "file-path" | "directory-path" | None — mirrors Param.fmt
     enum: tuple[str, ...] | None = None
+
+    @property
+    def is_path(self) -> bool:
+        """Any filesystem path (file or directory) — these values get an existence check."""
+        return self.fmt in ("file-path", "directory-path")
 
 
 @dataclass(frozen=True)
@@ -137,7 +142,7 @@ def load_input_schema(repo: Path) -> InputSchema | None:
                 type=_type_of(cobj),
                 required=cname in required,
                 pattern=cobj.get("pattern"),
-                is_path=cobj.get("format") == "file-path",
+                fmt=cobj.get("format"),
                 enum=tuple(str(e) for e in enum) if isinstance(enum, list) else None,
             ))
     return InputSchema(columns=tuple(cols))

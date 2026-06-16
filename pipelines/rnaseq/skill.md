@@ -20,17 +20,17 @@ nextflow run pipelines/rnaseq/upstream -profile docker --input samplesheet.csv -
 ```
 
 ## Inputs
-| column | type | required | allowed values |
-|---|---|---|---|
-| `sample` | string | yes |  |
-| `fastq_1` | string (file path) | yes |  |
-| `fastq_2` | string (file path) | no |  |
-| `strandedness` | string | yes | forward, reverse, unstranded, auto |
-| `seq_platform` | string | no |  |
-| `seq_center` | string | no |  |
-| `genome_bam` | string (file path) | no |  |
-| `transcriptome_bam` | string (file path) | no |  |
-| `percent_mapped` | number | no |  |
+| column | type | required | allowed values | pattern |
+|---|---|---|---|---|
+| `sample` | string | yes |  | ^\S+$ |
+| `fastq_1` | string (file path) | yes |  | ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q(\.gz)?$ |
+| `fastq_2` | string (file path) | no |  | ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q(\.gz)?$ |
+| `strandedness` | string | yes | forward, reverse, unstranded, auto |  |
+| `seq_platform` | string | no |  | ^\S+$ |
+| `seq_center` | string | no |  | ^\S+$ |
+| `genome_bam` | string (file path) | no |  | ^([\S\s]*\/)?[^\s\/]+\.(bam\|BAM)$ |
+| `transcriptome_bam` | string (file path) | no |  | ^([\S\s]*\/)?[^\s\/]+\.(bam\|BAM)$ |
+| `percent_mapped` | number | no |  |  |
 
 The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
@@ -40,8 +40,8 @@ sample,fastq_1,fastq_2,strandedness,seq_platform,seq_center,genome_bam,transcrip
 ## Required parameters
 | parameter | type | allowed values | description |
 |---|---|---|---|
-| `--input` | string |  | Path to the sample sheet (CSV) containing metadata about the experimental samples. |
-| `--outdir` | string |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| `--input` | string (file path) |  | Path to the sample sheet (CSV) containing metadata about the experimental samples. |
+| `--outdir` | string (directory path) |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
 All other parameters are optional. Every one — with type, default and allowed values — is in [reference.md](reference.md), grouped as:

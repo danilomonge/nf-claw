@@ -2,8 +2,8 @@ from runner.schema import Column, InputSchema
 from runner import samplesheet
 
 SCH = InputSchema(columns=(
-    Column("sample", "string", True, None, False),
-    Column("fastq_1", "string", True, None, True),
+    Column("sample", "string", True, None, None),
+    Column("fastq_1", "string", True, None, "file-path"),
 ))
 
 def test_missing_required_column(tmp_path):

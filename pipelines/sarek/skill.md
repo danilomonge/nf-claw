@@ -20,25 +20,25 @@ nextflow run pipelines/sarek/upstream -profile docker --input samplesheet.csv --
 ```
 
 ## Inputs
-| column | type | required | allowed values |
-|---|---|---|---|
-| `patient` | string | yes |  |
-| `sample` | string | yes |  |
-| `sex` | string | no | XX, XY, NA |
-| `status` | integer | no | 0, 1 |
-| `lane` | integer or string | no |  |
-| `fastq_1` | string (file path) | no |  |
-| `fastq_2` | string (file path) | no |  |
-| `spring_1` | string (file path) | no |  |
-| `spring_2` | string (file path) | no |  |
-| `table` | string (file path) | no |  |
-| `cram` | string (file path) | no |  |
-| `crai` | string (file path) | no |  |
-| `bam` | string (file path) | no |  |
-| `bai` | string (file path) | no |  |
-| `contamination` | number | no |  |
-| `vcf` | string (file path) | no |  |
-| `variantcaller` | string | no |  |
+| column | type | required | allowed values | pattern |
+|---|---|---|---|---|
+| `patient` | string | yes |  | ^\S+$ |
+| `sample` | string | yes |  | ^\S+$ |
+| `sex` | string | no | XX, XY, NA |  |
+| `status` | integer | no | 0, 1 |  |
+| `lane` | integer or string | no |  | ^\S+$ |
+| `fastq_1` | string (file path) | no |  | ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
+| `fastq_2` | string (file path) | no |  | ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
+| `spring_1` | string (file path) | no |  | ^\S+\.f(ast)?q\.gz.spring$ |
+| `spring_2` | string (file path) | no |  | ^\S+\.f(ast)?q\.gz.spring$ |
+| `table` | string (file path) | no |  | ^\S+\.table$ |
+| `cram` | string (file path) | no |  | ^\S+\.cram$ |
+| `crai` | string (file path) | no |  | ^\S+\.crai$ |
+| `bam` | string (file path) | no |  | ^\S+\.bam$ |
+| `bai` | string (file path) | no |  | ^\S+\.bai$ |
+| `contamination` | number | no |  |  |
+| `vcf` | string (file path) | no |  | ^\S+\.vcf(\.gz)?$ |
+| `variantcaller` | string | no |  |  |
 
 The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
@@ -49,7 +49,7 @@ patient,sample,sex,status,lane,fastq_1,fastq_2,spring_1,spring_2,table,cram,crai
 | parameter | type | allowed values | description |
 |---|---|---|---|
 | `--step` | string | mapping, markduplicates, prepare_recalibration, recalibrate, variant_calling, annotate | Starting step |
-| `--outdir` | string |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| `--outdir` | string (directory path) |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
 All other parameters are optional. Every one — with type, default and allowed values — is in [reference.md](reference.md), grouped as:

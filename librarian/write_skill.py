@@ -15,6 +15,13 @@ def _cell(text: object) -> str:
     return " ".join(str(text).split()).replace("|", "\\|")
 
 
+def _type_with_fmt(type_: str, fmt: str | None) -> str:
+    """Annotate a type with its path-ness — a schema fact (format: file-path / directory-path)."""
+    if fmt in ("file-path", "directory-path"):
+        return f"{type_} ({fmt.replace('-', ' ')})"
+    return type_
+
+
 def _load_keywords(name: str, pipelines_dir: Path) -> list[str]:
     rp = pipelines_dir / name / "routing.yml"
     if rp.exists():
@@ -32,13 +39,16 @@ def _inputs_section(insch: InputSchema | None) -> str:
     named = [c for c in insch.columns if c.name]
     if not named:
         # A single unnamed column (e.g. nf-core/fetchngs id list): one value per line, no header.
-        return "Input is a plain text file with one value per line (no header).\n"
-    head = "| column | type | required | allowed values |\n|---|---|---|---|\n"
+        c = insch.columns[0] if insch.columns else None
+        constraint = f" Each value must match the pattern `{c.pattern}`." if c and c.pattern else ""
+        return "Input is a plain text file with one value per line (no header)." + constraint + "\n"
+    head = "| column | type | required | allowed values | pattern |\n|---|---|---|---|---|\n"
     rows = ""
     for c in named:
-        typ = f"{c.type} (file path)" if c.is_path else c.type
+        typ = _type_with_fmt(c.type, c.fmt)
         allowed = ", ".join(c.enum) if c.enum else ""
-        rows += f"| `{c.name}` | {typ} | {'yes' if c.required else 'no'} | {_cell(allowed)} |\n"
+        rows += (f"| `{c.name}` | {typ} | {'yes' if c.required else 'no'} | "
+                 f"{_cell(allowed)} | {_cell(c.pattern or '')} |\n")
     header_line = ",".join(c.name for c in named)
     return (f"{head}{rows}\n"
             "The samplesheet is a CSV with this exact header; fill each value per the table above "
@@ -54,8 +64,8 @@ def _required_params(ps: ParamSchema) -> str:
     out = "| parameter | type | allowed values | description |\n|---|---|---|---|\n"
     for p in required:
         allowed = ", ".join(p.enum) if p.enum else ""
-        out += (f"| `--{p.name.replace('_', '-')}` | {p.type} | {_cell(allowed)} | "
-                f"{_cell(p.description)} |\n")
+        out += (f"| `--{p.name.replace('_', '-')}` | {_type_with_fmt(p.type, p.fmt)} | "
+                f"{_cell(allowed)} | {_cell(p.description)} |\n")
     return out
 
 
@@ -113,18 +123,19 @@ def _render_reference(name: str, st: SubmoduleStatus, ps: ParamSchema,
                       insch: InputSchema | None) -> str:
     out = (f"---\nname: {name}\nversion: {st.version}\ncommit: {st.commit}\n---\n\n"
            f"# {name} — full parameter reference\n\n"
-           "Every parameter from the pinned `nextflow_schema.json`; validated by nf-schema at "
-           "runtime.\n\n")
+           f"{ps.title}. Every parameter from the pinned `nextflow_schema.json`, validated by "
+           "nf-schema at runtime. `hidden` marks nf-core's generic/boilerplate parameters.\n\n")
     for group, params in sorted(ps.groups().items()):
         out += f"## {group or 'general'}\n\n"
-        out += ("| parameter | type | required | allowed values | default | description |\n"
-                "|---|---|---|---|---|---|\n")
+        out += ("| parameter | type | required | hidden | allowed values | default | description |\n"
+                "|---|---|---|---|---|---|---|\n")
         for p in sorted(params, key=lambda x: x.name):
             default = "" if p.default is None else str(p.default)
             allowed = ", ".join(p.enum) if p.enum else ""
             req = "yes" if p.required else ""
-            out += (f"| `--{p.name.replace('_', '-')}` | {p.type} | {req} | "
-                    f"{_cell(allowed)} | {_cell(default)} | {_cell(p.description)} |\n")
+            hid = "yes" if p.hidden else ""
+            out += (f"| `--{p.name.replace('_', '-')}` | {_type_with_fmt(p.type, p.fmt)} | "
+                    f"{req} | {hid} | {_cell(allowed)} | {_cell(default)} | {_cell(p.description)} |\n")
         out += "\n"
     out += f"<!-- Generated from nf-core/{name}@{st.commit}. Do not edit by hand. -->\n"
     return out
