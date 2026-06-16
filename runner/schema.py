@@ -16,7 +16,14 @@ class Param:
     fmt: str | None          # "file-path" | "directory-path" | None
     required: bool
     group: str
-    hidden: bool = False     # nf-core marks generic/boilerplate params (email, validation*, …) hidden
+    hidden: bool = False      # nf-core marks generic/boilerplate params (email, validation*, …) hidden
+    # Value-shape constraints nf-schema enforces at runtime (enum has its own field above).
+    pattern: str | None = None
+    minimum: int | float | None = None
+    maximum: int | float | None = None
+    min_length: int | None = None
+    max_length: int | None = None
+    deprecated: bool = False
 
 
 @dataclass(frozen=True)
@@ -50,6 +57,12 @@ class Column:
     pattern: str | None
     fmt: str | None = None          # "file-path" | "directory-path" | None — mirrors Param.fmt
     enum: tuple[str, ...] | None = None
+    # Same value-shape constraints as Param, so one renderer serves both (no asymmetry).
+    minimum: int | float | None = None
+    maximum: int | float | None = None
+    min_length: int | None = None
+    max_length: int | None = None
+    deprecated: bool = False
 
     @property
     def is_path(self) -> bool:
@@ -115,6 +128,12 @@ def load_param_schema(repo: Path) -> ParamSchema:
                 required=pname in required,
                 group=gname,
                 hidden=bool(pobj.get("hidden", False)),
+                pattern=pobj.get("pattern"),
+                minimum=pobj.get("minimum"),
+                maximum=pobj.get("maximum"),
+                min_length=pobj.get("minLength"),
+                max_length=pobj.get("maxLength"),
+                deprecated=bool(pobj.get("deprecated", False)),
             )
     return ParamSchema(
         title=str(data.get("title") or repo.name),
@@ -144,5 +163,10 @@ def load_input_schema(repo: Path) -> InputSchema | None:
                 pattern=cobj.get("pattern"),
                 fmt=cobj.get("format"),
                 enum=tuple(str(e) for e in enum) if isinstance(enum, list) else None,
+                minimum=cobj.get("minimum"),
+                maximum=cobj.get("maximum"),
+                min_length=cobj.get("minLength"),
+                max_length=cobj.get("maxLength"),
+                deprecated=bool(cobj.get("deprecated", False)),
             ))
     return InputSchema(columns=tuple(cols))

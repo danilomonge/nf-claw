@@ -147,15 +147,15 @@ def test_column_fmt_is_symmetric_with_param_and_drives_is_path(tmp_path):
     assert cols["name"].fmt is None and cols["name"].is_path is False
 
 
-def test_inputs_section_surfaces_pattern_and_directory_path():
+def test_inputs_section_surfaces_constraints_and_directory_path():
     insch = InputSchema(columns=(
         Column("sample", "string", True, r"^\S+$", None),
         Column("reads", "string", False, r"^\S+\.fq\.gz$", "file-path"),
         Column("refdir", "string", False, None, "directory-path"),
     ))
     out = write_skill._inputs_section(insch)
-    assert "| pattern |" in out                       # pattern column header present
-    assert r"^\S+\.fq\.gz$" in out                     # a real column pattern rendered (a fact)
+    assert "| constraints |" in out                    # unified constraints column header
+    assert r"matches ^\S+\.fq\.gz$" in out             # a real column pattern rendered (a fact)
     assert "string (file path)" in out                 # file-path marker
     assert "string (directory path)" in out            # directory-path marker (was lost before)
 
@@ -199,3 +199,73 @@ def test_required_params_marks_path_formats():
     out = write_skill._required_params(ps)
     assert "string (file path)" in out
     assert "string (directory path)" in out
+
+
+# --- Value constraints: pattern/min/max/length/deprecated are captured on BOTH Param and Column
+#     and rendered by ONE helper (so the two never drift apart), excluding enum (own column). ---
+def test_constraints_helper_renders_all_and_excludes_enum():
+    p = Param("x", "integer", None, ("a", "b"), "d", None, False, "g",
+              pattern=r"^(a|b)$", minimum=1, maximum=10, min_length=2, max_length=8, deprecated=True)
+    out = write_skill._constraints(p)
+    assert r"matches ^(a\|b)$" in out                   # pattern rendered, pipe escaped for the table
+    assert "≥ 1" in out and "≤ 10" in out               # numeric bounds
+    assert "length ≥ 2" in out and "length ≤ 8" in out  # length bounds
+    assert "deprecated" in out
+    assert "a, b" not in out                              # enum is NOT folded in here (own column)
+
+
+def test_constraints_helper_blank_when_unconstrained():
+    p = Param("x", "string", None, None, "d", None, False, "g")
+    assert write_skill._constraints(p) == ""
+    c = Column("x", "string", False, None, None)
+    assert write_skill._constraints(c) == ""             # same helper works on Column
+
+
+def test_constraints_minimum_zero_is_rendered():
+    # `0` is a real bound — must use `is not None`, not truthiness, or it vanishes.
+    p = Param("x", "integer", None, None, "d", None, False, "g", minimum=0)
+    assert "≥ 0" in write_skill._constraints(p)
+
+
+def test_load_param_schema_captures_value_constraints(tmp_path):
+    from runner import schema
+    (tmp_path / "nextflow_schema.json").write_text(
+        '{"title": "t", "definitions": {"g": {"properties": {'
+        '"reads": {"type": "string", "pattern": "^\\\\S+\\\\.csv$"}, '
+        '"n": {"type": "integer", "minimum": 1, "maximum": 9}, '
+        '"s": {"type": "string", "minLength": 2, "maxLength": 4}, '
+        '"old": {"type": "string", "deprecated": true}}}}}')
+    ps = schema.load_param_schema(tmp_path)
+    assert ps.params["reads"].pattern == r"^\S+\.csv$"
+    assert ps.params["n"].minimum == 1 and ps.params["n"].maximum == 9
+    assert ps.params["s"].min_length == 2 and ps.params["s"].max_length == 4
+    assert ps.params["old"].deprecated is True
+
+
+def test_load_input_schema_captures_column_constraints(tmp_path):
+    from runner import schema
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "schema_input.json").write_text(
+        '{"items": {"properties": {'
+        '"cells": {"type": "integer", "minimum": 1}, '
+        '"name": {"type": "string", "minLength": 1}}}}')
+    cols = {c.name: c for c in schema.load_input_schema(tmp_path).columns}
+    assert cols["cells"].minimum == 1                    # numeric column bound captured, not dropped
+    assert cols["name"].min_length == 1
+
+
+def test_reference_has_constraints_column_with_real_pattern():
+    from runner.submodule import SubmoduleStatus
+    st = SubmoduleStatus(name="pZ", path=Path("/x"), initialized=True, complete=True,
+                         version="1.0.0", commit="abc1234", missing_files=())
+    ps = ParamSchema(title="t", description="d", params={
+        "input": Param("input", "string", None, None, "ss", "file-path", True, "io",
+                       pattern=r"^\S+\.(csv|tsv)$"),
+        "n": Param("n", "integer", None, None, "count", None, False, "io", minimum=1),
+    })
+    out = write_skill._render_reference("pZ", st, ps, None)
+    assert "| constraints |" in out                                  # column present
+    input_row = next(l for l in out.splitlines() if l.startswith("| `--input`"))
+    assert r"matches ^\S+\.(csv\|tsv)$" in input_row                 # pattern in the right cell, pipe escaped
+    n_row = next(l for l in out.splitlines() if l.startswith("| `--n`"))
+    assert "≥ 1" in n_row

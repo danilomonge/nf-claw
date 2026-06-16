@@ -22,6 +22,26 @@ def _type_with_fmt(type_: str, fmt: str | None) -> str:
     return type_
 
 
+def _constraints(obj) -> str:
+    """Render the value-shape constraints nf-schema enforces — a literal fact list, no heuristics.
+    `enum` is intentionally excluded (it has its own 'allowed values' column). Works for both
+    Param and Column since they share these attributes."""
+    parts: list[str] = []
+    if obj.pattern:
+        parts.append(f"matches {obj.pattern}")
+    if obj.minimum is not None:
+        parts.append(f"≥ {obj.minimum}")
+    if obj.maximum is not None:
+        parts.append(f"≤ {obj.maximum}")
+    if obj.min_length is not None:
+        parts.append(f"length ≥ {obj.min_length}")
+    if obj.max_length is not None:
+        parts.append(f"length ≤ {obj.max_length}")
+    if obj.deprecated:
+        parts.append("deprecated")
+    return _cell("; ".join(parts))
+
+
 def _load_keywords(name: str, pipelines_dir: Path) -> list[str]:
     rp = pipelines_dir / name / "routing.yml"
     if rp.exists():
@@ -42,13 +62,13 @@ def _inputs_section(insch: InputSchema | None) -> str:
         c = insch.columns[0] if insch.columns else None
         constraint = f" Each value must match the pattern `{c.pattern}`." if c and c.pattern else ""
         return "Input is a plain text file with one value per line (no header)." + constraint + "\n"
-    head = "| column | type | required | allowed values | pattern |\n|---|---|---|---|---|\n"
+    head = "| column | type | required | allowed values | constraints |\n|---|---|---|---|---|\n"
     rows = ""
     for c in named:
         typ = _type_with_fmt(c.type, c.fmt)
         allowed = ", ".join(c.enum) if c.enum else ""
         rows += (f"| `{c.name}` | {typ} | {'yes' if c.required else 'no'} | "
-                 f"{_cell(allowed)} | {_cell(c.pattern or '')} |\n")
+                 f"{_cell(allowed)} | {_constraints(c)} |\n")
     header_line = ",".join(c.name for c in named)
     return (f"{head}{rows}\n"
             "The samplesheet is a CSV with this exact header; fill each value per the table above "
@@ -124,18 +144,20 @@ def _render_reference(name: str, st: SubmoduleStatus, ps: ParamSchema,
     out = (f"---\nname: {name}\nversion: {st.version}\ncommit: {st.commit}\n---\n\n"
            f"# {name} — full parameter reference\n\n"
            f"{ps.title}. Every parameter from the pinned `nextflow_schema.json`, validated by "
-           "nf-schema at runtime. `hidden` marks nf-core's generic/boilerplate parameters.\n\n")
+           "nf-schema at runtime. `hidden` marks nf-core's generic/boilerplate parameters; "
+           "`constraints` lists the value bounds the schema enforces (pattern, min/max, length).\n\n")
     for group, params in sorted(ps.groups().items()):
         out += f"## {group or 'general'}\n\n"
-        out += ("| parameter | type | required | hidden | allowed values | default | description |\n"
-                "|---|---|---|---|---|---|---|\n")
+        out += ("| parameter | type | required | hidden | allowed values | constraints | "
+                "default | description |\n|---|---|---|---|---|---|---|---|\n")
         for p in sorted(params, key=lambda x: x.name):
             default = "" if p.default is None else str(p.default)
             allowed = ", ".join(p.enum) if p.enum else ""
             req = "yes" if p.required else ""
             hid = "yes" if p.hidden else ""
             out += (f"| `--{p.name.replace('_', '-')}` | {_type_with_fmt(p.type, p.fmt)} | "
-                    f"{req} | {hid} | {_cell(allowed)} | {_cell(default)} | {_cell(p.description)} |\n")
+                    f"{req} | {hid} | {_cell(allowed)} | {_constraints(p)} | "
+                    f"{_cell(default)} | {_cell(p.description)} |\n")
         out += "\n"
     out += f"<!-- Generated from nf-core/{name}@{st.commit}. Do not edit by hand. -->\n"
     return out

@@ -20,24 +20,24 @@ nextflow run pipelines/sarek/upstream -profile docker --input samplesheet.csv --
 ```
 
 ## Inputs
-| column | type | required | allowed values | pattern |
+| column | type | required | allowed values | constraints |
 |---|---|---|---|---|
-| `patient` | string | yes |  | ^\S+$ |
-| `sample` | string | yes |  | ^\S+$ |
+| `patient` | string | yes |  | matches ^\S+$ |
+| `sample` | string | yes |  | matches ^\S+$ |
 | `sex` | string | no | XX, XY, NA |  |
 | `status` | integer | no | 0, 1 |  |
-| `lane` | integer or string | no |  | ^\S+$ |
-| `fastq_1` | string (file path) | no |  | ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
-| `fastq_2` | string (file path) | no |  | ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
-| `spring_1` | string (file path) | no |  | ^\S+\.f(ast)?q\.gz.spring$ |
-| `spring_2` | string (file path) | no |  | ^\S+\.f(ast)?q\.gz.spring$ |
-| `table` | string (file path) | no |  | ^\S+\.table$ |
-| `cram` | string (file path) | no |  | ^\S+\.cram$ |
-| `crai` | string (file path) | no |  | ^\S+\.crai$ |
-| `bam` | string (file path) | no |  | ^\S+\.bam$ |
-| `bai` | string (file path) | no |  | ^\S+\.bai$ |
+| `lane` | integer or string | no |  | matches ^\S+$ |
+| `fastq_1` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
+| `fastq_2` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
+| `spring_1` | string (file path) | no |  | matches ^\S+\.f(ast)?q\.gz.spring$ |
+| `spring_2` | string (file path) | no |  | matches ^\S+\.f(ast)?q\.gz.spring$ |
+| `table` | string (file path) | no |  | matches ^\S+\.table$ |
+| `cram` | string (file path) | no |  | matches ^\S+\.cram$ |
+| `crai` | string (file path) | no |  | matches ^\S+\.crai$ |
+| `bam` | string (file path) | no |  | matches ^\S+\.bam$ |
+| `bai` | string (file path) | no |  | matches ^\S+\.bai$ |
 | `contamination` | number | no |  |  |
-| `vcf` | string (file path) | no |  | ^\S+\.vcf(\.gz)?$ |
+| `vcf` | string (file path) | no |  | matches ^\S+\.vcf(\.gz)?$ |
 | `variantcaller` | string | no |  |  |
 
 The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):

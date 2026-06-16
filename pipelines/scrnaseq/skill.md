@@ -20,11 +20,11 @@ nextflow run pipelines/scrnaseq/upstream -profile docker --input samplesheet.csv
 ```
 
 ## Inputs
-| column | type | required | allowed values | pattern |
+| column | type | required | allowed values | constraints |
 |---|---|---|---|---|
-| `sample` | string | yes |  | ^\S+$ |
-| `fastq_1` | string (file path) | yes |  | ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
-| `fastq_2` | string (file path) | yes |  | ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
+| `sample` | string | yes |  | matches ^\S+$ |
+| `fastq_1` | string (file path) | yes |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
+| `fastq_2` | string (file path) | yes |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
 | `fastq_barcode` | string | no |  |  |
 | `expected_cells` | integer | no |  |  |
 | `seq_center` | string | no |  |  |

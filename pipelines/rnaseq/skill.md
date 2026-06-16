@@ -20,17 +20,17 @@ nextflow run pipelines/rnaseq/upstream -profile docker --input samplesheet.csv -
 ```
 
 ## Inputs
-| column | type | required | allowed values | pattern |
+| column | type | required | allowed values | constraints |
 |---|---|---|---|---|
-| `sample` | string | yes |  | ^\S+$ |
-| `fastq_1` | string (file path) | yes |  | ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q(\.gz)?$ |
-| `fastq_2` | string (file path) | no |  | ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q(\.gz)?$ |
+| `sample` | string | yes |  | matches ^\S+$ |
+| `fastq_1` | string (file path) | yes |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q(\.gz)?$ |
+| `fastq_2` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q(\.gz)?$ |
 | `strandedness` | string | yes | forward, reverse, unstranded, auto |  |
-| `seq_platform` | string | no |  | ^\S+$ |
-| `seq_center` | string | no |  | ^\S+$ |
-| `genome_bam` | string (file path) | no |  | ^([\S\s]*\/)?[^\s\/]+\.(bam\|BAM)$ |
-| `transcriptome_bam` | string (file path) | no |  | ^([\S\s]*\/)?[^\s\/]+\.(bam\|BAM)$ |
-| `percent_mapped` | number | no |  |  |
+| `seq_platform` | string | no |  | matches ^\S+$ |
+| `seq_center` | string | no |  | matches ^\S+$ |
+| `genome_bam` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.(bam\|BAM)$ |
+| `transcriptome_bam` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.(bam\|BAM)$ |
+| `percent_mapped` | number | no |  | ≥ 0; ≤ 100 |
 
 The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
