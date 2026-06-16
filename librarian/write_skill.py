@@ -91,13 +91,16 @@ def _required_params(ps: ParamSchema) -> str:
 
 
 def _param_groups(ps: ParamSchema) -> str:
-    """The schema's own parameter groups (names + counts) — a deterministic map, no curation."""
+    """The schema's own parameter groups (names + full counts) — a deterministic map, no curation."""
     groups = sorted(ps.groups().items())
     if not groups:
         return "_No additional parameters._\n"
-    lines = [f"- `{g or 'general'}` ({len(params)} parameters)" for g, params in groups]
-    return ("All other parameters are optional. Every one — with type, default and allowed "
-            "values — is in [reference.md](reference.md), grouped as:\n" + "\n".join(lines) + "\n")
+    lines = [f"- `{g or 'general'}` ({len(params)} parameter{'' if len(params) == 1 else 's'})"
+             for g, params in groups]
+    return ("Beyond the required parameters above, every other parameter is optional. "
+            "[reference.md](reference.md) documents them all — type, default, allowed values and "
+            "constraints — organised into these groups (counts are full group sizes, so they "
+            "include any required parameters already listed above):\n" + "\n".join(lines) + "\n")
 
 
 def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,

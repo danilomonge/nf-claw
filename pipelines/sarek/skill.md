@@ -52,7 +52,7 @@ patient,sample,sex,status,lane,fastq_1,fastq_2,spring_1,spring_2,table,cram,crai
 | `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
-All other parameters are optional. Every one — with type, default and allowed values — is in [reference.md](reference.md), grouped as:
+Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):
 - `annotation` (33 parameters)
 - `fastq_preprocessing` (9 parameters)
 - `general_reference_genome_options` (5 parameters)

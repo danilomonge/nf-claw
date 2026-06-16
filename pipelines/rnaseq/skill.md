@@ -44,7 +44,7 @@ sample,fastq_1,fastq_2,strandedness,seq_platform,seq_center,genome_bam,transcrip
 | `--outdir` | string (directory path) |  | length ≥ 1 | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
-All other parameters are optional. Every one — with type, default and allowed values — is in [reference.md](reference.md), grouped as:
+Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):
 - `alignment_options` (21 parameters)
 - `generic_options` (15 parameters)
 - `input_output_options` (4 parameters)

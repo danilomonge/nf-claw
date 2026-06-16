@@ -29,8 +29,8 @@ Input is a plain text file with one value per line (no header). Each value must 
 | `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
-All other parameters are optional. Every one — with type, default and allowed values — is in [reference.md](reference.md), grouped as:
-- `deprecated_options` (1 parameters)
+Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):
+- `deprecated_options` (1 parameter)
 - `generic_options` (11 parameters)
 - `input_output_options` (10 parameters)
 - `institutional_config_options` (6 parameters)

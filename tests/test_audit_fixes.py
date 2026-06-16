@@ -36,8 +36,11 @@ def test_param_groups_maps_every_group_with_counts():
         "c": Param("c", "string", "d", None, "z", None, False, "advanced"),
     })
     out = write_skill._param_groups(ps)
-    assert "`input_output` (1 parameters)" in out
+    assert "`input_output` (1 parameter)" in out          # full group size, singular grammar
     assert "`advanced` (2 parameters)" in out
+    # The counts are full group sizes; the prose must not claim every counted param is optional.
+    assert "All other parameters are optional" not in out
+    assert "include any required parameters already listed above" in out
 
 
 # --- F6: catalog.md escapes pipes in the description cell ---
