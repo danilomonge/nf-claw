@@ -66,7 +66,7 @@ Beyond the required parameters above, every other parameter is optional. [refere
 - `variant_calling` (25 parameters)
 
 ## Outputs
-Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions).
+Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). Unless `--no-provenance`, `nfclaw run` also writes `<outdir>/provenance/` — a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 ## Demo
 ```bash
