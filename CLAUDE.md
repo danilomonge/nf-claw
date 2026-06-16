@@ -7,7 +7,8 @@ This repo is a library of nf-core pipelines. Each lives in `pipelines/<name>/`:
 1. Find it: grep `catalog.json` (or `catalog.md`) for a keyword — do NOT read it whole.
 2. Read `pipelines/<name>/skill.md` — the exact command, inputs, and required parameters for the pinned version.
 3. Run: `nfclaw run <name> --input samplesheet.csv --outdir results -profile docker`
-   (raw fallback: `nextflow run pipelines/<name>/upstream -r <version> -profile docker ...`).
+   (raw fallback: `nextflow run pipelines/<name>/upstream -profile docker ...` — the submodule is
+   already pinned to the release, so no `-r`).
 
 Trust `skill.md` / `reference.md` over your own memory — they are generated from the pinned commit.
 To set any parameter beyond the essentials, look it up in `pipelines/<name>/reference.md` (the complete
