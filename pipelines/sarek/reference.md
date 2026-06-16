@@ -6,7 +6,7 @@ commit: 4bd2948f98c5bf7b785c91cf6708fffccab25467
 
 # sarek — full parameter reference
 
-nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_schema.json`, validated by nf-schema at runtime. `hidden` marks nf-core's generic/boilerplate parameters; `constraints` lists the value bounds the schema enforces (pattern, min/max, length).
+nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_schema.json`, validated by nf-schema at runtime. `hidden` marks nf-core's generic/boilerplate parameters; `constraints` lists each parameter's declared value bounds (pattern, min/max, length) — conditional or composed rules (e.g. anyOf/oneOf) are enforced by nf-schema at runtime.
 
 ## annotation
 

@@ -6,7 +6,7 @@ commit: e7ca46272c8f9d5ceee3f71759f4ba551d3217a4
 
 # rnaseq — full parameter reference
 
-nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_schema.json`, validated by nf-schema at runtime. `hidden` marks nf-core's generic/boilerplate parameters; `constraints` lists the value bounds the schema enforces (pattern, min/max, length).
+nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_schema.json`, validated by nf-schema at runtime. `hidden` marks nf-core's generic/boilerplate parameters; `constraints` lists each parameter's declared value bounds (pattern, min/max, length) — conditional or composed rules (e.g. anyOf/oneOf) are enforced by nf-schema at runtime.
 
 ## alignment_options
 

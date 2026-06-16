@@ -149,7 +149,8 @@ def _render_reference(name: str, st: SubmoduleStatus, ps: ParamSchema,
            f"# {name} — full parameter reference\n\n"
            f"{ps.title}. Every parameter from the pinned `nextflow_schema.json`, validated by "
            "nf-schema at runtime. `hidden` marks nf-core's generic/boilerplate parameters; "
-           "`constraints` lists the value bounds the schema enforces (pattern, min/max, length).\n\n")
+           "`constraints` lists each parameter's declared value bounds (pattern, min/max, length) — "
+           "conditional or composed rules (e.g. anyOf/oneOf) are enforced by nf-schema at runtime.\n\n")
     for group, params in sorted(ps.groups().items()):
         out += f"## {group or 'general'}\n\n"
         out += ("| parameter | type | required | hidden | allowed values | constraints | "

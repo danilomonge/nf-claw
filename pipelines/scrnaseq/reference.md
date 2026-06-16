@@ -6,7 +6,7 @@ commit: f7bf36d7c7e4bddc5302c3facd8d19ca83e22226
 
 # scrnaseq — full parameter reference
 
-nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_schema.json`, validated by nf-schema at runtime. `hidden` marks nf-core's generic/boilerplate parameters; `constraints` lists the value bounds the schema enforces (pattern, min/max, length).
+nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_schema.json`, validated by nf-schema at runtime. `hidden` marks nf-core's generic/boilerplate parameters; `constraints` lists each parameter's declared value bounds (pattern, min/max, length) — conditional or composed rules (e.g. anyOf/oneOf) are enforced by nf-schema at runtime.
 
 ## cellranger_multi_options
 

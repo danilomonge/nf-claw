@@ -6,7 +6,7 @@ commit: 8ec2d934f9301c818d961b1e4fdf7fc79610bdc5
 
 # fetchngs — full parameter reference
 
-nf-core/fetchngs pipeline parameters. Every parameter from the pinned `nextflow_schema.json`, validated by nf-schema at runtime. `hidden` marks nf-core's generic/boilerplate parameters; `constraints` lists the value bounds the schema enforces (pattern, min/max, length).
+nf-core/fetchngs pipeline parameters. Every parameter from the pinned `nextflow_schema.json`, validated by nf-schema at runtime. `hidden` marks nf-core's generic/boilerplate parameters; `constraints` lists each parameter's declared value bounds (pattern, min/max, length) — conditional or composed rules (e.g. anyOf/oneOf) are enforced by nf-schema at runtime.
 
 ## deprecated_options
 
