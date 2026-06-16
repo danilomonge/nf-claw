@@ -20,6 +20,9 @@ jobs:
       - run: pip install -e .
       - run: python -m librarian.update_pipelines --repo-root .
       - run: python -m librarian.write_catalog
+      # Self-gate: a PR opened with GITHUB_TOKEN does not trigger drift-check.yml, so the drift
+      # gate must run here. If regeneration left anything stale, fail now — never open a bad PR.
+      - run: python -m librarian.check_drift
       - uses: peter-evans/create-pull-request@v6
         with:
           branch: auto-update-pipelines
