@@ -4,7 +4,6 @@ pipeline: nf-core/scrnaseq
 version: 4.1.0
 commit: f7bf36d7c7e4bddc5302c3facd8d19ca83e22226
 description: Pipeline for processing 10x Genomics single cell rnaseq data
-keywords: [scrnaseq, nf-core, nextflow]
 has_samplesheet: true
 ---
 # scrnaseq

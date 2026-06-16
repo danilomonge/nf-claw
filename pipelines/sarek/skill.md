@@ -4,7 +4,6 @@ pipeline: nf-core/sarek
 version: 3.8.1
 commit: 4bd2948f98c5bf7b785c91cf6708fffccab25467
 description: An open-source analysis pipeline to detect germline or somatic variants from whole genome or targeted sequencing
-keywords: [sarek, nf-core, nextflow]
 has_samplesheet: true
 ---
 # sarek

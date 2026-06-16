@@ -42,17 +42,6 @@ def _constraints(obj) -> str:
     return _cell("; ".join(parts))
 
 
-def _load_keywords(name: str, pipelines_dir: Path) -> list[str]:
-    rp = pipelines_dir / name / "routing.yml"
-    if rp.exists():
-        kws = [line.strip()[2:].strip()
-               for line in rp.read_text(encoding="utf-8").splitlines()
-               if line.strip().startswith("- ")]
-        if kws:
-            return kws
-    return [name, "nf-core", "nextflow"]
-
-
 def _inputs_section(insch: InputSchema | None) -> str:
     if insch is None:
         return "This pipeline does not use a samplesheet; configure inputs via parameters.\n"
@@ -104,7 +93,7 @@ def _param_groups(ps: ParamSchema) -> str:
 
 
 def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
-                  insch: InputSchema | None, keywords: list[str]) -> str:
+                  insch: InputSchema | None) -> str:
     desc = (ps.description.splitlines() or [name])[0]
     fm = (
         "---\n"
@@ -113,7 +102,6 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"version: {st.version}\n"
         f"commit: {st.commit}\n"
         f"description: {desc}\n"
-        f"keywords: [{', '.join(keywords)}]\n"
         f"has_samplesheet: {str(insch is not None).lower()}\n"
         "---\n"
     )
@@ -172,10 +160,9 @@ def generate(name: str, *, pipelines_dir: Path) -> tuple[Path, Path]:
     st = submod.resolve(name, pipelines_dir)
     ps = schema_mod.load_param_schema(st.path)
     insch = schema_mod.load_input_schema(st.path)
-    keywords = _load_keywords(name, pipelines_dir)
     skill_path = pipelines_dir / name / "skill.md"
     ref_path = pipelines_dir / name / "reference.md"
-    skill_path.write_text(_render_skill(name, st, ps, insch, keywords), encoding="utf-8")
+    skill_path.write_text(_render_skill(name, st, ps, insch), encoding="utf-8")
     ref_path.write_text(_render_reference(name, st, ps, insch), encoding="utf-8")
     return skill_path, ref_path
 

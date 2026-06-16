@@ -4,7 +4,6 @@ pipeline: nf-core/rnaseq
 version: 3.26.0
 commit: e7ca46272c8f9d5ceee3f71759f4ba551d3217a4
 description: RNA sequencing analysis pipeline for gene/isoform quantification and extensive quality control.
-keywords: [rnaseq, nf-core, nextflow]
 has_samplesheet: true
 ---
 # rnaseq
