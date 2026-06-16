@@ -23,10 +23,10 @@ nextflow run pipelines/fetchngs/upstream -profile docker --input samplesheet.csv
 Input is a plain text file with one value per line (no header). Each value must match the pattern `^(((SR|ER|DR)[APRSX])|(SAM(N|EA|D))|(PRJ(NA|EB|DB))|(GS[EM]))(\d+)$`.
 
 ## Required parameters
-| parameter | type | allowed values | description |
-|---|---|---|---|
-| `--input` | string (file path) |  | File containing SRA/ENA/GEO/DDBJ identifiers one per line to download their associated metadata and FastQ files. |
-| `--outdir` | string (directory path) |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| parameter | type | allowed values | constraints | description |
+|---|---|---|---|---|
+| `--input` | string (file path) |  | matches ^\S+\.(csv\|tsv\|txt)$ | File containing SRA/ENA/GEO/DDBJ identifiers one per line to download their associated metadata and FastQ files. |
+| `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
 All other parameters are optional. Every one — with type, default and allowed values — is in [reference.md](reference.md), grouped as:

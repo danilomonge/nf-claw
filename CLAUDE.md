@@ -12,9 +12,9 @@ This repo is a library of nf-core pipelines. Each lives in `pipelines/<name>/`:
 
 Trust `skill.md` / `reference.md` over your own memory — they are generated from the pinned commit.
 To set any parameter beyond the essentials, look it up in `pipelines/<name>/reference.md` (the complete
-list, with allowed values) — do not invent a flag or value. `nfclaw run` rejects unknown flags and
-out-of-range values before it starts, and `nf-schema` validates the rest at runtime. Only read
-`upstream/` for deep dives.
+list, with allowed values and value constraints) — do not invent a flag or value. `nfclaw run` rejects
+unknown flags and values outside a parameter's allowed set before it starts, and `nf-schema` validates
+the rest (types, patterns, ranges) at runtime. Only read `upstream/` for deep dives.
 
 If a pipeline's `upstream/` is empty, initialise it first:
 `git submodule update --init pipelines/<name>/upstream`

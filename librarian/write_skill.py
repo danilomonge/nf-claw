@@ -81,11 +81,12 @@ def _required_params(ps: ParamSchema) -> str:
     if not required:
         return ("_The schema marks no parameter required; the pipeline runs with defaults. "
                 "See reference.md to customise._\n")
-    out = "| parameter | type | allowed values | description |\n|---|---|---|---|\n"
+    out = ("| parameter | type | allowed values | constraints | description |\n"
+           "|---|---|---|---|---|\n")
     for p in required:
         allowed = ", ".join(p.enum) if p.enum else ""
         out += (f"| `--{p.name.replace('_', '-')}` | {_type_with_fmt(p.type, p.fmt)} | "
-                f"{_cell(allowed)} | {_cell(p.description)} |\n")
+                f"{_cell(allowed)} | {_constraints(p)} | {_cell(p.description)} |\n")
     return out
 
 

@@ -38,10 +38,10 @@ sample,fastq_1,fastq_2,strandedness,seq_platform,seq_center,genome_bam,transcrip
 ```
 
 ## Required parameters
-| parameter | type | allowed values | description |
-|---|---|---|---|
-| `--input` | string (file path) |  | Path to the sample sheet (CSV) containing metadata about the experimental samples. |
-| `--outdir` | string (directory path) |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| parameter | type | allowed values | constraints | description |
+|---|---|---|---|---|
+| `--input` | string (file path) |  | matches ^\S+\.csv$ | Path to the sample sheet (CSV) containing metadata about the experimental samples. |
+| `--outdir` | string (directory path) |  | length ≥ 1 | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
 All other parameters are optional. Every one — with type, default and allowed values — is in [reference.md](reference.md), grouped as:

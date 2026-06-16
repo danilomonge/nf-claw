@@ -9,7 +9,7 @@ Each pipeline is a git submodule plus an auto-generated `skill.md` an agent read
 correctly — no external lookups, no hallucinated flags.
 
 ## Layout
-- `pipelines/<name>/` — `upstream/` (submodule, pinned to a release) + generated `skill.md` (run command, inputs, the schema's required parameters + a map of parameter groups) and `reference.md` (every parameter, with required flag, allowed values and default)
+- `pipelines/<name>/` — `upstream/` (submodule, pinned to a release) + generated `skill.md` (run command, inputs and required parameters with their allowed values and constraints, plus a map of parameter groups) and `reference.md` (every parameter, with required/hidden flags, allowed values, value constraints and default)
 - `runner/` — the `nfclaw` runtime (run a pipeline); the agent's tool
 - `librarian/` — builds the context files and bumps submodules (run via `make`)
 - `catalog.md` / `catalog.json` — the index of available pipelines

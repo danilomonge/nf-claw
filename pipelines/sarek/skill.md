@@ -46,10 +46,10 @@ patient,sample,sex,status,lane,fastq_1,fastq_2,spring_1,spring_2,table,cram,crai
 ```
 
 ## Required parameters
-| parameter | type | allowed values | description |
-|---|---|---|---|
-| `--step` | string | mapping, markduplicates, prepare_recalibration, recalibrate, variant_calling, annotate | Starting step |
-| `--outdir` | string (directory path) |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| parameter | type | allowed values | constraints | description |
+|---|---|---|---|---|
+| `--step` | string | mapping, markduplicates, prepare_recalibration, recalibrate, variant_calling, annotate |  | Starting step |
+| `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
 All other parameters are optional. Every one — with type, default and allowed values — is in [reference.md](reference.md), grouped as:

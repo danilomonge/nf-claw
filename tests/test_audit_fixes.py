@@ -201,6 +201,18 @@ def test_required_params_marks_path_formats():
     assert "string (directory path)" in out
 
 
+def test_required_params_shows_constraints_column():
+    # skill.md's two tables (Inputs, Required params) must agree: both carry constraints.
+    # A required --input with a `.csv` pattern is exactly the fact an agent must not miss.
+    ps = ParamSchema(title="t", description="d", params={
+        "input": Param("input", "string", None, None, "ss", "file-path", True, "io",
+                       pattern=r"^\S+\.csv$"),
+    })
+    out = write_skill._required_params(ps)
+    assert "| constraints |" in out
+    assert r"matches ^\S+\.csv$" in out
+
+
 # --- Value constraints: pattern/min/max/length/deprecated are captured on BOTH Param and Column
 #     and rendered by ONE helper (so the two never drift apart), excluding enum (own column). ---
 def test_constraints_helper_renders_all_and_excludes_enum():
