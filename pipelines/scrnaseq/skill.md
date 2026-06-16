@@ -62,10 +62,10 @@ Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info
 
 ## Demo
 ```bash
-nfclaw run scrnaseq --demo --outdir results   # uses upstream -profile test
+nfclaw run scrnaseq --demo --outdir results   # adds the upstream test profile (-profile test,docker)
 ```
 
 ## Full reference
-Every parameter — name, type, required, allowed values, default — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/scrnaseq/blob/4.1.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/scrnaseq/blob/4.1.0/docs/usage.md
 
 <!-- Generated from nf-core/scrnaseq@f7bf36d7c7e4bddc5302c3facd8d19ca83e22226. Do not edit by hand. -->
