@@ -20,4 +20,4 @@ If a pipeline's `upstream/` is empty, initialise it first:
 `git submodule update --init pipelines/<name>/upstream`
 
 ## Requirements (agent environment)
-git · nextflow (Java 17+) · docker or singularity. On macOS, use a space-free, non-iCloud path.
+git · python 3.11+ · nextflow (Java 17+) · docker or singularity. On macOS, use a space-free, non-iCloud path.

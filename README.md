@@ -52,4 +52,4 @@ If you use nf-claw, cite it via [`CITATION.cff`](CITATION.cff), together with th
 
 nf-claw is MIT-licensed and includes parts adapted from ClawBio (© Manuel Corpas, MIT — see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE)); the nf-core pipelines it wraps are MIT, and Nextflow is Apache-2.0.
 
-Requires: git, Nextflow (Java 17+), Docker/Singularity.
+Requires: Python 3.11+, git, Nextflow (Java 17+), Docker/Singularity.
