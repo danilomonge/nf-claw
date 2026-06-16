@@ -44,6 +44,6 @@ nfclaw run fetchngs --demo --outdir results   # adds the upstream test profile (
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/fetchngs/blob/1.12.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/fetchngs/blob/1.12.0/docs/usage.md
 
 <!-- Generated from nf-core/fetchngs@8ec2d934f9301c818d961b1e4fdf7fc79610bdc5. Do not edit by hand. -->
