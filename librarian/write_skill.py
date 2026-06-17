@@ -92,6 +92,20 @@ def _param_groups(ps: ParamSchema) -> str:
             "include any required parameters already listed above):\n" + "\n".join(lines) + "\n")
 
 
+def _run_invocation(name: str, ps: ParamSchema, insch: InputSchema | None) -> tuple[str, str]:
+    """The (nfclaw, raw nextflow) example commands. `--input` appears only when the pipeline
+    has a samplesheet, and every schema-required param beyond input/outdir that has NO default
+    is shown as an explicit `<placeholder>` (those carrying a default are filled by nf-schema, so
+    the one-liner stays runnable as printed)."""
+    inp = " --input samplesheet.csv" if insch is not None else ""
+    extra = "".join(f" --{p.name.replace('_', '-')} <{p.name}>"
+                    for p in ps.params.values()
+                    if p.required and p.name not in ("input", "outdir") and p.default is None)
+    nfclaw = f"nfclaw run {name}{inp} --outdir results{extra} -profile docker"
+    raw = f"nextflow run pipelines/{name}/upstream -profile docker{inp} --outdir results{extra}"
+    return nfclaw, raw
+
+
 def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
                   insch: InputSchema | None) -> str:
     desc = (ps.description.splitlines() or [name])[0]
@@ -105,21 +119,22 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"has_samplesheet: {str(insch is not None).lower()}\n"
         "---\n"
     )
+    nfclaw_cmd, raw_cmd = _run_invocation(name, ps, insch)
     body = (
         f"# {name}\n\n{desc}\n\n"
         "## Run it\n```bash\n"
         f"git submodule update --init pipelines/{name}/upstream   # first time only\n"
-        f"nfclaw run {name} --input samplesheet.csv --outdir results -profile docker\n"
+        f"{nfclaw_cmd}\n"
         "# raw equivalent (the submodule is already pinned to this release, so no -r is needed):\n"
-        f"nextflow run pipelines/{name}/upstream "
-        "-profile docker --input samplesheet.csv --outdir results\n```\n\n"
+        f"{raw_cmd}\n```\n\n"
         f"## Inputs\n{_inputs_section(insch)}\n"
         f"## Required parameters\n{_required_params(ps)}\n"
         f"## Other parameters\n{_param_groups(ps)}\n"
         "## Outputs\nResults land in `--outdir`; standardized run metadata in "
-        "`<outdir>/pipeline_info/` (execution report, software versions). Unless `--no-provenance`, "
-        "`nfclaw run` also writes `<outdir>/provenance/` — a run manifest (pinned version, commit and "
-        "exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.\n\n"
+        "`<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes "
+        "`<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it "
+        "adds a run manifest (pinned version, commit and exact command), input/output SHA-256 "
+        "checksums, and a replayable `commands.sh`.\n\n"
         "## Demo\n```bash\n"
         f"nfclaw run {name} --demo --outdir results   # adds the upstream test profile (-profile test,docker)\n```\n\n"
         "## Full reference\n"

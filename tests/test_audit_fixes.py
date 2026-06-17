@@ -216,6 +216,27 @@ def test_required_params_shows_constraints_column():
     assert r"matches ^\S+\.csv$" in out
 
 
+def test_run_invocation_omits_input_without_samplesheet():
+    ps = ParamSchema(title="t", description="d", params={
+        "outdir": Param("outdir", "string", None, None, "o", "directory-path", True, "io"),
+    })
+    nf, raw = write_skill._run_invocation("p", ps, None)
+    assert "--input" not in nf and "--input" not in raw       # no samplesheet → no --input
+    assert "--outdir results" in nf and nf.endswith("-profile docker")
+
+
+def test_run_invocation_shows_required_without_default_only():
+    ps = ParamSchema(title="t", description="d", params={
+        "outdir": Param("outdir", "string", None, None, "o", "directory-path", True, "io"),
+        "genome": Param("genome", "string", None, None, "g", None, True, "ref"),            # required, no default
+        "step": Param("step", "string", "mapping", ("mapping", "x"), "s", None, True, "main"),  # required, has default
+    })
+    nf, raw = write_skill._run_invocation("p", ps, InputSchema(columns=()))
+    assert "--genome <genome>" in nf and "--genome <genome>" in raw   # must-pass → placeholder shown
+    assert "--step" not in nf                                         # default filled by nf-schema → omitted
+    assert "--input samplesheet.csv" in nf                            # samplesheet present → --input shown
+
+
 def test_reference_renders_boolean_default_as_json_literal():
     # JSON booleans must render as true/false (schema-faithful), never Python True/False.
     from runner.submodule import SubmoduleStatus
