@@ -29,3 +29,10 @@ def test_show_prints_skill(tmp_path, monkeypatch, capsys):
 def test_collect_overrides_parses_flags():
     ov = cli._collect_overrides(["--tools", "strelka", "--wes"])
     assert ov == {"tools": "strelka", "wes": True}
+
+
+def test_collect_overrides_handles_equals_form():
+    # `--key=value` is a universal CLI convention agents will use.
+    assert cli._collect_overrides(["--genome=GRCh38"]) == {"genome": "GRCh38"}
+    ov = cli._collect_overrides(["--tools=strelka,mutect2", "--wes", "--step", "mapping"])
+    assert ov == {"tools": "strelka,mutect2", "wes": True, "step": "mapping"}

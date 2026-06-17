@@ -8,12 +8,25 @@ def _st(path, complete=True):
 
 
 def test_outdir_inside_repo_flagged(tmp_path, monkeypatch):
+    # Inside the repo and NOT gitignored (tmp_path isn't even a git repo) → rejected.
     monkeypatch.setattr(preflight.shutil, "which", lambda x: "/usr/bin/" + x)
     inside = tmp_path / "results"
-    issues = preflight.check_environment(profile="docker", output_dir=inside,
+    issues = preflight.check_environment(profile="singularity", output_dir=inside,
                                          submodule=_st(tmp_path / "up"),
                                          repo_root=tmp_path, resume=False)
     assert any("outside the repo" in i for i in issues)
+
+
+def test_outdir_gitignored_in_repo_allowed(tmp_path, monkeypatch):
+    # A gitignored outdir (the documented `--outdir results`) is allowed inside the repo.
+    import subprocess
+    monkeypatch.setattr(preflight.shutil, "which", lambda x: "/usr/bin/" + x)
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    (tmp_path / ".gitignore").write_text("results/\n")
+    issues = preflight.check_environment(profile="singularity", output_dir=tmp_path / "results",
+                                         submodule=_st(tmp_path / "up"),
+                                         repo_root=tmp_path, resume=False)
+    assert not any("outdir" in i for i in issues)
 
 
 def test_missing_nextflow_flagged(tmp_path, monkeypatch):

@@ -18,12 +18,18 @@ def _collect_overrides(extras: list[str]) -> dict:
     while i < len(extras):
         tok = extras[i]
         if tok.startswith("--"):
-            key = tok[2:].replace("-", "_")
+            body = tok[2:]
+            if "=" in body:                                   # --key=value (one token)
+                key, _, val = body.partition("=")
+                out[key.replace("-", "_")] = val
+                i += 1
+                continue
+            key = body.replace("-", "_")
             if i + 1 < len(extras) and not extras[i + 1].startswith("--"):
-                out[key] = extras[i + 1]
+                out[key] = extras[i + 1]                       # --key value (two tokens)
                 i += 2
             else:
-                out[key] = True
+                out[key] = True                               # --flag (boolean)
                 i += 1
         else:
             i += 1

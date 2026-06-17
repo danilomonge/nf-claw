@@ -30,9 +30,20 @@ def check_environment(*, profile: str, output_dir: Path, submodule: SubmoduleSta
         issues.append(f"pipeline submodule incomplete: missing {list(submodule.missing_files)}")
     try:
         output_dir.resolve().relative_to(repo_root.resolve())
-        issues.append(f"--outdir must be outside the repo (got {output_dir})")
     except ValueError:
-        pass
+        pass                                                  # outside the repo — fine
+    else:
+        # Inside the repo is OK only if git ignores it (so run outputs never pollute tracked
+        # files or trip the drift gate) — this is what lets the documented `--outdir results`
+        # work. Probe a child path so a directory-only rule (`results/`) still matches.
+        try:
+            ignored = subprocess.run(
+                ["git", "-C", str(repo_root), "check-ignore", "-q", str(output_dir / "_probe")],
+                capture_output=True, timeout=10).returncode == 0
+        except (OSError, subprocess.TimeoutExpired):
+            ignored = False
+        if not ignored:
+            issues.append(f"--outdir must be outside the repo or a gitignored path (got {output_dir})")
     if output_dir.exists() and any(output_dir.iterdir()) and not resume:
         issues.append(f"--outdir is not empty: {output_dir} (use -resume or a fresh dir)")
     if sys.platform == "darwin" and "docker" in tokens and \
