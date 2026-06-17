@@ -75,9 +75,22 @@ class InputSchema:
     columns: tuple[Column, ...]
 
 
+def json_scalar(value: Any) -> str:
+    """A JSON scalar in its JSON literal form — `true`/`false`, not Python's `True`/`False`.
+    Used wherever a schema value becomes text (enum capture, default rendering, the runner's
+    enum check) so generated docs and validation match the schema byte-for-byte."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
+
+
 def _type_of(obj: dict) -> str:
-    """Render a JSON-schema type, unioning anyOf/oneOf variants (e.g. 'integer or string')."""
+    """Render a JSON-schema type, unioning list/anyOf/oneOf variants (e.g. 'integer or string')."""
     t = obj.get("type")
+    if isinstance(t, list):                       # JSON Schema allows a type array, e.g. ["boolean","string"]
+        types = [str(x) for x in t if x]
+        if types:
+            return " or ".join(dict.fromkeys(types))
     if t:
         return str(t)
     for key in ("anyOf", "oneOf"):
@@ -122,7 +135,7 @@ def load_param_schema(repo: Path) -> ParamSchema:
                 name=pname,
                 type=_type_of(pobj),
                 default=pobj.get("default"),
-                enum=tuple(str(e) for e in enum) if isinstance(enum, list) else None,
+                enum=tuple(json_scalar(e) for e in enum) if isinstance(enum, list) else None,
                 description=str(pobj.get("description", "")),
                 fmt=pobj.get("format"),
                 required=pname in required,
@@ -162,7 +175,7 @@ def load_input_schema(repo: Path) -> InputSchema | None:
                 required=cname in required,
                 pattern=cobj.get("pattern"),
                 fmt=cobj.get("format"),
-                enum=tuple(str(e) for e in enum) if isinstance(enum, list) else None,
+                enum=tuple(json_scalar(e) for e in enum) if isinstance(enum, list) else None,
                 minimum=cobj.get("minimum"),
                 maximum=cobj.get("maximum"),
                 min_length=cobj.get("minLength"),

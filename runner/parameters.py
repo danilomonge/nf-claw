@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from runner.errors import ErrorCode, NfclawError
-from runner.schema import ParamSchema
+from runner.schema import ParamSchema, json_scalar
 
 
 def validate_params(cli_overrides: dict[str, Any], schema: ParamSchema) -> list[str]:
@@ -23,7 +23,7 @@ def validate_params(cli_overrides: dict[str, Any], schema: ParamSchema) -> list[
             errors.append(f"unknown parameter '{flag}' (not in the pipeline schema)")
         else:
             param = schema.params[key]
-            if param.enum and str(value) not in param.enum:
+            if param.enum and json_scalar(value) not in param.enum:
                 errors.append(f"parameter '{flag}={value}' is not allowed; "
                               f"must be one of: {', '.join(param.enum)}")
     return errors

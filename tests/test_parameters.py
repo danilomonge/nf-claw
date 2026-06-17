@@ -23,6 +23,17 @@ def test_validate_params_flags_value_outside_enum():
     assert errs and "must be one of" in errs[0] and "star" in errs[0]
 
 
+def test_validate_params_boolean_enum_uses_json_literals(tmp_path):
+    import json
+    (tmp_path / "nextflow_schema.json").write_text(json.dumps(
+        {"definitions": {"g": {"properties": {"flag": {"type": "boolean", "enum": [False]}}}}}))
+    ps = schema.load_param_schema(tmp_path)
+    assert parameters.validate_params({"flag": "false"}, ps) == []   # CLI string, schema-literal → ok
+    assert parameters.validate_params({"flag": False}, ps) == []     # native bool from a params-file → ok
+    assert parameters.validate_params({"flag": "False"}, ps)         # Python casing → rejected
+    assert parameters.validate_params({"flag": "true"}, ps)          # not in enum → rejected
+
+
 def test_compose_merges_and_writes_json(tmp_path):
     ps = schema.load_param_schema(FIX / "mini")
     dest = tmp_path / "params.json"

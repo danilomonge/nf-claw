@@ -12,7 +12,7 @@ nf-core/fetchngs pipeline parameters. Every parameter from the pinned `nextflow_
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--force-sratools-download` | boolean |  | yes | False |  |  | This parameter has been deprecated. Please use '--download_method sratools' instead. |
+| `--force-sratools-download` | boolean |  | yes | false |  |  | This parameter has been deprecated. Please use '--download_method sratools' instead. |
 
 ## generic_options
 
@@ -24,7 +24,7 @@ nf-core/fetchngs pipeline parameters. Every parameter from the pinned `nextflow_
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
 | `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
-| `--validate-params` | boolean |  | yes |  |  | True | Boolean whether to validate parameters against the schema at runtime |
+| `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--validationFailUnrecognisedParams` | boolean |  | yes |  |  |  | Validation of parameters fails when an unrecognised parameter is found. |
 | `--validationLenientMode` | boolean |  | yes |  |  |  | Validation of parameters in lenient more. |
 | `--validationShowHiddenParams` | boolean |  | yes |  |  |  | Show all params when using `--help` |

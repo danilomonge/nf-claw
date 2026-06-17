@@ -39,7 +39,7 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--email-on-fail` | string |  | yes |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary, only when pipeline fails. |
-| `--help` | ['boolean', 'string'] |  |  |  |  |  | Display the help message. |
+| `--help` | boolean or string |  |  |  |  |  | Display the help message. |
 | `--help-full` | boolean |  |  |  |  |  | Display the full detailed help message. |
 | `--max-multiqc-email-size` | string |  | yes |  |  | 25.MB | File size limit when attaching MultiQC reports to summary emails. |
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
@@ -51,7 +51,7 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  | matches ^[a-zA-Z0-9_\-\.{}]+$ |  | Suffix to add to the trace report filename. |
-| `--validate-params` | boolean |  | yes |  |  | True | Boolean whether to validate parameters against the schema at runtime |
+| `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--version` | boolean |  | yes |  |  |  | Display version and exit. |
 
 ## input_output_options
@@ -94,7 +94,7 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--skip-alignment` | boolean |  |  |  |  |  | Skip all of the alignment-based processes within the pipeline. |
-| `--skip-bbsplit` | boolean |  |  |  |  | True | Skip BBSplit for removal of non-reference genome reads. |
+| `--skip-bbsplit` | boolean |  |  |  |  | true | Skip BBSplit for removal of non-reference genome reads. |
 | `--skip-bigwig` | boolean |  |  |  |  |  | Skip bigWig file creation. |
 | `--skip-biotype-qc` | boolean |  |  |  |  |  | Skip additional featureCounts process for biotype QC. |
 | `--skip-deseq2-qc` | boolean |  |  |  |  |  | Skip DESeq2 PCA and heatmap plotting. |
@@ -105,7 +105,7 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--skip-linting` | boolean |  |  |  |  |  | Skip linting checks during FASTQ preprocessing and filtering. |
 | `--skip-markduplicates` | boolean |  |  |  |  |  | Skip picard MarkDuplicates step. |
 | `--skip-multiqc` | boolean |  |  |  |  |  | Skip MultiQC. |
-| `--skip-preseq` | boolean |  |  |  |  | True | Skip Preseq. |
+| `--skip-preseq` | boolean |  |  |  |  | true | Skip Preseq. |
 | `--skip-pseudo-alignment` | boolean |  |  |  |  |  | Skip all of the pseudoalignment-based processes within the pipeline. |
 | `--skip-qc` | boolean |  |  |  |  |  | Skip all QC steps except for MultiQC. |
 | `--skip-qualimap` | boolean |  |  |  |  |  | Skip Qualimap. |
@@ -114,7 +114,7 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--skip-stringtie` | boolean |  |  |  |  |  | Skip StringTie. |
 | `--skip-trimming` | boolean |  |  |  |  |  | Skip the adapter trimming step. |
 | `--skip-umi-extract` | boolean |  |  |  |  |  | Skip the UMI extraction from the read in case the UMIs have been moved to the headers in advance of the pipeline run. |
-| `--use-rustqc` | boolean |  |  |  |  | False | Experimental. Use RustQC instead of dupRadar, featureCounts biotype QC, RSeQC, Preseq, Qualimap, and samtools stats/flagstat/idxstats. Recommend trialling on pilot data first. |
+| `--use-rustqc` | boolean |  |  |  |  | false | Experimental. Use RustQC instead of dupRadar, featureCounts biotype QC, RSeQC, Preseq, Qualimap, and samtools stats/flagstat/idxstats. Recommend trialling on pilot data first. |
 
 ## quality_control
 
@@ -123,7 +123,7 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--bracken-precision` | string |  |  | D, P, C, O, F, G, S |  | S | Taxonomic level for Bracken abundance estimations. |
 | `--contaminant-screening` | string |  |  | kraken2, kraken2_bracken, sylph |  |  | Tool to use for detecting contaminants in the selected screening reads - available options are 'sylph', 'kraken2', or 'kraken2_bracken' |
 | `--contaminant-screening-input` | string |  |  | trimmed, unmapped |  | unmapped | Read set to screen for contaminants: aligner-unmapped reads (default) or trimmed/filter-passed reads before alignment. |
-| `--deseq2-vst` | boolean |  |  |  |  | True | Use vst transformation instead of rlog with DESeq2. |
+| `--deseq2-vst` | boolean |  |  |  |  | true | Use vst transformation instead of rlog with DESeq2. |
 | `--extra-fqlint-args` | string |  |  |  | length ≥ 1 | --disable-validator P001 | Extra arguments to pass to the fq lint command. |
 | `--kraken-db` | string |  |  |  |  |  | Database when using Kraken2/Bracken for contaminant screening. |
 | `--rseqc-modules` | string |  |  |  | length ≥ 1 | bam_stat,inner_distance,infer_experiment,junction_annotation,junction_saturation,read_distribution,read_duplication | Comma-separated list of RSeQC modules to run. |

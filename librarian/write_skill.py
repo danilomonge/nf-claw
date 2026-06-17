@@ -6,7 +6,7 @@ from pathlib import Path
 
 from runner import schema as schema_mod
 from runner import submodule as submod
-from runner.schema import InputSchema, ParamSchema
+from runner.schema import InputSchema, ParamSchema, json_scalar
 from runner.submodule import SubmoduleStatus
 
 
@@ -146,7 +146,7 @@ def _render_reference(name: str, st: SubmoduleStatus, ps: ParamSchema,
         out += ("| parameter | type | required | hidden | allowed values | constraints | "
                 "default | description |\n|---|---|---|---|---|---|---|---|\n")
         for p in sorted(params, key=lambda x: x.name):
-            default = "" if p.default is None else str(p.default)
+            default = "" if p.default is None else json_scalar(p.default)
             allowed = ", ".join(p.enum) if p.enum else ""
             req = "yes" if p.required else ""
             hid = "yes" if p.hidden else ""

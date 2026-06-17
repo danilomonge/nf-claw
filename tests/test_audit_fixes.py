@@ -216,6 +216,19 @@ def test_required_params_shows_constraints_column():
     assert r"matches ^\S+\.csv$" in out
 
 
+def test_reference_renders_boolean_default_as_json_literal():
+    # JSON booleans must render as true/false (schema-faithful), never Python True/False.
+    from runner.submodule import SubmoduleStatus
+    st = SubmoduleStatus(name="p", path=Path("/x"), initialized=True, complete=True,
+                         version="1.0.0", commit="abc", missing_files=())
+    ps = ParamSchema(title="t", description="d", params={
+        "validate_params": Param("validate_params", "boolean", True, None, "d", None, False, "g"),
+    })
+    out = write_skill._render_reference("p", st, ps, None)
+    row = next(l for l in out.splitlines() if l.startswith("| `--validate-params`"))
+    assert "| true |" in row and "True" not in row
+
+
 # --- Value constraints: pattern/min/max/length/deprecated are captured on BOTH Param and Column
 #     and rendered by ONE helper (so the two never drift apart), excluding enum (own column). ---
 def test_constraints_helper_renders_all_and_excludes_enum():
