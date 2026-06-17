@@ -13,17 +13,14 @@ def check(pipelines_dir: Path) -> list[str]:
     drift: list[str] = []
     for d in sorted(p for p in pipelines_dir.iterdir() if p.is_dir()):
         name = d.name
-        before = {f: (d / f).read_text(encoding="utf-8") if (d / f).exists() else None
-                  for f in ("skill.md", "reference.md")}
-        write_skill.generate(name, pipelines_dir=pipelines_dir)
-        for fname, prev in before.items():
-            now = (d / fname).read_text(encoding="utf-8")
-            if prev is None:
-                drift.append(f"{name}/{fname} was missing (now generated)")
-            elif now != prev:
+        fresh = dict(zip(("skill.md", "reference.md"),
+                         write_skill.render(name, pipelines_dir=pipelines_dir)))
+        for fname, expected in fresh.items():           # compare in memory; never touch the tree
+            committed = d / fname
+            if not committed.exists():
+                drift.append(f"{name}/{fname} is missing (run `make build`)")
+            elif committed.read_text(encoding="utf-8") != expected:
                 drift.append(f"{name}/{fname} is stale (run `make build`)")
-            if prev is not None:
-                (d / fname).write_text(prev, encoding="utf-8")   # restore committed copy
 
     # catalog.{md,json} must also stay in sync with the skill.md frontmatter
     repo = pipelines_dir.parent

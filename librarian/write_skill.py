@@ -173,14 +173,21 @@ def _render_reference(name: str, st: SubmoduleStatus, ps: ParamSchema,
     return out
 
 
-def generate(name: str, *, pipelines_dir: Path) -> tuple[Path, Path]:
+def render(name: str, *, pipelines_dir: Path) -> tuple[str, str]:
+    """Return the (skill.md, reference.md) text for a pipeline WITHOUT writing anything, so the
+    drift gate can compare against the committed files without mutating them."""
     st = submod.resolve(name, pipelines_dir)
     ps = schema_mod.load_param_schema(st.path)
     insch = schema_mod.load_input_schema(st.path)
+    return _render_skill(name, st, ps, insch), _render_reference(name, st, ps, insch)
+
+
+def generate(name: str, *, pipelines_dir: Path) -> tuple[Path, Path]:
+    skill_text, ref_text = render(name, pipelines_dir=pipelines_dir)
     skill_path = pipelines_dir / name / "skill.md"
     ref_path = pipelines_dir / name / "reference.md"
-    skill_path.write_text(_render_skill(name, st, ps, insch), encoding="utf-8")
-    ref_path.write_text(_render_reference(name, st, ps, insch), encoding="utf-8")
+    skill_path.write_text(skill_text, encoding="utf-8")
+    ref_path.write_text(ref_text, encoding="utf-8")
     return skill_path, ref_path
 
 

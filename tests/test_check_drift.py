@@ -28,3 +28,16 @@ def test_drift_when_skill_edited(tmp_path):
     write_skill.generate("mini", pipelines_dir=pdir)
     (pdir / "mini" / "skill.md").write_text("hand-edited\n")
     assert any("stale" in d for d in check_drift.check(pdir))
+
+
+def test_check_drift_never_writes(tmp_path, monkeypatch):
+    # The gate compares in memory via render(); it must never call the writing path.
+    pdir = _seed(tmp_path, "mini")
+    write_skill.generate("mini", pipelines_dir=pdir)
+    write_catalog.generate(pipelines_dir=pdir,
+                           out_md=tmp_path / "catalog.md", out_json=tmp_path / "catalog.json")
+
+    def _boom(*a, **k):
+        raise AssertionError("check_drift must not write files")
+    monkeypatch.setattr(write_skill, "generate", _boom)
+    assert check_drift.check(pdir) == []

@@ -35,6 +35,7 @@ make test
 Append a line to `sources.tsv` (`name<TAB>url<TAB>latest-release`), then:
 ```bash
 git submodule add <url> pipelines/<name>/upstream
+git -C pipelines/<name>/upstream checkout tags/<X.Y.Z>   # pin to a release (not the default branch)
 make build
 ```
 Full step-by-step, with the version-policy column and the checks to run, is in [`CONTRIBUTING.md`](CONTRIBUTING.md).
