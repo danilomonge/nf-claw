@@ -34,13 +34,23 @@ def test_validate_params_boolean_enum_uses_json_literals(tmp_path):
     assert parameters.validate_params({"flag": "true"}, ps)          # not in enum → rejected
 
 
-def test_compose_merges_and_writes_json(tmp_path):
+def test_merge_resolve_and_write(tmp_path):
     ps = schema.load_param_schema(FIX / "mini")
-    dest = tmp_path / "params.json"
-    pf = parameters.compose(cli_overrides={"aligner": "hisat2"}, params_file=None,
-                            schema=ps, outdir=tmp_path / "out",
-                            input_path=Path("/data/ss.csv"), dest=dest)
-    data = json.loads(pf.read_text())
-    assert data["input"] == "/data/ss.csv"
+    merged = parameters.merge(cli_overrides={"aligner": "hisat2"}, params_file=None,
+                              input_path=Path("rel/ss.csv"), outdir=tmp_path / "out")
+    resolved = parameters.resolve_path_params(merged, ps)
+    data = json.loads(parameters.write_params_file(resolved, tmp_path / "params.json").read_text())
     assert data["aligner"] == "hisat2"
     assert data["outdir"].endswith("/out")
+    assert data["input"].startswith("/") and data["input"].endswith("rel/ss.csv")  # made absolute
+
+
+def test_params_file_values_are_validated(tmp_path):
+    # A typo or bad enum inside a --params-file must fail fast, exactly like a CLI flag.
+    ps = schema.load_param_schema(FIX / "mini")
+    pf = tmp_path / "p.json"
+    pf.write_text('{"aligner": "bowtie", "alnger": "star"}')        # bad enum + typo'd key
+    merged = parameters.merge(cli_overrides={}, params_file=pf, input_path=None, outdir=tmp_path / "o")
+    errs = parameters.validate_params(merged, ps)
+    assert any("bowtie" in e and "must be one of" in e for e in errs)   # enum caught
+    assert any("alnger" in e and "unknown" in e for e in errs)         # typo caught

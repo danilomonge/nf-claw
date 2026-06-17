@@ -36,7 +36,11 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
                               "Samplesheet failed validation.",
                               details={"issues": problems})
 
-    param_errors = parameters.validate_params(cli_overrides, param_schema)
+    # Merge params-file + --input/--outdir + CLI first, then validate the WHOLE map — a typo
+    # or bad enum in the params-file must fail fast too, not only CLI flags.
+    merged = parameters.merge(cli_overrides=cli_overrides, params_file=params_file,
+                              input_path=input_path, outdir=outdir)
+    param_errors = parameters.validate_params(merged, param_schema)
     if param_errors:
         raise NfclawError(ErrorCode.PARAMS_INVALID,
                           "Parameters failed validation (fix before running).",
@@ -51,9 +55,8 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
                           details={"issues": issues})
 
     outdir.mkdir(parents=True, exist_ok=True)
-    params_file_out = parameters.compose(
-        cli_overrides=cli_overrides, params_file=params_file, schema=param_schema,
-        outdir=outdir, input_path=input_path, dest=outdir / "provenance" / "params.json")
+    resolved = parameters.resolve_path_params(merged, param_schema)
+    params_file_out = parameters.write_params_file(resolved, outdir / "provenance" / "params.json")
 
     cmd, cmd_str = nextflow_command.build(upstream=st.path, profile=composed_profile,
                                           params_file=params_file_out, resume=resume)
@@ -65,7 +68,10 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
                   timeout_seconds=timeout_seconds)
     report = outputs.collect(outdir)
     if write_provenance:
+        refs = param_schema.reference_path_params()
+        prov_inputs = [Path(v) for k, v in resolved.items()
+                       if k in refs and k != "outdir" and isinstance(v, str) and "://" not in v]
         provenance.write(outdir=outdir, pipeline=name, command_str=cmd_str, submodule=st,
-                         input_paths=[p for p in (input_path,) if p])
+                         input_paths=prov_inputs)
     return RunResult(command=cmd_str, outdir=outdir, checked_only=False,
                      outputs_report=report)

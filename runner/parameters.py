@@ -43,9 +43,10 @@ def _load_params_file(path: Path) -> dict:
     return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
 
-def compose(*, cli_overrides: dict[str, Any], params_file: Path | None,
-            schema: ParamSchema, outdir: Path, input_path: Path | None,
-            dest: Path) -> Path:
+def merge(*, cli_overrides: dict[str, Any], params_file: Path | None,
+          input_path: Path | None, outdir: Path) -> dict[str, Any]:
+    """Build the full parameter map (params-file < --input/--outdir < CLI) without touching
+    disk, so the merged result can be validated before anything is written or executed."""
     merged: dict[str, Any] = {}
     if params_file and params_file.exists():
         merged.update(_load_params_file(params_file))
@@ -53,10 +54,21 @@ def compose(*, cli_overrides: dict[str, Any], params_file: Path | None,
         merged["input"] = str(input_path)
     merged["outdir"] = str(outdir)
     merged.update(cli_overrides)
+    return merged
+
+
+def resolve_path_params(merged: dict[str, Any], schema: ParamSchema) -> dict[str, Any]:
+    """Make every file/dir-path param absolute. Nextflow runs with cwd = repo root, so a
+    relative path would otherwise resolve against the repo, not the caller's directory."""
     refs = schema.reference_path_params()
-    for key, val in list(merged.items()):
+    out = dict(merged)
+    for key, val in out.items():
         if key in refs and isinstance(val, str) and "://" not in val:
-            merged[key] = Path(val).expanduser().as_posix()
+            out[key] = Path(val).expanduser().resolve().as_posix()
+    return out
+
+
+def write_params_file(params: dict[str, Any], dest: Path) -> Path:
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(merged, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    dest.write_text(json.dumps(params, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return dest

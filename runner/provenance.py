@@ -45,7 +45,7 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
     (prov / "run_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
-    in_lines = [f"{_sha256(p)}  {p}" for p in input_paths if p.exists()]
+    in_lines = [f"{_sha256(p)}  {p}" for p in input_paths if p.is_file()]
     (prov / "inputs.sha256").write_text("\n".join(in_lines) + ("\n" if in_lines else ""))
 
     out_lines = [f"{_sha256(p)}  {p.relative_to(outdir)}"
