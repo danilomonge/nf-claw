@@ -23,3 +23,17 @@ def test_valid_sheet(tmp_path):
     ss = tmp_path / "ss.csv"
     ss.write_text("sample,fastq_1\nA,r1.fq.gz\n")
     assert samplesheet.validate(ss, SCH) == []
+
+
+# Headerless single-column input (nf-core/fetchngs id list): DictReader must NOT eat line 1.
+UNNAMED = InputSchema(columns=(Column("", "string", False, "^SRR", None),))
+
+def test_unnamed_single_column_accepts_one_value(tmp_path):
+    f = tmp_path / "ids.txt"
+    f.write_text("SRR123456\n")
+    assert samplesheet.validate(f, UNNAMED) == []          # was wrongly "no data rows"
+
+def test_unnamed_single_column_rejects_empty(tmp_path):
+    f = tmp_path / "ids.txt"
+    f.write_text("\n   \n")
+    assert samplesheet.validate(f, UNNAMED) == ["input file has no values"]
