@@ -86,5 +86,10 @@ def main(argv: list[str] | None = None) -> int:
             print(str(exc), file=sys.stderr)
             return 1
         print(res.command)
+        rep = res.outputs_report
+        if rep is not None:                                   # real run — surface where results landed
+            print(f"outputs: {len(rep.files)} files in {res.outdir}")
+            if rep.multiqc_report is not None:
+                print(f"multiqc: {rep.multiqc_report}")
         return 0
     return 2

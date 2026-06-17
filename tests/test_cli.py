@@ -36,3 +36,16 @@ def test_collect_overrides_handles_equals_form():
     assert cli._collect_overrides(["--genome=GRCh38"]) == {"genome": "GRCh38"}
     ov = cli._collect_overrides(["--tools=strelka,mutect2", "--wes", "--step", "mapping"])
     assert ov == {"tools": "strelka,mutect2", "wes": True, "step": "mapping"}
+
+
+def test_run_prints_command_and_outputs_summary(tmp_path, monkeypatch, capsys):
+    from runner import orchestration
+    from runner.outputs import OutputsReport
+    rep = OutputsReport(pipeline_info=None, multiqc_report=Path("/o/multiqc_report.html"),
+                        files=("a.txt", "b.txt"))
+    monkeypatch.setattr(orchestration, "run_pipeline",
+                        lambda *a, **k: orchestration.RunResult("CMD", Path("/o"), False, rep))
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 0
+    out = capsys.readouterr().out
+    assert "CMD" in out and "2 files" in out and "multiqc" in out
