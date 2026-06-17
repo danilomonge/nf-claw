@@ -35,9 +35,6 @@ class ParamSchema:
     def known_params(self) -> set[str]:
         return set(self.params)
 
-    def required_params(self) -> set[str]:
-        return {n for n, p in self.params.items() if p.required}
-
     def reference_path_params(self) -> set[str]:
         return {n for n, p in self.params.items()
                 if p.fmt in ("file-path", "directory-path")}

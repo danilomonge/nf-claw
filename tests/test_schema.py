@@ -9,7 +9,6 @@ def test_loads_params_and_refs():
     ps = schema.load_param_schema(FIX / "mini")
     assert {"input", "outdir", "fasta", "aligner"} <= ps.known_params()
     assert ps.reference_path_params() == {"input", "outdir", "fasta"}
-    assert ps.required_params() == {"input", "outdir"}
     assert ps.params["aligner"].enum == ("star", "hisat2")
     assert ps.params["aligner"].default == "star"
 
