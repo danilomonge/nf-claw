@@ -19,3 +19,39 @@
 [submodule "pipelines/atacseq/upstream"]
 	path = pipelines/atacseq/upstream
 	url = https://github.com/nf-core/atacseq.git
+[submodule "pipelines/bacass/upstream"]
+	path = pipelines/bacass/upstream
+	url = https://github.com/nf-core/bacass.git
+[submodule "pipelines/bactmap/upstream"]
+	path = pipelines/bactmap/upstream
+	url = https://github.com/nf-core/bactmap.git
+[submodule "pipelines/bamtofastq/upstream"]
+	path = pipelines/bamtofastq/upstream
+	url = https://github.com/nf-core/bamtofastq.git
+[submodule "pipelines/cageseq/upstream"]
+	path = pipelines/cageseq/upstream
+	url = https://github.com/nf-core/cageseq.git
+[submodule "pipelines/callingcards/upstream"]
+	path = pipelines/callingcards/upstream
+	url = https://github.com/nf-core/callingcards.git
+[submodule "pipelines/chipseq/upstream"]
+	path = pipelines/chipseq/upstream
+	url = https://github.com/nf-core/chipseq.git
+[submodule "pipelines/circdna/upstream"]
+	path = pipelines/circdna/upstream
+	url = https://github.com/nf-core/circdna.git
+[submodule "pipelines/clipseq/upstream"]
+	path = pipelines/clipseq/upstream
+	url = https://github.com/nf-core/clipseq.git
+[submodule "pipelines/coproid/upstream"]
+	path = pipelines/coproid/upstream
+	url = https://github.com/nf-core/coproid.git
+[submodule "pipelines/createpanelrefs/upstream"]
+	path = pipelines/createpanelrefs/upstream
+	url = https://github.com/nf-core/createpanelrefs.git
+[submodule "pipelines/createtaxdb/upstream"]
+	path = pipelines/createtaxdb/upstream
+	url = https://github.com/nf-core/createtaxdb.git
+[submodule "pipelines/crisprseq/upstream"]
+	path = pipelines/crisprseq/upstream
+	url = https://github.com/nf-core/crisprseq.git
