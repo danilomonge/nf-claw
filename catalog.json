@@ -15,6 +15,66 @@
     "version": "2.1.2"
   },
   {
+    "description": "Simple bacterial assembly and annotation",
+    "name": "bacass",
+    "version": "2.6.1"
+  },
+  {
+    "description": "A mapping-based pipeline for creating a phylogeny from bacterial whole genome sequences",
+    "name": "bactmap",
+    "version": "1.0.0"
+  },
+  {
+    "description": "Workflow converts one or multiple bam/cram files to fastq format",
+    "name": "bamtofastq",
+    "version": "2.2.1"
+  },
+  {
+    "description": "CAGE-seq pipeline",
+    "name": "cageseq",
+    "version": "1.0.2"
+  },
+  {
+    "description": "An automated processing pipeline for mammalian bulk calling cards experiments",
+    "name": "callingcards",
+    "version": "1.0.0"
+  },
+  {
+    "description": "ChIP-seq peak-calling and differential analysis pipeline.",
+    "name": "chipseq",
+    "version": "2.1.0"
+  },
+  {
+    "description": "Pipeline for the identification of circular DNAs",
+    "name": "circdna",
+    "version": "1.1.0"
+  },
+  {
+    "description": "CLIP analysis pipeline",
+    "name": "clipseq",
+    "version": "1.0.0"
+  },
+  {
+    "description": "COPROlite host IDentification",
+    "name": "coproid",
+    "version": "2.0.1"
+  },
+  {
+    "description": "Generate Panel of Normals, models or other similar references from lots of samples",
+    "name": "createpanelrefs",
+    "version": "1.0.0"
+  },
+  {
+    "description": "Parallelised and automated creation of metagenomic classifier databases of different tools",
+    "name": "createtaxdb",
+    "version": "3.0.0"
+  },
+  {
+    "description": "Pipeline for the analysis of CRISPR data",
+    "name": "crisprseq",
+    "version": "2.3.0"
+  },
+  {
     "description": "Pipeline to fetch metadata and raw FastQ files from public databases",
     "name": "fetchngs",
     "version": "1.12.0"

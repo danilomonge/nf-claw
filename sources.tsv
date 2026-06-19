@@ -6,3 +6,15 @@ fetchngs	https://github.com/nf-core/fetchngs.git	latest-release
 airrflow	https://github.com/nf-core/airrflow.git	latest-release
 ampliseq	https://github.com/nf-core/ampliseq.git	latest-release
 atacseq	https://github.com/nf-core/atacseq.git	latest-release
+bacass	https://github.com/nf-core/bacass.git	latest-release
+bactmap	https://github.com/nf-core/bactmap.git	latest-release
+bamtofastq	https://github.com/nf-core/bamtofastq.git	latest-release
+cageseq	https://github.com/nf-core/cageseq.git	latest-release
+callingcards	https://github.com/nf-core/callingcards.git	latest-release
+chipseq	https://github.com/nf-core/chipseq.git	latest-release
+circdna	https://github.com/nf-core/circdna.git	latest-release
+clipseq	https://github.com/nf-core/clipseq.git	latest-release
+coproid	https://github.com/nf-core/coproid.git	latest-release
+createpanelrefs	https://github.com/nf-core/createpanelrefs.git	latest-release
+createtaxdb	https://github.com/nf-core/createtaxdb.git	latest-release
+crisprseq	https://github.com/nf-core/crisprseq.git	latest-release
