@@ -9,6 +9,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: write          # to dispatch the deploy after merge
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,8 +25,20 @@ jobs:
       # gate must run here. If regeneration left anything stale, fail now — never open a bad PR.
       - run: python -m librarian.check_drift
       - uses: peter-evans/create-pull-request@v6
+        id: cpr
         with:
           branch: auto-update-pipelines
           title: "chore: auto-update pipelines to latest releases"
           commit-message: "chore: bump pipelines + regenerate context"
           body: "Automated: bumped submodules to latest release tags and regenerated skill.md/reference.md/catalog."
+      # The in-job drift gate above already validated the change, so the PR is
+      # safe to merge automatically. The merge push is made with GITHUB_TOKEN
+      # and so does not trigger the push-driven deploy — dispatch it explicitly
+      # (workflow_dispatch is exempt from the no-recursion rule).
+      - name: Auto-merge and redeploy
+        if: steps.cpr.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge --squash --delete-branch "${{ steps.cpr.outputs.pull-request-number }}"
+          gh workflow run deploy-pages.yml --ref main

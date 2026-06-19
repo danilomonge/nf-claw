@@ -44,8 +44,16 @@ make build
 Full step-by-step, with the version-policy column and the checks to run, is in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## How it stays current
-`.github/workflows/auto-update.yml` runs on a schedule: it finds each pipeline's newest release
-with `git ls-remote --tags` (pure git, no APIs), checks it out, regenerates context, and opens a PR.
+Three scheduled workflows keep the library — and the site — up to date with no manual edits:
+- **`auto-update.yml`** (daily): finds each pipeline's newest release with `git ls-remote --tags`
+  (pure git, no APIs), checks it out, regenerates context, and opens a PR. The PR is gated by the
+  drift check in the same job and then **merged automatically**, which triggers a site rebuild.
+- **`discover-pipelines.yml`** (weekly): finds nf-core pipelines not yet in `sources.tsv`, scaffolds
+  each one (pinned submodule + generated context) and opens a PR for review — expanding the library
+  is a deliberate step, so this PR is not auto-merged.
+- **`deploy-pages.yml`** (on every push to `main`): builds the website as a static export and
+  publishes it to GitHub Pages, so the live site always reflects the current repository state.
+
 The drift gate guarantees committed context always matches the pinned submodule. More detail:
 [`docs/updating.md`](docs/updating.md).
 

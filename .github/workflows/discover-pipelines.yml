@@ -1,0 +1,43 @@
+name: discover-pipelines
+# Find nf-core pipelines not yet in the library and scaffold them (pinned
+# submodule + generated skill.md/reference.md + catalog). Opens a PR for
+# review: expanding the library changes build time and scope, so unlike the
+# daily version bump this one is NOT auto-merged — merge it to grow the library.
+on:
+  schedule:
+    - cron: "0 7 * * 1"      # weekly, Monday 07:00 UTC
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Max new pipelines to add this run (0 = no limit)"
+        default: "12"
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e .
+      - name: Discover and scaffold new pipelines
+        run: python -m librarian.discover_pipelines --repo-root . --limit "${{ inputs.limit || '12' }}"
+      - run: python -m librarian.write_catalog
+      # Self-gate: never open a PR whose committed context drifts from the submodules.
+      - run: python -m librarian.check_drift
+      - uses: peter-evans/create-pull-request@v6
+        with:
+          branch: auto-discover-pipelines
+          title: "feat: add newly discovered nf-core pipelines"
+          commit-message: "feat: add discovered nf-core pipelines + generated context"
+          body: |
+            Automated discovery: added nf-core pipelines not yet in the library, each pinned
+            to its latest stable release, with generated `skill.md` / `reference.md` and an
+            updated catalog. Review and merge to expand the library — merging rebuilds the site.

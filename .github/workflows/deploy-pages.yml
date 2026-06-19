@@ -45,6 +45,9 @@ jobs:
           # project site, empty for a user/org apex site).
           NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
           NEXT_PUBLIC_SITE_URL: ${{ steps.pages.outputs.origin }}
+          # Build-time only: lets src/lib/data/github.ts bake live Actions runs
+          # and releases into the Activity panel. Never shipped to the client.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm run build
           touch out/.nojekyll
