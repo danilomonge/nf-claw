@@ -19,6 +19,7 @@ interface to the whole library (pipelines, parameters, docs and automation), reb
 - `sources.tsv` — the source list (name, url, version policy)
 
 Design details (the three zones and how generation stays drift-free): [`docs/architecture.md`](docs/architecture.md).
+Version/engine compatibility (DSL2-only; each release runs with the Nextflow version it declares): [`docs/compatibility.md`](docs/compatibility.md).
 
 ## Use
 ```bash

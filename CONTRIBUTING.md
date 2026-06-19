@@ -13,6 +13,10 @@
 No per-pipeline Python is ever required: all context derives from the pipeline's own
 `nextflow_schema.json` / `assets/schema_input.json`.
 
+Pipelines must be **DSL2** (DSL1 was removed in Nextflow 22.03 and cannot run) and are run
+with the Nextflow version each release declares in its manifest — there is no single global
+version. See [`docs/compatibility.md`](docs/compatibility.md).
+
 ## Code
 - `runner/` (runtime) and `librarian/` (maintenance) are pipeline-agnostic. Never hardcode
   pipeline names, parameter lists, or sample columns.
