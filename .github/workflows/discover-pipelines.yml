@@ -1,8 +1,9 @@
 name: discover-pipelines
-# Find nf-core pipelines not yet in the library and scaffold them (pinned
-# submodule + generated skill.md/reference.md + catalog). Opens a PR for
-# review: expanding the library changes build time and scope, so unlike the
-# daily version bump this one is NOT auto-merged — merge it to grow the library.
+# Find nf-core pipelines not yet in the library, scaffold each (pinned submodule
+# + generated skill.md/reference.md + catalog), then VALIDATE them: unit tests,
+# the drift gate and Nextflow acceptance (`-preview`). Pipelines that Nextflow
+# rejects are dropped from the batch; if any survive and all checks pass, the PR
+# is opened and auto-merged (which rebuilds the site).
 on:
   schedule:
     - cron: "0 7 * * 1"      # weekly, Monday 07:00 UTC
@@ -12,32 +13,84 @@ on:
         description: "Max new pipelines to add this run (0 = no limit)"
         default: "12"
 
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write             # to dispatch the deploy after merge
+
 jobs:
   discover:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
+    env:
+      NXF_ANSI_LOG: "false"
+      NFCLAW_KEEP_SUBMODULES: "1"   # keep newly-added submodules initialised for the PR
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: recursive     # existing pipelines, so the drift gate can regenerate them
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - run: pip install -e .
-      - name: Discover and scaffold new pipelines
-        run: python -m librarian.discover_pipelines --repo-root . --limit "${{ inputs.limit || '12' }}"
-      - run: python -m librarian.write_catalog
-      # Self-gate: never open a PR whose committed context drifts from the submodules.
-      - run: python -m librarian.check_drift
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Install Nextflow
+        run: |
+          curl -s https://get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+      - name: Discover, validate acceptance, keep only what Nextflow accepts
+        id: disc
+        run: |
+          set -e
+          python -m librarian.discover_pipelines --repo-root . --limit "${{ inputs.limit || '12' }}" \
+            | tee "$RUNNER_TEMP/disc.out"
+          added=$(grep ': added at ' "$RUNNER_TEMP/disc.out" | sed -E 's/: added at .*//' | tr -d ' ')
+          if [ -z "$added" ]; then
+            echo "No new pipelines to add."
+            echo "kept=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Does Nextflow accept each new pipeline? (per-pipeline verdicts in the result file)
+          export NFCLAW_RESULT_FILE="$RUNNER_TEMP/accept.tsv"
+          bash scripts/nextflow_accept.sh $added || true
+          kept=0
+          while IFS=$'\t' read -r name verdict; do
+            if [ "$verdict" = "rejected" ]; then
+              echo "::warning::$name rejected by Nextflow — dropping it from this batch"
+              python -m librarian.discover_pipelines --repo-root . --rollback "$name"
+            else
+              kept=$((kept + 1))
+            fi
+          done < "$NFCLAW_RESULT_FILE"
+          python -m librarian.write_catalog
+          echo "kept=$kept" >> "$GITHUB_OUTPUT"
+      - name: Unit tests + drift gate
+        if: steps.disc.outputs.kept != '0'
+        run: |
+          pip install "pytest>=8,<10"
+          pytest -q
+          python -m librarian.check_drift
       - uses: peter-evans/create-pull-request@v6
+        if: success() && steps.disc.outputs.kept != '0'
+        id: cpr
         with:
           branch: auto-discover-pipelines
           title: "feat: add newly discovered nf-core pipelines"
           commit-message: "feat: add discovered nf-core pipelines + generated context"
           body: |
-            Automated discovery: added nf-core pipelines not yet in the library, each pinned
-            to its latest stable release, with generated `skill.md` / `reference.md` and an
-            updated catalog. Review and merge to expand the library — merging rebuilds the site.
+            Automated discovery: added nf-core pipelines (each pinned to its latest stable
+            release) that pass the unit tests, the drift gate and Nextflow acceptance
+            (`nextflow -preview`). Pipelines Nextflow rejected were dropped. Auto-merged
+            because all checks passed.
+      # All checks passed, so merge automatically. The merge push is made with GITHUB_TOKEN
+      # and does not trigger the push-driven deploy — dispatch it explicitly.
+      - name: Auto-merge and redeploy
+        if: success() && steps.cpr.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge --squash --delete-branch "${{ steps.cpr.outputs.pull-request-number }}"
+          gh workflow run deploy-pages.yml --ref main

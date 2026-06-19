@@ -62,3 +62,16 @@ def test_append_source_writes_tab_separated_row(tmp_path):
     dp._append_source(src, "demo", "https://github.com/nf-core/demo.git")
     rows = [line for line in src.read_text().splitlines() if line and not line.startswith("#")]
     assert rows[-1] == "demo\thttps://github.com/nf-core/demo.git\tlatest-release"
+
+
+def test_remove_source_drops_only_that_row(tmp_path):
+    src = tmp_path / "sources.tsv"
+    src.write_text(
+        "# name\turl\tpolicy\n"
+        "rnaseq\thttps://x/rnaseq.git\tlatest-release\n"
+        "demo\thttps://x/demo.git\tlatest-release\n",
+        encoding="utf-8",
+    )
+    dp._remove_source(src, "demo")
+    rows = [line for line in src.read_text().splitlines() if line and not line.startswith("#")]
+    assert rows == ["rnaseq\thttps://x/rnaseq.git\tlatest-release"]

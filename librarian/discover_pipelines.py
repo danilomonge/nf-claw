@@ -101,6 +101,27 @@ def add_one(name: str, url: str, tag: str, repo_root: Path) -> bool:
         return False
 
 
+def _remove_source(sources_path: Path, name: str) -> None:
+    """Drop the row for `name` from sources.tsv (keeps comments and others)."""
+    if not sources_path.exists():
+        return
+    kept = [
+        line for line in sources_path.read_text(encoding="utf-8").splitlines()
+        if not (line.strip() and not line.startswith("#")
+                and (line.split("\t")[0] if "\t" in line else line.split()[0]).strip() == name)
+    ]
+    sources_path.write_text("\n".join(kept) + "\n", encoding="utf-8")
+
+
+def remove_one(name: str, repo_root: Path, sources_path: Path) -> None:
+    """Completely remove a pipeline: its submodule, generated files and source row."""
+    _rollback(name, repo_root)
+    _run(["git", "-C", str(repo_root), "config", "-f", ".gitmodules",
+          "--remove-section", f"submodule.pipelines/{name}/upstream"])
+    _run(["git", "-C", str(repo_root), "add", ".gitmodules"])
+    _remove_source(sources_path, name)
+
+
 def _append_source(sources_path: Path, name: str, url: str) -> None:
     text = sources_path.read_text(encoding="utf-8")
     sep = "" if text.endswith("\n") or not text else "\n"
@@ -116,12 +137,20 @@ def main(argv: list[str] | None = None) -> int:
                         help="max new pipelines to add per run (0 = no limit)")
     parser.add_argument("--dry-run", action="store_true",
                         help="list what would be added without changing anything")
+    parser.add_argument("--rollback", nargs="+", metavar="NAME",
+                        help="remove the named pipeline(s) entirely, then exit")
     args = parser.parse_args(argv)
 
     root = Path(args.repo_root).resolve()
     sources_path = Path(args.sources)
     if not sources_path.is_absolute():
         sources_path = root / sources_path
+
+    if args.rollback:
+        for name in args.rollback:
+            remove_one(name, root, sources_path)
+            print(f"{name}: removed")
+        return 0
 
     existing = {s.name for s in read_sources(sources_path)}
     fresh = new_pipelines(fetch_catalog(), existing)
