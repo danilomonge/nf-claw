@@ -65,6 +65,21 @@
     "version": "2.3.0"
   },
   {
+    "description": "Analysis pipeline for CUT&RUN and CUT&TAG experiments that includes sequencing QC, spike-in normalisation, IgG control normalisation, peak calling and downstream peak analysis.",
+    "name": "cutandrun",
+    "version": "3.2.2"
+  },
+  {
+    "description": "An nf-core demo pipeline",
+    "name": "demo",
+    "version": "1.1.0"
+  },
+  {
+    "description": "Demultiplexing pipeline for Illumina sequencing data",
+    "name": "demultiplex",
+    "version": "1.7.1"
+  },
+  {
     "description": "Pipeline to fetch metadata and raw FastQ files from public databases",
     "name": "fetchngs",
     "version": "1.12.0"

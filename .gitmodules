@@ -49,3 +49,12 @@
 [submodule "pipelines/crisprseq/upstream"]
 	path = pipelines/crisprseq/upstream
 	url = https://github.com/nf-core/crisprseq.git
+[submodule "pipelines/cutandrun/upstream"]
+	path = pipelines/cutandrun/upstream
+	url = https://github.com/nf-core/cutandrun.git
+[submodule "pipelines/demo/upstream"]
+	path = pipelines/demo/upstream
+	url = https://github.com/nf-core/demo.git
+[submodule "pipelines/demultiplex/upstream"]
+	path = pipelines/demultiplex/upstream
+	url = https://github.com/nf-core/demultiplex.git
