@@ -53,6 +53,11 @@ Three scheduled workflows keep the library — and the site — up to date with 
   is a deliberate step, so this PR is not auto-merged.
 - **`deploy-pages.yml`** (on every push to `main`): builds the website as a static export and
   publishes it to GitHub Pages, so the live site always reflects the current repository state.
+- **`smoke.yml`** (weekly + on pipeline/runner changes): for every pipeline, builds and preflights
+  the demo command (`nfclaw run --check --demo`) — parsing the pinned schema, validating parameters
+  and composing the test profile, all without executing the workflow. It guards what nf-claw owns
+  (schema parse, generated command, submodule integrity); a release's scientific correctness is
+  already covered by nf-core's own CI before it is tagged.
 
 The drift gate guarantees committed context always matches the pinned submodule. More detail:
 [`docs/updating.md`](docs/updating.md).

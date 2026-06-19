@@ -1,0 +1,60 @@
+name: smoke
+# Verify every pipeline is actually usable through nfclaw WITHOUT running the
+# (heavy) workflows themselves. For each pipeline this initializes the pinned
+# submodule, parses its nextflow_schema.json, validates parameters, composes the
+# test profile and builds + preflights the demo command — i.e. `nfclaw run
+# --check --demo` stops just before execution. Scientific correctness of a
+# release is nf-core's own CI's job; this guards what nf-claw owns (schema parse,
+# generated command, submodule integrity) and stays cheap as the library grows.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pipelines/**"
+      - "runner/**"
+      - "catalog.json"
+      - "sources.tsv"
+      - ".github/workflows/smoke.yml"
+  schedule:
+    - cron: "0 6 * * 3"      # weekly, Wednesday 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      # No submodules here: nfclaw shallow-inits each pipeline's submodule on demand.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e .
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Install Nextflow
+        run: |
+          curl -s https://get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+      - name: Build + preflight the demo command for every pipeline
+        run: |
+          fail=0
+          {
+            echo "## Pipeline smoke test"
+            echo "| pipeline | result |"
+            echo "|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for name in $(nfclaw list | cut -f1); do
+            out="$RUNNER_TEMP/smoke-$name"
+            if nfclaw run "$name" --outdir "$out" --check --demo -profile docker > "$RUNNER_TEMP/$name.log" 2>&1; then
+              echo "::group::✓ $name"; cat "$RUNNER_TEMP/$name.log"; echo "::endgroup::"
+              echo "| \`$name\` | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::error::$name failed the demo build/preflight"
+              cat "$RUNNER_TEMP/$name.log"
+              echo "| \`$name\` | ❌ |" >> "$GITHUB_STEP_SUMMARY"
+              fail=1
+            fi
+          done
+          exit $fail
