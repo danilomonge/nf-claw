@@ -1,5 +1,20 @@
 [
   {
+    "description": "B and T cell repertoire analysis pipeline with the Immcantation framework.",
+    "name": "airrflow",
+    "version": "5.1.0"
+  },
+  {
+    "description": "Amplicon sequencing analysis workflow using DADA2 and QIIME2",
+    "name": "ampliseq",
+    "version": "2.18.0"
+  },
+  {
+    "description": "ATACSeq peak-calling and differential analysis pipeline.",
+    "name": "atacseq",
+    "version": "2.1.2"
+  },
+  {
     "description": "Pipeline to fetch metadata and raw FastQ files from public databases",
     "name": "fetchngs",
     "version": "1.12.0"
