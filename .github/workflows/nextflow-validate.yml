@@ -24,6 +24,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NXF_ANSI_LOG: "false"
+      # Pin Nextflow to the newest version that still defaults to the lenient
+      # config parser. The strict parser (default from 26.x) rejects valid config
+      # syntax used by older pinned releases; this version parses the whole
+      # release range while satisfying each pipeline's minimum-version manifest.
+      NXF_VER: "25.10.4"
     steps:
       # No upfront submodules: each pipeline is initialised on demand below.
       - uses: actions/checkout@v4
