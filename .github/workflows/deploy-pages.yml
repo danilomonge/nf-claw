@@ -1,0 +1,64 @@
+name: deploy-pages
+# Build the data-driven website as a static site and publish it to GitHub Pages.
+# Runs on every push to main, so the site reflects the latest repository state
+# (including merged auto-update PRs).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment; let in-progress runs finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The data layer reads the pinned submodules (release dates, module
+          # counts) and full git history (commit count, tags) at build time.
+          submodules: recursive
+          fetch-depth: 0
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - name: Install dependencies
+        working-directory: website
+        run: npm ci
+      - name: Build static site
+        working-directory: website
+        env:
+          # Host the site under the Pages base path (e.g. "/nf-claw" for a
+          # project site, empty for a user/org apex site).
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          NEXT_PUBLIC_SITE_URL: ${{ steps.pages.outputs.origin }}
+        run: |
+          npm run build
+          touch out/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

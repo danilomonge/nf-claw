@@ -8,6 +8,9 @@ A self-maintaining, token-minimal library of [nf-core](https://nf-co.re) pipelin
 Each pipeline is a git submodule plus an auto-generated `skill.md` an agent reads to run it
 correctly — no external lookups, no hallucinated flags.
 
+**🌐 Live site: [danilomonge.github.io/nf-claw](https://danilomonge.github.io/nf-claw/)** — a data-driven
+interface to the whole library (pipelines, parameters, docs and automation), rebuilt from the repository on every push.
+
 ## Layout
 - `pipelines/<name>/` — `upstream/` (submodule, pinned to a release) + generated `skill.md` (run command, inputs and required parameters with their allowed values and constraints, plus a map of parameter groups) and `reference.md` (every parameter, with required/hidden flags, allowed values, value constraints and default)
 - `runner/` — the `nfclaw` runtime (run a pipeline); the agent's tool

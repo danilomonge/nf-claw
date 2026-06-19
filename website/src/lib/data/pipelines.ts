@@ -1,0 +1,256 @@
+import fs from "node:fs";
+import path from "node:path";
+import { execFileSync } from "node:child_process";
+import { repoPath, readText, exists } from "./paths";
+import {
+  splitFrontmatter,
+  tableUnder,
+  parseTableAt,
+  sectionLines,
+  codeBlockUnder,
+  proseUnder,
+  splitAllowed,
+  isYes,
+  unticked,
+} from "./markdown";
+import { humanize } from "../utils";
+import type {
+  Pipeline,
+  Parameter,
+  ParameterGroup,
+  SamplesheetColumn,
+  RequiredParam,
+} from "../types";
+
+interface CatalogEntry {
+  name: string;
+  version: string;
+  description: string;
+}
+
+function readCatalog(): CatalogEntry[] {
+  const raw = readText("catalog.json");
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw) as CatalogEntry[];
+  } catch {
+    return [];
+  }
+}
+
+/** Parse sources.tsv into name -> { url, policy }. */
+function readSources(): Record<string, { url: string; policy: string }> {
+  const raw = readText("sources.tsv");
+  const out: Record<string, { url: string; policy: string }> = {};
+  if (!raw) return out;
+  for (const line of raw.split("\n")) {
+    if (!line.trim() || line.trim().startsWith("#")) continue;
+    const [name, url, policy] = line.split("\t").map((s) => s.trim());
+    if (name) out[name] = { url: url || "", policy: policy || "" };
+  }
+  return out;
+}
+
+/** Parse .gitmodules into pipeline-name -> url (fallback for sources.tsv). */
+function readSubmoduleUrls(): Record<string, string> {
+  const raw = readText(".gitmodules");
+  const out: Record<string, string> = {};
+  if (!raw) return out;
+  const blocks = raw.split(/\[submodule/).slice(1);
+  for (const block of blocks) {
+    const pathM = block.match(/path\s*=\s*pipelines\/([^/]+)\/upstream/);
+    const urlM = block.match(/url\s*=\s*(\S+)/);
+    if (pathM && urlM) out[pathM[1]] = urlM[1];
+  }
+  return out;
+}
+
+/** Date of the pinned release commit inside an upstream submodule. */
+function releaseDate(name: string, commit: string): string | null {
+  if (!commit) return null;
+  try {
+    const out = execFileSync(
+      "git",
+      ["-C", repoPath("pipelines", name, "upstream"), "show", "-s", "--format=%cI", commit],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+    ).trim();
+    return out || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Count distinct nf-core modules vendored inside an upstream submodule. */
+function moduleCount(name: string): number {
+  const base = repoPath("pipelines", name, "upstream", "modules", "nf-core");
+  if (!fs.existsSync(base)) return 0;
+  let count = 0;
+  const walk = (dir: string, depth: number) => {
+    if (depth > 4) return;
+    let entries: fs.Dirent[] = [];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    const hasMain = entries.some((e) => e.isFile() && e.name === "main.nf");
+    if (hasMain) {
+      count++;
+      return;
+    }
+    for (const e of entries) {
+      if (e.isDirectory()) walk(path.join(dir, e.name), depth + 1);
+    }
+  };
+  walk(base, 0);
+  return count;
+}
+
+function parseSamplesheet(skill: string): SamplesheetColumn[] {
+  const table = tableUnder(skill, "Inputs");
+  if (!table) return [];
+  return table.rows.map((r) => ({
+    column: unticked(r[0] ?? ""),
+    type: r[1] ?? "",
+    required: isYes(r[2] ?? ""),
+    allowed: splitAllowed(r[3] ?? ""),
+    constraints: r[4] ?? "",
+  }));
+}
+
+function parseRequired(skill: string): RequiredParam[] {
+  const table = tableUnder(skill, "Required parameters");
+  if (!table) return [];
+  return table.rows.map((r) => ({
+    name: unticked(r[0] ?? ""),
+    type: r[1] ?? "",
+    allowed: splitAllowed(r[2] ?? ""),
+    constraints: r[3] ?? "",
+    description: r[4] ?? "",
+  }));
+}
+
+/** Parse reference.md into parameter groups. Each "## group" holds one table. */
+function parseReference(reference: string): ParameterGroup[] {
+  const lines = reference.split("\n");
+  const groups: ParameterGroup[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^##\s+([a-z0-9_]+)\s*$/i);
+    if (!m) continue;
+    const groupName = m[1];
+    const table = parseTableAt(lines, i + 1);
+    if (!table) continue;
+    const parameters: Parameter[] = table.rows.map((r) => ({
+      name: unticked(r[0] ?? ""),
+      type: r[1] ?? "",
+      required: isYes(r[2] ?? ""),
+      hidden: isYes(r[3] ?? ""),
+      allowed: splitAllowed(r[4] ?? ""),
+      constraints: r[5] ?? "",
+      default: r[6] ?? "",
+      description: r[7] ?? "",
+      group: groupName,
+    }));
+    if (parameters.length) {
+      groups.push({ name: groupName, title: humanize(groupName), parameters });
+    }
+  }
+  return groups;
+}
+
+function extractUsageUrl(skill: string): string | null {
+  const m = skill.match(/https?:\/\/\S+usage\.md/);
+  return m ? m[0] : null;
+}
+
+function runCommands(skill: string, name: string): { run: string; raw: string } {
+  const block = codeBlockUnder(skill, "Run it") ?? "";
+  const lines = block.split("\n").map((l) => l.trim());
+  const run = lines.find((l) => l.startsWith("nfclaw run")) ?? `nfclaw run ${name} --input samplesheet.csv --outdir results -profile docker`;
+  const raw =
+    lines.find((l) => l.startsWith("nextflow run")) ??
+    `nextflow run pipelines/${name}/upstream -profile docker --input samplesheet.csv --outdir results`;
+  return { run, raw };
+}
+
+function demoCommand(skill: string): string | null {
+  const block = codeBlockUnder(skill, "Demo");
+  if (!block) return null;
+  const line = block.split("\n").find((l) => l.trim().startsWith("nfclaw"));
+  return line ? line.trim() : null;
+}
+
+let cache: Pipeline[] | null = null;
+
+export function getPipelines(): Pipeline[] {
+  if (cache) return cache;
+  const catalog = readCatalog();
+  const sources = readSources();
+  const submodules = readSubmoduleUrls();
+
+  const pipelines = catalog
+    .map((entry): Pipeline | null => {
+      const name = entry.name;
+      const skillRaw = readText("pipelines", name, "skill.md");
+      const referenceRaw = readText("pipelines", name, "reference.md");
+      if (!skillRaw) return null;
+
+      const { data: fm, content: skillBody } = splitFrontmatter(skillRaw);
+      const reference = referenceRaw ? splitFrontmatter(referenceRaw).content : "";
+
+      const groups = parseReference(reference);
+      const parameterCount = groups.reduce((n, g) => n + g.parameters.length, 0);
+      const commit = String(fm.commit ?? "");
+      const { run, raw } = runCommands(skillBody, name);
+
+      return {
+        name,
+        pipeline: String(fm.pipeline ?? `nf-core/${name}`),
+        version: String(fm.version ?? entry.version ?? ""),
+        commit,
+        description: String(fm.description ?? entry.description ?? ""),
+        hasSamplesheet: Boolean(fm.has_samplesheet),
+        url: sources[name]?.url || submodules[name] || `https://github.com/nf-core/${name}`,
+        policy: sources[name]?.policy || "",
+        runCommand: run,
+        rawCommand: raw,
+        demoCommand: demoCommand(skillBody),
+        samplesheet: parseSamplesheet(skillBody),
+        requiredParams: parseRequired(skillBody),
+        groups,
+        parameterCount,
+        outputs: proseUnder(skillBody, "Outputs"),
+        usageUrl: extractUsageUrl(skillBody),
+        releaseDate: releaseDate(name, commit),
+        moduleCount: moduleCount(name),
+      };
+    })
+    .filter((p): p is Pipeline => p !== null)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  cache = pipelines;
+  return pipelines;
+}
+
+export function getPipeline(name: string): Pipeline | undefined {
+  return getPipelines().find((p) => p.name === name);
+}
+
+export function pipelineNames(): string[] {
+  return getPipelines().map((p) => p.name);
+}
+
+/** All parameters across every pipeline, flattened for the global explorer. */
+export function allParameters(): (Parameter & { pipeline: string })[] {
+  const out: (Parameter & { pipeline: string })[] = [];
+  for (const p of getPipelines()) {
+    for (const g of p.groups) {
+      for (const param of g.parameters) {
+        out.push({ ...param, pipeline: p.name });
+      }
+    }
+  }
+  return out;
+}
+
+export { exists };
