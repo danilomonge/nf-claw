@@ -16,3 +16,6 @@ coproid	https://github.com/nf-core/coproid.git	latest-release
 createpanelrefs	https://github.com/nf-core/createpanelrefs.git	latest-release
 createtaxdb	https://github.com/nf-core/createtaxdb.git	latest-release
 crisprseq	https://github.com/nf-core/crisprseq.git	latest-release
+cutandrun	https://github.com/nf-core/cutandrun.git	latest-release
+demo	https://github.com/nf-core/demo.git	latest-release
+demultiplex	https://github.com/nf-core/demultiplex.git	latest-release

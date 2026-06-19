@@ -1,6 +1,6 @@
 # Pipeline catalog
 
-17 nf-core pipelines. Grep this file for a keyword, then read `pipelines/<name>/skill.md`.
+20 nf-core pipelines. Grep this file for a keyword, then read `pipelines/<name>/skill.md`.
 
 | pipeline | version | description |
 |---|---|---|
@@ -17,6 +17,9 @@
 | `createpanelrefs` | 1.0.0 | Generate Panel of Normals, models or other similar references from lots of samples |
 | `createtaxdb` | 3.0.0 | Parallelised and automated creation of metagenomic classifier databases of different tools |
 | `crisprseq` | 2.3.0 | Pipeline for the analysis of CRISPR data |
+| `cutandrun` | 3.2.2 | Analysis pipeline for CUT&RUN and CUT&TAG experiments that includes sequencing QC, spike-in normalisation, IgG control normalisation, peak calling and downstream peak analysis. |
+| `demo` | 1.1.0 | An nf-core demo pipeline |
+| `demultiplex` | 1.7.1 | Demultiplexing pipeline for Illumina sequencing data |
 | `fetchngs` | 1.12.0 | Pipeline to fetch metadata and raw FastQ files from public databases |
 | `rnaseq` | 3.26.0 | RNA sequencing analysis pipeline for gene/isoform quantification and extensive quality control. |
 | `sarek` | 3.8.1 | An open-source analysis pipeline to detect germline or somatic variants from whole genome or targeted sequencing |
