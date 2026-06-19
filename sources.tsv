@@ -3,3 +3,6 @@ rnaseq	https://github.com/nf-core/rnaseq.git	latest-release
 sarek	https://github.com/nf-core/sarek.git	latest-release
 scrnaseq	https://github.com/nf-core/scrnaseq.git	latest-release
 fetchngs	https://github.com/nf-core/fetchngs.git	latest-release
+airrflow	https://github.com/nf-core/airrflow.git	latest-release
+ampliseq	https://github.com/nf-core/ampliseq.git	latest-release
+atacseq	https://github.com/nf-core/atacseq.git	latest-release
