@@ -56,8 +56,12 @@ Three scheduled workflows keep the library — and the site — up to date with 
 - **`smoke.yml`** (weekly + on pipeline/runner changes): for every pipeline, builds and preflights
   the demo command (`nfclaw run --check --demo`) — parsing the pinned schema, validating parameters
   and composing the test profile, all without executing the workflow. It guards what nf-claw owns
-  (schema parse, generated command, submodule integrity); a release's scientific correctness is
-  already covered by nf-core's own CI before it is tagged.
+  (schema parse, generated command, submodule integrity).
+- **`nextflow-validate.yml`** (weekly + on pipeline changes): runs each pipeline through Nextflow
+  with `-profile test,docker -preview`, so Nextflow compiles it, resolves the config/profile, runs
+  the nf-schema parameter validation and builds the full task DAG — then stops before launching any
+  task. This proves every pinned pipeline is accepted and runnable up to the point of execution; the
+  analysis itself is already covered by nf-core's own CI before a release is tagged.
 
 The drift gate guarantees committed context always matches the pinned submodule. More detail:
 [`docs/updating.md`](docs/updating.md).

@@ -1,0 +1,71 @@
+name: nextflow-validate
+# Verify Nextflow ACCEPTS every pipeline without running the analysis. For each
+# pipeline this runs `nextflow run <upstream> -profile test,docker -preview`,
+# which compiles the pipeline, resolves config + the test profile, runs the
+# nf-schema parameter validation and builds the full task DAG — then stops
+# before launching any task. It confirms each pinned pipeline is runnable up to
+# the moment of execution; the analysis itself is covered by nf-core's own
+# per-release CI. Submodules are initialised one at a time and cleaned up, so
+# disk stays bounded as the library grows.
+on:
+  schedule:
+    - cron: "0 5 * * 6"      # weekly, Saturday 05:00 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "sources.tsv"
+      - ".gitmodules"
+      - "pipelines/*/skill.md"
+      - ".github/workflows/nextflow-validate.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      NXF_ANSI_LOG: "false"
+    steps:
+      # No upfront submodules: each pipeline is initialised on demand below.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e .
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Install Nextflow
+        run: |
+          curl -s https://get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+      - name: Preview every pipeline through Nextflow (no task execution)
+        run: |
+          fail=0
+          {
+            echo "## Nextflow acceptance ( -preview )"
+            echo "| pipeline | accepted by Nextflow |"
+            echo "|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for name in $(nfclaw list | cut -f1); do
+            up="pipelines/$name/upstream"
+            out="$RUNNER_TEMP/prev-$name"
+            work="$RUNNER_TEMP/work-$name"
+            git submodule update --init --depth 1 "$up"
+            echo "::group::$name"
+            if timeout 900 nextflow run "$up" -profile test,docker \
+                 --outdir "$out" -work-dir "$work" -preview > "$RUNNER_TEMP/$name.out" 2>&1; then
+              tail -8 "$RUNNER_TEMP/$name.out"
+              echo "| \`$name\` | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              cat "$RUNNER_TEMP/$name.out"
+              echo "::error::Nextflow did not accept $name"
+              echo "| \`$name\` | ❌ |" >> "$GITHUB_STEP_SUMMARY"
+              fail=1
+            fi
+            echo "::endgroup::"
+            # free disk before the next pipeline
+            git submodule deinit -f "$up" >/dev/null 2>&1 || true
+            rm -rf "$work" "$out"
+          done
+          exit $fail
