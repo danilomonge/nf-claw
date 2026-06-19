@@ -24,11 +24,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NXF_ANSI_LOG: "false"
-      # Pin Nextflow to the newest version that still defaults to the lenient
-      # config parser. The strict parser (default from 26.x) rejects valid config
-      # syntax used by older pinned releases; this version parses the whole
-      # release range while satisfying each pipeline's minimum-version manifest.
-      NXF_VER: "25.10.4"
     steps:
       # No upfront submodules: each pipeline is initialised on demand below.
       - uses: actions/checkout@v4
@@ -49,23 +44,30 @@ jobs:
           fail=0
           {
             echo "## Nextflow acceptance ( -preview )"
-            echo "| pipeline | accepted by Nextflow |"
-            echo "|---|---|"
+            echo "| pipeline | nextflow | accepted |"
+            echo "|---|---|---|"
           } >> "$GITHUB_STEP_SUMMARY"
           for name in $(nfclaw list | cut -f1); do
             up="pipelines/$name/upstream"
             out="$RUNNER_TEMP/prev-$name"
             work="$RUNNER_TEMP/work-$name"
             git submodule update --init --depth 1 "$up"
-            echo "::group::$name"
-            if timeout 900 nextflow run "$up" -profile test,docker \
+            # Run each pipeline with the Nextflow version it declares: this satisfies its
+            # requirement AND guarantees its config parses, since each nf-core release is
+            # authored against the config-parser default of its declared minimum version
+            # (no single version can serve both pre- and post-strict-parser releases).
+            ver=$(grep -hoE "nextflowVersion[[:space:]]*=[[:space:]]*'[^']+'" "$up/nextflow.config" 2>/dev/null \
+                  | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | head -1)
+            ver="${ver:-25.10.4}"
+            echo "::group::$name (nextflow $ver)"
+            if NXF_VER="$ver" timeout 900 nextflow run "$up" -profile test,docker \
                  --outdir "$out" -work-dir "$work" -preview > "$RUNNER_TEMP/$name.out" 2>&1; then
               tail -8 "$RUNNER_TEMP/$name.out"
-              echo "| \`$name\` | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+              echo "| \`$name\` | $ver | ✅ |" >> "$GITHUB_STEP_SUMMARY"
             else
               cat "$RUNNER_TEMP/$name.out"
               echo "::error::Nextflow did not accept $name"
-              echo "| \`$name\` | ❌ |" >> "$GITHUB_STEP_SUMMARY"
+              echo "| \`$name\` | $ver | ❌ |" >> "$GITHUB_STEP_SUMMARY"
               fail=1
             fi
             echo "::endgroup::"
