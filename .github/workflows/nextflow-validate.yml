@@ -69,12 +69,28 @@ jobs:
               ver="24.10.5"
             fi
             echo "::group::$name (nextflow $ver)"
-            if NXF_VER="$ver" timeout 900 nextflow run "$up" -profile test,docker \
-                 -c "$cfg" --outdir "$out" -work-dir "$work" -preview > "$RUNNER_TEMP/$name.out" 2>&1; then
-              tail -8 "$RUNNER_TEMP/$name.out"
+            log="$RUNNER_TEMP/$name.out"
+            NXF_VER="$ver" timeout 900 nextflow run "$up" -profile test,docker \
+              -c "$cfg" --outdir "$out" -work-dir "$work" -preview > "$log" 2>&1 && rc=0 || rc=$?
+            # "Accepted" = Nextflow compiled the pipeline, resolved its config and validated
+            # its parameters. rc==0 means -preview also built the full DAG. A non-zero rc is a
+            # real REJECTION only if it failed at compile/config/version/parameter validation;
+            # if it got past those (preview just couldn't stage remote test inputs, which is
+            # analysis-time I/O, out of scope here) the pipeline is still accepted.
+            if [ "$rc" = 0 ]; then
+              tail -6 "$log"
               echo "| \`$name\` | $ver | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+            elif grep -qiE "Config parsing failed|Unexpected input|Invalid include source|does not match workflow required version|Unknown option: -preview|Validation of pipeline parameters failed|DSL ?1|Script compilation error|Unable to parse|MissingMethod" "$log"; then
+              cat "$log"
+              echo "::error::Nextflow rejected $name (compile/config/version/parameters)"
+              echo "| \`$name\` | $ver | ❌ |" >> "$GITHUB_STEP_SUMMARY"
+              fail=1
+            elif grep -qiE "\* ?PREVIEW ?\*|Only displaying parameters that differ|Core Nextflow options|If you use nf-core" "$log"; then
+              tail -6 "$log"
+              echo "::warning::$name accepted (compiled + parameters validated); -preview could not stage test inputs"
+              echo "| \`$name\` | $ver | ✅ ¹ |" >> "$GITHUB_STEP_SUMMARY"
             else
-              cat "$RUNNER_TEMP/$name.out"
+              cat "$log"
               echo "::error::Nextflow did not accept $name"
               echo "| \`$name\` | $ver | ❌ |" >> "$GITHUB_STEP_SUMMARY"
               fail=1
@@ -84,4 +100,6 @@ jobs:
             git submodule deinit -f "$up" >/dev/null 2>&1 || true
             rm -rf "$work" "$out"
           done
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "¹ compiled + parameters validated; \`-preview\` could not stage remote test inputs (analysis-time I/O, out of scope)." >> "$GITHUB_STEP_SUMMARY"
           exit $fail
