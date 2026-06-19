@@ -28,9 +28,6 @@
 [submodule "pipelines/bamtofastq/upstream"]
 	path = pipelines/bamtofastq/upstream
 	url = https://github.com/nf-core/bamtofastq.git
-[submodule "pipelines/cageseq/upstream"]
-	path = pipelines/cageseq/upstream
-	url = https://github.com/nf-core/cageseq.git
 [submodule "pipelines/callingcards/upstream"]
 	path = pipelines/callingcards/upstream
 	url = https://github.com/nf-core/callingcards.git
@@ -40,9 +37,6 @@
 [submodule "pipelines/circdna/upstream"]
 	path = pipelines/circdna/upstream
 	url = https://github.com/nf-core/circdna.git
-[submodule "pipelines/clipseq/upstream"]
-	path = pipelines/clipseq/upstream
-	url = https://github.com/nf-core/clipseq.git
 [submodule "pipelines/coproid/upstream"]
 	path = pipelines/coproid/upstream
 	url = https://github.com/nf-core/coproid.git

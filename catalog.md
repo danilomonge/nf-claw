@@ -1,6 +1,6 @@
 # Pipeline catalog
 
-19 nf-core pipelines. Grep this file for a keyword, then read `pipelines/<name>/skill.md`.
+17 nf-core pipelines. Grep this file for a keyword, then read `pipelines/<name>/skill.md`.
 
 | pipeline | version | description |
 |---|---|---|
@@ -10,11 +10,9 @@
 | `bacass` | 2.6.1 | Simple bacterial assembly and annotation |
 | `bactmap` | 1.0.0 | A mapping-based pipeline for creating a phylogeny from bacterial whole genome sequences |
 | `bamtofastq` | 2.2.1 | Workflow converts one or multiple bam/cram files to fastq format |
-| `cageseq` | 1.0.2 | CAGE-seq pipeline |
 | `callingcards` | 1.0.0 | An automated processing pipeline for mammalian bulk calling cards experiments |
 | `chipseq` | 2.1.0 | ChIP-seq peak-calling and differential analysis pipeline. |
 | `circdna` | 1.1.0 | Pipeline for the identification of circular DNAs |
-| `clipseq` | 1.0.0 | CLIP analysis pipeline |
 | `coproid` | 2.0.1 | COPROlite host IDentification |
 | `createpanelrefs` | 1.0.0 | Generate Panel of Normals, models or other similar references from lots of samples |
 | `createtaxdb` | 3.0.0 | Parallelised and automated creation of metagenomic classifier databases of different tools |

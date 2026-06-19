@@ -42,6 +42,11 @@ jobs:
       - name: Preview every pipeline through Nextflow (no task execution)
         run: |
           fail=0
+          # -preview builds the DAG but produces no trace, so disable the report/
+          # timeline/trace/dag outputs nf-core configs enable (rendering them with no
+          # data fails the run on recent Nextflow).
+          cfg="$RUNNER_TEMP/no-reports.config"
+          printf 'report.enabled=false\ntimeline.enabled=false\ntrace.enabled=false\ndag.enabled=false\n' > "$cfg"
           {
             echo "## Nextflow acceptance ( -preview )"
             echo "| pipeline | nextflow | accepted |"
@@ -53,15 +58,19 @@ jobs:
             work="$RUNNER_TEMP/work-$name"
             git submodule update --init --depth 1 "$up"
             # Run each pipeline with the Nextflow version it declares: this satisfies its
-            # requirement AND guarantees its config parses, since each nf-core release is
-            # authored against the config-parser default of its declared minimum version
-            # (no single version can serve both pre- and post-strict-parser releases).
+            # requirement AND matches the config-parser that release was authored for (no
+            # single version serves both pre- and post-strict-parser releases). Releases
+            # whose declared minimum predates `-preview` (Nextflow 22.06) are floored to a
+            # recent lenient-parser version that still runs their (DSL2) code.
             ver=$(grep -hoE "nextflowVersion[[:space:]]*=[[:space:]]*'[^']+'" "$up/nextflow.config" 2>/dev/null \
                   | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | head -1)
             ver="${ver:-25.10.4}"
+            if [ "$(printf '%s\n22.10.0\n' "$ver" | sort -V | head -1)" = "$ver" ] && [ "$ver" != "22.10.0" ]; then
+              ver="24.10.5"
+            fi
             echo "::group::$name (nextflow $ver)"
             if NXF_VER="$ver" timeout 900 nextflow run "$up" -profile test,docker \
-                 --outdir "$out" -work-dir "$work" -preview > "$RUNNER_TEMP/$name.out" 2>&1; then
+                 -c "$cfg" --outdir "$out" -work-dir "$work" -preview > "$RUNNER_TEMP/$name.out" 2>&1; then
               tail -8 "$RUNNER_TEMP/$name.out"
               echo "| \`$name\` | $ver | ✅ |" >> "$GITHUB_STEP_SUMMARY"
             else

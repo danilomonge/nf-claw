@@ -30,11 +30,6 @@
     "version": "2.2.1"
   },
   {
-    "description": "CAGE-seq pipeline",
-    "name": "cageseq",
-    "version": "1.0.2"
-  },
-  {
     "description": "An automated processing pipeline for mammalian bulk calling cards experiments",
     "name": "callingcards",
     "version": "1.0.0"
@@ -48,11 +43,6 @@
     "description": "Pipeline for the identification of circular DNAs",
     "name": "circdna",
     "version": "1.1.0"
-  },
-  {
-    "description": "CLIP analysis pipeline",
-    "name": "clipseq",
-    "version": "1.0.0"
   },
   {
     "description": "COPROlite host IDentification",
