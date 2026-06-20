@@ -29,6 +29,10 @@ jobs:
         with:
           submodules: recursive     # existing pipelines, so the drift gate can regenerate them
           fetch-depth: 0
+      # Existing submodules need their tags present so `git describe --tags` resolves each
+      # pinned version deterministically (the drift gate compares regenerated context).
+      - name: Fetch submodule tags
+        run: git submodule foreach 'git fetch -q --tags origin 2>/dev/null || true'
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"

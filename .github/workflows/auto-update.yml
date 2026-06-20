@@ -15,6 +15,10 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+      # Ensure submodule tags are present so `git describe --tags` resolves the pinned
+      # version deterministically (otherwise the in-job drift gate can fail spuriously).
+      - name: Fetch submodule tags
+        run: git submodule foreach 'git fetch -q --tags origin 2>/dev/null || true'
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"

@@ -7,6 +7,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      # `git describe --tags` resolves each pinned release version, but actions/checkout does
+      # not fetch submodule tags — without them the version falls back to a commit hash and the
+      # drift gate fails spuriously. Fetch the tags so resolution is deterministic.
+      - name: Fetch submodule tags
+        run: git submodule foreach 'git fetch -q --tags origin 2>/dev/null || true'
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
