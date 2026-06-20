@@ -1,102 +1,142 @@
 [
   {
     "description": "B and T cell repertoire analysis pipeline with the Immcantation framework.",
+    "input": "samplesheet (sample_id, subject_id, species, pcr_target_locus, tissue, sex, age, biomaterial_provider, single_cell, filename_R1, filename_R2, filename_I1, filename)",
     "name": "airrflow",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "5.1.0"
   },
   {
     "description": "Amplicon sequencing analysis workflow using DADA2 and QIIME2",
+    "input": "samplesheet (sampleID, forwardReads, reverseReads, sample, fastq_1, fastq_2, run, control, quant_reading)",
     "name": "ampliseq",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "2.18.0"
   },
   {
     "description": "ATACSeq peak-calling and differential analysis pipeline.",
+    "input": "samplesheet (sample, fastq_1, fastq_2, replicate, control, control_replicate)",
     "name": "atacseq",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "2.1.2"
   },
   {
     "description": "Simple bacterial assembly and annotation",
+    "input": "samplesheet (ID, R1, R2, LongFastQ, Fast5, GenomeSize)",
     "name": "bacass",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "2.6.1"
   },
   {
     "description": "A mapping-based pipeline for creating a phylogeny from bacterial whole genome sequences",
+    "input": "parameters (no samplesheet)",
     "name": "bactmap",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
     "version": "1.0.0"
   },
   {
     "description": "Workflow converts one or multiple bam/cram files to fastq format",
+    "input": "samplesheet (sample_id, mapped, index, file_type)",
     "name": "bamtofastq",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "2.2.1"
   },
   {
     "description": "An automated processing pipeline for mammalian bulk calling cards experiments",
+    "input": "samplesheet (sample, fastq_1, fastq_2, barcode_details)",
     "name": "callingcards",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "1.0.0"
   },
   {
     "description": "ChIP-seq peak-calling and differential analysis pipeline.",
+    "input": "samplesheet (sample, fastq_1, fastq_2, replicate, antibody, control, control_replicate)",
     "name": "chipseq",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "2.1.0"
   },
   {
     "description": "Pipeline for the identification of circular DNAs",
+    "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "circdna",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "1.1.0"
   },
   {
     "description": "COPROlite host IDentification",
+    "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "coproid",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "2.0.1"
   },
   {
     "description": "Generate Panel of Normals, models or other similar references from lots of samples",
+    "input": "samplesheet (sample, bam, bai, cram, crai)",
     "name": "createpanelrefs",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "1.0.0"
   },
   {
     "description": "Parallelised and automated creation of metagenomic classifier databases of different tools",
+    "input": "samplesheet (id, taxid, fasta_dna, fasta_aa)",
     "name": "createtaxdb",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "3.0.0"
   },
   {
     "description": "Pipeline for the analysis of CRISPR data",
+    "input": "samplesheet (sample, fastq_1, fastq_2, condition, reference, protospacer, template)",
     "name": "crisprseq",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "2.3.0"
   },
   {
     "description": "Analysis pipeline for CUT&RUN and CUT&TAG experiments that includes sequencing QC, spike-in normalisation, IgG control normalisation, peak calling and downstream peak analysis.",
+    "input": "samplesheet (group, replicate, fastq_1, fastq_2, control)",
     "name": "cutandrun",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "3.2.2"
   },
   {
     "description": "An nf-core demo pipeline",
+    "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "demo",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "1.1.0"
   },
   {
     "description": "Demultiplexing pipeline for Illumina sequencing data",
+    "input": "samplesheet (id, samplesheet, lane, flowcell, per_flowcell_manifest)",
     "name": "demultiplex",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "1.7.1"
   },
   {
     "description": "Pipeline to fetch metadata and raw FastQ files from public databases",
+    "input": "id list (one value per line)",
     "name": "fetchngs",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
     "version": "1.12.0"
   },
   {
     "description": "RNA sequencing analysis pipeline for gene/isoform quantification and extensive quality control.",
+    "input": "samplesheet (sample, fastq_1, fastq_2, strandedness, seq_platform, seq_center, genome_bam, transcriptome_bam, percent_mapped)",
     "name": "rnaseq",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "3.26.0"
   },
   {
     "description": "An open-source analysis pipeline to detect germline or somatic variants from whole genome or targeted sequencing",
+    "input": "samplesheet (patient, sample, sex, status, lane, fastq_1, fastq_2, spring_1, spring_2, table, cram, crai, bam, bai, contamination, vcf, variantcaller)",
     "name": "sarek",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "3.8.1"
   },
   {
     "description": "Pipeline for processing 10x Genomics single cell rnaseq data",
+    "input": "samplesheet (sample, fastq_1, fastq_2, fastq_barcode, expected_cells, seq_center, sample_type, feature_type)",
     "name": "scrnaseq",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "version": "4.1.0"
   }
 ]

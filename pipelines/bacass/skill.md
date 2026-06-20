@@ -5,6 +5,8 @@ version: 2.6.1
 commit: 5ed7c2dd9a05d2434d8ba39ace1116368a4ba570
 description: Simple bacterial assembly and annotation
 has_samplesheet: true
+input: samplesheet (ID, R1, R2, LongFastQ, Fast5, GenomeSize)
+output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
 ---
 # bacass
 
@@ -53,7 +55,9 @@ Beyond the required parameters above, every other parameter is optional. [refere
 - `skipping_options` (7 parameters)
 
 ## Outputs
-Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/bacass/blob/2.6.1/docs/output.md
 
 ## Demo
 ```bash

@@ -5,6 +5,8 @@ version: 3.26.0
 commit: e7ca46272c8f9d5ceee3f71759f4ba551d3217a4
 description: RNA sequencing analysis pipeline for gene/isoform quantification and extensive quality control.
 has_samplesheet: true
+input: samplesheet (sample, fastq_1, fastq_2, strandedness, seq_platform, seq_center, genome_bam, transcriptome_bam, percent_mapped)
+output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
 ---
 # rnaseq
 
@@ -57,7 +59,9 @@ Beyond the required parameters above, every other parameter is optional. [refere
 - `umi_options` (10 parameters)
 
 ## Outputs
-Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/rnaseq/blob/3.26.0/docs/output.md
 
 ## Demo
 ```bash

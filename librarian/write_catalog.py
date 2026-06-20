@@ -11,7 +11,9 @@ from runner import discovery
 def generate(*, pipelines_dir: Path, out_md: Path, out_json: Path) -> None:
     rows = [{"name": p.name,
              "version": p.frontmatter.get("version", ""),
-             "description": p.frontmatter.get("description", "")}
+             "description": p.frontmatter.get("description", ""),
+             "input": p.frontmatter.get("input", ""),
+             "output": p.frontmatter.get("output", "")}
             for p in discovery.discover(pipelines_dir)]
     out_json.write_text(json.dumps(rows, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -20,9 +22,13 @@ def generate(*, pipelines_dir: Path, out_md: Path, out_json: Path) -> None:
 
     lines = ["# Pipeline catalog", "",
              f"{len(rows)} nf-core pipelines. Grep this file for a keyword, then read "
-             "`pipelines/<name>/skill.md`.", "",
-             "| pipeline | version | description |", "|---|---|---|"]
-    lines += [f"| `{r['name']}` | {r['version']} | {_safe(r['description'])} |" for r in rows]
+             "`pipelines/<name>/skill.md`. `input` is derived from each pipeline's samplesheet "
+             "schema; `output` is the guaranteed output contract (per-release detail is in the "
+             "pipeline's upstream `docs/output.md`, linked from its skill).", "",
+             "| pipeline | version | input | output | description |",
+             "|---|---|---|---|---|"]
+    lines += [f"| `{r['name']}` | {r['version']} | {_safe(r['input'])} | {_safe(r['output'])} "
+              f"| {_safe(r['description'])} |" for r in rows]
     out_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

@@ -5,6 +5,8 @@ version: 3.0.0
 commit: e561e64257492bb337a4ade1555ecb772156a0c2
 description: Parallelised and automated creation of metagenomic classifier databases of different tools
 has_samplesheet: true
+input: samplesheet (id, taxid, fasta_dna, fasta_aa)
+output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
 ---
 # createtaxdb
 
@@ -49,7 +51,9 @@ Beyond the required parameters above, every other parameter is optional. [refere
 - `institutional_config_options` (6 parameters)
 
 ## Outputs
-Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/createtaxdb/blob/3.0.0/docs/output.md
 
 ## Demo
 ```bash

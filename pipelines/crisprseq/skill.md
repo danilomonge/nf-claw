@@ -5,6 +5,8 @@ version: 2.3.0
 commit: 0e9f915c4a3c89d02a66ec58e2decbc832323c8b
 description: Pipeline for the analysis of CRISPR data
 has_samplesheet: true
+input: samplesheet (sample, fastq_1, fastq_2, condition, reference, protospacer, template)
+output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
 ---
 # crisprseq
 
@@ -53,7 +55,9 @@ Beyond the required parameters above, every other parameter is optional. [refere
 - `vsearch_parameters` (3 parameters)
 
 ## Outputs
-Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/crisprseq/blob/2.3.0/docs/output.md
 
 ## Demo
 ```bash

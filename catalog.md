@@ -1,26 +1,26 @@
 # Pipeline catalog
 
-20 nf-core pipelines. Grep this file for a keyword, then read `pipelines/<name>/skill.md`.
+20 nf-core pipelines. Grep this file for a keyword, then read `pipelines/<name>/skill.md`. `input` is derived from each pipeline's samplesheet schema; `output` is the guaranteed output contract (per-release detail is in the pipeline's upstream `docs/output.md`, linked from its skill).
 
-| pipeline | version | description |
-|---|---|---|
-| `airrflow` | 5.1.0 | B and T cell repertoire analysis pipeline with the Immcantation framework. |
-| `ampliseq` | 2.18.0 | Amplicon sequencing analysis workflow using DADA2 and QIIME2 |
-| `atacseq` | 2.1.2 | ATACSeq peak-calling and differential analysis pipeline. |
-| `bacass` | 2.6.1 | Simple bacterial assembly and annotation |
-| `bactmap` | 1.0.0 | A mapping-based pipeline for creating a phylogeny from bacterial whole genome sequences |
-| `bamtofastq` | 2.2.1 | Workflow converts one or multiple bam/cram files to fastq format |
-| `callingcards` | 1.0.0 | An automated processing pipeline for mammalian bulk calling cards experiments |
-| `chipseq` | 2.1.0 | ChIP-seq peak-calling and differential analysis pipeline. |
-| `circdna` | 1.1.0 | Pipeline for the identification of circular DNAs |
-| `coproid` | 2.0.1 | COPROlite host IDentification |
-| `createpanelrefs` | 1.0.0 | Generate Panel of Normals, models or other similar references from lots of samples |
-| `createtaxdb` | 3.0.0 | Parallelised and automated creation of metagenomic classifier databases of different tools |
-| `crisprseq` | 2.3.0 | Pipeline for the analysis of CRISPR data |
-| `cutandrun` | 3.2.2 | Analysis pipeline for CUT&RUN and CUT&TAG experiments that includes sequencing QC, spike-in normalisation, IgG control normalisation, peak calling and downstream peak analysis. |
-| `demo` | 1.1.0 | An nf-core demo pipeline |
-| `demultiplex` | 1.7.1 | Demultiplexing pipeline for Illumina sequencing data |
-| `fetchngs` | 1.12.0 | Pipeline to fetch metadata and raw FastQ files from public databases |
-| `rnaseq` | 3.26.0 | RNA sequencing analysis pipeline for gene/isoform quantification and extensive quality control. |
-| `sarek` | 3.8.1 | An open-source analysis pipeline to detect germline or somatic variants from whole genome or targeted sequencing |
-| `scrnaseq` | 4.1.0 | Pipeline for processing 10x Genomics single cell rnaseq data |
+| pipeline | version | input | output | description |
+|---|---|---|---|---|
+| `airrflow` | 5.1.0 | samplesheet (sample_id, subject_id, species, pcr_target_locus, tissue, sex, age, biomaterial_provider, single_cell, filename_R1, filename_R2, filename_I1, filename) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | B and T cell repertoire analysis pipeline with the Immcantation framework. |
+| `ampliseq` | 2.18.0 | samplesheet (sampleID, forwardReads, reverseReads, sample, fastq_1, fastq_2, run, control, quant_reading) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Amplicon sequencing analysis workflow using DADA2 and QIIME2 |
+| `atacseq` | 2.1.2 | samplesheet (sample, fastq_1, fastq_2, replicate, control, control_replicate) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | ATACSeq peak-calling and differential analysis pipeline. |
+| `bacass` | 2.6.1 | samplesheet (ID, R1, R2, LongFastQ, Fast5, GenomeSize) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Simple bacterial assembly and annotation |
+| `bactmap` | 1.0.0 | parameters (no samplesheet) | --outdir/ (per-module results); pipeline_info/ (reports, versions) | A mapping-based pipeline for creating a phylogeny from bacterial whole genome sequences |
+| `bamtofastq` | 2.2.1 | samplesheet (sample_id, mapped, index, file_type) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Workflow converts one or multiple bam/cram files to fastq format |
+| `callingcards` | 1.0.0 | samplesheet (sample, fastq_1, fastq_2, barcode_details) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | An automated processing pipeline for mammalian bulk calling cards experiments |
+| `chipseq` | 2.1.0 | samplesheet (sample, fastq_1, fastq_2, replicate, antibody, control, control_replicate) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | ChIP-seq peak-calling and differential analysis pipeline. |
+| `circdna` | 1.1.0 | samplesheet (sample, fastq_1, fastq_2) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Pipeline for the identification of circular DNAs |
+| `coproid` | 2.0.1 | samplesheet (sample, fastq_1, fastq_2) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | COPROlite host IDentification |
+| `createpanelrefs` | 1.0.0 | samplesheet (sample, bam, bai, cram, crai) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Generate Panel of Normals, models or other similar references from lots of samples |
+| `createtaxdb` | 3.0.0 | samplesheet (id, taxid, fasta_dna, fasta_aa) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Parallelised and automated creation of metagenomic classifier databases of different tools |
+| `crisprseq` | 2.3.0 | samplesheet (sample, fastq_1, fastq_2, condition, reference, protospacer, template) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Pipeline for the analysis of CRISPR data |
+| `cutandrun` | 3.2.2 | samplesheet (group, replicate, fastq_1, fastq_2, control) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Analysis pipeline for CUT&RUN and CUT&TAG experiments that includes sequencing QC, spike-in normalisation, IgG control normalisation, peak calling and downstream peak analysis. |
+| `demo` | 1.1.0 | samplesheet (sample, fastq_1, fastq_2) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | An nf-core demo pipeline |
+| `demultiplex` | 1.7.1 | samplesheet (id, samplesheet, lane, flowcell, per_flowcell_manifest) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Demultiplexing pipeline for Illumina sequencing data |
+| `fetchngs` | 1.12.0 | id list (one value per line) | --outdir/ (per-module results); pipeline_info/ (reports, versions) | Pipeline to fetch metadata and raw FastQ files from public databases |
+| `rnaseq` | 3.26.0 | samplesheet (sample, fastq_1, fastq_2, strandedness, seq_platform, seq_center, genome_bam, transcriptome_bam, percent_mapped) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | RNA sequencing analysis pipeline for gene/isoform quantification and extensive quality control. |
+| `sarek` | 3.8.1 | samplesheet (patient, sample, sex, status, lane, fastq_1, fastq_2, spring_1, spring_2, table, cram, crai, bam, bai, contamination, vcf, variantcaller) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | An open-source analysis pipeline to detect germline or somatic variants from whole genome or targeted sequencing |
+| `scrnaseq` | 4.1.0 | samplesheet (sample, fastq_1, fastq_2, fastq_barcode, expected_cells, seq_center, sample_type, feature_type) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Pipeline for processing 10x Genomics single cell rnaseq data |

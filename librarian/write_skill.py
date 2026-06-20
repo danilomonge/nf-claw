@@ -42,6 +42,50 @@ def _constraints(obj) -> str:
     return _cell("; ".join(parts))
 
 
+def _input_summary(insch: InputSchema | None) -> str:
+    """One-line, schema-derived description of what the pipeline consumes (for the catalog).
+    Robust: comes straight from assets/schema_input.json, never guessed."""
+    if insch is None:
+        return "parameters (no samplesheet)"
+    named = [c for c in insch.columns if c.name]
+    if not named:
+        return "id list (one value per line)"
+    return "samplesheet (" + ", ".join(c.name for c in named) + ")"
+
+
+def _produces_multiqc(upstream: Path) -> bool:
+    """A MultiQC report is a near-universal nf-core output; detect it from the pinned tree."""
+    return ((upstream / "assets" / "multiqc_config.yml").exists()
+            or (upstream / "modules" / "nf-core" / "multiqc").is_dir())
+
+
+def _output_summary(upstream: Path) -> str:
+    """One-line, fact-only description of outputs (for the catalog). nf-core pins no
+    machine-readable output schema, so this states the guaranteed output contract — not an
+    invented per-file list. Per-release detail lives in the upstream docs/output.md (linked
+    from the skill)."""
+    parts = ["--outdir/ (per-module results)", "pipeline_info/ (reports, versions)"]
+    if _produces_multiqc(upstream):
+        parts.append("MultiQC report")
+    return "; ".join(parts)
+
+
+def _outputs_section(name: str, st: SubmoduleStatus) -> str:
+    mq = " A MultiQC HTML report aggregates QC across steps." if _produces_multiqc(st.path) else ""
+    link = ""
+    if (st.path / "docs" / "output.md").exists():
+        link = ("\n\nThe exact output files and directory layout for this release are documented "
+                f"upstream: https://github.com/nf-core/{name}/blob/{st.version}/docs/output.md")
+    return (
+        "Results land in `--outdir`, organised into one sub-directory per pipeline step/module; "
+        "standardized run metadata in `<outdir>/pipeline_info/` (execution report, software "
+        f"versions).{mq} `nfclaw run` also writes `<outdir>/provenance/` with the exact params "
+        "file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, "
+        "commit and exact command), input/output SHA-256 checksums, and a replayable "
+        f"`commands.sh`.{link}\n"
+    )
+
+
 def _inputs_section(insch: InputSchema | None) -> str:
     if insch is None:
         return "This pipeline does not use a samplesheet; configure inputs via parameters.\n"
@@ -117,6 +161,8 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"commit: {st.commit}\n"
         f"description: {desc}\n"
         f"has_samplesheet: {str(insch is not None).lower()}\n"
+        f"input: {_input_summary(insch)}\n"
+        f"output: {_output_summary(st.path)}\n"
         "---\n"
     )
     nfclaw_cmd, raw_cmd = _run_invocation(name, ps, insch)
@@ -130,11 +176,7 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"## Inputs\n{_inputs_section(insch)}\n"
         f"## Required parameters\n{_required_params(ps)}\n"
         f"## Other parameters\n{_param_groups(ps)}\n"
-        "## Outputs\nResults land in `--outdir`; standardized run metadata in "
-        "`<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes "
-        "`<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it "
-        "adds a run manifest (pinned version, commit and exact command), input/output SHA-256 "
-        "checksums, and a replayable `commands.sh`.\n\n"
+        f"## Outputs\n{_outputs_section(name, st)}\n"
         "## Demo\n```bash\n"
         f"nfclaw run {name} --demo --outdir results   # adds the upstream test profile (-profile test,docker)\n```\n\n"
         "## Full reference\n"

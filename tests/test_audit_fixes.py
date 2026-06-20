@@ -53,8 +53,9 @@ def test_catalog_md_escapes_pipes(tmp_path):
     md = out_md.read_text()
     assert "A \\| B" in md
     row = next(line for line in md.splitlines() if line.startswith("| `pX`"))
-    # 4 unescaped pipes = exactly 3 columns (bookends + 2 separators); no extra column from the desc
-    assert row.count("|") - row.count("\\|") == 4
+    # 6 unescaped pipes = exactly 5 columns (pipeline|version|input|output|description);
+    # the literal pipe in the description stays escaped, not counted as a separator
+    assert row.count("|") - row.count("\\|") == 6
 
 
 # --- F7: the drift gate now covers catalog.{md,json} ---

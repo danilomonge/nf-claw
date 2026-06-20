@@ -5,6 +5,8 @@ version: 2.18.0
 commit: 2723d4c298d48321594920d0324697e14d73ee94
 description: Amplicon sequencing analysis workflow using DADA2 and QIIME2
 has_samplesheet: true
+input: samplesheet (sampleID, forwardReads, reverseReads, sample, fastq_1, fastq_2, run, control, quant_reading)
+output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
 ---
 # ampliseq
 
@@ -61,7 +63,9 @@ Beyond the required parameters above, every other parameter is optional. [refere
 - `taxonomic_assignment` (38 parameters)
 
 ## Outputs
-Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/ampliseq/blob/2.18.0/docs/output.md
 
 ## Demo
 ```bash

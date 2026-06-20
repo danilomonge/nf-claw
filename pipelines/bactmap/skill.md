@@ -5,6 +5,8 @@ version: 1.0.0
 commit: 834642d8ac150ca10d705833223e7bcf15efc210
 description: A mapping-based pipeline for creating a phylogeny from bacterial whole genome sequences
 has_samplesheet: false
+input: parameters (no samplesheet)
+output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
 ---
 # bactmap
 
@@ -37,7 +39,9 @@ Beyond the required parameters above, every other parameter is optional. [refere
 - `optional_pipeline_steps` (12 parameters)
 
 ## Outputs
-Results land in `--outdir`; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/bactmap/blob/1.0.0/docs/output.md
 
 ## Demo
 ```bash

@@ -55,6 +55,38 @@ def test_no_samplesheet_graceful(tmp_path):
     text = skill.read_text()
     assert "does not use a samplesheet" in text
     assert "has_samplesheet: false" in text
+    assert "input: parameters (no samplesheet)" in text
+
+
+def test_input_summary_from_schema():
+    from runner.schema import Column, InputSchema
+    assert write_skill._input_summary(None) == "parameters (no samplesheet)"
+    cols = InputSchema(columns=(
+        Column("sample", "string", True, None),
+        Column("fastq_1", "string", True, None),
+    ))
+    assert write_skill._input_summary(cols) == "samplesheet (sample, fastq_1)"
+    idlist = InputSchema(columns=(Column("", "string", True, r"^\S+$"),))
+    assert write_skill._input_summary(idlist) == "id list (one value per line)"
+
+
+def test_multiqc_detection_and_output_summary(tmp_path):
+    up = tmp_path / "upstream"
+    (up / "modules" / "nf-core" / "multiqc").mkdir(parents=True)
+    assert write_skill._produces_multiqc(up) is True
+    assert "MultiQC report" in write_skill._output_summary(up)
+    bare = tmp_path / "bare"
+    bare.mkdir()
+    assert write_skill._produces_multiqc(bare) is False
+    out = write_skill._output_summary(bare)
+    assert "pipeline_info/" in out and "MultiQC" not in out
+
+
+def test_skill_frontmatter_has_input_output(tmp_path):
+    pdir = _seed(tmp_path, "mini")
+    skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
+    fm = skill.read_text().split("---")[1]
+    assert "input:" in fm and "output:" in fm
 
 
 def test_required_params_only(tmp_path):
