@@ -7,6 +7,7 @@ description: Pipeline for screening for functional components of assembled conti
 has_samplesheet: true
 input: samplesheet (sample, fasta, protein, gbk)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
+tools: ABRicate, AMPir, AMPlify, AMRFinderPlus, AntiSMASH, argNorm, Bakta, comBGC, DeepARG, DeepBGC, fARGene, GECCO, AMPcombi, hAMRonization, HMMER, InterPro, InterProScan, Macrel, MMseqs2, Prodigal, PROKKA, Pyrodigal, RGI, SeqKit
 ---
 # funcscan
 
@@ -78,6 +79,11 @@ Beyond the required parameters above, every other parameter is optional. [refere
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/funcscan/blob/3.0.0/docs/output.md
+
+## Tools this pipeline runs
+The tools/methods this pipeline runs, per the authors' own list: ABRicate, AMPir, AMPlify, AMRFinderPlus, AntiSMASH, argNorm, Bakta, comBGC, DeepARG, DeepBGC, fARGene, GECCO, AMPcombi, hAMRonization, HMMER, InterPro, InterProScan, Macrel, MMseqs2, Prodigal, PROKKA, Pyrodigal, RGI, SeqKit.
+
+Full list with references: https://github.com/nf-core/funcscan/blob/3.0.0/CITATIONS.md
 
 ## Demo
 ```bash

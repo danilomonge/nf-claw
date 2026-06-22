@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 from pathlib import Path
 
 from runner import schema as schema_mod
@@ -68,6 +69,38 @@ def _output_summary(upstream: Path) -> str:
     if _produces_multiqc(upstream):
         parts.append("MultiQC report")
     return "; ".join(parts)
+
+
+_TOOL_BULLET = re.compile(r"^\s*-\s*\[([^\]]+)\]")
+
+
+def _pipeline_tools(upstream: Path) -> list[str]:
+    """The tools/methods the pipeline runs, taken from the authors' own `## Pipeline tools`
+    section of CITATIONS.md — a curated fact, not our invention. Stops at the next `## ` header
+    (so packaging/containerisation tools are excluded). Empty if the file/section is absent."""
+    try:
+        text = (upstream / "CITATIONS.md").read_text(encoding="utf-8")
+    except OSError:
+        return []
+    tools: list[str] = []
+    in_section = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in_section = line.strip().lower() == "## pipeline tools"
+            continue
+        if in_section and (m := _TOOL_BULLET.match(line)):
+            nm = m.group(1).strip()
+            if nm and nm not in tools:
+                tools.append(nm)
+    return tools
+
+
+def _tools_section(name: str, st: SubmoduleStatus, tools: list[str]) -> str:
+    if not tools:
+        return ""
+    return (f"The tools/methods this pipeline runs, per the authors' own list: "
+            f"{', '.join(tools)}.\n\nFull list with references: "
+            f"https://github.com/nf-core/{name}/blob/{st.version}/CITATIONS.md\n")
 
 
 def _outputs_section(name: str, st: SubmoduleStatus) -> str:
@@ -153,6 +186,7 @@ def _run_invocation(name: str, ps: ParamSchema, insch: InputSchema | None) -> tu
 def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
                   insch: InputSchema | None) -> str:
     desc = (ps.description.splitlines() or [name])[0]
+    tools = _pipeline_tools(st.path)
     fm = (
         "---\n"
         f"name: {name}\n"
@@ -163,8 +197,11 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"has_samplesheet: {str(insch is not None).lower()}\n"
         f"input: {_input_summary(insch)}\n"
         f"output: {_output_summary(st.path)}\n"
+        f"tools: {', '.join(tools)}\n"
         "---\n"
     )
+    tools_md = _tools_section(name, st, tools)
+    tools_block = f"## Tools this pipeline runs\n{tools_md}\n" if tools_md else ""
     nfclaw_cmd, raw_cmd = _run_invocation(name, ps, insch)
     body = (
         f"# {name}\n\n{desc}\n\n"
@@ -177,6 +214,7 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"## Required parameters\n{_required_params(ps)}\n"
         f"## Other parameters\n{_param_groups(ps)}\n"
         f"## Outputs\n{_outputs_section(name, st)}\n"
+        f"{tools_block}"
         "## Demo\n```bash\n"
         f"nfclaw run {name} --demo --outdir results   # adds the upstream test profile (-profile test,docker)\n```\n\n"
         "## Full reference\n"

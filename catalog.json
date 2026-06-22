@@ -4,6 +4,20 @@
     "input": "samplesheet (sample_id, subject_id, species, pcr_target_locus, tissue, sex, age, biomaterial_provider, single_cell, filename_R1, filename_R2, filename_I1, filename)",
     "name": "airrflow",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "FastQC",
+      "Fastp",
+      "pRESTO",
+      "SHazaM",
+      "Change-O",
+      "IgBLAST",
+      "Alakazam",
+      "SCOPer",
+      "Dowser",
+      "IgPhyML",
+      "RAxML",
+      "MultiQC"
+    ],
     "version": "5.1.0"
   },
   {
@@ -11,6 +25,46 @@
     "input": "samplesheet (sampleID, forwardReads, reverseReads, sample, fastq_1, fastq_2, run, control, quant_reading)",
     "name": "ampliseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "FastQC",
+      "Cutadapt",
+      "Barrnap",
+      "DADA2",
+      "Greengenes2",
+      "PR2 - Protist Reference Ribosomal Database",
+      "GTDB - Genome Taxonomy Database",
+      "SBDI-GTDB",
+      "RDP - Ribosomal Database Project",
+      "UNITE - eukaryotic nuclear ribosomal ITS region",
+      "MIDORI2 - a collection of reference databases",
+      "COIDB - CO1 Taxonomy Database",
+      "PhytoRef plastid 16S rRNA database for photosynthetic eukaryotes",
+      "Zehr lab nifH database",
+      "BOLD Plantae",
+      "nf-core/phyloplace",
+      "HMMER",
+      "MAFFT",
+      "EPA-NG",
+      "Gappa",
+      "q2-sidle",
+      "SMURF",
+      "RESCRIPt",
+      "SEPP",
+      "QIIME2",
+      "ANCOM",
+      "ANCOM-BC",
+      "ANCOM-BC2",
+      "Adonis",
+      "Phyloseq",
+      "TreeSummarizedExperiment",
+      "ITSx",
+      "ITSxRust",
+      "PICRUSt2",
+      "VSEARCH",
+      "decontam",
+      "Kraken2",
+      "MultiQC"
+    ],
     "version": "2.18.0"
   },
   {
@@ -18,6 +72,24 @@
     "input": "samplesheet (sample, fastq_1, fastq_2, replicate, control, control_replicate)",
     "name": "atacseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "BWA",
+      "BEDTools",
+      "BamTools",
+      "deepTools",
+      "FastQC",
+      "featureCounts",
+      "HOMER",
+      "MACS2",
+      "MultiQC",
+      "picard-tools",
+      "preseq",
+      "pysam",
+      "SAMtools",
+      "Trim Galore!",
+      "UCSC tools",
+      "ataqv"
+    ],
     "version": "2.1.2"
   },
   {
@@ -25,6 +97,31 @@
     "input": "samplesheet (ID, R1, R2, LongFastQ, Fast5, GenomeSize)",
     "name": "bacass",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "FastQC",
+      "FastP",
+      "Porechop",
+      "NanoPlot",
+      "ToulligQC",
+      "pycoQC",
+      "Unicycler",
+      "MEGAHIT",
+      "Miniasm",
+      "Canu",
+      "Flye",
+      "Raven",
+      "Autocycler",
+      "QUAST",
+      "Prokka",
+      "DFAST",
+      "Liftoff",
+      "Medaka",
+      "Nanopolish",
+      "SAMtools",
+      "Kraken2",
+      "Rasusa",
+      "MultiQC"
+    ],
     "version": "2.6.1"
   },
   {
@@ -32,6 +129,7 @@
     "input": "parameters (no samplesheet)",
     "name": "bactmap",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
+    "tools": [],
     "version": "1.0.0"
   },
   {
@@ -39,6 +137,12 @@
     "input": "samplesheet (sample_id, mapped, index, file_type)",
     "name": "bamtofastq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "FastQC",
+      "fastq_utils",
+      "MultiQC",
+      "SAMtools"
+    ],
     "version": "2.2.1"
   },
   {
@@ -46,6 +150,23 @@
     "input": "samplesheet (sample, fastq_1, fastq_2, barcode_details)",
     "name": "callingcards",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "bedtools",
+      "bowtie",
+      "bowtie2",
+      "bwa",
+      "bwamem2",
+      "callingCardsTools",
+      "FastQC",
+      "MultiQC",
+      "nf-core/rnaseq:GTF2BED",
+      "picard",
+      "rseqc",
+      "samtools",
+      "seqkit",
+      "trimmomatic",
+      "UMITools"
+    ],
     "version": "1.0.0"
   },
   {
@@ -53,6 +174,27 @@
     "input": "samplesheet (sample, fastq_1, fastq_2, replicate, antibody, control, control_replicate)",
     "name": "chipseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "BWA",
+      "BEDTools",
+      "BamTools",
+      "Bowtie2",
+      "Chromap",
+      "deepTools",
+      "FastQC",
+      "featureCounts",
+      "HOMER",
+      "MACS3",
+      "MultiQC",
+      "phantompeakqualtools",
+      "picard-tools",
+      "preseq",
+      "pysam",
+      "SAMtools",
+      "STAR",
+      "Trim Galore!",
+      "UCSC tools"
+    ],
     "version": "2.1.0"
   },
   {
@@ -60,6 +202,23 @@
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "circdna",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "FastQC",
+      "MultiQC",
+      "Samtools",
+      "Trimgalore",
+      "BWA",
+      "Picard",
+      "Circle-Map",
+      "Unicycler",
+      "CNVKit",
+      "AmpliconSuite-Pipeline",
+      "AmpliconArchitect",
+      "AmpliconClassifier",
+      "Samblaster",
+      "Circle_finder",
+      "Circexplorer2"
+    ],
     "version": "1.1.0"
   },
   {
@@ -67,6 +226,20 @@
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "coproid",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "BBnorm/BBTools",
+      "Bowtie2",
+      "damageprofiler",
+      "FastP",
+      "FastQC",
+      "Kraken2",
+      "MultiQC",
+      "PyDamage",
+      "Quarto",
+      "Sam2lca",
+      "SAMtools",
+      "sourcepredict"
+    ],
     "version": "2.0.1"
   },
   {
@@ -74,6 +247,11 @@
     "input": "samplesheet (sample, bam, bai, cram, crai)",
     "name": "createpanelrefs",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "CNVKIT",
+      "GATK",
+      "MultiQC"
+    ],
     "version": "1.0.0"
   },
   {
@@ -81,6 +259,22 @@
     "input": "samplesheet (id, taxid, fasta_dna, fasta_aa)",
     "name": "createtaxdb",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "Bracken",
+      "Centrifuge",
+      "DIAMOND",
+      "ganon",
+      "Kaiju",
+      "KMCP",
+      "Kraken2",
+      "KrakenUniq",
+      "MALT",
+      "MetaCache",
+      "MultiQC",
+      "SeqKit2",
+      "sourmash",
+      "sylph"
+    ],
     "version": "3.0.0"
   },
   {
@@ -88,6 +282,18 @@
     "input": "samplesheet (sample, fastq_1, fastq_2, condition, reference, protospacer, template)",
     "name": "crisprseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "FastQC",
+      "MultiQC",
+      "Pear",
+      "Seqtk",
+      "Bowtie2",
+      "BWA",
+      "Minimap2",
+      "Cutadapt",
+      "Samtools",
+      "MAGeCKFlute"
+    ],
     "version": "2.3.0"
   },
   {
@@ -95,6 +301,17 @@
     "input": "samplesheet (group, replicate, fastq_1, fastq_2, control)",
     "name": "cutandrun",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "FastQC",
+      "MultiQC",
+      "bedtools",
+      "samtools",
+      "bowtie2",
+      "deeptools",
+      "seacr",
+      "macs2",
+      "picard"
+    ],
     "version": "3.2.2"
   },
   {
@@ -102,6 +319,11 @@
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "demo",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "FastQC",
+      "seqtk",
+      "MultiQC"
+    ],
     "version": "1.1.0"
   },
   {
@@ -109,6 +331,13 @@
     "input": "samplesheet (id, samplesheet, lane, flowcell, per_flowcell_manifest)",
     "name": "demultiplex",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "fastp",
+      "Falco",
+      "MultiQC",
+      "CheckQC",
+      "samshee"
+    ],
     "version": "1.7.1"
   },
   {
@@ -116,6 +345,20 @@
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "denovotranscript",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "BUSCO",
+      "Evidential Gene",
+      "fastp",
+      "FastQC",
+      "gawk",
+      "MultiQC",
+      "rnaQUAST",
+      "rnaSPAdes",
+      "Salmon",
+      "SortMeRNA",
+      "TransRate",
+      "Trinity"
+    ],
     "version": "1.2.1"
   },
   {
@@ -123,6 +366,16 @@
     "input": "samplesheet (sample, short_reads_fastq_1, short_reads_fastq_2, long_reads_fastq_1)",
     "name": "detaxizer",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "bbmap",
+      "blastn",
+      "fastp",
+      "FastQC",
+      "Kraken2",
+      "MultiQC",
+      "seqkit",
+      "dnaio"
+    ],
     "version": "1.3.0"
   },
   {
@@ -130,6 +383,9 @@
     "input": "samplesheet (sample)",
     "name": "differentialabundance",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "GSEA"
+    ],
     "version": "1.5.0"
   },
   {
@@ -137,6 +393,54 @@
     "input": "samplesheet (RNA_ID, RNA_BAM_FILE, RNA_BAI_FILE, DNA_ID, DNA_VCF_FILE, DNA_TBI_FILE, DROP_GROUP, PAIRED_END, COUNT_MODE, COUNT_OVERLAPS, STRAND, HPO_TERMS, GENE_COUNTS_FILE, GENE_ANNOTATION, GENOME, SPLICE_COUNTS_DIR, SEX, TISSUE, DISEASE)",
     "name": "drop",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "BBmisc",
+      "BCFTools",
+      "BeautifulSoup4",
+      "BiocManager",
+      "BiocParallel",
+      "BSgenome",
+      "Cowplot",
+      "Data.table",
+      "DelayedMatrixStats",
+      "Devtools",
+      "Dplyr",
+      "DT",
+      "FRASER",
+      "GATK",
+      "GenomicAlignments",
+      "GenomicFeatures",
+      "GenomicRanges",
+      "Ggplot2",
+      "Ggthemes",
+      "Hdf5r",
+      "Htslib",
+      "Knitr",
+      "Lxml",
+      "MafDB",
+      "Magrittr",
+      "MultiQC",
+      "OUTRIDER",
+      "Pheatmap",
+      "Plotly.R",
+      "Python",
+      "R",
+      "RColorBrewer",
+      "Reshape2",
+      "Rmarkdown",
+      "Rsamtools",
+      "Rtracklayer",
+      "R utils",
+      "R YAML",
+      "SAMtools",
+      "Stringr",
+      "SummarizedExperiment",
+      "Tar",
+      "Tidyr",
+      "tMAE",
+      "Txdbmaker",
+      "VariantAnnotation"
+    ],
     "version": "1.0.0"
   },
   {
@@ -144,6 +448,14 @@
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "drugresponseeval",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
+    "tools": [
+      "DrEvalPy",
+      "CurveCurator",
+      "DIPK",
+      "MOLI",
+      "SRMF",
+      "SuperFELT"
+    ],
     "version": "1.2.1"
   },
   {
@@ -151,6 +463,18 @@
     "input": "samplesheet (sample, alleles, mhc_class, filename)",
     "name": "epitopeprediction",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "MultiQC",
+      "SnpSift",
+      "Epytope (FRED2)",
+      "MHCflurry",
+      "MHCnuggets",
+      "NetMHC-4.0",
+      "NetMHCpan-4.0",
+      "NetMHCpan-4.1",
+      "NetMHCII-2.3",
+      "NetMHCIIpan-4.0"
+    ],
     "version": "3.1.0"
   },
   {
@@ -158,6 +482,13 @@
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "fastqrepair",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "FastQC",
+      "gzrt",
+      "Wipertools",
+      "BBMap",
+      "MultiQC"
+    ],
     "version": "1.0.0"
   },
   {
@@ -165,6 +496,13 @@
     "input": "samplesheet (sample, fastq_1, fastq_2, fastq_3, fastq_4, read_structure)",
     "name": "fastquorum",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "Bwa",
+      "FastQC",
+      "FGBio",
+      "MultiQC",
+      "SAMtools"
+    ],
     "version": "1.2.0"
   },
   {
@@ -172,6 +510,12 @@
     "input": "id list (one value per line)",
     "name": "fetchngs",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
+    "tools": [
+      "Aspera CLI",
+      "Python",
+      "Requests",
+      "sra-tools"
+    ],
     "version": "1.12.0"
   },
   {
@@ -179,6 +523,32 @@
     "input": "samplesheet (sample, fasta, protein, gbk)",
     "name": "funcscan",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "ABRicate",
+      "AMPir",
+      "AMPlify",
+      "AMRFinderPlus",
+      "AntiSMASH",
+      "argNorm",
+      "Bakta",
+      "comBGC",
+      "DeepARG",
+      "DeepBGC",
+      "fARGene",
+      "GECCO",
+      "AMPcombi",
+      "hAMRonization",
+      "HMMER",
+      "InterPro",
+      "InterProScan",
+      "Macrel",
+      "MMseqs2",
+      "Prodigal",
+      "PROKKA",
+      "Pyrodigal",
+      "RGI",
+      "SeqKit"
+    ],
     "version": "3.0.0"
   },
   {
@@ -186,6 +556,27 @@
     "input": "samplesheet (sample, ontreads, hifireads, ref_fasta, ref_gff, shortread_F, shortread_R, paired)",
     "name": "genomeassembler",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
+    "tools": [
+      "lima",
+      "nanoq",
+      "porechop",
+      "TrimGalore",
+      "hifiasm",
+      "flye",
+      "pilon",
+      "medaka",
+      "LINKS",
+      "longstitch",
+      "RagTag",
+      "liftoff",
+      "BUSCO",
+      "genomescope2",
+      "jellyfish",
+      "meryl",
+      "QUAST",
+      "minimap2",
+      "samtools"
+    ],
     "version": "1.1.0"
   },
   {
@@ -193,6 +584,19 @@
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "hgtseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "FastQC",
+      "MultiQC",
+      "Trim Galore",
+      "Qualimap",
+      "BAMTOOLS",
+      "BWA",
+      "BWAmem2",
+      "SAMtools",
+      "Kraken2",
+      "Krona",
+      "RMarkDown"
+    ],
     "version": "1.1.0"
   },
   {
@@ -200,6 +604,40 @@
     "input": "samplesheet (sample, fastq_1, fastq_2, strandedness, seq_platform, seq_center, genome_bam, transcriptome_bam, percent_mapped)",
     "name": "rnaseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "BBMap",
+      "BEDTools",
+      "Bowtie2",
+      "Bracken",
+      "fastp",
+      "FastQC",
+      "featureCounts",
+      "fq",
+      "GffRead",
+      "HISAT2",
+      "Kallisto",
+      "Kraken2",
+      "MultiQC",
+      "picard-tools",
+      "preseq",
+      "Qualimap 2",
+      "RiboDetector",
+      "RSEM",
+      "RustQC",
+      "RSeQC",
+      "Salmon",
+      "SeqKit",
+      "SAMtools",
+      "SortMeRNA",
+      "STAR",
+      "StringTie2",
+      "Sylph",
+      "Trim Galore!",
+      "tximport",
+      "UCSC tools",
+      "UMI-tools",
+      "UMICollapse"
+    ],
     "version": "3.26.0"
   },
   {
@@ -207,6 +645,55 @@
     "input": "samplesheet (patient, sample, sex, status, lane, fastq_1, fastq_2, spring_1, spring_2, table, cram, crai, bam, bai, contamination, vcf, variantcaller)",
     "name": "sarek",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "ASCAT",
+      "alleleCount",
+      "BCFTools",
+      "BGZip",
+      "BWA-MEM",
+      "BWA-MEM2",
+      "CNVKIT",
+      "Condel",
+      "Control-FREEC",
+      "dbNSFP",
+      "DeepVariant",
+      "DragMap",
+      "EnsemblVEP",
+      "FastP",
+      "FastQC",
+      "FGBio",
+      "FreeBayes",
+      "GATK",
+      "GNU sed",
+      "goleft indexcov",
+      "HaplotypeCaller Joint Germline",
+      "LOFTEE",
+      "Manta",
+      "Mastermind",
+      "Mosdepth",
+      "MSIsensor2",
+      "MSISensorPro",
+      "MultiQC",
+      "NGSCheckMate",
+      "NVIDIA Clara Parabricks",
+      "Phenotypes",
+      "PIGZ",
+      "P7Zip",
+      "SAMtools",
+      "snpEff",
+      "SpliceAI",
+      "SpliceRegion",
+      "SPRING",
+      "Strelka2",
+      "SVDB",
+      "Tabix",
+      "TIDDIT",
+      "Varlociraptor",
+      "VCFTools",
+      "vcflib",
+      "Lofreq",
+      "MuSE"
+    ],
     "version": "3.8.1"
   },
   {
@@ -214,6 +701,11 @@
     "input": "samplesheet (sample, fastq_1, fastq_2, fastq_barcode, expected_cells, seq_center, sample_type, feature_type)",
     "name": "scrnaseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "tools": [
+      "FastQC",
+      "MultiQC",
+      "Simpleaf"
+    ],
     "version": "4.1.0"
   }
 ]

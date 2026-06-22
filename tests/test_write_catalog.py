@@ -22,6 +22,17 @@ def test_catalog_lists_all_sorted(tmp_path):
     assert "`sarek`" in out_md.read_text()
 
 
+def test_catalog_includes_tools_list(tmp_path):
+    d = tmp_path / "rnaseq"
+    (d / "upstream").mkdir(parents=True)
+    d.joinpath("skill.md").write_text(
+        "---\nname: rnaseq\nversion: 1\ndescription: x\ntools: FastQC, STAR, Salmon\n---\n")
+    out_md, out_json = tmp_path / "c.md", tmp_path / "c.json"
+    write_catalog.generate(pipelines_dir=tmp_path, out_md=out_md, out_json=out_json)
+    rows = json.loads(out_json.read_text())
+    assert rows[0]["tools"] == ["FastQC", "STAR", "Salmon"]
+
+
 def test_catalog_deterministic(tmp_path):
     pdir = _seed(tmp_path)
     out_md, out_json = tmp_path / "c.md", tmp_path / "c.json"

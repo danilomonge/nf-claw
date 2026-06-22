@@ -7,6 +7,7 @@ description: Amplicon sequencing analysis workflow using DADA2 and QIIME2
 has_samplesheet: true
 input: samplesheet (sampleID, forwardReads, reverseReads, sample, fastq_1, fastq_2, run, control, quant_reading)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
+tools: FastQC, Cutadapt, Barrnap, DADA2, Greengenes2, PR2 - Protist Reference Ribosomal Database, GTDB - Genome Taxonomy Database, SBDI-GTDB, RDP - Ribosomal Database Project, UNITE - eukaryotic nuclear ribosomal ITS region, MIDORI2 - a collection of reference databases, COIDB - CO1 Taxonomy Database, PhytoRef plastid 16S rRNA database for photosynthetic eukaryotes, Zehr lab nifH database, BOLD Plantae, nf-core/phyloplace, HMMER, MAFFT, EPA-NG, Gappa, q2-sidle, SMURF, RESCRIPt, SEPP, QIIME2, ANCOM, ANCOM-BC, ANCOM-BC2, Adonis, Phyloseq, TreeSummarizedExperiment, ITSx, ITSxRust, PICRUSt2, VSEARCH, decontam, Kraken2, MultiQC
 ---
 # ampliseq
 
@@ -66,6 +67,11 @@ Beyond the required parameters above, every other parameter is optional. [refere
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/ampliseq/blob/2.18.0/docs/output.md
+
+## Tools this pipeline runs
+The tools/methods this pipeline runs, per the authors' own list: FastQC, Cutadapt, Barrnap, DADA2, Greengenes2, PR2 - Protist Reference Ribosomal Database, GTDB - Genome Taxonomy Database, SBDI-GTDB, RDP - Ribosomal Database Project, UNITE - eukaryotic nuclear ribosomal ITS region, MIDORI2 - a collection of reference databases, COIDB - CO1 Taxonomy Database, PhytoRef plastid 16S rRNA database for photosynthetic eukaryotes, Zehr lab nifH database, BOLD Plantae, nf-core/phyloplace, HMMER, MAFFT, EPA-NG, Gappa, q2-sidle, SMURF, RESCRIPt, SEPP, QIIME2, ANCOM, ANCOM-BC, ANCOM-BC2, Adonis, Phyloseq, TreeSummarizedExperiment, ITSx, ITSxRust, PICRUSt2, VSEARCH, decontam, Kraken2, MultiQC.
+
+Full list with references: https://github.com/nf-core/ampliseq/blob/2.18.0/CITATIONS.md
 
 ## Demo
 ```bash

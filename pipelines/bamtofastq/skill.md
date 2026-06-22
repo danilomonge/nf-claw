@@ -7,6 +7,7 @@ description: Workflow converts one or multiple bam/cram files to fastq format
 has_samplesheet: true
 input: samplesheet (sample_id, mapped, index, file_type)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
+tools: FastQC, fastq_utils, MultiQC, SAMtools
 ---
 # bamtofastq
 
@@ -51,6 +52,11 @@ Beyond the required parameters above, every other parameter is optional. [refere
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/bamtofastq/blob/2.2.1/docs/output.md
+
+## Tools this pipeline runs
+The tools/methods this pipeline runs, per the authors' own list: FastQC, fastq_utils, MultiQC, SAMtools.
+
+Full list with references: https://github.com/nf-core/bamtofastq/blob/2.2.1/CITATIONS.md
 
 ## Demo
 ```bash

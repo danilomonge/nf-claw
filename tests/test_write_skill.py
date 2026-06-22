@@ -103,6 +103,45 @@ def test_required_params_only(tmp_path):
     assert "aligner" not in out and "email" not in out   # optional → not shown
 
 
+# --- tools: parsed from the authors' own `## Pipeline tools` section of CITATIONS.md ---
+def test_pipeline_tools_parses_citations(tmp_path):
+    up = tmp_path / "upstream"
+    up.mkdir()
+    (up / "CITATIONS.md").write_text(
+        "# x: Citations\n\n"
+        "## [nf-core](url)\n> ref\n\n"
+        "## [Nextflow](url)\n> ref\n\n"
+        "## Pipeline tools\n\n"
+        "- [FastQC](u1)\n\n"
+        "- [STAR](u2)\n  > extra reference line\n\n"
+        "- [Salmon](u3)\n\n"
+        "## Software packaging/containerisation tools\n\n"
+        "- [Docker](ud)\n")
+    # only the curated Pipeline-tools section; packaging tools are excluded
+    assert write_skill._pipeline_tools(up) == ["FastQC", "STAR", "Salmon"]
+
+
+def test_pipeline_tools_graceful_when_absent(tmp_path):
+    up = tmp_path / "upstream"
+    up.mkdir()
+    assert write_skill._pipeline_tools(up) == []                 # no CITATIONS.md
+    (up / "CITATIONS.md").write_text("# x\n\n## Pipeline tools\n\n")
+    assert write_skill._pipeline_tools(up) == []                 # section present but empty
+    (up / "CITATIONS.md").write_text("# x\n\n## Other\n\n- [Z](u)\n")
+    assert write_skill._pipeline_tools(up) == []                 # no tools section
+
+
+def test_skill_surfaces_tools_when_citations_present(tmp_path):
+    pdir = _seed(tmp_path, "mini")
+    (pdir / "mini" / "upstream" / "CITATIONS.md").write_text(
+        "# mini\n\n## Pipeline tools\n\n- [FastQC](u)\n- [STAR](u)\n")
+    skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
+    text = skill.read_text()
+    assert "## Tools this pipeline runs" in text
+    assert "FastQC" in text and "STAR" in text
+    assert "tools: FastQC, STAR" in text.split("---")[1]          # frontmatter (for the catalog)
+
+
 # --- _cell: free text is collapsed to one line and pipe-escaped so tables never break ---
 def test_cell_collapses_whitespace_and_escapes_pipes():
     assert write_skill._cell("a\n\nb") == "a b"

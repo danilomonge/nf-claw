@@ -7,6 +7,7 @@ description: This pipeline evaluates drug response models in various settings on
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
+tools: DrEvalPy, CurveCurator, DIPK, MOLI, SRMF, SuperFELT
 ---
 # drugresponseeval
 
@@ -58,6 +59,11 @@ Beyond the required parameters above, every other parameter is optional. [refere
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/drugresponseeval/blob/1.2.1/docs/output.md
+
+## Tools this pipeline runs
+The tools/methods this pipeline runs, per the authors' own list: DrEvalPy, CurveCurator, DIPK, MOLI, SRMF, SuperFELT.
+
+Full list with references: https://github.com/nf-core/drugresponseeval/blob/1.2.1/CITATIONS.md
 
 ## Demo
 ```bash

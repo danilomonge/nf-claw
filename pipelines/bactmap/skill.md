@@ -7,6 +7,7 @@ description: A mapping-based pipeline for creating a phylogeny from bacterial wh
 has_samplesheet: false
 input: parameters (no samplesheet)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
+tools: 
 ---
 # bactmap
 

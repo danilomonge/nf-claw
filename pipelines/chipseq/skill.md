@@ -7,6 +7,7 @@ description: ChIP-seq peak-calling and differential analysis pipeline.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, replicate, antibody, control, control_replicate)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
+tools: BWA, BEDTools, BamTools, Bowtie2, Chromap, deepTools, FastQC, featureCounts, HOMER, MACS3, MultiQC, phantompeakqualtools, picard-tools, preseq, pysam, SAMtools, STAR, Trim Galore!, UCSC tools
 ---
 # chipseq
 
@@ -59,6 +60,11 @@ Beyond the required parameters above, every other parameter is optional. [refere
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/chipseq/blob/2.1.0/docs/output.md
+
+## Tools this pipeline runs
+The tools/methods this pipeline runs, per the authors' own list: BWA, BEDTools, BamTools, Bowtie2, Chromap, deepTools, FastQC, featureCounts, HOMER, MACS3, MultiQC, phantompeakqualtools, picard-tools, preseq, pysam, SAMtools, STAR, Trim Galore!, UCSC tools.
+
+Full list with references: https://github.com/nf-core/chipseq/blob/2.1.0/CITATIONS.md
 
 ## Demo
 ```bash

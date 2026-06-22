@@ -1,6 +1,6 @@
 # Pipeline catalog
 
-31 nf-core pipelines. Grep this file for a keyword, then read `pipelines/<name>/skill.md`. `input` is derived from each pipeline's samplesheet schema; `output` is the guaranteed output contract (per-release detail is in the pipeline's upstream `docs/output.md`, linked from its skill).
+31 nf-core pipelines. Grep this file for a keyword, then read `pipelines/<name>/skill.md`. `input` is derived from each pipeline's samplesheet schema; `output` is the guaranteed output contract (per-release detail is in the pipeline's upstream `docs/output.md`, linked from its skill). Each pipeline's `skill.md` and `catalog.json` also list the `tools` it runs, taken from the pipeline's own `CITATIONS.md`.
 
 | pipeline | version | input | output | description |
 |---|---|---|---|---|

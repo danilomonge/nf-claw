@@ -7,6 +7,7 @@ description: Simple bacterial assembly and annotation
 has_samplesheet: true
 input: samplesheet (ID, R1, R2, LongFastQ, Fast5, GenomeSize)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
+tools: FastQC, FastP, Porechop, NanoPlot, ToulligQC, pycoQC, Unicycler, MEGAHIT, Miniasm, Canu, Flye, Raven, Autocycler, QUAST, Prokka, DFAST, Liftoff, Medaka, Nanopolish, SAMtools, Kraken2, Rasusa, MultiQC
 ---
 # bacass
 
@@ -58,6 +59,11 @@ Beyond the required parameters above, every other parameter is optional. [refere
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/bacass/blob/2.6.1/docs/output.md
+
+## Tools this pipeline runs
+The tools/methods this pipeline runs, per the authors' own list: FastQC, FastP, Porechop, NanoPlot, ToulligQC, pycoQC, Unicycler, MEGAHIT, Miniasm, Canu, Flye, Raven, Autocycler, QUAST, Prokka, DFAST, Liftoff, Medaka, Nanopolish, SAMtools, Kraken2, Rasusa, MultiQC.
+
+Full list with references: https://github.com/nf-core/bacass/blob/2.6.1/CITATIONS.md
 
 ## Demo
 ```bash
