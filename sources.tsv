@@ -19,3 +19,14 @@ crisprseq	https://github.com/nf-core/crisprseq.git	latest-release
 cutandrun	https://github.com/nf-core/cutandrun.git	latest-release
 demo	https://github.com/nf-core/demo.git	latest-release
 demultiplex	https://github.com/nf-core/demultiplex.git	latest-release
+denovotranscript	https://github.com/nf-core/denovotranscript.git	latest-release
+detaxizer	https://github.com/nf-core/detaxizer.git	latest-release
+differentialabundance	https://github.com/nf-core/differentialabundance.git	latest-release
+drop	https://github.com/nf-core/drop.git	latest-release
+drugresponseeval	https://github.com/nf-core/drugresponseeval.git	latest-release
+epitopeprediction	https://github.com/nf-core/epitopeprediction.git	latest-release
+fastqrepair	https://github.com/nf-core/fastqrepair.git	latest-release
+fastquorum	https://github.com/nf-core/fastquorum.git	latest-release
+funcscan	https://github.com/nf-core/funcscan.git	latest-release
+genomeassembler	https://github.com/nf-core/genomeassembler.git	latest-release
+hgtseq	https://github.com/nf-core/hgtseq.git	latest-release
