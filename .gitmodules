@@ -58,3 +58,36 @@
 [submodule "pipelines/demultiplex/upstream"]
 	path = pipelines/demultiplex/upstream
 	url = https://github.com/nf-core/demultiplex.git
+[submodule "pipelines/denovotranscript/upstream"]
+	path = pipelines/denovotranscript/upstream
+	url = https://github.com/nf-core/denovotranscript.git
+[submodule "pipelines/detaxizer/upstream"]
+	path = pipelines/detaxizer/upstream
+	url = https://github.com/nf-core/detaxizer.git
+[submodule "pipelines/differentialabundance/upstream"]
+	path = pipelines/differentialabundance/upstream
+	url = https://github.com/nf-core/differentialabundance.git
+[submodule "pipelines/drop/upstream"]
+	path = pipelines/drop/upstream
+	url = https://github.com/nf-core/drop.git
+[submodule "pipelines/drugresponseeval/upstream"]
+	path = pipelines/drugresponseeval/upstream
+	url = https://github.com/nf-core/drugresponseeval.git
+[submodule "pipelines/epitopeprediction/upstream"]
+	path = pipelines/epitopeprediction/upstream
+	url = https://github.com/nf-core/epitopeprediction.git
+[submodule "pipelines/fastqrepair/upstream"]
+	path = pipelines/fastqrepair/upstream
+	url = https://github.com/nf-core/fastqrepair.git
+[submodule "pipelines/fastquorum/upstream"]
+	path = pipelines/fastquorum/upstream
+	url = https://github.com/nf-core/fastquorum.git
+[submodule "pipelines/funcscan/upstream"]
+	path = pipelines/funcscan/upstream
+	url = https://github.com/nf-core/funcscan.git
+[submodule "pipelines/genomeassembler/upstream"]
+	path = pipelines/genomeassembler/upstream
+	url = https://github.com/nf-core/genomeassembler.git
+[submodule "pipelines/hgtseq/upstream"]
+	path = pipelines/hgtseq/upstream
+	url = https://github.com/nf-core/hgtseq.git

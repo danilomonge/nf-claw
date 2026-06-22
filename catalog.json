@@ -112,11 +112,88 @@
     "version": "1.7.1"
   },
   {
+    "description": "A pipeline for de novo transcriptome assembly of short reads from bulk RNA-seq",
+    "input": "samplesheet (sample, fastq_1, fastq_2)",
+    "name": "denovotranscript",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "version": "1.2.1"
+  },
+  {
+    "description": "A pipeline to identify (and remove) certain sequences from raw genomic data. Default taxon to identify (and remove) is Homo sapiens. Removal is optional.",
+    "input": "samplesheet (sample, short_reads_fastq_1, short_reads_fastq_2, long_reads_fastq_1)",
+    "name": "detaxizer",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "version": "1.3.0"
+  },
+  {
+    "description": "Differential abundance analysis",
+    "input": "samplesheet (sample)",
+    "name": "differentialabundance",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "version": "1.5.0"
+  },
+  {
+    "description": "The detection of RNA Outliers Pipeline (DROP) is an integrative workflow to detect aberrant expression, aberrant splicing, and mono-allelic expression from raw sequencing files.",
+    "input": "samplesheet (RNA_ID, RNA_BAM_FILE, RNA_BAI_FILE, DNA_ID, DNA_VCF_FILE, DNA_TBI_FILE, DROP_GROUP, PAIRED_END, COUNT_MODE, COUNT_OVERLAPS, STRAND, HPO_TERMS, GENE_COUNTS_FILE, GENE_ANNOTATION, GENOME, SPLICE_COUNTS_DIR, SEX, TISSUE, DISEASE)",
+    "name": "drop",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "version": "1.0.0"
+  },
+  {
+    "description": "This pipeline evaluates drug response models in various settings on a variety of datasets.",
+    "input": "samplesheet (sample, fastq_1, fastq_2)",
+    "name": "drugresponseeval",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
+    "version": "1.2.1"
+  },
+  {
+    "description": "A fully reproducible and state of the art epitope prediction pipeline.",
+    "input": "samplesheet (sample, alleles, mhc_class, filename)",
+    "name": "epitopeprediction",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "version": "3.1.0"
+  },
+  {
+    "description": "A pipeline that can be used to recover corrupted FASTQ.gz files, drop or fix uncompliant reads, remove unpaired reads, and settle reads that became disordered",
+    "input": "samplesheet (sample, fastq_1, fastq_2)",
+    "name": "fastqrepair",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "version": "1.0.0"
+  },
+  {
+    "description": "fgbio Best Practices FASTQ to Consensus Pipeline",
+    "input": "samplesheet (sample, fastq_1, fastq_2, fastq_3, fastq_4, read_structure)",
+    "name": "fastquorum",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "version": "1.2.0"
+  },
+  {
     "description": "Pipeline to fetch metadata and raw FastQ files from public databases",
     "input": "id list (one value per line)",
     "name": "fetchngs",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
     "version": "1.12.0"
+  },
+  {
+    "description": "Pipeline for screening for functional components of assembled contigs",
+    "input": "samplesheet (sample, fasta, protein, gbk)",
+    "name": "funcscan",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "version": "3.0.0"
+  },
+  {
+    "description": "Assemble genomes from long ONT or pacbio HiFi reads",
+    "input": "samplesheet (sample, ontreads, hifireads, ref_fasta, ref_gff, shortread_F, shortread_R, paired)",
+    "name": "genomeassembler",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
+    "version": "1.1.0"
+  },
+  {
+    "description": "A pipeline to investigate horizontal gene transfer from NGS data",
+    "input": "samplesheet (sample, fastq_1, fastq_2)",
+    "name": "hgtseq",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "version": "1.1.0"
   },
   {
     "description": "RNA sequencing analysis pipeline for gene/isoform quantification and extensive quality control.",
