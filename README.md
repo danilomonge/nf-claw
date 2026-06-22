@@ -36,7 +36,7 @@ make check     # drift gate + tests
 make test
 ```
 
-## Add pipelines (scales to all ~150 nf-core pipelines)
+## Add pipelines (scales to the majority of the ~150 nf-core pipelines)
 Append a line to `sources.tsv` (`name<TAB>url<TAB>latest-release`), then:
 ```bash
 git submodule add <url> pipelines/<name>/upstream
