@@ -49,3 +49,15 @@ def test_run_prints_command_and_outputs_summary(tmp_path, monkeypatch, capsys):
     assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 0
     out = capsys.readouterr().out
     assert "CMD" in out and "2 files" in out and "multiqc" in out
+
+
+def test_run_surfaces_engine_warning_on_stderr(tmp_path, monkeypatch, capsys):
+    from runner import orchestration
+    monkeypatch.setattr(orchestration, "run_pipeline",
+                        lambda *a, **k: orchestration.RunResult(
+                            "CMD", Path("/o"), True, None, warnings=["engine too old"]))
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 0
+    cap = capsys.readouterr()
+    assert "CMD" in cap.out                                    # command still on stdout
+    assert "warning: engine too old" in cap.err               # advisory on stderr

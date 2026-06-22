@@ -26,6 +26,9 @@ So the only correct version for a given pipeline is the one **it declares**. nf-
 
 - **`nfclaw run`** invokes the pinned pipeline directly; run it with a Nextflow that satisfies the
   release's declared minimum (a recent Nextflow that meets `nextflowVersion` is the safe choice).
+  If your installed Nextflow is older than the pipeline's declared minimum, `nfclaw run` prints a
+  non-blocking advisory before launching — Nextflow itself remains the authority and enforces the
+  requirement at startup.
 - **`.github/workflows/nextflow-validate.yml`** reads each pipeline's declared `nextflowVersion`
   and runs `-preview` with exactly that version — which both satisfies the requirement and matches
   the parser the release targets. Releases whose declared minimum predates `-preview`

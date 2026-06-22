@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
-from runner import (discovery, execution, nextflow_command, outputs,
-                    parameters, preflight, provenance, samplesheet)
+from runner import (discovery, engine_version, execution, nextflow_command,
+                    outputs, parameters, preflight, provenance, samplesheet)
 from runner import schema as schema_mod
 from runner import submodule as submod
 from runner.errors import ErrorCode, NfclawError
@@ -16,6 +16,7 @@ class RunResult:
     outdir: Path
     checked_only: bool
     outputs_report: "outputs.OutputsReport | None"
+    warnings: list[str] = field(default_factory=list)
 
 
 def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
@@ -54,6 +55,11 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
         raise NfclawError(ErrorCode.ENVIRONMENT, "Preflight checks failed.",
                           details={"issues": issues})
 
+    # Advisory only: preflight has confirmed nextflow is on PATH, so compare the installed
+    # engine to the pipeline's declared requirement. Non-blocking — Nextflow is the authority
+    # and enforces this itself at launch; we just surface it earlier with a clear message.
+    warnings = engine_version.check(st.path)
+
     outdir.mkdir(parents=True, exist_ok=True)
     resolved = parameters.resolve_path_params(merged, param_schema)
     params_file_out = parameters.write_params_file(resolved, outdir / "provenance" / "params.json")
@@ -62,7 +68,7 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
                                           params_file=params_file_out, resume=resume)
     if check_only:
         return RunResult(command=cmd_str, outdir=outdir, checked_only=True,
-                         outputs_report=None)
+                         outputs_report=None, warnings=warnings)
 
     execution.run(cmd, cwd=repo_root, logs_dir=outdir / "provenance" / "logs",
                   timeout_seconds=timeout_seconds)
@@ -74,4 +80,4 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
         provenance.write(outdir=outdir, pipeline=name, command_str=cmd_str, submodule=st,
                          input_paths=prov_inputs)
     return RunResult(command=cmd_str, outdir=outdir, checked_only=False,
-                     outputs_report=report)
+                     outputs_report=report, warnings=warnings)

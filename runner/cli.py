@@ -85,6 +85,8 @@ def main(argv: list[str] | None = None) -> int:
         except NfclawError as exc:
             print(str(exc), file=sys.stderr)
             return 1
+        for w in res.warnings:                                # advisory, non-blocking
+            print(f"warning: {w}", file=sys.stderr)
         print(res.command)
         rep = res.outputs_report
         if rep is not None:                                   # real run — surface where results landed
