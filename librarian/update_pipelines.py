@@ -34,6 +34,11 @@ def bump(name: str, url: str, repo_root: Path) -> str | None:
     subprocess.run(["git", "-C", str(up), "fetch", "--tags", "--depth", "1",
                     "origin", f"refs/tags/{latest}:refs/tags/{latest}"], check=False)
     subprocess.run(["git", "-C", str(up), "checkout", f"tags/{latest}"], check=True)
+    # Record the gitlink at the tag we just checked out, so the committed pin IS the release
+    # and a later `git submodule update` cannot reset the working tree off it. (Matches
+    # discover_pipelines.add_one; keeps `git describe --tags` clean for the drift gate.)
+    subprocess.run(["git", "-C", str(repo_root), "add",
+                    f"pipelines/{name}/upstream"], check=True)
     write_skill.generate(name, pipelines_dir=repo_root / "pipelines")
     return latest
 

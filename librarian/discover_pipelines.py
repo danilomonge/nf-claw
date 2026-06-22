@@ -93,6 +93,11 @@ def add_one(name: str, url: str, tag: str, repo_root: Path) -> bool:
         _run(["git", "-C", str(up), "fetch", "--tags", "--depth", "1", "origin",
               f"refs/tags/{tag}:refs/tags/{tag}"])
         _run(["git", "-C", str(up), "checkout", f"tags/{tag}"], check=True)
+        # `submodule add` records the gitlink at the default branch HEAD; re-stage it at the
+        # tag we just checked out so the pin IS the release. Otherwise a later
+        # `git submodule update` resets the working tree off the tag, `git describe --tags`
+        # returns `<tag>-N-g<hash>`, and the drift gate flags the generated context as stale.
+        _run(["git", "-C", str(repo_root), "add", f"pipelines/{name}/upstream"], check=True)
         write_skill.generate(name, pipelines_dir=repo_root / "pipelines")
         return True
     except Exception as exc:  # one failure never blocks the others
