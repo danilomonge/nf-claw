@@ -7,7 +7,7 @@ description: Pipeline for processing 10x Genomics single cell rnaseq data
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, fastq_barcode, expected_cells, seq_center, sample_type, feature_type)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FastQC, MultiQC, Simpleaf
+tools: FastQC, MultiQC, Simpleaf, Alevin-fry, Alevin, Salmon, Kallisto/Bustools, StarSolo
 ---
 # scrnaseq
 
@@ -65,7 +65,7 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/scrnaseq/blob/4.1.0/docs/output.md
 
 ## Tools this pipeline runs
-The tools/methods this pipeline runs, per the authors' own list: FastQC, MultiQC, Simpleaf.
+The tools/methods this pipeline runs, per the authors' own list: FastQC, MultiQC, Simpleaf, Alevin-fry, Alevin, Salmon, Kallisto/Bustools, StarSolo.
 
 Full list with references: https://github.com/nf-core/scrnaseq/blob/4.1.0/CITATIONS.md
 

@@ -129,7 +129,22 @@
     "input": "parameters (no samplesheet)",
     "name": "bactmap",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
-    "tools": [],
+    "tools": [
+      "bcftools",
+      "BWA",
+      "fastp",
+      "FastQC",
+      "FastTree2",
+      "Gubbins",
+      "IQ-TREE2",
+      "Mash",
+      "MultiQC",
+      "RapidNJ",
+      "RAxML-NG",
+      "Rasusa",
+      "samtools",
+      "SNP-sites"
+    ],
     "version": "1.0.0"
   },
   {
@@ -704,7 +719,12 @@
     "tools": [
       "FastQC",
       "MultiQC",
-      "Simpleaf"
+      "Simpleaf",
+      "Alevin-fry",
+      "Alevin",
+      "Salmon",
+      "Kallisto/Bustools",
+      "StarSolo"
     ],
     "version": "4.1.0"
   }

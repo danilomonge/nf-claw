@@ -121,6 +121,18 @@ def test_pipeline_tools_parses_citations(tmp_path):
     assert write_skill._pipeline_tools(up) == ["FastQC", "STAR", "Salmon"]
 
 
+def test_pipeline_tools_handles_asterisk_bullets(tmp_path):
+    # Older nf-core releases (e.g. bactmap 1.0.0) use `* [Tool]` instead of `- [Tool]`.
+    up = tmp_path / "upstream"
+    up.mkdir()
+    (up / "CITATIONS.md").write_text(
+        "# x\n\n## Pipeline tools\n\n"
+        "* [bcftools](u1)\n  > ref\n\n"
+        "* [BWA](u2)\n\n"
+        "+ [fastp](u3)\n")
+    assert write_skill._pipeline_tools(up) == ["bcftools", "BWA", "fastp"]
+
+
 def test_pipeline_tools_graceful_when_absent(tmp_path):
     up = tmp_path / "upstream"
     up.mkdir()

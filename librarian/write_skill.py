@@ -71,7 +71,7 @@ def _output_summary(upstream: Path) -> str:
     return "; ".join(parts)
 
 
-_TOOL_BULLET = re.compile(r"^\s*-\s*\[([^\]]+)\]")
+_TOOL_BULLET = re.compile(r"^\s*[-*+]\s*\[([^\]]+)\]")  # markdown allows -, * or + bullets
 
 
 def _pipeline_tools(upstream: Path) -> list[str]:
