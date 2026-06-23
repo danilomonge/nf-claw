@@ -103,7 +103,7 @@ def test_required_params_only(tmp_path):
     assert "aligner" not in out and "email" not in out   # optional → not shown
 
 
-# --- tools: parsed from the authors' own `## Pipeline tools` section of CITATIONS.md ---
+# --- tools: parsed from the software sections of the authors' own CITATIONS.md ---
 def test_pipeline_tools_parses_citations(tmp_path):
     up = tmp_path / "upstream"
     up.mkdir()
@@ -139,8 +139,26 @@ def test_pipeline_tools_graceful_when_absent(tmp_path):
     assert write_skill._pipeline_tools(up) == []                 # no CITATIONS.md
     (up / "CITATIONS.md").write_text("# x\n\n## Pipeline tools\n\n")
     assert write_skill._pipeline_tools(up) == []                 # section present but empty
-    (up / "CITATIONS.md").write_text("# x\n\n## Other\n\n- [Z](u)\n")
-    assert write_skill._pipeline_tools(up) == []                 # no tools section
+    (up / "CITATIONS.md").write_text("# x\n\n## [SomePaper](url)\n\n- [Z](u)\n")
+    assert write_skill._pipeline_tools(up) == []                 # citation-link section, not software
+
+
+def test_pipeline_tools_merges_software_sections(tmp_path):
+    # Some pipelines (e.g. differentialabundance, detaxizer) split their software across
+    # `## Pipeline tools` plus `## R packages` / `## Python`. All are tools the pipeline runs;
+    # citation-link headers, packaging/containerisation infra and test-data/archive sections are not.
+    up = tmp_path / "upstream"
+    up.mkdir()
+    (up / "CITATIONS.md").write_text(
+        "# x: Citations\n\n"
+        "## [nf-core](url)\n> ref\n\n"
+        "## Pipeline tools\n\n- [GSEA](u1)\n\n"
+        "## R packages\n\n- [DESeq2](u2)\n- [Limma](u3)\n\n"
+        "## Python\n\n- [biopython](u4)\n\n"
+        "## Data\n\n- [Full-size test data](u5)\n\n"
+        "## Pipeline resources\n\n- [SRA](u6)\n\n"
+        "## Software packaging/containerisation tools\n\n- [Docker](u7)\n")
+    assert write_skill._pipeline_tools(up) == ["GSEA", "DESeq2", "Limma", "biopython"]
 
 
 def test_skill_surfaces_tools_when_citations_present(tmp_path):

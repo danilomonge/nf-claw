@@ -7,7 +7,7 @@ description: ChIP-seq peak-calling and differential analysis pipeline.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, replicate, antibody, control, control_replicate)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: BWA, BEDTools, BamTools, Bowtie2, Chromap, deepTools, FastQC, featureCounts, HOMER, MACS3, MultiQC, phantompeakqualtools, picard-tools, preseq, pysam, SAMtools, STAR, Trim Galore!, UCSC tools
+tools: BWA, BEDTools, BamTools, Bowtie2, Chromap, deepTools, FastQC, featureCounts, HOMER, MACS3, MultiQC, phantompeakqualtools, picard-tools, preseq, pysam, SAMtools, STAR, Trim Galore!, UCSC tools, R, DESeq2, UpSetR, ggplot2, reshape2, scales, pheatmap, RColorBrewer, optparse
 ---
 # chipseq
 
@@ -62,7 +62,7 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/chipseq/blob/2.1.0/docs/output.md
 
 ## Tools this pipeline runs
-The tools/methods this pipeline runs, per the authors' own list: BWA, BEDTools, BamTools, Bowtie2, Chromap, deepTools, FastQC, featureCounts, HOMER, MACS3, MultiQC, phantompeakqualtools, picard-tools, preseq, pysam, SAMtools, STAR, Trim Galore!, UCSC tools.
+The tools/methods this pipeline runs, per the authors' own list: BWA, BEDTools, BamTools, Bowtie2, Chromap, deepTools, FastQC, featureCounts, HOMER, MACS3, MultiQC, phantompeakqualtools, picard-tools, preseq, pysam, SAMtools, STAR, Trim Galore!, UCSC tools, R, DESeq2, UpSetR, ggplot2, reshape2, scales, pheatmap, RColorBrewer, optparse.
 
 Full list with references: https://github.com/nf-core/chipseq/blob/2.1.0/CITATIONS.md
 

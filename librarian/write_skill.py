@@ -74,10 +74,27 @@ def _output_summary(upstream: Path) -> str:
 _TOOL_BULLET = re.compile(r"^\s*[-*+]\s*\[([^\]]+)\]")  # markdown allows -, * or + bullets
 
 
+def _is_tool_section(header: str) -> bool:
+    """Whether a CITATIONS.md `## ` section lists software the pipeline runs. True for the
+    `## Pipeline tools` section and any language-specific software section (`## R packages`,
+    `## Python`, ...); False for citation-link headers (`## [Name](url)` — the pipeline's own
+    paper and the nf-core/Nextflow citations), the packaging/containerisation infra section,
+    and test-data/external-archive sections (`## Data`, `## Pipeline resources`)."""
+    t = header.strip().lower()
+    if t.startswith("["):                            # `## [Name](url)` — paper/framework citation
+        return False
+    if "packaging" in t or "containeri" in t:        # packaging/containerisation (incl. /testing) — infra
+        return False
+    if t == "data" or "resource" in t:               # test data / external archives — not software
+        return False
+    return True
+
+
 def _pipeline_tools(upstream: Path) -> list[str]:
-    """The tools/methods the pipeline runs, taken from the authors' own `## Pipeline tools`
-    section of CITATIONS.md — a curated fact, not our invention. Stops at the next `## ` header
-    (so packaging/containerisation tools are excluded). Empty if the file/section is absent."""
+    """The software/methods the pipeline runs, taken from the authors' own CITATIONS.md — a
+    curated fact, not our invention. Collects the `[Tool](url)` bullets under every software
+    section (see `_is_tool_section`), de-duplicated in document order. Empty if the file is
+    absent or lists no tools."""
     try:
         text = (upstream / "CITATIONS.md").read_text(encoding="utf-8")
     except OSError:
@@ -86,7 +103,7 @@ def _pipeline_tools(upstream: Path) -> list[str]:
     in_section = False
     for line in text.splitlines():
         if line.startswith("## "):
-            in_section = line.strip().lower() == "## pipeline tools"
+            in_section = _is_tool_section(line[3:])
             continue
         if in_section and (m := _TOOL_BULLET.match(line)):
             nm = m.group(1).strip()

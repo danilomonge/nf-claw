@@ -7,7 +7,7 @@ description: Differential abundance analysis
 has_samplesheet: true
 input: samplesheet (sample)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: GSEA
+tools: GSEA, affy, DESeq2, GEOQuery, ggplot2, gprofiler2, Limma, optparse, plotly, Proteus, R, RColorBrewer, RMarkdown, shinyngs, SummarizedExperiment
 ---
 # differentialabundance
 
@@ -91,7 +91,7 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/differentialabundance/blob/1.5.0/docs/output.md
 
 ## Tools this pipeline runs
-The tools/methods this pipeline runs, per the authors' own list: GSEA.
+The tools/methods this pipeline runs, per the authors' own list: GSEA, affy, DESeq2, GEOQuery, ggplot2, gprofiler2, Limma, optparse, plotly, Proteus, R, RColorBrewer, RMarkdown, shinyngs, SummarizedExperiment.
 
 Full list with references: https://github.com/nf-core/differentialabundance/blob/1.5.0/CITATIONS.md
 

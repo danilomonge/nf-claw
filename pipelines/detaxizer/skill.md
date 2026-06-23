@@ -7,7 +7,7 @@ description: A pipeline to identify (and remove) certain sequences from raw geno
 has_samplesheet: true
 input: samplesheet (sample, short_reads_fastq_1, short_reads_fastq_2, long_reads_fastq_1)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: bbmap, blastn, fastp, FastQC, Kraken2, MultiQC, seqkit, dnaio
+tools: bbmap, blastn, fastp, FastQC, Kraken2, MultiQC, seqkit, dnaio, Python, biopython
 ---
 # detaxizer
 
@@ -59,7 +59,7 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/detaxizer/blob/1.3.0/docs/output.md
 
 ## Tools this pipeline runs
-The tools/methods this pipeline runs, per the authors' own list: bbmap, blastn, fastp, FastQC, Kraken2, MultiQC, seqkit, dnaio.
+The tools/methods this pipeline runs, per the authors' own list: bbmap, blastn, fastp, FastQC, Kraken2, MultiQC, seqkit, dnaio, Python, biopython.
 
 Full list with references: https://github.com/nf-core/detaxizer/blob/1.3.0/CITATIONS.md
 

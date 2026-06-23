@@ -7,7 +7,7 @@ description: ATACSeq peak-calling and differential analysis pipeline.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, replicate, control, control_replicate)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: BWA, BEDTools, BamTools, deepTools, FastQC, featureCounts, HOMER, MACS2, MultiQC, picard-tools, preseq, pysam, SAMtools, Trim Galore!, UCSC tools, ataqv
+tools: BWA, BEDTools, BamTools, deepTools, FastQC, featureCounts, HOMER, MACS2, MultiQC, picard-tools, preseq, pysam, SAMtools, Trim Galore!, UCSC tools, ataqv, R, DESeq2, UpSetR, ggplot2, reshape2, scales, pheatmap, RColorBrewer, optparse
 ---
 # atacseq
 
@@ -61,7 +61,7 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/atacseq/blob/2.1.2/docs/output.md
 
 ## Tools this pipeline runs
-The tools/methods this pipeline runs, per the authors' own list: BWA, BEDTools, BamTools, deepTools, FastQC, featureCounts, HOMER, MACS2, MultiQC, picard-tools, preseq, pysam, SAMtools, Trim Galore!, UCSC tools, ataqv.
+The tools/methods this pipeline runs, per the authors' own list: BWA, BEDTools, BamTools, deepTools, FastQC, featureCounts, HOMER, MACS2, MultiQC, picard-tools, preseq, pysam, SAMtools, Trim Galore!, UCSC tools, ataqv, R, DESeq2, UpSetR, ggplot2, reshape2, scales, pheatmap, RColorBrewer, optparse.
 
 Full list with references: https://github.com/nf-core/atacseq/blob/2.1.2/CITATIONS.md
 
