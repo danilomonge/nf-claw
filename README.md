@@ -16,8 +16,9 @@ interface to the whole library (pipelines, parameters, docs and automation), reb
 - `runner/` — the `nfclaw` runtime (run a pipeline); the agent's tool
 - `librarian/` — builds the context files and bumps submodules (run via `make`)
 - `catalog.md` / `catalog.json` — the index of available pipelines, with each one's `input`
-  (derived from its samplesheet schema), `output` (the guaranteed output contract) and `tools`
-  (the methods it runs, from the pipeline's own `CITATIONS.md`; in `skill.md` and `catalog.json`)
+  (derived from its samplesheet schema), `output` (the guaranteed output contract), `summary`
+  (the authors' own one-paragraph description from the pipeline README; in `skill.md` and
+  `catalog.json`) and `tools` (the methods it runs, from the pipeline's own `CITATIONS.md`)
 - `sources.tsv` — the source list (name, url, version policy)
 
 Design details (the three zones and how generation stays drift-free): [`docs/architecture.md`](docs/architecture.md).

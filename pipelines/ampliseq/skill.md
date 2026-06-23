@@ -4,6 +4,7 @@ pipeline: nf-core/ampliseq
 version: 2.18.0
 commit: 2723d4c298d48321594920d0324697e14d73ee94
 description: Amplicon sequencing analysis workflow using DADA2 and QIIME2
+summary: nfcore/ampliseq is a bioinformatics analysis pipeline used for amplicon sequencing, supporting denoising of any amplicon and supports a variety of taxonomic databases for taxonomic assignment including 16S, ITS, CO1 and 18S. Phylogenetic placement is also possible. Multiple region analysis such as 5R is implemented. Supported is paired-end Illumina or single-end Illumina, PacBio and IonTorrent data. Default is the analysis of 16S rRNA gene amplicons sequenced paired-end with Illumina.
 has_samplesheet: true
 input: samplesheet (sampleID, forwardReads, reverseReads, sample, fastq_1, fastq_2, run, control, quant_reading)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: FastQC, Cutadapt, Barrnap, DADA2, Greengenes2, PR2 - Protist Reference Ri
 ---
 # ampliseq
 
-Amplicon sequencing analysis workflow using DADA2 and QIIME2
+nfcore/ampliseq is a bioinformatics analysis pipeline used for amplicon sequencing, supporting denoising of any amplicon and supports a variety of taxonomic databases for taxonomic assignment including 16S, ITS, CO1 and 18S. Phylogenetic placement is also possible. Multiple region analysis such as 5R is implemented. Supported is paired-end Illumina or single-end Illumina, PacBio and IonTorrent data. Default is the analysis of 16S rRNA gene amplicons sequenced paired-end with Illumina.
 
 ## Run it
 ```bash

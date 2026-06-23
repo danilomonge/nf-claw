@@ -4,6 +4,7 @@
     "input": "samplesheet (sample_id, subject_id, species, pcr_target_locus, tissue, sex, age, biomaterial_provider, single_cell, filename_R1, filename_R2, filename_I1, filename)",
     "name": "airrflow",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/airrflow is a bioinformatics best-practice pipeline to analyze B-cell receptor (BCR) or T-cell receptor (TCR) repertoire sequencing data. It allows the processing of targeted bulk and single-cell adaptive immune receptor sequencing data (AIRR-seq), as well as the extraction of TCR and BCR sequences from untargeted bulk and single-cell RNA-seq data. The pipeline enables an end-to-end analysis, departing from raw reads or assembled sequences, and performs sequence assembly, V(D)J assignment, novel allele identification, genotype inference, clonal inference, repertoire analysis, lineage reconstruction and BCR/TCR sequence embedding using the Immcantation framework, as well as other immune repertoire analysis tools.",
     "tools": [
       "FastQC",
       "Fastp",
@@ -25,6 +26,7 @@
     "input": "samplesheet (sampleID, forwardReads, reverseReads, sample, fastq_1, fastq_2, run, control, quant_reading)",
     "name": "ampliseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nfcore/ampliseq is a bioinformatics analysis pipeline used for amplicon sequencing, supporting denoising of any amplicon and supports a variety of taxonomic databases for taxonomic assignment including 16S, ITS, CO1 and 18S. Phylogenetic placement is also possible. Multiple region analysis such as 5R is implemented. Supported is paired-end Illumina or single-end Illumina, PacBio and IonTorrent data. Default is the analysis of 16S rRNA gene amplicons sequenced paired-end with Illumina.",
     "tools": [
       "FastQC",
       "Cutadapt",
@@ -72,6 +74,7 @@
     "input": "samplesheet (sample, fastq_1, fastq_2, replicate, control, control_replicate)",
     "name": "atacseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nfcore/atacseq is a bioinformatics analysis pipeline used for ATAC-seq data.",
     "tools": [
       "BWA",
       "BEDTools",
@@ -106,6 +109,7 @@
     "input": "samplesheet (ID, R1, R2, LongFastQ, Fast5, GenomeSize)",
     "name": "bacass",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/bacass is a bioinformatics best-practice analysis pipeline for simple bacterial assembly and annotation. The pipeline is able to assemble short reads, long reads, or a mixture of short and long reads (hybrid assembly).",
     "tools": [
       "FastQC",
       "FastP",
@@ -138,6 +142,7 @@
     "input": "parameters (no samplesheet)",
     "name": "bactmap",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
+    "summary": "nf-core/bactmap is a bioinformatics best-practice analysis pipeline for mapping short reads from bacterial WGS to a reference sequence, creating filtered VCF files, making pseudogenomes based on high quality positions in the VCF files and optionally creating a phylogeny from an alignment of the pseudogenomes.",
     "tools": [
       "bcftools",
       "BWA",
@@ -161,6 +166,7 @@
     "input": "samplesheet (sample_id, mapped, index, file_type)",
     "name": "bamtofastq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/bamtofastq is a bioinformatics best-practice analysis pipeline that converts (un)mapped .bam or .cram files into fq.gz files. Initially, it auto-detects, whether the input file contains single-end or paired-end reads. Following this step, the reads are sorted using samtools collate and extracted with samtools fastq. Furthermore, for mapped bam/cram files it is possible to only convert reads mapping to a specific region or chromosome. The obtained FastQ files can then be used to further process with other pipelines.",
     "tools": [
       "FastQC",
       "fastq_utils",
@@ -174,6 +180,7 @@
     "input": "samplesheet (sample, fastq_1, fastq_2, barcode_details)",
     "name": "callingcards",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/callingcards is a bioinformatics pipeline that can be used to process raw Calling Cards data obtained from either mammals (human, mouse) or yeast. It takes a samplesheet, which describes the sample names, paths to the fastq files, and paths to the barcode details json files, a parameter which identifies the organism type (either mammals or yeast) and either the name of the reference genome on igenomes or paths to the fasta/gff. It then parses the reads, counts the number of calling cards insertions, and provides some QC metrics.",
     "tools": [
       "bedtools",
       "bowtie",
@@ -198,6 +205,7 @@
     "input": "samplesheet (sample, fastq_1, fastq_2, replicate, antibody, control, control_replicate)",
     "name": "chipseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nfcore/chipseq is a bioinformatics analysis pipeline used for Chromatin ImmunoPrecipitation sequencing (ChIP-seq) data.",
     "tools": [
       "BWA",
       "BEDTools",
@@ -235,6 +243,7 @@
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "circdna",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/circdna is a bioinformatics best-practice analysis pipeline for the identification of extrachromosomal circular DNAs (ecDNAs) in eukaryotic cells. The pipeline is able to process WGS, ATAC-seq data or Circle-Seq data generated from short-read sequencing technologies. Depending on the input data and selected analysis branch, nf-core/circdna is able to identify various types of ecDNAs. This includes the detection of smaller ecDNAs, often referred to as eccDNAs or microDNAs, as well as larger ecDNAs that exhibit amplification. These analyses are facilitated through the use of prominent software tools that are widely recognized in the field of ecDNA or circular DNA research.",
     "tools": [
       "FastQC",
       "MultiQC",
@@ -259,6 +268,7 @@
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "coproid",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/coproid is a bioinformatics pipeline that helps you identify the \"true maker\" of Illumina sequenced (Paleo)faeces by checking the microbiome composition and the endogenous host DNA.",
     "tools": [
       "BBnorm/BBTools",
       "Bowtie2",
@@ -280,6 +290,7 @@
     "input": "samplesheet (sample, bam, bai, cram, crai)",
     "name": "createpanelrefs",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/createpanelrefs is a bioinformatics helper pipeline that will help in creating panel of normals and other models.",
     "tools": [
       "CNVKIT",
       "GATK",
@@ -292,6 +303,7 @@
     "input": "samplesheet (id, taxid, fasta_dna, fasta_aa)",
     "name": "createtaxdb",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/createtaxdb is a bioinformatics pipeline that constructs custom metagenomic classifier databases for multiple classifiers and profilers from the same input reference genome set in a highly automated and parallelised manner. It supports both nucleotide and protein based classifiers and profilers. The pipeline is designed to be a companion pipeline to nf-core/taxprofiler for taxonomic profiling of metagenomic data, but can be used for any context.",
     "tools": [
       "Bracken",
       "Centrifuge",
@@ -315,6 +327,7 @@
     "input": "samplesheet (sample, fastq_1, fastq_2, condition, reference, protospacer, template)",
     "name": "crisprseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/crisprseq is a bioinformatics best-practice analysis pipeline for the analysis of CRISPR edited data. It allows the evaluation of the quality of gene editing experiments using targeted next generation sequencing (NGS) data (targeted) as well as the discovery of important genes from knock-out or activation CRISPR-Cas9 screens using CRISPR pooled DNA (screening).",
     "tools": [
       "FastQC",
       "MultiQC",
@@ -334,6 +347,7 @@
     "input": "samplesheet (group, replicate, fastq_1, fastq_2, control)",
     "name": "cutandrun",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/cutandrun is a best-practice bioinformatic analysis pipeline for CUT&RUN, CUT&Tag, and TIPseq experimental protocols that were developed to study protein-DNA interactions and epigenomic profiling.",
     "tools": [
       "FastQC",
       "MultiQC",
@@ -352,6 +366,7 @@
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "demo",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/demo is a simple nf-core style bioinformatics pipeline for workshops and demonstrations. It was created using the nf-core template and is designed to run quickly using small test data files.",
     "tools": [
       "FastQC",
       "seqtk",
@@ -364,6 +379,7 @@
     "input": "samplesheet (id, samplesheet, lane, flowcell, per_flowcell_manifest)",
     "name": "demultiplex",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/demultiplex is a bioinformatics pipeline used to demultiplex the raw data produced by next generation sequencing machines. The following platforms are supported:",
     "tools": [
       "fastp",
       "Falco",
@@ -378,6 +394,7 @@
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "denovotranscript",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/denovotranscript is a bioinformatics pipeline for de novo transcriptome assembly of paired-end short reads from bulk RNA-seq. It takes a samplesheet and FASTQ files as input, perfoms quality control (QC), trimming, assembly, redundancy reduction, pseudoalignment, and quantification. It outputs a transcriptome assembly FASTA file, a transcript abundance TSV file, and a MultiQC report with assembly quality and read QC metrics.",
     "tools": [
       "BUSCO",
       "Evidential Gene",
@@ -399,6 +416,7 @@
     "input": "samplesheet (sample, short_reads_fastq_1, short_reads_fastq_2, long_reads_fastq_1)",
     "name": "detaxizer",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/detaxizer is a bioinformatics pipeline that checks for the presence of a specific taxon in (meta)genomic fastq files and to filter out this taxon or taxonomic subtree. The process begins with quality assessment via FastQC and optional preprocessing (adapter trimming, quality cutting and optional length and quality filtering) using fastp, followed by taxonomic classification with kraken2 and/or bbduk, and optionally employs blastn for validation of the reads associated with the identified taxa. Users must provide a samplesheet to indicate the fastq files and, if utilizing bbduk in the classification and/or the validation step, fasta files for usage of bbduk and creating the blastn database to verify the targeted taxon.",
     "tools": [
       "bbmap",
       "blastn",
@@ -418,6 +436,7 @@
     "input": "samplesheet (sample)",
     "name": "differentialabundance",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/differentialabundance is a bioinformatics pipeline that can be used to analyse data represented as matrices, comparing groups of observations to generate differential statistics and downstream analyses. The pipeline supports RNA-seq data such as that generated by the nf-core rnaseq workflow, and Affymetrix arrays via .CEL files. Other types of matrix may also work with appropriate changes to parameters, and PRs to support additional specific modalities are welcomed.",
     "tools": [
       "GSEA",
       "affy",
@@ -442,6 +461,7 @@
     "input": "samplesheet (RNA_ID, RNA_BAM_FILE, RNA_BAI_FILE, DNA_ID, DNA_VCF_FILE, DNA_TBI_FILE, DROP_GROUP, PAIRED_END, COUNT_MODE, COUNT_OVERLAPS, STRAND, HPO_TERMS, GENE_COUNTS_FILE, GENE_ANNOTATION, GENOME, SPLICE_COUNTS_DIR, SEX, TISSUE, DISEASE)",
     "name": "drop",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/drop is a Nextflow rewrite of drop (Detection of RNA Outliers Pipeline), a bioinformatics pipeline that detects aberrant expression, aberrant splicing, and mono-allelic expression from RNA sequencing data. drop was originally written by Vicente Yepez, Christian Mertes, Michaela Mueller, Daniela Andrade, Leonhard Wachutka from the Gagneur lab at the Department of Informatics and School of Medicine of the Technical University of Munich (TUM) and The German Human Genome-Phenome Archive (GHGA).",
     "tools": [
       "BBmisc",
       "BCFTools",
@@ -497,6 +517,7 @@
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "drugresponseeval",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
+    "summary": "DrEval is a bioinformatics framework that includes a PyPI package (drevalpy) and a Nextflow pipeline (this repo). DrEval ensures that evaluations are statistically sound, biologically meaningful, and reproducible. DrEval simplifies the implementation of drug response prediction models, allowing researchers to focus on advancing their modeling innovations by automating standardized evaluation protocols and preprocessing workflows. With DrEval, hyperparameter tuning is fair and consistent. With its flexible model interface, DrEval supports any model type, ranging from statistical models to complex neural networks. By contributing your model to the DrEval catalog, you can increase your work's exposure, reusability, and transferability.",
     "tools": [
       "DrEvalPy",
       "CurveCurator",
@@ -512,6 +533,7 @@
     "input": "samplesheet (sample, alleles, mhc_class, filename)",
     "name": "epitopeprediction",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/epitopeprediction is a bioinformatics best-practice analysis pipeline for epitope prediction and annotation. The pipeline performs epitope predictions for a given set of variants, proteins, or peptides directly using state of the art prediction tools. The pipeline can be used to generate putative neo-epitopes with variant input, scan one or more proteins for binding hotspots or darkspots analysis, and perform binding predictions on immunopeptidomics data with peptide input.",
     "tools": [
       "MultiQC",
       "SnpSift",
@@ -531,6 +553,7 @@
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "fastqrepair",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/fastqrepair is a bioinformatics pipeline that can be used to recover corrupted FASTQ.gz files, drop or fix uncompliant reads, remove unpaired reads, and settles reads that became disordered. It takes a samplesheet with FASTQ/FASTQ.gz files as input (both single-end and paired-end) and produces clean FASTQ files and QC reports.",
     "tools": [
       "FastQC",
       "gzrt",
@@ -545,6 +568,7 @@
     "input": "samplesheet (sample, fastq_1, fastq_2, fastq_3, fastq_4, read_structure)",
     "name": "fastquorum",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/fastquorum is a bioinformatics pipeline that implements the pipeline implements the fgbio Best Practices FASTQ to Consensus Pipeline to produce consensus reads using unique molecular indexes/barcodes (UMIs). nf-core/fastquorum can produce consensus reads from single or multi UMI reads, and even Duplex Sequencing reads.",
     "tools": [
       "Bwa",
       "FastQC",
@@ -559,6 +583,7 @@
     "input": "id list (one value per line)",
     "name": "fetchngs",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
+    "summary": "nf-core/fetchngs is a bioinformatics pipeline to fetch metadata and raw FastQ files from both public databases. At present, the pipeline supports SRA / ENA / DDBJ / GEO ids (see usage docs).",
     "tools": [
       "Aspera CLI",
       "Python",
@@ -572,6 +597,7 @@
     "input": "samplesheet (sample, fasta, protein, gbk)",
     "name": "funcscan",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/funcscan is a bioinformatics best-practice analysis pipeline for the screening of nucleotide sequences such as assembled contigs for functional genes. It currently features mining for antimicrobial peptides, antibiotic resistance genes and biosynthetic gene clusters.",
     "tools": [
       "ABRicate",
       "AMPir",
@@ -605,6 +631,7 @@
     "input": "samplesheet (sample, ontreads, hifireads, ref_fasta, ref_gff, shortread_F, shortread_R, paired)",
     "name": "genomeassembler",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
+    "summary": "nf-core/genomeassembler is a bioinformatics pipeline that carries out genome assembly, polishing and scaffolding from long reads (ONT or pacbio). Assembly can be done via flye or hifiasm, polishing can be carried out with medaka (ONT), or pilon (requires short-reads), and scaffolding can be done using LINKS, Longstitch, or RagTag (if a reference is available). Quality control includes BUSCO, QUAST and merqury (requires short-reads). Currently, this pipeline does not implement phasing of polyploid genomes or HiC scaffolding.",
     "tools": [
       "lima",
       "nanoq",
@@ -633,6 +660,7 @@
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "hgtseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/hgtseq is a bioinformatics best-practice analysis pipeline built to investigate horizontal gene transfer from NGS data.",
     "tools": [
       "FastQC",
       "MultiQC",
@@ -653,6 +681,7 @@
     "input": "samplesheet (sample, fastq_1, fastq_2, strandedness, seq_platform, seq_center, genome_bam, transcriptome_bam, percent_mapped)",
     "name": "rnaseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/rnaseq is a bioinformatics pipeline that can be used to analyse RNA sequencing data obtained from organisms with a reference genome and annotation. It takes a samplesheet with FASTQ files or pre-aligned BAM files as input, performs quality control (QC), trimming and (pseudo-)alignment, and produces a gene expression matrix and extensive QC report.",
     "tools": [
       "BBMap",
       "BEDTools",
@@ -703,6 +732,7 @@
     "input": "samplesheet (patient, sample, sex, status, lane, fastq_1, fastq_2, spring_1, spring_2, table, cram, crai, bam, bai, contamination, vcf, variantcaller)",
     "name": "sarek",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/sarek is a workflow designed to detect variants on whole genome or targeted sequencing data. Initially designed for Human, and Mouse, it can work on any species with a reference genome. Sarek can also handle tumour / normal pairs and could include additional relapses.",
     "tools": [
       "ASCAT",
       "alleleCount",
@@ -761,6 +791,7 @@
     "input": "samplesheet (sample, fastq_1, fastq_2, fastq_barcode, expected_cells, seq_center, sample_type, feature_type)",
     "name": "scrnaseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/scrnaseq is a bioinformatics best-practice analysis pipeline for processing 10x Genomics single-cell RNA-seq data.",
     "tools": [
       "FastQC",
       "MultiQC",

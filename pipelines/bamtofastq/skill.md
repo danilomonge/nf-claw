@@ -4,6 +4,7 @@ pipeline: nf-core/bamtofastq
 version: 2.2.1
 commit: 8a295860c0c9221337dec7f2620709a47cea254d
 description: Workflow converts one or multiple bam/cram files to fastq format
+summary: nf-core/bamtofastq is a bioinformatics best-practice analysis pipeline that converts (un)mapped .bam or .cram files into fq.gz files. Initially, it auto-detects, whether the input file contains single-end or paired-end reads. Following this step, the reads are sorted using samtools collate and extracted with samtools fastq. Furthermore, for mapped bam/cram files it is possible to only convert reads mapping to a specific region or chromosome. The obtained FastQ files can then be used to further process with other pipelines.
 has_samplesheet: true
 input: samplesheet (sample_id, mapped, index, file_type)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: FastQC, fastq_utils, MultiQC, SAMtools
 ---
 # bamtofastq
 
-Workflow converts one or multiple bam/cram files to fastq format
+nf-core/bamtofastq is a bioinformatics best-practice analysis pipeline that converts (un)mapped .bam or .cram files into fq.gz files. Initially, it auto-detects, whether the input file contains single-end or paired-end reads. Following this step, the reads are sorted using samtools collate and extracted with samtools fastq. Furthermore, for mapped bam/cram files it is possible to only convert reads mapping to a specific region or chromosome. The obtained FastQ files can then be used to further process with other pipelines.
 
 ## Run it
 ```bash

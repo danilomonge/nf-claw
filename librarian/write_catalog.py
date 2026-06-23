@@ -12,6 +12,7 @@ def generate(*, pipelines_dir: Path, out_md: Path, out_json: Path) -> None:
     rows = [{"name": p.name,
              "version": p.frontmatter.get("version", ""),
              "description": p.frontmatter.get("description", ""),
+             "summary": p.frontmatter.get("summary", ""),
              "input": p.frontmatter.get("input", ""),
              "output": p.frontmatter.get("output", ""),
              "tools": [t.strip() for t in (p.frontmatter.get("tools") or "").split(",")
@@ -23,12 +24,14 @@ def generate(*, pipelines_dir: Path, out_md: Path, out_json: Path) -> None:
         return " ".join(str(text).split()).replace("|", "\\|")
 
     lines = ["# Pipeline catalog", "",
-             f"{len(rows)} nf-core pipelines. Grep this file for a keyword, then read "
-             "`pipelines/<name>/skill.md`. `input` is derived from each pipeline's samplesheet "
-             "schema; `output` is the guaranteed output contract (per-release detail is in the "
-             "pipeline's upstream `docs/output.md`, linked from its skill). Each pipeline's "
-             "`skill.md` and `catalog.json` also list the `tools` it runs, taken from the "
-             "pipeline's own `CITATIONS.md`.", "",
+             f"{len(rows)} nf-core pipelines. Grep this file (or `catalog.json`) for a keyword, "
+             "then read `pipelines/<name>/skill.md`. `input` is derived from each pipeline's "
+             "samplesheet schema; `output` is the guaranteed output contract (per-release detail "
+             "is in the pipeline's upstream `docs/output.md`, linked from its skill). `catalog.json` "
+             "and each `skill.md` also carry a `summary` (the authors' own one-paragraph description "
+             "from the pipeline README, a richer signal for matching a request than the terse "
+             "`description` below) and the `tools` it runs (from the pipeline's own `CITATIONS.md`).",
+             "",
              "| pipeline | version | input | output | description |",
              "|---|---|---|---|---|"]
     lines += [f"| `{r['name']}` | {r['version']} | {_safe(r['input'])} | {_safe(r['output'])} "

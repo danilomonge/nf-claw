@@ -4,6 +4,7 @@ pipeline: nf-core/atacseq
 version: 2.1.2
 commit: 1a1dbe52ffbd82256c941a032b0e22abbd925b8a
 description: ATACSeq peak-calling and differential analysis pipeline.
+summary: nfcore/atacseq is a bioinformatics analysis pipeline used for ATAC-seq data.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, replicate, control, control_replicate)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: BWA, BEDTools, BamTools, deepTools, FastQC, featureCounts, HOMER, MACS2, 
 ---
 # atacseq
 
-ATACSeq peak-calling and differential analysis pipeline.
+nfcore/atacseq is a bioinformatics analysis pipeline used for ATAC-seq data.
 
 ## Run it
 ```bash

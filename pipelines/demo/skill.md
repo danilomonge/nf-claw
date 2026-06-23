@@ -4,6 +4,7 @@ pipeline: nf-core/demo
 version: 1.1.0
 commit: 45904cb9d12db3d89900e6c479fe604ef71b297b
 description: An nf-core demo pipeline
+summary: nf-core/demo is a simple nf-core style bioinformatics pipeline for workshops and demonstrations. It was created using the nf-core template and is designed to run quickly using small test data files.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: FastQC, seqtk, MultiQC
 ---
 # demo
 
-An nf-core demo pipeline
+nf-core/demo is a simple nf-core style bioinformatics pipeline for workshops and demonstrations. It was created using the nf-core template and is designed to run quickly using small test data files.
 
 ## Run it
 ```bash

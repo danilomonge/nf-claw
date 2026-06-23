@@ -4,6 +4,7 @@ pipeline: nf-core/chipseq
 version: 2.1.0
 commit: 76e2382b6d443db4dc2396e6831d1243256d80b0
 description: ChIP-seq peak-calling and differential analysis pipeline.
+summary: nfcore/chipseq is a bioinformatics analysis pipeline used for Chromatin ImmunoPrecipitation sequencing (ChIP-seq) data.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, replicate, antibody, control, control_replicate)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: BWA, BEDTools, BamTools, Bowtie2, Chromap, deepTools, FastQC, featureCoun
 ---
 # chipseq
 
-ChIP-seq peak-calling and differential analysis pipeline.
+nfcore/chipseq is a bioinformatics analysis pipeline used for Chromatin ImmunoPrecipitation sequencing (ChIP-seq) data.
 
 ## Run it
 ```bash

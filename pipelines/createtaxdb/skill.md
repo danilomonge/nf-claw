@@ -4,6 +4,7 @@ pipeline: nf-core/createtaxdb
 version: 3.0.0
 commit: e561e64257492bb337a4ade1555ecb772156a0c2
 description: Parallelised and automated creation of metagenomic classifier databases of different tools
+summary: nf-core/createtaxdb is a bioinformatics pipeline that constructs custom metagenomic classifier databases for multiple classifiers and profilers from the same input reference genome set in a highly automated and parallelised manner. It supports both nucleotide and protein based classifiers and profilers. The pipeline is designed to be a companion pipeline to nf-core/taxprofiler for taxonomic profiling of metagenomic data, but can be used for any context.
 has_samplesheet: true
 input: samplesheet (id, taxid, fasta_dna, fasta_aa)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: Bracken, Centrifuge, DIAMOND, ganon, Kaiju, KMCP, Kraken2, KrakenUniq, MA
 ---
 # createtaxdb
 
-Parallelised and automated creation of metagenomic classifier databases of different tools
+nf-core/createtaxdb is a bioinformatics pipeline that constructs custom metagenomic classifier databases for multiple classifiers and profilers from the same input reference genome set in a highly automated and parallelised manner. It supports both nucleotide and protein based classifiers and profilers. The pipeline is designed to be a companion pipeline to nf-core/taxprofiler for taxonomic profiling of metagenomic data, but can be used for any context.
 
 ## Run it
 ```bash

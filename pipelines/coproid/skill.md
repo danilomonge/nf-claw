@@ -4,6 +4,7 @@ pipeline: nf-core/coproid
 version: 2.0.1
 commit: 045d569d5b01b2d1572220718e64a6d054ad57eb
 description:  COPROlite host IDentification 
+summary: nf-core/coproid is a bioinformatics pipeline that helps you identify the "true maker" of Illumina sequenced (Paleo)faeces by checking the microbiome composition and the endogenous host DNA.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: BBnorm/BBTools, Bowtie2, damageprofiler, FastP, FastQC, Kraken2, MultiQC,
 ---
 # coproid
 
- COPROlite host IDentification 
+nf-core/coproid is a bioinformatics pipeline that helps you identify the "true maker" of Illumina sequenced (Paleo)faeces by checking the microbiome composition and the endogenous host DNA.
 
 ## Run it
 ```bash

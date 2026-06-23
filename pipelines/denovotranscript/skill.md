@@ -4,6 +4,7 @@ pipeline: nf-core/denovotranscript
 version: 1.2.1
 commit: 9ab0f57785c37f77e05a03c8c327e35c63c8432b
 description: A pipeline for de novo transcriptome assembly of short reads from bulk RNA-seq
+summary: nf-core/denovotranscript is a bioinformatics pipeline for de novo transcriptome assembly of paired-end short reads from bulk RNA-seq. It takes a samplesheet and FASTQ files as input, perfoms quality control (QC), trimming, assembly, redundancy reduction, pseudoalignment, and quantification. It outputs a transcriptome assembly FASTA file, a transcript abundance TSV file, and a MultiQC report with assembly quality and read QC metrics.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: BUSCO, Evidential Gene, fastp, FastQC, gawk, MultiQC, rnaQUAST, rnaSPAdes
 ---
 # denovotranscript
 
-A pipeline for de novo transcriptome assembly of short reads from bulk RNA-seq
+nf-core/denovotranscript is a bioinformatics pipeline for de novo transcriptome assembly of paired-end short reads from bulk RNA-seq. It takes a samplesheet and FASTQ files as input, perfoms quality control (QC), trimming, assembly, redundancy reduction, pseudoalignment, and quantification. It outputs a transcriptome assembly FASTA file, a transcript abundance TSV file, and a MultiQC report with assembly quality and read QC metrics.
 
 ## Run it
 ```bash

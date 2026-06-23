@@ -4,6 +4,7 @@ pipeline: nf-core/bacass
 version: 2.6.1
 commit: 5ed7c2dd9a05d2434d8ba39ace1116368a4ba570
 description: Simple bacterial assembly and annotation
+summary: nf-core/bacass is a bioinformatics best-practice analysis pipeline for simple bacterial assembly and annotation. The pipeline is able to assemble short reads, long reads, or a mixture of short and long reads (hybrid assembly).
 has_samplesheet: true
 input: samplesheet (ID, R1, R2, LongFastQ, Fast5, GenomeSize)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: FastQC, FastP, Porechop, NanoPlot, ToulligQC, pycoQC, Unicycler, MEGAHIT,
 ---
 # bacass
 
-Simple bacterial assembly and annotation
+nf-core/bacass is a bioinformatics best-practice analysis pipeline for simple bacterial assembly and annotation. The pipeline is able to assemble short reads, long reads, or a mixture of short and long reads (hybrid assembly).
 
 ## Run it
 ```bash

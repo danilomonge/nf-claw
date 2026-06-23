@@ -4,6 +4,7 @@ pipeline: nf-core/cutandrun
 version: 3.2.2
 commit: 6e1125d4fee4ea7c8b70ed836bb0e92a89e3305f
 description: Analysis pipeline for CUT&RUN and CUT&TAG experiments that includes sequencing QC, spike-in normalisation, IgG control normalisation, peak calling and downstream peak analysis.
+summary: nf-core/cutandrun is a best-practice bioinformatic analysis pipeline for CUT&RUN, CUT&Tag, and TIPseq experimental protocols that were developed to study protein-DNA interactions and epigenomic profiling.
 has_samplesheet: true
 input: samplesheet (group, replicate, fastq_1, fastq_2, control)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: FastQC, MultiQC, bedtools, samtools, bowtie2, deeptools, seacr, macs2, pi
 ---
 # cutandrun
 
-Analysis pipeline for CUT&RUN and CUT&TAG experiments that includes sequencing QC, spike-in normalisation, IgG control normalisation, peak calling and downstream peak analysis.
+nf-core/cutandrun is a best-practice bioinformatic analysis pipeline for CUT&RUN, CUT&Tag, and TIPseq experimental protocols that were developed to study protein-DNA interactions and epigenomic profiling.
 
 ## Run it
 ```bash

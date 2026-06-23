@@ -4,6 +4,7 @@ pipeline: nf-core/hgtseq
 version: 1.1.0
 commit: 683daaf41bb396839445e603152b45daa141ced4
 description: A pipeline to investigate horizontal gene transfer from NGS data
+summary: nf-core/hgtseq is a bioinformatics best-practice analysis pipeline built to investigate horizontal gene transfer from NGS data.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: FastQC, MultiQC, Trim Galore, Qualimap, BAMTOOLS, BWA, BWAmem2, SAMtools,
 ---
 # hgtseq
 
-A pipeline to investigate horizontal gene transfer from NGS data
+nf-core/hgtseq is a bioinformatics best-practice analysis pipeline built to investigate horizontal gene transfer from NGS data.
 
 ## Run it
 ```bash

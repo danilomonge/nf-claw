@@ -4,6 +4,7 @@ pipeline: nf-core/fetchngs
 version: 1.12.0
 commit: 8ec2d934f9301c818d961b1e4fdf7fc79610bdc5
 description: Pipeline to fetch metadata and raw FastQ files from public databases
+summary: nf-core/fetchngs is a bioinformatics pipeline to fetch metadata and raw FastQ files from both public databases. At present, the pipeline supports SRA / ENA / DDBJ / GEO ids (see usage docs).
 has_samplesheet: true
 input: id list (one value per line)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
@@ -11,7 +12,7 @@ tools: Aspera CLI, Python, Requests, sra-tools
 ---
 # fetchngs
 
-Pipeline to fetch metadata and raw FastQ files from public databases
+nf-core/fetchngs is a bioinformatics pipeline to fetch metadata and raw FastQ files from both public databases. At present, the pipeline supports SRA / ENA / DDBJ / GEO ids (see usage docs).
 
 ## Run it
 ```bash

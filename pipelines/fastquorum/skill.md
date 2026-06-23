@@ -4,6 +4,7 @@ pipeline: nf-core/fastquorum
 version: 1.2.0
 commit: e6414c99ef5eef47a4ac3f124962e3dc5c21ab4b
 description: fgbio Best Practices FASTQ to Consensus Pipeline
+summary: nf-core/fastquorum is a bioinformatics pipeline that implements the pipeline implements the fgbio Best Practices FASTQ to Consensus Pipeline to produce consensus reads using unique molecular indexes/barcodes (UMIs). nf-core/fastquorum can produce consensus reads from single or multi UMI reads, and even Duplex Sequencing reads.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, fastq_3, fastq_4, read_structure)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: Bwa, FastQC, FGBio, MultiQC, SAMtools
 ---
 # fastquorum
 
-fgbio Best Practices FASTQ to Consensus Pipeline
+nf-core/fastquorum is a bioinformatics pipeline that implements the pipeline implements the fgbio Best Practices FASTQ to Consensus Pipeline to produce consensus reads using unique molecular indexes/barcodes (UMIs). nf-core/fastquorum can produce consensus reads from single or multi UMI reads, and even Duplex Sequencing reads.
 
 ## Run it
 ```bash

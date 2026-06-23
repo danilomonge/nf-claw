@@ -4,6 +4,7 @@ pipeline: nf-core/demultiplex
 version: 1.7.1
 commit: fbec8e442f0599f8b74876e62263af05b9a41d33
 description: Demultiplexing pipeline for Illumina sequencing data
+summary: nf-core/demultiplex is a bioinformatics pipeline used to demultiplex the raw data produced by next generation sequencing machines. The following platforms are supported:
 has_samplesheet: true
 input: samplesheet (id, samplesheet, lane, flowcell, per_flowcell_manifest)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: fastp, Falco, MultiQC, CheckQC, samshee
 ---
 # demultiplex
 
-Demultiplexing pipeline for Illumina sequencing data
+nf-core/demultiplex is a bioinformatics pipeline used to demultiplex the raw data produced by next generation sequencing machines. The following platforms are supported:
 
 ## Run it
 ```bash

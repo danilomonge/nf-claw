@@ -120,6 +120,35 @@ def _tools_section(name: str, st: SubmoduleStatus, tools: list[str]) -> str:
             f"https://github.com/nf-core/{name}/blob/{st.version}/CITATIONS.md\n")
 
 
+def _summary(upstream: Path) -> str:
+    """The pipeline's own one-paragraph description, taken verbatim from the first prose
+    paragraph of the README `## Introduction` section — a far richer selection signal than the
+    terse manifest description. Leading non-prose blocks (images, headings, blockquotes, lists)
+    are skipped; markdown links are flattened to their text. Returns "" if the section or a prose
+    paragraph is absent, so callers fall back to the manifest description — this can only ever add
+    signal, never break."""
+    try:
+        text = (upstream / "README.md").read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    m = re.search(r"^##\s+Introduction\s*$(.*?)(^##\s|\Z)", text, re.M | re.S)
+    if not m:
+        return ""
+    for block in re.split(r"\n\s*\n", m.group(1).strip()):
+        s = block.strip()
+        if (not s or s[0] in "#>|<" or s.startswith(("![", "- ", "* ", "+ "))
+                or re.match(r"^\d+\.\s", s)):
+            continue                                       # image/heading/blockquote/list lead-in
+        s = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", s)         # inline images
+        s = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", s)     # inline links -> text
+        s = re.sub(r"\[([^\]]+)\]\[[^\]]*\]", r"\1", s)    # reference-style links -> text
+        s = s.replace("**", "").replace("`", "")
+        s = re.sub(r"\s+", " ", s).strip()
+        if len(s) >= 40 and s[:1].isalpha():
+            return s
+    return ""
+
+
 def _outputs_section(name: str, st: SubmoduleStatus) -> str:
     mq = " A MultiQC HTML report aggregates QC across steps." if _produces_multiqc(st.path) else ""
     link = ""
@@ -203,6 +232,7 @@ def _run_invocation(name: str, ps: ParamSchema, insch: InputSchema | None) -> tu
 def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
                   insch: InputSchema | None) -> str:
     desc = (ps.description.splitlines() or [name])[0]
+    summary = _summary(st.path) or desc
     tools = _pipeline_tools(st.path)
     fm = (
         "---\n"
@@ -211,6 +241,7 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"version: {st.version}\n"
         f"commit: {st.commit}\n"
         f"description: {desc}\n"
+        f"summary: {summary}\n"
         f"has_samplesheet: {str(insch is not None).lower()}\n"
         f"input: {_input_summary(insch)}\n"
         f"output: {_output_summary(st.path)}\n"
@@ -221,7 +252,7 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
     tools_block = f"## Tools this pipeline runs\n{tools_md}\n" if tools_md else ""
     nfclaw_cmd, raw_cmd = _run_invocation(name, ps, insch)
     body = (
-        f"# {name}\n\n{desc}\n\n"
+        f"# {name}\n\n{summary}\n\n"
         "## Run it\n```bash\n"
         f"git submodule update --init pipelines/{name}/upstream   # first time only\n"
         f"{nfclaw_cmd}\n"

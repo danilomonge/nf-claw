@@ -4,6 +4,7 @@ pipeline: nf-core/genomeassembler
 version: 1.1.0
 commit: ccf1b89898cb720f46a966029c3a60dbcc25b012
 description: Assemble genomes from long ONT or pacbio HiFi reads
+summary: nf-core/genomeassembler is a bioinformatics pipeline that carries out genome assembly, polishing and scaffolding from long reads (ONT or pacbio). Assembly can be done via flye or hifiasm, polishing can be carried out with medaka (ONT), or pilon (requires short-reads), and scaffolding can be done using LINKS, Longstitch, or RagTag (if a reference is available). Quality control includes BUSCO, QUAST and merqury (requires short-reads). Currently, this pipeline does not implement phasing of polyploid genomes or HiC scaffolding.
 has_samplesheet: true
 input: samplesheet (sample, ontreads, hifireads, ref_fasta, ref_gff, shortread_F, shortread_R, paired)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
@@ -11,7 +12,7 @@ tools: lima, nanoq, porechop, TrimGalore, hifiasm, flye, pilon, medaka, LINKS, l
 ---
 # genomeassembler
 
-Assemble genomes from long ONT or pacbio HiFi reads
+nf-core/genomeassembler is a bioinformatics pipeline that carries out genome assembly, polishing and scaffolding from long reads (ONT or pacbio). Assembly can be done via flye or hifiasm, polishing can be carried out with medaka (ONT), or pilon (requires short-reads), and scaffolding can be done using LINKS, Longstitch, or RagTag (if a reference is available). Quality control includes BUSCO, QUAST and merqury (requires short-reads). Currently, this pipeline does not implement phasing of polyploid genomes or HiC scaffolding.
 
 ## Run it
 ```bash

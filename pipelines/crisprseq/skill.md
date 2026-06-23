@@ -4,6 +4,7 @@ pipeline: nf-core/crisprseq
 version: 2.3.0
 commit: 0e9f915c4a3c89d02a66ec58e2decbc832323c8b
 description: Pipeline for the analysis of CRISPR data
+summary: nf-core/crisprseq is a bioinformatics best-practice analysis pipeline for the analysis of CRISPR edited data. It allows the evaluation of the quality of gene editing experiments using targeted next generation sequencing (NGS) data (targeted) as well as the discovery of important genes from knock-out or activation CRISPR-Cas9 screens using CRISPR pooled DNA (screening).
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, condition, reference, protospacer, template)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: FastQC, MultiQC, Pear, Seqtk, Bowtie2, BWA, Minimap2, Cutadapt, Samtools,
 ---
 # crisprseq
 
-Pipeline for the analysis of CRISPR data
+nf-core/crisprseq is a bioinformatics best-practice analysis pipeline for the analysis of CRISPR edited data. It allows the evaluation of the quality of gene editing experiments using targeted next generation sequencing (NGS) data (targeted) as well as the discovery of important genes from knock-out or activation CRISPR-Cas9 screens using CRISPR pooled DNA (screening).
 
 ## Run it
 ```bash

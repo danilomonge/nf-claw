@@ -4,6 +4,7 @@ pipeline: nf-core/createpanelrefs
 version: 1.0.0
 commit: 8ce86a84b5af74facf99abb76216531622b52bc8
 description: Generate Panel of Normals, models or other similar references from lots of samples
+summary: nf-core/createpanelrefs is a bioinformatics helper pipeline that will help in creating panel of normals and other models.
 has_samplesheet: true
 input: samplesheet (sample, bam, bai, cram, crai)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: CNVKIT, GATK, MultiQC
 ---
 # createpanelrefs
 
-Generate Panel of Normals, models or other similar references from lots of samples
+nf-core/createpanelrefs is a bioinformatics helper pipeline that will help in creating panel of normals and other models.
 
 ## Run it
 ```bash

@@ -4,6 +4,7 @@ pipeline: nf-core/scrnaseq
 version: 4.1.0
 commit: f7bf36d7c7e4bddc5302c3facd8d19ca83e22226
 description: Pipeline for processing 10x Genomics single cell rnaseq data
+summary: nf-core/scrnaseq is a bioinformatics best-practice analysis pipeline for processing 10x Genomics single-cell RNA-seq data.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, fastq_barcode, expected_cells, seq_center, sample_type, feature_type)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: FastQC, MultiQC, Simpleaf, Alevin-fry, Alevin, Salmon, Kallisto/Bustools,
 ---
 # scrnaseq
 
-Pipeline for processing 10x Genomics single cell rnaseq data
+nf-core/scrnaseq is a bioinformatics best-practice analysis pipeline for processing 10x Genomics single-cell RNA-seq data.
 
 ## Run it
 ```bash

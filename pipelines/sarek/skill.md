@@ -4,6 +4,7 @@ pipeline: nf-core/sarek
 version: 3.8.1
 commit: 4bd2948f98c5bf7b785c91cf6708fffccab25467
 description: An open-source analysis pipeline to detect germline or somatic variants from whole genome or targeted sequencing
+summary: nf-core/sarek is a workflow designed to detect variants on whole genome or targeted sequencing data. Initially designed for Human, and Mouse, it can work on any species with a reference genome. Sarek can also handle tumour / normal pairs and could include additional relapses.
 has_samplesheet: true
 input: samplesheet (patient, sample, sex, status, lane, fastq_1, fastq_2, spring_1, spring_2, table, cram, crai, bam, bai, contamination, vcf, variantcaller)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: ASCAT, alleleCount, BCFTools, BGZip, BWA-MEM, BWA-MEM2, CNVKIT, Condel, C
 ---
 # sarek
 
-An open-source analysis pipeline to detect germline or somatic variants from whole genome or targeted sequencing
+nf-core/sarek is a workflow designed to detect variants on whole genome or targeted sequencing data. Initially designed for Human, and Mouse, it can work on any species with a reference genome. Sarek can also handle tumour / normal pairs and could include additional relapses.
 
 ## Run it
 ```bash

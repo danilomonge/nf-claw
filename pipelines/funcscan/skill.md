@@ -4,6 +4,7 @@ pipeline: nf-core/funcscan
 version: 3.0.0
 commit: fa9db018e528ffb5149cdde928e2fa24e7c546fe
 description: Pipeline for screening for functional components of assembled contigs
+summary: nf-core/funcscan is a bioinformatics best-practice analysis pipeline for the screening of nucleotide sequences such as assembled contigs for functional genes. It currently features mining for antimicrobial peptides, antibiotic resistance genes and biosynthetic gene clusters.
 has_samplesheet: true
 input: samplesheet (sample, fasta, protein, gbk)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: ABRicate, AMPir, AMPlify, AMRFinderPlus, AntiSMASH, argNorm, Bakta, comBG
 ---
 # funcscan
 
-Pipeline for screening for functional components of assembled contigs
+nf-core/funcscan is a bioinformatics best-practice analysis pipeline for the screening of nucleotide sequences such as assembled contigs for functional genes. It currently features mining for antimicrobial peptides, antibiotic resistance genes and biosynthetic gene clusters.
 
 ## Run it
 ```bash

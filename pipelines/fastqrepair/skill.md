@@ -4,6 +4,7 @@ pipeline: nf-core/fastqrepair
 version: 1.0.0
 commit: 5f102cae4cfaa1d9281b9702ccc3738d9974e388
 description: A pipeline that can be used to recover corrupted FASTQ.gz files, drop or fix uncompliant reads, remove unpaired reads, and settle reads that became disordered
+summary: nf-core/fastqrepair is a bioinformatics pipeline that can be used to recover corrupted FASTQ.gz files, drop or fix uncompliant reads, remove unpaired reads, and settles reads that became disordered. It takes a samplesheet with FASTQ/FASTQ.gz files as input (both single-end and paired-end) and produces clean FASTQ files and QC reports.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: FastQC, gzrt, Wipertools, BBMap, MultiQC
 ---
 # fastqrepair
 
-A pipeline that can be used to recover corrupted FASTQ.gz files, drop or fix uncompliant reads, remove unpaired reads, and settle reads that became disordered
+nf-core/fastqrepair is a bioinformatics pipeline that can be used to recover corrupted FASTQ.gz files, drop or fix uncompliant reads, remove unpaired reads, and settles reads that became disordered. It takes a samplesheet with FASTQ/FASTQ.gz files as input (both single-end and paired-end) and produces clean FASTQ files and QC reports.
 
 ## Run it
 ```bash

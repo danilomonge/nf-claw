@@ -4,6 +4,7 @@ pipeline: nf-core/bactmap
 version: 1.0.0
 commit: 834642d8ac150ca10d705833223e7bcf15efc210
 description: A mapping-based pipeline for creating a phylogeny from bacterial whole genome sequences
+summary: nf-core/bactmap is a bioinformatics best-practice analysis pipeline for mapping short reads from bacterial WGS to a reference sequence, creating filtered VCF files, making pseudogenomes based on high quality positions in the VCF files and optionally creating a phylogeny from an alignment of the pseudogenomes.
 has_samplesheet: false
 input: parameters (no samplesheet)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
@@ -11,7 +12,7 @@ tools: bcftools, BWA, fastp, FastQC, FastTree2, Gubbins, IQ-TREE2, Mash, MultiQC
 ---
 # bactmap
 
-A mapping-based pipeline for creating a phylogeny from bacterial whole genome sequences
+nf-core/bactmap is a bioinformatics best-practice analysis pipeline for mapping short reads from bacterial WGS to a reference sequence, creating filtered VCF files, making pseudogenomes based on high quality positions in the VCF files and optionally creating a phylogeny from an alignment of the pseudogenomes.
 
 ## Run it
 ```bash

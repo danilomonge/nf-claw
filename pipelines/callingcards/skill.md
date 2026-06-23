@@ -4,6 +4,7 @@ pipeline: nf-core/callingcards
 version: 1.0.0
 commit: 20b66e785a822028eaa125583aad0747d55bba61
 description: An automated processing pipeline for mammalian bulk calling cards experiments
+summary: nf-core/callingcards is a bioinformatics pipeline that can be used to process raw Calling Cards data obtained from either mammals (human, mouse) or yeast. It takes a samplesheet, which describes the sample names, paths to the fastq files, and paths to the barcode details json files, a parameter which identifies the organism type (either mammals or yeast) and either the name of the reference genome on igenomes or paths to the fasta/gff. It then parses the reads, counts the number of calling cards insertions, and provides some QC metrics.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, barcode_details)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: bedtools, bowtie, bowtie2, bwa, bwamem2, callingCardsTools, FastQC, Multi
 ---
 # callingcards
 
-An automated processing pipeline for mammalian bulk calling cards experiments
+nf-core/callingcards is a bioinformatics pipeline that can be used to process raw Calling Cards data obtained from either mammals (human, mouse) or yeast. It takes a samplesheet, which describes the sample names, paths to the fastq files, and paths to the barcode details json files, a parameter which identifies the organism type (either mammals or yeast) and either the name of the reference genome on igenomes or paths to the fasta/gff. It then parses the reads, counts the number of calling cards insertions, and provides some QC metrics.
 
 ## Run it
 ```bash

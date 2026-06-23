@@ -4,6 +4,7 @@ pipeline: nf-core/rnaseq
 version: 3.26.0
 commit: e7ca46272c8f9d5ceee3f71759f4ba551d3217a4
 description: RNA sequencing analysis pipeline for gene/isoform quantification and extensive quality control.
+summary: nf-core/rnaseq is a bioinformatics pipeline that can be used to analyse RNA sequencing data obtained from organisms with a reference genome and annotation. It takes a samplesheet with FASTQ files or pre-aligned BAM files as input, performs quality control (QC), trimming and (pseudo-)alignment, and produces a gene expression matrix and extensive QC report.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, strandedness, seq_platform, seq_center, genome_bam, transcriptome_bam, percent_mapped)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
@@ -11,7 +12,7 @@ tools: BBMap, BEDTools, Bowtie2, Bracken, fastp, FastQC, featureCounts, fq, GffR
 ---
 # rnaseq
 
-RNA sequencing analysis pipeline for gene/isoform quantification and extensive quality control.
+nf-core/rnaseq is a bioinformatics pipeline that can be used to analyse RNA sequencing data obtained from organisms with a reference genome and annotation. It takes a samplesheet with FASTQ files or pre-aligned BAM files as input, performs quality control (QC), trimming and (pseudo-)alignment, and produces a gene expression matrix and extensive QC report.
 
 ## Run it
 ```bash

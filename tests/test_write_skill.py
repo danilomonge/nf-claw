@@ -172,6 +172,70 @@ def test_skill_surfaces_tools_when_citations_present(tmp_path):
     assert "tools: FastQC, STAR" in text.split("---")[1]          # frontmatter (for the catalog)
 
 
+# --- summary: the authors' own one-paragraph description from the README `## Introduction` ---
+def test_summary_extracts_first_prose_paragraph(tmp_path):
+    up = tmp_path / "upstream"
+    up.mkdir()
+    (up / "README.md").write_text(
+        "# nf-core/x\n\n## Introduction\n\n"
+        "**nf-core/x** is a bioinformatics pipeline that analyses [RNA-seq](http://u) data "
+        "and produces a gene matrix.\n\n"
+        "![metro map](docs/map.svg)\n\n"
+        "1. Step one\n2. Step two\n")
+    assert write_skill._summary(up) == (
+        "nf-core/x is a bioinformatics pipeline that analyses RNA-seq data and produces a gene matrix.")
+
+
+def test_summary_skips_leading_image_and_heading(tmp_path):
+    # drugresponseeval leads its Introduction with an image wrapped in a heading.
+    up = tmp_path / "upstream"
+    up.mkdir()
+    (up / "README.md").write_text(
+        "## Introduction\n\n"
+        "# ![summary](assets/summary.svg)\n\n"
+        "**DrEval** is a bioinformatics framework that evaluates drug response prediction models.\n")
+    assert write_skill._summary(up) == (
+        "DrEval is a bioinformatics framework that evaluates drug response prediction models.")
+
+
+def test_summary_flattens_reference_style_links(tmp_path):
+    up = tmp_path / "upstream"
+    up.mkdir()
+    (up / "README.md").write_text(
+        "## Introduction\n\n"
+        "nf-core/q implements the [fgbio Best Practices Pipeline][fgbio-ref] for consensus calling.\n")
+    assert write_skill._summary(up) == (
+        "nf-core/q implements the fgbio Best Practices Pipeline for consensus calling.")
+
+
+def test_summary_graceful_when_absent(tmp_path):
+    up = tmp_path / "upstream"
+    up.mkdir()
+    assert write_skill._summary(up) == ""                       # no README.md
+    (up / "README.md").write_text("# x\n\n## Usage\n\nrun it\n")
+    assert write_skill._summary(up) == ""                       # no Introduction section
+    (up / "README.md").write_text("## Introduction\n\n![only an image](i.svg)\n")
+    assert write_skill._summary(up) == ""                       # no prose paragraph
+
+
+def test_skill_surfaces_summary_with_fallback(tmp_path):
+    pdir = _seed(tmp_path, "mini")
+    (pdir / "mini" / "upstream" / "README.md").write_text(
+        "## Introduction\n\nnf-core/mini is a pipeline that does a specific scientific thing well.\n")
+    skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
+    text = skill.read_text()
+    assert "summary: nf-core/mini is a pipeline that does a specific scientific thing well." in text.split("---")[1]
+    assert "nf-core/mini is a pipeline that does a specific scientific thing well." in text  # body too
+
+
+def test_skill_summary_falls_back_to_description(tmp_path):
+    # mini fixture has no README -> summary frontmatter falls back to the terse description.
+    pdir = _seed(tmp_path, "mini")
+    skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
+    fm = skill.read_text().split("---")[1]
+    assert "summary:" in fm and "description:" in fm
+
+
 # --- _cell: free text is collapsed to one line and pipe-escaped so tables never break ---
 def test_cell_collapses_whitespace_and_escapes_pipes():
     assert write_skill._cell("a\n\nb") == "a b"
