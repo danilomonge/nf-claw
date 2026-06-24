@@ -1,8 +1,8 @@
 ---
 name: drugresponseeval
 pipeline: nf-core/drugresponseeval
-version: 1.2.1
-commit: 877ef94f5f0cd3597ffc5c2c3564039770f7c840
+version: 1.2.2
+commit: 84cb752a7ca4584fcb95fcb7492aceb4137a3df7
 description: This pipeline evaluates drug response models in various settings on a variety of datasets.
 summary: DrEval is a bioinformatics framework that includes a PyPI package (drevalpy) and a Nextflow pipeline (this repo). DrEval ensures that evaluations are statistically sound, biologically meaningful, and reproducible. DrEval simplifies the implementation of drug response prediction models, allowing researchers to focus on advancing their modeling innovations by automating standardized evaluation protocols and preprocessing workflows. With DrEval, hyperparameter tuning is fair and consistent. With its flexible model interface, DrEval supports any model type, ranging from statistical models to complex neural networks. By contributing your model to the DrEval catalog, you can increase your work's exposure, reusability, and transferability.
 has_samplesheet: true
@@ -59,12 +59,12 @@ Beyond the required parameters above, every other parameter is optional. [refere
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/drugresponseeval/blob/1.2.1/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/drugresponseeval/blob/1.2.2/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: DrEvalPy, CurveCurator, DIPK, MOLI, SRMF, SuperFELT.
 
-Full list with references: https://github.com/nf-core/drugresponseeval/blob/1.2.1/CITATIONS.md
+Full list with references: https://github.com/nf-core/drugresponseeval/blob/1.2.2/CITATIONS.md
 
 ## Demo
 ```bash
@@ -72,6 +72,6 @@ nfclaw run drugresponseeval --demo --outdir results   # adds the upstream test p
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/drugresponseeval/blob/1.2.1/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/drugresponseeval/blob/1.2.2/docs/usage.md
 
-<!-- Generated from nf-core/drugresponseeval@877ef94f5f0cd3597ffc5c2c3564039770f7c840. Do not edit by hand. -->
+<!-- Generated from nf-core/drugresponseeval@84cb752a7ca4584fcb95fcb7492aceb4137a3df7. Do not edit by hand. -->

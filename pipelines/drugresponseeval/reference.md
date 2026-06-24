@@ -1,7 +1,7 @@
 ---
 name: drugresponseeval
-version: 1.2.1
-commit: 877ef94f5f0cd3597ffc5c2c3564039770f7c840
+version: 1.2.2
+commit: 84cb752a7ca4584fcb95fcb7492aceb4137a3df7
 ---
 
 # drugresponseeval — full parameter reference
@@ -91,4 +91,4 @@ nf-core/drugresponseeval pipeline parameters. Every parameter from the pinned `n
 |---|---|---|---|---|---|---|---|
 | `--n-trials-robustness` | integer |  |  |  | ≥ 0 | 0 | Number of trials to run for the robustness test |
 
-<!-- Generated from nf-core/drugresponseeval@877ef94f5f0cd3597ffc5c2c3564039770f7c840. Do not edit by hand. -->
+<!-- Generated from nf-core/drugresponseeval@84cb752a7ca4584fcb95fcb7492aceb4137a3df7. Do not edit by hand. -->
