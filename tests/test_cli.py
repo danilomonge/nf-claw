@@ -113,6 +113,40 @@ def test_versions_empty_reports_none_found(tmp_path, monkeypatch, capsys):
     assert "no release" in capsys.readouterr().err.lower()
 
 
+def test_run_threads_nxf_ver_and_env(tmp_path, monkeypatch):
+    from runner import orchestration
+    captured = {}
+
+    def fake_run(*a, **k):
+        captured.update(k)
+        return orchestration.RunResult("CMD", Path("/o"), True, None)
+
+    monkeypatch.setattr(orchestration, "run_pipeline", fake_run)
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    rc = cli.main(["run", "x", "--outdir", str(tmp_path / "out"),
+                   "--nxf-ver", "25.10.2",
+                   "--nxf-env", "NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true",
+                   "--nxf-env", "NXF_OFFLINE=true"])
+    assert rc == 0
+    assert captured["nxf_ver"] == "25.10.2"
+    assert captured["nxf_env"] == {"NXF_JVM_ARGS": "-Djava.net.preferIPv6Addresses=true",
+                                   "NXF_OFFLINE": "true"}
+
+
+def test_run_rejects_non_nxf_env_var(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    rc = cli.main(["run", "x", "--outdir", str(tmp_path / "out"), "--nxf-env", "FOO=bar"])
+    assert rc == 1
+    assert "NXF_" in capsys.readouterr().err
+
+
+def test_run_rejects_malformed_nxf_env(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    rc = cli.main(["run", "x", "--outdir", str(tmp_path / "out"), "--nxf-env", "NXF_VER"])
+    assert rc == 1
+    assert "KEY=VALUE" in capsys.readouterr().err
+
+
 def test_run_surfaces_engine_warning_on_stderr(tmp_path, monkeypatch, capsys):
     from runner import orchestration
     monkeypatch.setattr(orchestration, "run_pipeline",

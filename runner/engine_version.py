@@ -59,10 +59,15 @@ def warning(spec: str | None, installed: str | None) -> str | None:
             f"(advisory — Nextflow enforces the engine version).")
 
 
-def check(upstream: Path) -> list[str]:
-    """Zero or one advisory about the installed Nextflow vs. the pipeline's requirement."""
+def check(upstream: Path, *, nxf_ver: str | None = None) -> list[str]:
+    """Zero or one advisory about the Nextflow engine vs. the pipeline's requirement.
+
+    When `nxf_ver` is given (the user pinned the engine via --nxf-ver / NXF_VER), that is the
+    version Nextflow will actually run, so judge the requirement against it — not the installed
+    launcher, which Nextflow only uses to bootstrap the requested version."""
     spec = required_spec(upstream / "nextflow.config")
     if spec is None:                           # no declared constraint → nothing to advise
         return []
-    w = warning(spec, _installed_raw())
+    effective = f"version {nxf_ver}" if nxf_ver else _installed_raw()
+    w = warning(spec, effective)
     return [w] if w else []

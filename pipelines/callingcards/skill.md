@@ -22,6 +22,8 @@ nfclaw run callingcards --input samplesheet.csv --outdir results --datatype <dat
 nextflow run pipelines/callingcards/upstream -profile docker --input samplesheet.csv --outdir results --datatype <datatype>
 ```
 
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions callingcards` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show callingcards --pipeline-version X.Y.Z` prints that release's docs).
+
 ## Inputs
 | column | type | required | allowed values | constraints |
 |---|---|---|---|---|

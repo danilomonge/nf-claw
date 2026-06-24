@@ -26,6 +26,8 @@ Version/engine compatibility (DSL2-only; each release runs with the Nextflow ver
 
 ## Use
 ```bash
+pip install -e .             # first time: puts `nfclaw` on PATH (or use `python -m runner <cmd>`)
+
 nfclaw list                  # or: python -m runner list
 nfclaw run rnaseq --input samplesheet.csv --outdir results -profile docker
 
@@ -33,6 +35,10 @@ nfclaw run rnaseq --input samplesheet.csv --outdir results -profile docker
 nfclaw versions rnaseq                                   # list release tags (latest is flagged)
 nfclaw show rnaseq --pipeline-version 3.14.0             # that release's skill.md (schema + flags), generated on demand
 nfclaw run  rnaseq --pipeline-version 3.14.0 --input samplesheet.csv --outdir results -profile docker
+
+# pin the Nextflow engine / set NXF_* for one run (both recorded in provenance)
+nfclaw run rnaseq --nxf-ver 25.10.2 --input ss.csv --outdir results -profile docker  # if a newer Nextflow breaks the release
+nfclaw run rnaseq --nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true ...      # IPv6-only host (JVM → GitHub)
 ```
 
 ## Maintain

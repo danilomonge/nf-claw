@@ -22,13 +22,21 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
                  outdir: Path, profile: str, params_file: Path | None,
                  cli_overrides: dict, resume: bool, demo: bool,
                  check_only: bool, write_provenance: bool,
-                 timeout_seconds: int, pipeline_version: str | None = None) -> RunResult:
+                 timeout_seconds: int, pipeline_version: str | None = None,
+                 nxf_ver: str | None = None,
+                 nxf_env: dict[str, str] | None = None) -> RunResult:
     pipelines_dir = repo_root / "pipelines"
     discovery.find(name, pipelines_dir)                       # 404 if unknown
     # None → pinned latest (unchanged); a tag → that release, validated + materialized.
     # Everything downstream consumes `st`/`st.path`, so it all targets the chosen version.
     st = versions.ensure(name, pipeline_version, pipelines_dir=pipelines_dir,
                          repo_root=repo_root)
+    # The Nextflow runtime env nfclaw applies for this run: --nxf-env vars plus --nxf-ver
+    # (sugar for NXF_VER, which wins if both set it). Threaded to the engine check, the
+    # subprocess and provenance so the engine actually used is consistent and recorded.
+    nxf_overlay = dict(nxf_env or {})
+    if nxf_ver:
+        nxf_overlay["NXF_VER"] = nxf_ver
     param_schema = schema_mod.load_param_schema(st.path)
     input_schema = schema_mod.load_input_schema(st.path)
 
@@ -60,7 +68,7 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
     # Advisory only: preflight has confirmed nextflow is on PATH, so compare the installed
     # engine to the pipeline's declared requirement. Non-blocking — Nextflow is the authority
     # and enforces this itself at launch; we just surface it earlier with a clear message.
-    warnings = engine_version.check(st.path)
+    warnings = engine_version.check(st.path, nxf_ver=nxf_overlay.get("NXF_VER"))
 
     outdir.mkdir(parents=True, exist_ok=True)
     resolved = parameters.resolve_path_params(merged, param_schema)
@@ -73,13 +81,13 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
                          outputs_report=None, warnings=warnings)
 
     execution.run(cmd, cwd=repo_root, logs_dir=outdir / "provenance" / "logs",
-                  timeout_seconds=timeout_seconds)
+                  timeout_seconds=timeout_seconds, env_extra=nxf_overlay)
     report = outputs.collect(outdir)
     if write_provenance:
         refs = param_schema.reference_path_params()
         prov_inputs = [Path(v) for k, v in resolved.items()
                        if k in refs and k != "outdir" and isinstance(v, str) and "://" not in v]
         provenance.write(outdir=outdir, pipeline=name, command_str=cmd_str, submodule=st,
-                         input_paths=prov_inputs)
+                         input_paths=prov_inputs, env_extra=nxf_overlay)
     return RunResult(command=cmd_str, outdir=outdir, checked_only=False,
                      outputs_report=report, warnings=warnings)

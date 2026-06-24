@@ -18,14 +18,17 @@ class ExecResult:
 
 
 def run(command: list[str], *, cwd: Path, logs_dir: Path,
-        timeout_seconds: int) -> ExecResult:
+        timeout_seconds: int, env_extra: dict[str, str] | None = None) -> ExecResult:
     logs_dir.mkdir(parents=True, exist_ok=True)
     out_p, err_p = logs_dir / "stdout.txt", logs_dir / "stderr.txt"
     popen_kwargs = {} if sys.platform == "win32" else {"start_new_session": True}
+    # Inherit the full environment, then overlay the caller's NXF_* overrides (engine version,
+    # JVM args, …). Inheriting keeps shell-set vars (proxies, JAVA_HOME) working as before.
+    env = {**os.environ, **env_extra} if env_extra else None
     with out_p.open("w") as out_fh, err_p.open("w") as err_fh:
         try:
             proc = subprocess.Popen(command, cwd=str(cwd), stdout=out_fh,
-                                    stderr=err_fh, **popen_kwargs)
+                                    stderr=err_fh, env=env, **popen_kwargs)
         except OSError as exc:
             raise NfclawError(ErrorCode.EXECUTION_FAILED,
                               f"Could not launch process: {exc}",

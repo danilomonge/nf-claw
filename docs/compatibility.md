@@ -24,11 +24,21 @@ for the configuration parser that ships with that version:
 
 So the only correct version for a given pipeline is the one **it declares**. nf-claw honours this:
 
-- **`nfclaw run`** invokes the pinned pipeline directly; run it with a Nextflow that satisfies the
-  release's declared minimum (a recent Nextflow that meets `nextflowVersion` is the safe choice).
-  If your installed Nextflow is older than the pipeline's declared minimum, `nfclaw run` prints a
-  non-blocking advisory before launching — Nextflow itself remains the authority and enforces the
-  requirement at startup.
+- **`nfclaw run`** invokes the pinned pipeline directly. Run it with a Nextflow that satisfies the
+  release's declared minimum **and isn't so new that its stricter config parser rejects the
+  release** — e.g. an older release such as sarek 3.8.1 fails on Nextflow 26.x, which made the
+  strict parser the default. When the installed engine doesn't fit (too old *or* too new), pin the
+  engine the release was written for with **`--nxf-ver X.Y.Z`** (sets `NXF_VER`; Nextflow then
+  bootstraps that exact version for the run, and it is recorded in provenance). If your installed
+  Nextflow is older than the declared minimum, `nfclaw run` prints a non-blocking advisory before
+  launching — with `--nxf-ver` the advisory judges the pinned version instead. Nextflow itself
+  remains the authority and enforces the requirement at startup.
+
+  Beyond the engine version, **`--nxf-env KEY=VALUE`** (repeatable) sets any `NXF_*` variable for a
+  run — e.g. `NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true` on an IPv6-only host whose JVM
+  can't reach GitHub for remote configs, or `NXF_OFFLINE=true` to skip remote config fetches. The
+  rest of the environment is inherited from your shell. Both flags are recorded in
+  `<outdir>/provenance/` for replay.
 - **`.github/workflows/nextflow-validate.yml`** reads each pipeline's declared `nextflowVersion`
   and runs `-preview` with exactly that version — which both satisfies the requirement and matches
   the parser the release targets. Releases whose declared minimum predates `-preview`

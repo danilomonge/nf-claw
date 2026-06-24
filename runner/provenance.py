@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import platform
 import shutil
 import subprocess
@@ -19,17 +20,21 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def _nextflow_version() -> str:
+def _nextflow_version(env_extra: dict[str, str] | None = None) -> str:
+    # Probe with the same env overlay the run used, so a pinned NXF_VER reports the version that
+    # actually ran, not the launcher default.
+    env = {**os.environ, **env_extra} if env_extra else None
     try:
         r = subprocess.run(["nextflow", "-version"], capture_output=True,
-                           text=True, timeout=30)
+                           text=True, timeout=30, env=env)
         return (r.stdout or r.stderr).strip()
     except (subprocess.SubprocessError, FileNotFoundError, OSError):
         return ""
 
 
 def write(*, outdir: Path, pipeline: str, command_str: str,
-          submodule: SubmoduleStatus, input_paths: list[Path]) -> Path:
+          submodule: SubmoduleStatus, input_paths: list[Path],
+          env_extra: dict[str, str] | None = None) -> Path:
     prov = outdir / "provenance"
     prov.mkdir(parents=True, exist_ok=True)
 
@@ -39,7 +44,8 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         "commit": submodule.commit,
         "command": command_str,
         "ran_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "nextflow": _nextflow_version(),
+        "nextflow": _nextflow_version(env_extra),
+        "nextflow_env": dict(env_extra or {}),       # NXF_* overrides nfclaw applied (for replay)
         "os": platform.platform(),
     }
     (prov / "run_manifest.json").write_text(

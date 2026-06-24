@@ -22,6 +22,8 @@ nfclaw run crisprseq --input samplesheet.csv --outdir results --analysis <analys
 nextflow run pipelines/crisprseq/upstream -profile docker --input samplesheet.csv --outdir results --analysis <analysis>
 ```
 
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions crisprseq` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show crisprseq --pipeline-version X.Y.Z` prints that release's docs).
+
 ## Inputs
 | column | type | required | allowed values | constraints |
 |---|---|---|---|---|
