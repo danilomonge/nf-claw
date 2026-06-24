@@ -30,8 +30,9 @@ def _git(path: Path, *args: str) -> str:
     return out.stdout.strip()
 
 
-def resolve(name: str, pipelines_dir: Path) -> SubmoduleStatus:
-    path = pipelines_dir / name / "upstream"
+def resolve_at(name: str, path: Path) -> SubmoduleStatus:
+    """Status of a checked-out pipeline tree at an explicit path — works for the pinned
+    submodule and for any materialized version worktree alike."""
     initialized = path.is_dir() and any(path.iterdir())
     missing = tuple(f for f in REQUIRED_FILES if not (path / f).exists())
     commit = _git(path, "rev-parse", "HEAD") if initialized else ""
@@ -41,6 +42,10 @@ def resolve(name: str, pipelines_dir: Path) -> SubmoduleStatus:
         complete=initialized and not missing,
         version=version, commit=commit, missing_files=missing,
     )
+
+
+def resolve(name: str, pipelines_dir: Path) -> SubmoduleStatus:
+    return resolve_at(name, pipelines_dir / name / "upstream")
 
 
 def ensure_initialized(name: str, pipelines_dir: Path, repo_root: Path) -> SubmoduleStatus:

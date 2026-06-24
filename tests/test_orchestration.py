@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 
-from runner import orchestration
+from runner import orchestration, submodule
 
 
 def _make_pipeline(tmp_path, name):
@@ -37,6 +37,44 @@ def test_full_run_invokes_execution(tmp_path, monkeypatch):
         profile="docker", params_file=None, cli_overrides={}, resume=False,
         demo=True, check_only=False, write_provenance=True, timeout_seconds=10)
     assert called.get("ran") and not res.checked_only
+
+
+def test_pipeline_version_routed_through_versions_ensure(tmp_path, monkeypatch):
+    # A requested version is resolved/materialized via versions.ensure; everything downstream
+    # (schema, validation, command) then targets whatever tree it returns.
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    captured = {}
+
+    def fake_ensure(name, version, *, pipelines_dir, repo_root):
+        captured["version"] = version
+        return submodule.resolve_at(name, pipelines_dir / name / "upstream")
+
+    monkeypatch.setattr(orchestration.versions, "ensure", fake_ensure)
+    res = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10,
+        pipeline_version="1.2.0")
+    assert captured["version"] == "1.2.0"
+    assert "nextflow" in res.command
+
+
+def test_default_run_uses_no_version(tmp_path, monkeypatch):
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    captured = {}
+
+    def fake_ensure(name, version, *, pipelines_dir, repo_root):
+        captured["version"] = version
+        return submodule.resolve_at(name, pipelines_dir / name / "upstream")
+
+    monkeypatch.setattr(orchestration.versions, "ensure", fake_ensure)
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
+    assert captured["version"] is None                          # default = pinned latest
 
 
 def test_invalid_param_rejected_before_execution(tmp_path, monkeypatch):

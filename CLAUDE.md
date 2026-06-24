@@ -16,6 +16,17 @@ list, with allowed values and value constraints) — do not invent a flag or val
 unknown flags and values outside a parameter's allowed set before it starts, and `nf-schema` validates
 the rest (types, patterns, ranges) at runtime. Only read `upstream/` for deep dives.
 
+## To run a specific (non-latest) version
+The default is always the pinned latest release. To run any other published release instead:
+1. List the releases: `nfclaw versions <name>` (the pinned latest is flagged).
+2. Read that version's docs: `nfclaw show <name> --pipeline-version X.Y.Z` — it fetches the tag,
+   materializes it under `pipelines/<name>/.versions/X.Y.Z/` (git-ignored), and prints the `skill.md`
+   generated from *that* release's schema (a `reference.md` is written alongside it). The params, flags
+   and validation all come from X.Y.Z, not from latest.
+3. Run it: `nfclaw run <name> --pipeline-version X.Y.Z --input samplesheet.csv --outdir results -profile docker`.
+Only real release tags are accepted (semver, with or without a leading `v`); an unknown version fails fast
+and lists what is available. Provenance records the exact version that ran.
+
 If a pipeline's `upstream/` is empty, initialise it first:
 `git submodule update --init pipelines/<name>/upstream`
 

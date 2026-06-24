@@ -31,6 +31,37 @@ def test_skill_md_has_fixed_sections(tmp_path):
     assert "Do not edit by hand" in text
 
 
+def test_render_status_uses_status_path_and_version(tmp_path):
+    # render_status renders from an explicit status (any version's tree), reusing the same logic.
+    up = tmp_path / "anytree" / "upstream"
+    up.mkdir(parents=True)
+    for f in ("main.nf", "nextflow.config"):
+        (up / f).write_text("x")
+    shutil.copy(FIX / "mini" / "nextflow_schema.json", up / "nextflow_schema.json")
+    st = SubmoduleStatus("mini", up, True, True, "1.2.0", "deadbeef", ())
+    skill, ref = write_skill.render_status(st)
+    assert "version: 1.2.0" in skill and "commit: deadbeef" in skill
+    assert "# mini" in skill and "mini" in ref
+
+
+def test_versioned_render_threads_pipeline_version_into_commands(tmp_path):
+    # A version-specific skill.md must tell the agent to run THAT version, and its raw
+    # equivalent must point at the materialized version tree — not the pinned default.
+    up = tmp_path / "anytree" / "upstream"
+    up.mkdir(parents=True)
+    for f in ("main.nf", "nextflow.config"):
+        (up / f).write_text("x")
+    shutil.copy(FIX / "mini" / "nextflow_schema.json", up / "nextflow_schema.json")
+    st = SubmoduleStatus("mini", up, True, True, "1.2.0", "deadbeef", ())
+    versioned, _ = write_skill.render_status(st, pipeline_version="1.2.0")
+    assert "--pipeline-version 1.2.0" in versioned
+    assert "pipelines/mini/.versions/1.2.0/upstream" in versioned
+    # the default (pinned) render must NOT carry a version flag — keeps committed docs stable
+    pinned, _ = write_skill.render_status(st)
+    assert "--pipeline-version" not in pinned
+    assert "pipelines/mini/upstream" in pinned
+
+
 def test_deterministic_idempotent(tmp_path):
     pdir = _seed(tmp_path, "mini")
     s1, r1 = write_skill.generate("mini", pipelines_dir=pdir)

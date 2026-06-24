@@ -28,6 +28,11 @@ Version/engine compatibility (DSL2-only; each release runs with the Nextflow ver
 ```bash
 nfclaw list                  # or: python -m runner list
 nfclaw run rnaseq --input samplesheet.csv --outdir results -profile docker
+
+# run a specific (non-latest) release — default stays the pinned latest
+nfclaw versions rnaseq                                   # list release tags (latest is flagged)
+nfclaw show rnaseq --pipeline-version 3.14.0             # that release's skill.md (schema + flags), generated on demand
+nfclaw run  rnaseq --pipeline-version 3.14.0 --input samplesheet.csv --outdir results -profile docker
 ```
 
 ## Maintain
