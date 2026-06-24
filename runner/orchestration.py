@@ -4,9 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from runner import (discovery, engine_version, execution, nextflow_command,
-                    outputs, parameters, preflight, provenance, samplesheet)
+                    outputs, parameters, preflight, provenance, samplesheet, versions)
 from runner import schema as schema_mod
-from runner import submodule as submod
 from runner.errors import ErrorCode, NfclawError
 
 
@@ -23,10 +22,13 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
                  outdir: Path, profile: str, params_file: Path | None,
                  cli_overrides: dict, resume: bool, demo: bool,
                  check_only: bool, write_provenance: bool,
-                 timeout_seconds: int) -> RunResult:
+                 timeout_seconds: int, pipeline_version: str | None = None) -> RunResult:
     pipelines_dir = repo_root / "pipelines"
     discovery.find(name, pipelines_dir)                       # 404 if unknown
-    st = submod.ensure_initialized(name, pipelines_dir, repo_root)
+    # None → pinned latest (unchanged); a tag → that release, validated + materialized.
+    # Everything downstream consumes `st`/`st.path`, so it all targets the chosen version.
+    st = versions.ensure(name, pipeline_version, pipelines_dir=pipelines_dir,
+                         repo_root=repo_root)
     param_schema = schema_mod.load_param_schema(st.path)
     input_schema = schema_mod.load_input_schema(st.path)
 

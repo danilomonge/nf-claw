@@ -24,5 +24,8 @@ work/
 results/
 *.pyc
 
+# per-version cache: materialized worktrees + on-demand docs for non-pinned releases
+pipelines/*/.versions/
+
 # git worktrees (parallel agents)
 .worktrees/

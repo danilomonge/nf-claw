@@ -4,7 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from runner import discovery, orchestration
+from runner import discovery, orchestration, versions
 from runner.errors import NfclawError
 
 
@@ -43,12 +43,16 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("list")
     p_show = sub.add_parser("show")
     p_show.add_argument("name")
+    p_show.add_argument("--pipeline-version", dest="pipeline_version")
+    p_versions = sub.add_parser("versions")
+    p_versions.add_argument("name")
     p_run = sub.add_parser("run")
     p_run.add_argument("name")
     p_run.add_argument("--input")
     p_run.add_argument("--outdir", required=True)
     p_run.add_argument("-profile", "--profile", dest="profile", default="docker")
     p_run.add_argument("--params-file", dest="params_file")
+    p_run.add_argument("--pipeline-version", dest="pipeline_version")
     p_run.add_argument("--check", action="store_true")
     p_run.add_argument("--demo", action="store_true")
     p_run.add_argument("--resume", action="store_true")
@@ -66,9 +70,37 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.cmd == "show":
+        if args.pipeline_version:
+            try:
+                discovery.find(args.name, pdir)                # 404 before any git work
+                st = versions.ensure(args.name, args.pipeline_version,
+                                     pipelines_dir=pdir, repo_root=root)
+            except NfclawError as exc:
+                print(str(exc), file=sys.stderr)
+                return 1
+            if versions.is_cached(st):                         # a non-pinned version → generate on demand
+                skill_path, ref_path = versions.generate_docs(st, dest_dir=st.path.parent)
+                print(skill_path.read_text(encoding="utf-8"))
+                print(f"reference.md for this version cached at {ref_path}", file=sys.stderr)
+                return 0
+            # requested version IS the pin → fall through to the committed skill.md
         p = discovery.find(args.name, pdir)
         print(p.skill_md.read_text(encoding="utf-8") if p.skill_md.exists()
               else f"(no skill.md for {args.name})")
+        return 0
+
+    if args.cmd == "versions":
+        try:
+            avail = versions.available(args.name, pipelines_dir=pdir, repo_root=root)
+        except NfclawError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        if not avail:
+            print(f"No releases found for {args.name} (check network connectivity).",
+                  file=sys.stderr)
+            return 0
+        for tag, is_pin in avail:
+            print(f"{tag}\tlatest (pinned)" if is_pin else tag)
         return 0
 
     if args.cmd == "run":
@@ -81,7 +113,8 @@ def main(argv: list[str] | None = None) -> int:
                 params_file=Path(args.params_file) if args.params_file else None,
                 cli_overrides=_collect_overrides(extras),
                 resume=args.resume, demo=args.demo, check_only=args.check,
-                write_provenance=not args.no_provenance, timeout_seconds=args.timeout)
+                write_provenance=not args.no_provenance, timeout_seconds=args.timeout,
+                pipeline_version=args.pipeline_version)
         except NfclawError as exc:
             print(str(exc), file=sys.stderr)
             return 1

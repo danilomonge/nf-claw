@@ -51,6 +51,68 @@ def test_run_prints_command_and_outputs_summary(tmp_path, monkeypatch, capsys):
     assert "CMD" in out and "2 files" in out and "multiqc" in out
 
 
+def test_versions_command_lists_tags_and_marks_pin(tmp_path, monkeypatch, capsys):
+    from runner import versions
+    root = _seed(tmp_path)
+    monkeypatch.setattr(cli, "_repo_root", lambda: root)
+    monkeypatch.setattr(versions, "available",
+                        lambda name, **k: [("2.0.0", True), ("1.2.0", False)])
+    assert cli.main(["versions", "sarek"]) == 0
+    out = capsys.readouterr().out
+    assert "2.0.0" in out and "latest" in out and "1.2.0" in out
+
+
+def test_run_threads_pipeline_version(tmp_path, monkeypatch, capsys):
+    from runner import orchestration
+    captured = {}
+
+    def fake_run(*a, **k):
+        captured.update(k)
+        return orchestration.RunResult("CMD", Path("/o"), True, None)
+
+    monkeypatch.setattr(orchestration, "run_pipeline", fake_run)
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out"),
+                     "--pipeline-version", "1.2.0"]) == 0
+    assert captured["pipeline_version"] == "1.2.0"
+
+
+def test_show_pipeline_version_prints_generated_docs(tmp_path, monkeypatch, capsys):
+    from runner import versions
+    from runner.submodule import SubmoduleStatus
+    root = _seed(tmp_path)
+    monkeypatch.setattr(cli, "_repo_root", lambda: root)
+    cached = root / "pipelines" / "sarek" / ".versions" / "1.2.0" / "upstream"
+    st = SubmoduleStatus("sarek", cached, True, True, "1.2.0", "abc", ())
+    monkeypatch.setattr(versions, "ensure", lambda *a, **k: st)
+
+    def fake_generate(status, *, dest_dir):
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        (dest_dir / "skill.md").write_text("# sarek @ 1.2.0\n")
+        return dest_dir / "skill.md", dest_dir / "reference.md"
+
+    monkeypatch.setattr(versions, "generate_docs", fake_generate)
+    assert cli.main(["show", "sarek", "--pipeline-version", "1.2.0"]) == 0
+    assert "# sarek @ 1.2.0" in capsys.readouterr().out
+
+
+def test_show_unknown_pipeline_with_version_errors_cleanly(tmp_path, monkeypatch, capsys):
+    # An unknown pipeline must 404 cleanly (return 1), never attempt git work on a bad path.
+    root = _seed(tmp_path)
+    monkeypatch.setattr(cli, "_repo_root", lambda: root)
+    assert cli.main(["show", "nope", "--pipeline-version", "1.0.0"]) == 1
+    assert "pipeline_not_found" in capsys.readouterr().err
+
+
+def test_versions_empty_reports_none_found(tmp_path, monkeypatch, capsys):
+    from runner import versions
+    root = _seed(tmp_path)
+    monkeypatch.setattr(cli, "_repo_root", lambda: root)
+    monkeypatch.setattr(versions, "available", lambda name, **k: [])
+    assert cli.main(["versions", "sarek"]) == 0
+    assert "no release" in capsys.readouterr().err.lower()
+
+
 def test_run_surfaces_engine_warning_on_stderr(tmp_path, monkeypatch, capsys):
     from runner import orchestration
     monkeypatch.setattr(orchestration, "run_pipeline",

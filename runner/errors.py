@@ -8,6 +8,7 @@ from typing import Any
 class ErrorCode(str, Enum):
     SUBMODULE_INCOMPLETE = "submodule_incomplete"
     PIPELINE_NOT_FOUND = "pipeline_not_found"
+    VERSION_NOT_FOUND = "version_not_found"
     ENVIRONMENT = "environment"
     SAMPLESHEET_INVALID = "samplesheet_invalid"
     PARAMS_INVALID = "params_invalid"

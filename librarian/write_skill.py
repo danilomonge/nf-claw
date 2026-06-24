@@ -215,22 +215,27 @@ def _param_groups(ps: ParamSchema) -> str:
             "include any required parameters already listed above):\n" + "\n".join(lines) + "\n")
 
 
-def _run_invocation(name: str, ps: ParamSchema, insch: InputSchema | None) -> tuple[str, str]:
+def _run_invocation(name: str, ps: ParamSchema, insch: InputSchema | None,
+                    pipeline_version: str | None = None) -> tuple[str, str]:
     """The (nfclaw, raw nextflow) example commands. `--input` appears only when the pipeline
     has a samplesheet, and every schema-required param beyond input/outdir that has NO default
     is shown as an explicit `<placeholder>` (those carrying a default are filled by nf-schema, so
-    the one-liner stays runnable as printed)."""
+    the one-liner stays runnable as printed). When rendering a non-pinned version, the nfclaw
+    command carries `--pipeline-version <tag>` and the raw command targets that version's tree."""
     inp = " --input samplesheet.csv" if insch is not None else ""
     extra = "".join(f" --{p.name.replace('_', '-')} <{p.name}>"
                     for p in ps.params.values()
                     if p.required and p.name not in ("input", "outdir") and p.default is None)
-    nfclaw = f"nfclaw run {name}{inp} --outdir results{extra} -profile docker"
-    raw = f"nextflow run pipelines/{name}/upstream -profile docker{inp} --outdir results{extra}"
+    ver = f" --pipeline-version {pipeline_version}" if pipeline_version else ""
+    upstream = (f"pipelines/{name}/.versions/{pipeline_version}/upstream"
+                if pipeline_version else f"pipelines/{name}/upstream")
+    nfclaw = f"nfclaw run {name}{inp} --outdir results{extra}{ver} -profile docker"
+    raw = f"nextflow run {upstream} -profile docker{inp} --outdir results{extra}"
     return nfclaw, raw
 
 
 def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
-                  insch: InputSchema | None) -> str:
+                  insch: InputSchema | None, pipeline_version: str | None = None) -> str:
     desc = (ps.description.splitlines() or [name])[0]
     summary = _summary(st.path) or desc
     tools = _pipeline_tools(st.path)
@@ -250,13 +255,24 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
     )
     tools_md = _tools_section(name, st, tools)
     tools_block = f"## Tools this pipeline runs\n{tools_md}\n" if tools_md else ""
-    nfclaw_cmd, raw_cmd = _run_invocation(name, ps, insch)
+    nfclaw_cmd, raw_cmd = _run_invocation(name, ps, insch, pipeline_version)
+    if pipeline_version:
+        first_line = (f"# nfclaw fetches and materializes nf-core/{name}@{pipeline_version} "
+                      "on first use; the default (no --pipeline-version) is the latest release.")
+        raw_comment = f"# raw equivalent (runs the materialized {pipeline_version} tree directly):"
+        demo_line = (f"nfclaw run {name} --demo --outdir results --pipeline-version {pipeline_version}"
+                     "   # adds the upstream test profile (-profile test,docker)")
+    else:
+        first_line = f"git submodule update --init pipelines/{name}/upstream   # first time only"
+        raw_comment = "# raw equivalent (the submodule is already pinned to this release, so no -r is needed):"
+        demo_line = (f"nfclaw run {name} --demo --outdir results"
+                     "   # adds the upstream test profile (-profile test,docker)")
     body = (
         f"# {name}\n\n{summary}\n\n"
         "## Run it\n```bash\n"
-        f"git submodule update --init pipelines/{name}/upstream   # first time only\n"
+        f"{first_line}\n"
         f"{nfclaw_cmd}\n"
-        "# raw equivalent (the submodule is already pinned to this release, so no -r is needed):\n"
+        f"{raw_comment}\n"
         f"{raw_cmd}\n```\n\n"
         f"## Inputs\n{_inputs_section(insch)}\n"
         f"## Required parameters\n{_required_params(ps)}\n"
@@ -264,7 +280,7 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"## Outputs\n{_outputs_section(name, st)}\n"
         f"{tools_block}"
         "## Demo\n```bash\n"
-        f"nfclaw run {name} --demo --outdir results   # adds the upstream test profile (-profile test,docker)\n```\n\n"
+        f"{demo_line}\n```\n\n"
         "## Full reference\n"
         "Every parameter — name, type, required, hidden, allowed values, constraints, default and "
         "description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. "
@@ -301,13 +317,21 @@ def _render_reference(name: str, st: SubmoduleStatus, ps: ParamSchema,
     return out
 
 
+def render_status(st: SubmoduleStatus, *, pipeline_version: str | None = None) -> tuple[str, str]:
+    """Return the (skill.md, reference.md) text for an already-resolved tree — works for the
+    pinned submodule and for any materialized version worktree alike. Nothing is written.
+    `pipeline_version` makes the skill's run commands target that specific release; leave it
+    None for the pinned default so the committed docs stay byte-stable."""
+    ps = schema_mod.load_param_schema(st.path)
+    insch = schema_mod.load_input_schema(st.path)
+    return (_render_skill(st.name, st, ps, insch, pipeline_version),
+            _render_reference(st.name, st, ps, insch))
+
+
 def render(name: str, *, pipelines_dir: Path) -> tuple[str, str]:
     """Return the (skill.md, reference.md) text for a pipeline WITHOUT writing anything, so the
     drift gate can compare against the committed files without mutating them."""
-    st = submod.resolve(name, pipelines_dir)
-    ps = schema_mod.load_param_schema(st.path)
-    insch = schema_mod.load_input_schema(st.path)
-    return _render_skill(name, st, ps, insch), _render_reference(name, st, ps, insch)
+    return render_status(submod.resolve(name, pipelines_dir))
 
 
 def generate(name: str, *, pipelines_dir: Path) -> tuple[Path, Path]:
