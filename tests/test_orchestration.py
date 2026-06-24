@@ -77,6 +77,42 @@ def test_default_run_uses_no_version(tmp_path, monkeypatch):
     assert captured["version"] is None                          # default = pinned latest
 
 
+def test_nxf_overlay_flows_to_execution_and_provenance(tmp_path, monkeypatch):
+    import json
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    seen = {}
+    monkeypatch.setattr(orchestration.execution, "run",
+                        lambda *a, **k: seen.update({"exec_env": k.get("env_extra")}))
+    # stub the version probe so the provenance step doesn't invoke real `nextflow -version` with
+    # NXF_VER set (which would try to fetch that engine — execution.run is mocked here).
+    monkeypatch.setattr(orchestration.provenance, "_nextflow_version", lambda env_extra=None: "stub")
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=False, write_provenance=True, timeout_seconds=10,
+        nxf_ver="25.10.2", nxf_env={"NXF_JVM_ARGS": "-Dx=y"})
+    overlay = {"NXF_JVM_ARGS": "-Dx=y", "NXF_VER": "25.10.2"}
+    assert seen["exec_env"] == overlay                                    # applied to the nextflow subprocess
+    manifest = json.loads((tmp_path / "out" / "provenance" / "run_manifest.json").read_text())
+    assert manifest["nextflow_env"] == overlay                           # and recorded for reproducibility
+
+
+def test_nxf_ver_makes_engine_check_judge_the_pin(tmp_path, monkeypatch):
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: None)
+    seen = {}
+    monkeypatch.setattr(orchestration.engine_version, "check",
+                        lambda upstream, **k: seen.setdefault("nxf_ver", k.get("nxf_ver")) or [])
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=False, write_provenance=False, timeout_seconds=10,
+        nxf_ver="25.10.2")
+    assert seen["nxf_ver"] == "25.10.2"
+
+
 def test_invalid_param_rejected_before_execution(tmp_path, monkeypatch):
     import pytest
     from runner.errors import ErrorCode, NfclawError

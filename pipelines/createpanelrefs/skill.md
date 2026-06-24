@@ -22,6 +22,8 @@ nfclaw run createpanelrefs --input samplesheet.csv --outdir results --tools <too
 nextflow run pipelines/createpanelrefs/upstream -profile docker --input samplesheet.csv --outdir results --tools <tools>
 ```
 
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions createpanelrefs` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show createpanelrefs --pipeline-version X.Y.Z` prints that release's docs).
+
 ## Inputs
 | column | type | required | allowed values | constraints |
 |---|---|---|---|---|

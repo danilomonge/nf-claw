@@ -22,6 +22,8 @@ nfclaw run genomeassembler --input samplesheet.csv --outdir results -profile doc
 nextflow run pipelines/genomeassembler/upstream -profile docker --input samplesheet.csv --outdir results
 ```
 
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions genomeassembler` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show genomeassembler --pipeline-version X.Y.Z` prints that release's docs).
+
 ## Inputs
 | column | type | required | allowed values | constraints |
 |---|---|---|---|---|

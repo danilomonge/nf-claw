@@ -22,6 +22,8 @@ nfclaw run drop --input samplesheet.csv --outdir results --genome <genome> -prof
 nextflow run pipelines/drop/upstream -profile docker --input samplesheet.csv --outdir results --genome <genome>
 ```
 
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions drop` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show drop --pipeline-version X.Y.Z` prints that release's docs).
+
 ## Inputs
 | column | type | required | allowed values | constraints |
 |---|---|---|---|---|

@@ -262,11 +262,16 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         raw_comment = f"# raw equivalent (runs the materialized {pipeline_version} tree directly):"
         demo_line = (f"nfclaw run {name} --demo --outdir results --pipeline-version {pipeline_version}"
                      "   # adds the upstream test profile (-profile test,docker)")
+        version_note = ""                                     # the Run-it comment already explains the default
     else:
         first_line = f"git submodule update --init pipelines/{name}/upstream   # first time only"
         raw_comment = "# raw equivalent (the submodule is already pinned to this release, so no -r is needed):"
         demo_line = (f"nfclaw run {name} --demo --outdir results"
                      "   # adds the upstream test profile (-profile test,docker)")
+        version_note = (f"This is the pinned latest release. To run a different one, list the available "
+                        f"releases with `nfclaw versions {name}` and add `--pipeline-version X.Y.Z` to the "
+                        f"command above (`nfclaw show {name} --pipeline-version X.Y.Z` prints that release's "
+                        "docs).\n\n")
     body = (
         f"# {name}\n\n{summary}\n\n"
         "## Run it\n```bash\n"
@@ -274,6 +279,7 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"{nfclaw_cmd}\n"
         f"{raw_comment}\n"
         f"{raw_cmd}\n```\n\n"
+        f"{version_note}"
         f"## Inputs\n{_inputs_section(insch)}\n"
         f"## Required parameters\n{_required_params(ps)}\n"
         f"## Other parameters\n{_param_groups(ps)}\n"

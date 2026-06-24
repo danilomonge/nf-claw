@@ -22,6 +22,8 @@ nfclaw run chipseq --input samplesheet.csv --outdir results --fasta <fasta> -pro
 nextflow run pipelines/chipseq/upstream -profile docker --input samplesheet.csv --outdir results --fasta <fasta>
 ```
 
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions chipseq` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show chipseq --pipeline-version X.Y.Z` prints that release's docs).
+
 ## Inputs
 | column | type | required | allowed values | constraints |
 |---|---|---|---|---|

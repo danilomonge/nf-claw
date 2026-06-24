@@ -22,6 +22,8 @@ nfclaw run hgtseq --input samplesheet.csv --outdir results --taxonomy-id <taxono
 nextflow run pipelines/hgtseq/upstream -profile docker --input samplesheet.csv --outdir results --taxonomy-id <taxonomy_id>
 ```
 
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions hgtseq` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show hgtseq --pipeline-version X.Y.Z` prints that release's docs).
+
 ## Inputs
 | column | type | required | allowed values | constraints |
 |---|---|---|---|---|

@@ -5,11 +5,31 @@ import sys
 from pathlib import Path
 
 from runner import discovery, orchestration, versions
-from runner.errors import NfclawError
+from runner.errors import ErrorCode, NfclawError
 
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
+
+
+def _parse_nxf_env(items: list[str]) -> dict[str, str]:
+    """Parse repeatable `--nxf-env KEY=VALUE` into a dict, restricted to `NXF_*` variables.
+
+    Restricting to NXF_* keeps the knob focused on Nextflow's own runtime (and the provenance
+    record meaningful); any other environment a run needs is still inherited from the shell."""
+    env: dict[str, str] = {}
+    for item in items:
+        key, sep, value = item.partition("=")
+        key = key.strip()
+        if not sep:
+            raise NfclawError(ErrorCode.PARAMS_INVALID,
+                              f"--nxf-env must be KEY=VALUE (got {item!r}).")
+        if not key.startswith("NXF_"):
+            raise NfclawError(ErrorCode.PARAMS_INVALID,
+                              f"--nxf-env only accepts NXF_* variables (got {key!r}); "
+                              "other environment is inherited from the shell.")
+        env[key] = value
+    return env
 
 
 def _collect_overrides(extras: list[str]) -> dict:
@@ -53,6 +73,12 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("-profile", "--profile", dest="profile", default="docker")
     p_run.add_argument("--params-file", dest="params_file")
     p_run.add_argument("--pipeline-version", dest="pipeline_version")
+    p_run.add_argument("--nxf-ver", dest="nxf_ver",
+                       help="pin the Nextflow engine version for this run (sets NXF_VER)")
+    p_run.add_argument("--nxf-env", dest="nxf_env", action="append", default=[],
+                       metavar="KEY=VALUE",
+                       help="set an NXF_* env var for this run (repeatable), e.g. "
+                            "NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true")
     p_run.add_argument("--check", action="store_true")
     p_run.add_argument("--demo", action="store_true")
     p_run.add_argument("--resume", action="store_true")
@@ -114,7 +140,8 @@ def main(argv: list[str] | None = None) -> int:
                 cli_overrides=_collect_overrides(extras),
                 resume=args.resume, demo=args.demo, check_only=args.check,
                 write_provenance=not args.no_provenance, timeout_seconds=args.timeout,
-                pipeline_version=args.pipeline_version)
+                pipeline_version=args.pipeline_version,
+                nxf_ver=args.nxf_ver, nxf_env=_parse_nxf_env(args.nxf_env))
         except NfclawError as exc:
             print(str(exc), file=sys.stderr)
             return 1

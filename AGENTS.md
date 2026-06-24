@@ -3,6 +3,11 @@
 This repo is a library of nf-core pipelines. Each lives in `pipelines/<name>/`:
 `upstream/` (the pinned pipeline code, a git submodule) and `skill.md` (how to run it).
 
+## Setup (first time)
+Install once, from the repo root, so the `nfclaw` command is on PATH: `pip install -e .`
+(use a virtualenv). No-install equivalent: run `python -m runner <cmd>` from the repo root
+anywhere this doc shows `nfclaw <cmd>`.
+
 ## To run a pipeline
 1. Find it: grep `catalog.json` (or `catalog.md`) for a keyword — do NOT read it whole.
 2. Read `pipelines/<name>/skill.md` — the exact command, inputs, and required parameters for the pinned version.
@@ -27,8 +32,22 @@ The default is always the pinned latest release. To run any other published rele
 Only real release tags are accepted (semver, with or without a leading `v`); an unknown version fails fast
 and lists what is available. Provenance records the exact version that ran.
 
+## Tuning the Nextflow engine / environment
+`nfclaw run` inherits your shell environment and passes it through to Nextflow. Two run flags make the
+engine and its runtime explicit and reproducible (both are recorded in `<outdir>/provenance/`):
+- `--nxf-ver X.Y.Z` — pin the Nextflow engine for this run (sets `NXF_VER`). Use it when a newer
+  Nextflow breaks an older pipeline release (e.g. a config-parser change in a new Nextflow major), or
+  to reproduce a prior run exactly. nfclaw judges the version requirement against this pin.
+- `--nxf-env KEY=VALUE` — set an `NXF_*` variable for this run (repeatable). Common fixes:
+  - IPv6-only host where the JVM can't reach GitHub for remote configs:
+    `--nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true`
+  - skip remote config fetches entirely: `--nxf-env NXF_OFFLINE=true`
+
+Any other environment (proxies, `JAVA_HOME`, …) is inherited from your shell unchanged.
+
 If a pipeline's `upstream/` is empty, initialise it first:
 `git submodule update --init pipelines/<name>/upstream`
 
 ## Requirements (agent environment)
-git · python 3.11+ · nextflow (Java 17+) · docker or singularity. On macOS, use a space-free, non-iCloud path.
+git · python 3.11+ (install nfclaw with `pip install -e .`) · nextflow (Java 17+) · docker or
+singularity. On macOS, use a space-free, non-iCloud path.

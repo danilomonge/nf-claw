@@ -22,6 +22,8 @@ nfclaw run bactmap --outdir results --reference <reference> -profile docker
 nextflow run pipelines/bactmap/upstream -profile docker --outdir results --reference <reference>
 ```
 
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions bactmap` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show bactmap --pipeline-version X.Y.Z` prints that release's docs).
+
 ## Inputs
 This pipeline does not use a samplesheet; configure inputs via parameters.
 

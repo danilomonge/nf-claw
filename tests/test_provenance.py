@@ -28,3 +28,25 @@ def test_defensive_without_pipeline_info(tmp_path):
     prov = provenance.write(outdir=out, pipeline="mini", command_str="x",
                             submodule=_st(tmp_path / "up"), input_paths=[])
     assert (prov / "run_manifest.json").exists()
+
+
+def test_records_nextflow_env_and_probes_version_with_it(tmp_path, monkeypatch):
+    out = tmp_path / "out"
+    out.mkdir()
+    seen = {}
+    monkeypatch.setattr(provenance, "_nextflow_version",
+                        lambda env_extra=None: seen.setdefault("env", env_extra) or "ver 25.10.2")
+    overlay = {"NXF_VER": "25.10.2", "NXF_JVM_ARGS": "-Dx=y"}
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="x",
+                            submodule=_st(tmp_path / "up"), input_paths=[], env_extra=overlay)
+    manifest = json.loads((prov / "run_manifest.json").read_text())
+    assert manifest["nextflow_env"] == overlay          # the overlay nfclaw applied is recorded
+    assert seen["env"] == overlay                        # version probed with the overlay (reports the pin)
+
+
+def test_nextflow_env_empty_by_default(tmp_path):
+    out = tmp_path / "out"
+    out.mkdir()
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="x",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    assert json.loads((prov / "run_manifest.json").read_text())["nextflow_env"] == {}

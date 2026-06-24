@@ -56,10 +56,34 @@ def test_versioned_render_threads_pipeline_version_into_commands(tmp_path):
     versioned, _ = write_skill.render_status(st, pipeline_version="1.2.0")
     assert "--pipeline-version 1.2.0" in versioned
     assert "pipelines/mini/.versions/1.2.0/upstream" in versioned
-    # the default (pinned) render must NOT carry a version flag — keeps committed docs stable
+    # the default (pinned) run/demo COMMANDS must NOT carry a version flag — keeps the default run latest
     pinned, _ = write_skill.render_status(st)
-    assert "--pipeline-version" not in pinned
+    for line in pinned.splitlines():
+        if line.startswith("nfclaw run"):
+            assert "--pipeline-version" not in line
     assert "pipelines/mini/upstream" in pinned
+
+
+def test_skill_surfaces_other_versions_for_discovery(tmp_path):
+    # The committed (pinned) skill.md nudges the agent that other releases are runnable, so it can
+    # discover them without grepping a file that only knows the pin.
+    pdir = _seed(tmp_path, "mini")
+    skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
+    text = skill.read_text()
+    assert "nfclaw versions mini" in text
+    assert "--pipeline-version" in text                       # the discoverability nudge (prose, not the run cmd)
+
+
+def test_versioned_skill_omits_discovery_note(tmp_path):
+    # A version-specific doc already explains the default in its Run-it comment; no extra nudge needed.
+    up = tmp_path / "anytree" / "upstream"
+    up.mkdir(parents=True)
+    for f in ("main.nf", "nextflow.config"):
+        (up / f).write_text("x")
+    shutil.copy(FIX / "mini" / "nextflow_schema.json", up / "nextflow_schema.json")
+    st = SubmoduleStatus("mini", up, True, True, "1.2.0", "deadbeef", ())
+    versioned, _ = write_skill.render_status(st, pipeline_version="1.2.0")
+    assert "nfclaw versions" not in versioned
 
 
 def test_deterministic_idempotent(tmp_path):

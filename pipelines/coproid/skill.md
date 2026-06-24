@@ -22,6 +22,8 @@ nfclaw run coproid --input samplesheet.csv --outdir results --genome-sheet <geno
 nextflow run pipelines/coproid/upstream -profile docker --input samplesheet.csv --outdir results --genome-sheet <genome_sheet> --kraken2-db <kraken2_db> --sp-sources <sp_sources> --sp-labels <sp_labels>
 ```
 
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions coproid` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show coproid --pipeline-version X.Y.Z` prints that release's docs).
+
 ## Inputs
 | column | type | required | allowed values | constraints |
 |---|---|---|---|---|

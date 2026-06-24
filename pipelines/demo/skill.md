@@ -22,6 +22,8 @@ nfclaw run demo --input samplesheet.csv --outdir results -profile docker
 nextflow run pipelines/demo/upstream -profile docker --input samplesheet.csv --outdir results
 ```
 
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions demo` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show demo --pipeline-version X.Y.Z` prints that release's docs).
+
 ## Inputs
 | column | type | required | allowed values | constraints |
 |---|---|---|---|---|

@@ -22,6 +22,8 @@ nfclaw run epitopeprediction --input samplesheet.csv --outdir results -profile d
 nextflow run pipelines/epitopeprediction/upstream -profile docker --input samplesheet.csv --outdir results
 ```
 
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions epitopeprediction` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show epitopeprediction --pipeline-version X.Y.Z` prints that release's docs).
+
 ## Inputs
 | column | type | required | allowed values | constraints |
 |---|---|---|---|---|
