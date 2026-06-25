@@ -103,14 +103,53 @@ def test_nxf_ver_makes_engine_check_judge_the_pin(tmp_path, monkeypatch):
     monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
     monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: None)
     seen = {}
-    monkeypatch.setattr(orchestration.engine_version, "check",
-                        lambda upstream, **k: seen.setdefault("nxf_ver", k.get("nxf_ver")) or [])
+
+    def fake_check(upstream, **k):
+        seen["nxf_ver"] = k.get("nxf_ver")
+        return []                                             # check() always returns list[str]
+
+    monkeypatch.setattr(orchestration.engine_version, "check", fake_check)
     orchestration.run_pipeline(
         "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
         profile="docker", params_file=None, cli_overrides={}, resume=False,
         demo=True, check_only=False, write_provenance=False, timeout_seconds=10,
         nxf_ver="25.10.2")
     assert seen["nxf_ver"] == "25.10.2"
+
+
+def _make_pipeline_with_bool(tmp_path, name="boolp"):
+    import json
+    up = tmp_path / "pipelines" / name / "upstream"
+    up.mkdir(parents=True)
+    for f in ("main.nf", "nextflow.config"):
+        (up / f).write_text("x")
+    (up / "nextflow_schema.json").write_text(json.dumps({"definitions": {"io": {"properties": {
+        "outdir": {"type": "string", "format": "directory-path"},
+        "skip_busco": {"type": "boolean"}}}}}))
+    (tmp_path / "pipelines" / name / "skill.md").write_text(f"---\nname: {name}\n---\n")
+    return tmp_path
+
+
+def test_boolean_cli_string_is_coerced_in_params_file(tmp_path, monkeypatch):
+    import json
+    root = _make_pipeline_with_bool(tmp_path)
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    orchestration.run_pipeline(
+        "boolp", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={"skip_busco": "true"},
+        resume=False, demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
+    params = json.loads((tmp_path / "out" / "provenance" / "params.json").read_text())
+    assert params["skip_busco"] is True                       # CLI "true" → real boolean for nf-schema
+
+
+def test_space_in_path_surfaces_nonblocking_advisory(tmp_path, monkeypatch):
+    root = _make_pipeline(tmp_path / "draft 2", "mini")        # repo path contains a space
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    res = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="singularity", params_file=None, cli_overrides={}, resume=False,
+        demo=False, check_only=True, write_provenance=False, timeout_seconds=10)
+    assert any("space" in w.lower() for w in res.warnings)     # advisory, not a hard failure
 
 
 def test_invalid_param_rejected_before_execution(tmp_path, monkeypatch):

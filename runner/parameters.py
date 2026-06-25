@@ -29,6 +29,44 @@ def validate_params(cli_overrides: dict[str, Any], schema: ParamSchema) -> list[
     return errors
 
 
+_LEAVE = object()       # sentinel: "not coercible — leave the value untouched"
+
+
+def _coerce_scalar(value: str, type_: str):
+    """Convert a CLI string to its schema scalar type, or `_LEAVE` if it can't be done
+    unambiguously (so nf-schema reports a precise error on the original string)."""
+    if type_ == "boolean":
+        low = value.strip().lower()
+        return True if low == "true" else False if low == "false" else _LEAVE
+    if type_ == "integer":
+        try:
+            return int(value.strip())
+        except ValueError:
+            return _LEAVE
+    if type_ == "number":
+        try:
+            return float(value.strip())
+        except ValueError:
+            return _LEAVE
+    return _LEAVE           # string, or a union like "integer or string" — ambiguous, leave it
+
+
+def coerce_to_schema(merged: dict[str, Any], schema: ParamSchema) -> dict[str, Any]:
+    """Coerce CLI-string values to their schema-declared scalar type so `--skip-busco true` or
+    `--max-cpus 4` reach nf-schema as a real boolean/integer/number, not a string. Only the
+    unambiguous scalar types are touched; strings, union types and unparseable values are left
+    as-is. Values from a params-file are already typed, so this is a no-op for them."""
+    out = dict(merged)
+    for key, val in merged.items():
+        param = schema.params.get(key)
+        if param is None or not isinstance(val, str):
+            continue
+        coerced = _coerce_scalar(val, param.type)
+        if coerced is not _LEAVE:
+            out[key] = coerced
+    return out
+
+
 def _load_params_file(path: Path) -> dict:
     if path.suffix.lower() == ".json":
         return json.loads(path.read_text(encoding="utf-8"))

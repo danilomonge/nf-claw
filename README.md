@@ -23,6 +23,7 @@ interface to the whole library (pipelines, parameters, docs and automation), reb
 
 Design details (the three zones and how generation stays drift-free): [`docs/architecture.md`](docs/architecture.md).
 Version/engine compatibility (DSL2-only; each release runs with the Nextflow version it declares): [`docs/compatibility.md`](docs/compatibility.md).
+Run-time errors (space-in-path, IPv6 host, no-network, Nextflow-version parse errors, known upstream-pipeline bugs): [`docs/known-issues.md`](docs/known-issues.md).
 
 ## Use
 ```bash

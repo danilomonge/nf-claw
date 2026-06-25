@@ -51,3 +51,15 @@ def check_environment(*, profile: str, output_dir: Path, submodule: SubmoduleSta
         issues.append("path contains spaces; Docker on macOS fails (errno 35). "
                       "Use a space-free path or Singularity.")
     return issues
+
+
+def space_advisories(*, submodule: SubmoduleStatus, output_dir: Path) -> list[str]:
+    """Non-blocking advisory (any OS) when a path contains a space. Many bioinformatics tools
+    build shell commands without quoting their work paths, so a space breaks them at runtime —
+    independent of the macOS+Docker case `check_environment` hard-blocks above."""
+    hits = [str(p) for p in (submodule.path, output_dir) if " " in str(p)]
+    if not hits:
+        return []
+    return ["a path contains spaces (" + "; ".join(hits) + "); some pipeline tools and "
+            "Nextflow's work directory mishandle spaces. Use a space-free path, or set the "
+            "work directory with `--nxf-env NXF_WORK=/a/space-free/dir`."]

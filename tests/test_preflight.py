@@ -36,3 +36,16 @@ def test_missing_nextflow_flagged(tmp_path, monkeypatch):
                                          submodule=_st(tmp_path / "up"),
                                          repo_root=tmp_path, resume=False)
     assert any("nextflow not found" in i for i in issues)
+
+
+def test_space_advisory_flags_spaces_in_paths():
+    from pathlib import Path
+    adv = preflight.space_advisories(submodule=_st(Path("/vol/draft 2/up")),
+                                     output_dir=Path("/clean/out"))
+    assert len(adv) == 1 and "space" in adv[0].lower() and "NXF_WORK" in adv[0]
+
+
+def test_space_advisory_silent_without_spaces():
+    from pathlib import Path
+    assert preflight.space_advisories(submodule=_st(Path("/clean/up")),
+                                      output_dir=Path("/clean/out")) == []
