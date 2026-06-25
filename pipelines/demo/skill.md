@@ -1,14 +1,14 @@
 ---
 name: demo
 pipeline: nf-core/demo
-version: 1.1.0
-commit: 45904cb9d12db3d89900e6c479fe604ef71b297b
+version: 1.2.0
+commit: 32893afef8076a03a2767a020b3f0cab2e0b40b2
 description: An nf-core demo pipeline
 summary: nf-core/demo is a simple nf-core style bioinformatics pipeline for workshops and demonstrations. It was created using the nf-core template and is designed to run quickly using small test data files.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FastQC, seqtk, MultiQC
+tools: FastQC, seqtk, cowpy, MultiQC
 ---
 # demo
 
@@ -44,7 +44,7 @@ sample,fastq_1,fastq_2
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):
-- `generic_options` (16 parameters)
+- `generic_options` (15 parameters)
 - `input_output_options` (4 parameters)
 - `institutional_config_options` (6 parameters)
 - `process_skipping_options` (1 parameter)
@@ -53,12 +53,12 @@ Beyond the required parameters above, every other parameter is optional. [refere
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/demo/blob/1.1.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/demo/blob/1.2.0/docs/output.md
 
 ## Tools this pipeline runs
-The tools/methods this pipeline runs, per the authors' own list: FastQC, seqtk, MultiQC.
+The tools/methods this pipeline runs, per the authors' own list: FastQC, seqtk, cowpy, MultiQC.
 
-Full list with references: https://github.com/nf-core/demo/blob/1.1.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/demo/blob/1.2.0/CITATIONS.md
 
 ## Demo
 ```bash
@@ -66,6 +66,6 @@ nfclaw run demo --demo --outdir results   # adds the upstream test profile (-pro
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/demo/blob/1.1.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/demo/blob/1.2.0/docs/usage.md
 
-<!-- Generated from nf-core/demo@45904cb9d12db3d89900e6c479fe604ef71b297b. Do not edit by hand. -->
+<!-- Generated from nf-core/demo@32893afef8076a03a2767a020b3f0cab2e0b40b2. Do not edit by hand. -->

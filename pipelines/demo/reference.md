@@ -1,7 +1,7 @@
 ---
 name: demo
-version: 1.1.0
-commit: 45904cb9d12db3d89900e6c479fe604ef71b297b
+version: 1.2.0
+commit: 32893afef8076a03a2767a020b3f0cab2e0b40b2
 ---
 
 # demo — full parameter reference
@@ -15,7 +15,6 @@ nf-core/demo pipeline parameters. Every parameter from the pinned `nextflow_sche
 | `--email-on-fail` | string |  | yes |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary, only when pipeline fails. |
 | `--help` | boolean or string |  |  |  |  |  | Display the help message. |
 | `--help-full` | boolean |  |  |  |  |  | Display the full detailed help message. |
-| `--hook-url` | string |  | yes |  |  |  | Incoming hook URL for messaging service |
 | `--max-multiqc-email-size` | string |  | yes |  | matches ^\d+(\.\d+)?\.?\s*(K\|M\|G\|T)?B$ | 25.MB | File size limit when attaching MultiQC reports to summary emails. |
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--multiqc-config` | string (file path) |  | yes |  |  |  | Custom config file to supply to MultiQC. |
@@ -61,7 +60,7 @@ nf-core/demo pipeline parameters. Every parameter from the pinned `nextflow_sche
 |---|---|---|---|---|---|---|---|
 | `--fasta` | string (file path) |  |  |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ |  | Path to FASTA genome file. |
 | `--genome` | string |  |  |  |  |  | Name of iGenomes reference. |
-| `--igenomes-base` | string (directory path) |  | yes |  |  | s3://ngi-igenomes/igenomes/ | The base path to the igenomes reference files |
+| `--igenomes-base` | string |  | yes |  |  | s3://ngi-igenomes/igenomes/ | The base path to the igenomes reference files |
 | `--igenomes-ignore` | boolean |  | yes |  |  |  | Do not load the iGenomes reference config. |
 
-<!-- Generated from nf-core/demo@45904cb9d12db3d89900e6c479fe604ef71b297b. Do not edit by hand. -->
+<!-- Generated from nf-core/demo@32893afef8076a03a2767a020b3f0cab2e0b40b2. Do not edit by hand. -->
