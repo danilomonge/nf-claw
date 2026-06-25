@@ -50,4 +50,10 @@ If a pipeline's `upstream/` is empty, initialise it first:
 
 ## Requirements (agent environment)
 git · python 3.11+ (install nfclaw with `pip install -e .`) · nextflow (Java 17+) · docker or
-singularity. On macOS, use a space-free, non-iCloud path.
+singularity. **Use a space-free path on macOS *and* Linux** — many bioinformatics tools and
+Nextflow's work directory mishandle spaces in paths; on macOS also avoid iCloud paths.
+
+## Run-time errors
+Hitting a failure during a run (path spaces, an IPv6-only host, a tool downloading a database, a
+Nextflow-version parse error, or a known upstream-pipeline bug)? The symptom→fix map is in
+[`docs/known-issues.md`](docs/known-issues.md).

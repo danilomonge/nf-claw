@@ -51,6 +51,9 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
     # or bad enum in the params-file must fail fast too, not only CLI flags.
     merged = parameters.merge(cli_overrides=cli_overrides, params_file=params_file,
                               input_path=input_path, outdir=outdir)
+    # Coerce CLI strings to their schema scalar type (e.g. `--skip-busco true` → real boolean)
+    # before validating and writing the params-file, so nf-schema sees correctly-typed values.
+    merged = parameters.coerce_to_schema(merged, param_schema)
     param_errors = parameters.validate_params(merged, param_schema)
     if param_errors:
         raise NfclawError(ErrorCode.PARAMS_INVALID,
@@ -69,6 +72,7 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
     # engine to the pipeline's declared requirement. Non-blocking — Nextflow is the authority
     # and enforces this itself at launch; we just surface it earlier with a clear message.
     warnings = engine_version.check(st.path, nxf_ver=nxf_overlay.get("NXF_VER"))
+    warnings += preflight.space_advisories(submodule=st, output_dir=outdir)
 
     outdir.mkdir(parents=True, exist_ok=True)
     resolved = parameters.resolve_path_params(merged, param_schema)
