@@ -42,8 +42,12 @@ engine and its runtime explicit and reproducible (both are recorded in `<outdir>
   - IPv6-only host where the JVM can't reach GitHub for remote configs:
     `--nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true`
   - skip remote config fetches entirely: `--nxf-env NXF_OFFLINE=true`
+- `--config PATH` (or `-c`, repeatable) — pass an extra Nextflow config straight through (`-c`),
+  e.g. a docker host-network config (`docker { runOptions = "--network host" }`) or custom resources.
 
-Any other environment (proxies, `JAVA_HOME`, …) is inherited from your shell unchanged.
+Any other environment (proxies, `JAVA_HOME`, …) is inherited from your shell unchanged. Each run
+launches Nextflow from its `--outdir`, so its `.nextflow/` history is isolated and `-resume` resumes
+that run (use a distinct `--outdir` per pipeline).
 
 If a pipeline's `upstream/` is empty, initialise it first:
 `git submodule update --init pipelines/<name>/upstream`

@@ -5,8 +5,10 @@ an `nfclaw run` flag or a setup change) and **upstream pipeline bugs** (a defect
 nf-core release). nf-claw wraps pipelines **unmodified**, so upstream bugs are documented here and
 reported upstream, never patched into the submodule.
 
-`nfclaw run` flags used below come from the runner; both `--nxf-ver` and `--nxf-env` are recorded
-in `<outdir>/provenance/` so a working invocation is reproducible.
+`nfclaw run` flags used below come from the runner; `--nxf-ver`, `--nxf-env` and `--config` are
+recorded in `<outdir>/provenance/` so a working invocation is reproducible. Flag names accept either
+dashes or underscores — `nfclaw` normalises `--skip-busco` and `--skip_busco` alike (the raw
+`nextflow run` needs the pipeline's exact spelling, usually underscores).
 
 When a run fails for any other reason, the error points at the full Nextflow log and back to this
 file; match the symptom below and apply the fix.
@@ -39,10 +41,36 @@ fetches entirely (offline): `--nxf-env NXF_OFFLINE=true`.
 `--params-file '{"skip_busco": true}'`).
 
 ### Nextflow too new for an older release
-**Symptom:** `Unexpected input: ':'` / config-parser errors on Nextflow **26.x** (its strict
-parser rejects config syntax an older release used).
+**Symptom:** `Unexpected input: ':'`, `Unexpected token`, `Invalid include source`, or
+`import ...` rejected — on Nextflow **26.x**, whose strict parser rejects older Groovy config
+syntax (typed declarations, functions with params, `manifest.*`/`validation.*` accessed at parse
+time, `import` in `.nf`). Many older releases hit this.
 **Fix:** pin an engine the release was written for: `--nxf-ver 25.10.2` (must still satisfy the
-pipeline's declared `nextflowVersion` minimum). See [`compatibility.md`](compatibility.md).
+pipeline's declared `nextflowVersion` minimum). If you hit it on most pipelines, set it once for the
+shell: `export NXF_VER=25.10.2` (nfclaw passes it through). See [`compatibility.md`](compatibility.md).
+
+### Docker bridge network has no DNS (IPv6-only host)
+**Symptom:** containers can't resolve hostnames; downloads inside a container fail even though the
+host has connectivity. Docker's bridge uses the IPv4 DNS `8.8.8.8`, unreachable on an IPv6-only host.
+**Fix:** give containers the host network via a config file, passed with `--config`:
+```groovy
+// host-net.config
+docker { runOptions = "--network host" }
+```
+`nfclaw run <name> --config host-net.config …`. `--config` is repeatable and accepts any Nextflow
+config (also handy for custom resources, below).
+
+### A container creates root-owned files that block publishing
+**Symptom:** a step (e.g. `CUSTOM_SRATOOLSNCBISETTINGS`, `macrel`) writes a file owned by root with
+mode `600`, and Nextflow can't copy it to `--outdir`.
+**Why:** Docker runs containers as root by default; the file lands in the work dir owned by root.
+**Fix:** map your user into the container via `--config` (`docker { runOptions = "-u \$(id -u):\$(id -g)" }`),
+or fix the file's permissions in the work dir and resume the run (`-resume`, see below).
+
+### `-resume` resumed the wrong session
+**Status: fixed.** `nfclaw run` now launches Nextflow **from the `--outdir`**, so each run owns its
+own `.nextflow/` history and cache. `--resume` resumes *this* outdir's session — it can no longer
+pick up another pipeline's run. Use a distinct `--outdir` per pipeline.
 
 ## Upstream pipeline bugs (documented, not patched)
 
@@ -52,8 +80,22 @@ is the nf-claw-side workaround.
 | pipeline @ version | symptom | why it happens | workaround |
 |---|---|---|---|
 | `scrnaseq` 4.1.0 | `Invalid include source: conf/test_multiome.config` | the `test_multiome` profile references a config file that was not committed at the tag; Nextflow 26 validates every `includeConfig` at parse time, even for unused profiles | report upstream; try another release via `--pipeline-version`; or use an engine whose parser does not pre-validate unused profiles |
-| `bamtofastq` 2.2.1 | `SAMTOOLS_FAIDX ([])` fails immediately | with no `--fasta`/`--genome`, the `prepare_indices` subworkflow routes an empty dummy channel into `SAMTOOLS_FAIDX` | provide a reference (`--fasta` / `--genome`); or report upstream |
+| `bamtofastq` (incl. 2.1.2 / 2.2.1) | `SAMTOOLS_FAIDX ([])` fails immediately | the `test` profile sets `genome = null` + `igenomes_ignore = true`, so `prepare_indices` routes an empty dummy channel into `SAMTOOLS_FAIDX` | provide a reference (`--fasta` / `--genome`); no fix in pure `--demo` mode — report upstream |
 | `bacass` 2.6.1 (Unicycler) | `SyntaxWarning: invalid escape sequence '\d'` then failure on Python 3.12 | the `unicycler:0.5.1` container ships Python code not updated for 3.12 | choose another assembler: `--assembler megahit` |
+| `hgtseq` 1.1.0 | `a column named input1 ... is mandatory!` | the `test` profile's CSV uses the old header `sample,fastq_1,fastq_2`, but the release's schema expects `sample_group,input1,input2` | provide a matching samplesheet via `--input` (don't rely on `--demo`) |
+| `funcscan` 2.1.0 | `TypeError` in `ampcombi_download.py` building the DRAMP DB | rows with an empty `Sequence` become `NaN`; the script applies a regex to a float | pre-build the DB with the NaN rows filtered and pass `--amp_ampcombi_db /path/to/amp_DRAMP_database` |
 
 When a workaround relies on a different release, confirm the symptom is gone there before relying
 on it — `nfclaw show <name> --pipeline-version X.Y.Z` prints that release's docs.
+
+## Pipeline-specific run notes
+
+These are not bugs — just the right flag for a constrained environment:
+
+- **`fetchngs`** — if accessions have no ENA FTP URL, the pipeline falls back to `SRATOOLS_PREFETCH`
+  (needs NCBI SRA Cloud). With no such access, run metadata-only: `--skip_fastq_download`.
+- **`coproid`** — `SAM2LCA_UPDATEDB` downloads the NCBI taxonomy over FTP/IPv4 at run time. On a
+  restricted host, pre-build the database and pass `--sam2lca_db /path/to/db`.
+- **`ampliseq`** — the `test` profile caps memory at 6 GB; visualisation/export steps (e.g.
+  `QIIME2_EXPORT_RELTAX`) may be OOM-killed (exit 137) without failing the pipeline. In production
+  raise it with `--max_memory '<N>.GB'` (or a custom `--config`).

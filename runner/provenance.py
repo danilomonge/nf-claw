@@ -4,11 +4,13 @@ import hashlib
 import json
 import os
 import platform
+import shlex
 import shutil
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
+from runner.outputs import is_nextflow_internal
 from runner.submodule import SubmoduleStatus
 
 
@@ -54,15 +56,19 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
     in_lines = [f"{_sha256(p)}  {p}" for p in input_paths if p.is_file()]
     (prov / "inputs.sha256").write_text("\n".join(in_lines) + ("\n" if in_lines else ""))
 
-    out_lines = [f"{_sha256(p)}  {p.relative_to(outdir)}"
+    out_lines = [f"{_sha256(p)}  {rel}"
                  for p in sorted(outdir.rglob("*"))
-                 if p.is_file() and prov not in p.parents]
+                 if p.is_file() and prov not in p.parents
+                 and not is_nextflow_internal(rel := p.relative_to(outdir))]
     (prov / "outputs.sha256").write_text("\n".join(out_lines) + ("\n" if out_lines else ""))
 
     sv = outdir / "pipeline_info" / "software_versions.yml"
     if sv.exists():
         shutil.copy2(sv, prov / "software_versions.yml")
 
+    # `cd` to the outdir first: nfclaw launches Nextflow from there, so re-running this lands the
+    # engine state (.nextflow/) in the same place — a faithful, self-contained replay.
     (prov / "commands.sh").write_text(
-        "#!/usr/bin/env bash\nset -euo pipefail\n" + command_str + "\n", encoding="utf-8")
+        "#!/usr/bin/env bash\nset -euo pipefail\n"
+        f"cd {shlex.quote(str(outdir))}\n{command_str}\n", encoding="utf-8")
     return prov
