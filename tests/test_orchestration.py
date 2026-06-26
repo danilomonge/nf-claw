@@ -86,6 +86,54 @@ def test_space_in_repo_path_blocks_the_run(tmp_path, monkeypatch):
     assert any("space" in i for i in exc.value.details["issues"])
 
 
+def test_configs_passed_to_build_as_extra_configs(tmp_path, monkeypatch):
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    cfg = tmp_path / "extra.config"
+    cfg.write_text("docker { runOptions = '--network host' }\n")
+    seen = {}
+    real_build = orchestration.nextflow_command.build
+    monkeypatch.setattr(orchestration.nextflow_command, "build",
+                        lambda **k: (seen.update(k), real_build(**k))[1])
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10,
+        configs=[str(cfg)])
+    assert seen["extra_configs"] == (cfg.resolve(),)              # resolved to absolute, passed as -c
+
+
+def test_missing_config_fails_fast(tmp_path, monkeypatch):
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    with pytest.raises(NfclawError) as exc:
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+            profile="docker", params_file=None, cli_overrides={}, resume=False,
+            demo=True, check_only=True, write_provenance=False, timeout_seconds=10,
+            configs=["/no/such/file.config"])
+    assert exc.value.code == ErrorCode.ENVIRONMENT and "config" in str(exc.value).lower()
+
+
+def test_runs_from_outdir_with_shared_work_dir(tmp_path, monkeypatch):
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.delenv("NXF_WORK", raising=False)
+    eseen, bseen = {}, {}
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: eseen.update(k))
+    real_build = orchestration.nextflow_command.build
+    monkeypatch.setattr(orchestration.nextflow_command, "build",
+                        lambda **k: (bseen.update(k), real_build(**k))[1])
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=False, write_provenance=False, timeout_seconds=10)
+    assert eseen["cwd"] == tmp_path / "out"                       # isolates .nextflow/ per run
+    assert bseen["work_dir"] == root / "work"                    # work stays shared, off the outdir
+
+
 def test_pipeline_version_routed_through_versions_ensure(tmp_path, monkeypatch):
     # A requested version is resolved/materialized via versions.ensure; everything downstream
     # (schema, validation, command) then targets whatever tree it returns.

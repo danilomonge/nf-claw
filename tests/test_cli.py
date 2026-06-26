@@ -140,6 +140,20 @@ def test_run_rejects_non_nxf_env_var(tmp_path, monkeypatch, capsys):
     assert "NXF_" in capsys.readouterr().err
 
 
+def test_run_threads_config(tmp_path, monkeypatch):
+    from runner import orchestration
+    captured = {}
+    monkeypatch.setattr(orchestration, "run_pipeline",
+                        lambda *a, **k: captured.update(k) or orchestration.RunResult(
+                            "CMD", Path("/o"), True, None))
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    cfg = tmp_path / "host.config"
+    cfg.write_text("docker { runOptions = '--network host' }\n")
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out"),
+                     "-c", str(cfg), "--config", str(cfg)]) == 0
+    assert captured["configs"] == [str(cfg), str(cfg)]            # repeatable, threaded through
+
+
 def test_run_threads_allow_spaces(tmp_path, monkeypatch):
     from runner import orchestration
     captured = {}

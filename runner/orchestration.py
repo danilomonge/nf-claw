@@ -26,9 +26,19 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
                  timeout_seconds: int, pipeline_version: str | None = None,
                  nxf_ver: str | None = None,
                  nxf_env: dict[str, str] | None = None,
-                 allow_spaces: bool = False) -> RunResult:
+                 allow_spaces: bool = False,
+                 configs: tuple[str, ...] | list[str] = ()) -> RunResult:
     pipelines_dir = repo_root / "pipelines"
     discovery.find(name, pipelines_dir)                       # 404 if unknown
+    # Extra Nextflow config files passed straight through as `-c` (e.g. a docker host-network or
+    # custom-resources config). Resolved to absolute and validated up front so a typo fails fast.
+    extra_configs: list[Path] = []
+    for c in configs:
+        cfg = Path(c).expanduser().resolve()
+        if not cfg.is_file():
+            raise NfclawError(ErrorCode.ENVIRONMENT, f"--config file not found: {c}",
+                              fix="Pass a path to an existing Nextflow config file.")
+        extra_configs.append(cfg)
     # None → pinned latest (unchanged); a tag → that release, validated + materialized.
     # Everything downstream consumes `st`/`st.path`, so it all targets the chosen version.
     st = versions.ensure(name, pipeline_version, pipelines_dir=pipelines_dir,
@@ -84,13 +94,20 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
     resolved = parameters.resolve_path_params(merged, param_schema)
     params_file_out = parameters.write_params_file(resolved, outdir / "provenance" / "params.json")
 
+    # Pass the work dir explicitly so it stays off the outdir (shared, content-hashed — fine),
+    # and any extra `-c` configs. nfclaw launches Nextflow from the outdir (below) so each run
+    # gets its own .nextflow/ state, but the work dir must not move into the results.
     cmd, cmd_str = nextflow_command.build(upstream=st.path, profile=composed_profile,
-                                          params_file=params_file_out, resume=resume)
+                                          params_file=params_file_out, resume=resume,
+                                          work_dir=work_dir, extra_configs=tuple(extra_configs))
     if check_only:
         return RunResult(command=cmd_str, outdir=outdir, checked_only=True,
                          outputs_report=None, warnings=warnings)
 
-    execution.run(cmd, cwd=repo_root, logs_dir=outdir / "provenance" / "logs",
+    # Launch from the outdir so each run owns its `.nextflow/` history and cache: `-resume` then
+    # resumes THIS run, never another pipeline's session. Paths in the command are absolute, so
+    # the cwd only decides where the engine state lands.
+    execution.run(cmd, cwd=outdir, logs_dir=outdir / "provenance" / "logs",
                   timeout_seconds=timeout_seconds, env_extra=nxf_overlay)
     report = outputs.collect(outdir)
     if write_provenance:

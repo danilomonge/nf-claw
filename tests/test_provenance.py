@@ -30,6 +30,22 @@ def test_defensive_without_pipeline_info(tmp_path):
     assert (prov / "run_manifest.json").exists()
 
 
+def test_excludes_nextflow_internals_and_cds_to_outdir(tmp_path):
+    import shlex
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "result.txt").write_text("data")
+    (out / ".nextflow").mkdir()
+    (out / ".nextflow" / "history").write_text("h")
+    (out / ".nextflow.log").write_text("log")
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="nextflow run x",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    sha = (prov / "outputs.sha256").read_text()
+    assert "result.txt" in sha and ".nextflow" not in sha          # internals not checksummed
+    commands = (prov / "commands.sh").read_text()
+    assert f"cd {shlex.quote(str(out))}" in commands               # replay lands state in the outdir
+
+
 def test_records_nextflow_env_and_probes_version_with_it(tmp_path, monkeypatch):
     out = tmp_path / "out"
     out.mkdir()
