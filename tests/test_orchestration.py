@@ -39,6 +39,19 @@ def test_full_run_invokes_execution(tmp_path, monkeypatch):
     assert called.get("ran") and not res.checked_only
 
 
+def test_execution_gets_diagnose_paths(tmp_path, monkeypatch):
+    # On failure, execution enriches the error from these paths (outdir/repo/tree spaces).
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    seen = {}
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: seen.update(k))
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=False, write_provenance=False, timeout_seconds=10)
+    assert (tmp_path / "out") in seen["diagnose_paths"] and root in seen["diagnose_paths"]
+
+
 def test_pipeline_version_routed_through_versions_ensure(tmp_path, monkeypatch):
     # A requested version is resolved/materialized via versions.ensure; everything downstream
     # (schema, validation, command) then targets whatever tree it returns.
