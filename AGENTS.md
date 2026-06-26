@@ -54,7 +54,9 @@ singularity. **Use a space-free path on macOS *and* Linux** — many bioinformat
 Nextflow's work directory mishandle spaces in paths; on macOS also avoid iCloud paths.
 
 ## Run-time errors
-When a run fails, `nfclaw run` recognises the common causes (path spaces, an IPv6-only host, a tool
-downloading a database, a too-new Nextflow's config parser, known upstream-pipeline bugs) from the
-log and **appends the likely cause and the exact fix to the error** — apply that flag and retry.
-The full symptom→fix map is in [`docs/known-issues.md`](docs/known-issues.md).
+Spaces in a path break many tools, so `nfclaw run` checks the repo path, the Nextflow work
+directory and `--outdir` **before** launching and **fails fast** naming the offending path (pass
+`--allow-spaces` to override) — a deterministic check, not a guess. For other failures (IPv6 host,
+no-network database downloads, a too-new Nextflow config parser, known upstream-pipeline bugs) the
+error points at the Nextflow log; the symptom→fix map is in
+[`docs/known-issues.md`](docs/known-issues.md).

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from runner import preflight
 from runner.submodule import SubmoduleStatus
 
@@ -38,14 +40,53 @@ def test_missing_nextflow_flagged(tmp_path, monkeypatch):
     assert any("nextflow not found" in i for i in issues)
 
 
-def test_space_advisory_flags_spaces_in_paths():
-    from pathlib import Path
-    adv = preflight.space_advisories(submodule=_st(Path("/vol/draft 2/up")),
-                                     output_dir=Path("/clean/out"))
-    assert len(adv) == 1 and "space" in adv[0].lower() and "NXF_WORK" in adv[0]
+def _clean_env(monkeypatch):
+    # tools present, docker daemon healthy — isolate the space check from unrelated issues
+    monkeypatch.setattr(preflight.shutil, "which", lambda x: "/usr/bin/" + x)
+    monkeypatch.setattr(preflight.subprocess, "run",
+                        lambda *a, **k: type("R", (), {"returncode": 0})())
 
 
-def test_space_advisory_silent_without_spaces():
-    from pathlib import Path
-    assert preflight.space_advisories(submodule=_st(Path("/clean/up")),
-                                      output_dir=Path("/clean/out")) == []
+def test_space_in_repo_path_blocks(tmp_path, monkeypatch):
+    _clean_env(monkeypatch)
+    spaced = tmp_path / "draft 2"
+    spaced.mkdir()
+    issues = preflight.check_environment(profile="singularity", output_dir=tmp_path / "out_x",
+                                         submodule=_st(spaced / "up"), repo_root=spaced,
+                                         resume=False)
+    assert any("repo path" in i and "space" in i and "--allow-spaces" in i for i in issues)
+
+
+def test_space_in_outdir_blocks(tmp_path, monkeypatch):
+    _clean_env(monkeypatch)
+    issues = preflight.check_environment(profile="singularity", output_dir=tmp_path / "a b" / "out",
+                                         submodule=_st(tmp_path / "up"), repo_root=tmp_path,
+                                         resume=False)
+    assert any("--outdir" in i and "space" in i for i in issues)
+
+
+def test_space_in_work_dir_blocks(tmp_path, monkeypatch):
+    _clean_env(monkeypatch)
+    issues = preflight.check_environment(profile="singularity", output_dir=tmp_path / "out_x",
+                                         submodule=_st(tmp_path / "up"), repo_root=tmp_path,
+                                         resume=False, work_dir=Path("/scratch dir/work"))
+    assert any("work directory" in i and "NXF_WORK" in i for i in issues)
+
+
+def test_allow_spaces_overrides_the_block(tmp_path, monkeypatch):
+    _clean_env(monkeypatch)
+    spaced = tmp_path / "draft 2"
+    spaced.mkdir()
+    issues = preflight.check_environment(profile="singularity", output_dir=spaced / "out",
+                                         submodule=_st(spaced / "up"), repo_root=spaced,
+                                         resume=False, work_dir=Path("/x y/work"),
+                                         allow_spaces=True)
+    assert not any("space" in i for i in issues)
+
+
+def test_no_spaces_no_block(tmp_path, monkeypatch):
+    _clean_env(monkeypatch)
+    issues = preflight.check_environment(profile="singularity", output_dir=tmp_path / "out_x",
+                                         submodule=_st(tmp_path / "up"), repo_root=tmp_path,
+                                         resume=False, work_dir=tmp_path / "work")
+    assert not any("space" in i for i in issues)

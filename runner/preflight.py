@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 from runner.submodule import SubmoduleStatus
 
 
 def check_environment(*, profile: str, output_dir: Path, submodule: SubmoduleStatus,
-                      repo_root: Path, resume: bool) -> list[str]:
+                      repo_root: Path, resume: bool, work_dir: Path | None = None,
+                      allow_spaces: bool = False) -> list[str]:
     issues: list[str] = []
     for tool, hint in (("git", ""), ("nextflow", ""), ("java", " (Nextflow needs Java 17+)")):
         if shutil.which(tool) is None:
@@ -46,20 +46,28 @@ def check_environment(*, profile: str, output_dir: Path, submodule: SubmoduleSta
             issues.append(f"--outdir must be outside the repo or a gitignored path (got {output_dir})")
     if output_dir.exists() and any(output_dir.iterdir()) and not resume:
         issues.append(f"--outdir is not empty: {output_dir} (use -resume or a fresh dir)")
-    if sys.platform == "darwin" and "docker" in tokens and \
-       (" " in str(submodule.path) or " " in str(output_dir)):
-        issues.append("path contains spaces; Docker on macOS fails (errno 35). "
-                      "Use a space-free path or Singularity.")
+    issues += _space_issues(repo_root=repo_root, output_dir=output_dir,
+                            work_dir=work_dir, allow_spaces=allow_spaces)
     return issues
 
 
-def space_advisories(*, submodule: SubmoduleStatus, output_dir: Path) -> list[str]:
-    """Non-blocking advisory (any OS) when a path contains a space. Many bioinformatics tools
-    build shell commands without quoting their work paths, so a space breaks them at runtime —
-    independent of the macOS+Docker case `check_environment` hard-blocks above."""
-    hits = [str(p) for p in (submodule.path, output_dir) if " " in str(p)]
-    if not hits:
+def _space_issues(*, repo_root: Path, output_dir: Path, work_dir: Path | None,
+                  allow_spaces: bool) -> list[str]:
+    """Fail-fast, deterministic: a space in the repo tree, the Nextflow work directory or the
+    output path breaks many bioinformatics tools (they build shell commands without quoting
+    their work paths) and Docker on macOS outright. A path either contains a space or it does
+    not — there is no heuristic here. `--allow-spaces` is the explicit opt-out."""
+    if allow_spaces:
         return []
-    return ["a path contains spaces (" + "; ".join(hits) + "); some pipeline tools and "
-            "Nextflow's work directory mishandle spaces. Use a space-free path, or set the "
-            "work directory with `--nxf-env NXF_WORK=/a/space-free/dir`."]
+    issues: list[str] = []
+    for label, path in (("the repo path", repo_root),
+                        ("the Nextflow work directory", work_dir),
+                        ("--outdir", output_dir)):
+        if path is None or " " not in str(path):
+            continue
+        fix = ("set the work directory off it with --nxf-env NXF_WORK=/a/space-free/dir"
+               if "work" in label else "use a space-free path")
+        issues.append(f"{label} contains a space: {path} — bioinformatics tools and Nextflow's "
+                      f"work directory mishandle spaces (Docker on macOS fails outright). "
+                      f"{fix}, or pass --allow-spaces to run anyway.")
+    return issues

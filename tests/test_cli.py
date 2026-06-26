@@ -140,6 +140,20 @@ def test_run_rejects_non_nxf_env_var(tmp_path, monkeypatch, capsys):
     assert "NXF_" in capsys.readouterr().err
 
 
+def test_run_threads_allow_spaces(tmp_path, monkeypatch):
+    from runner import orchestration
+    captured = {}
+    monkeypatch.setattr(orchestration, "run_pipeline",
+                        lambda *a, **k: captured.update(k) or orchestration.RunResult(
+                            "CMD", Path("/o"), True, None))
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out"), "--allow-spaces"]) == 0
+    assert captured["allow_spaces"] is True
+    captured.clear()
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 0
+    assert captured["allow_spaces"] is False                  # default off
+
+
 def test_run_rejects_malformed_nxf_env(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
     rc = cli.main(["run", "x", "--outdir", str(tmp_path / "out"), "--nxf-env", "NXF_VER"])

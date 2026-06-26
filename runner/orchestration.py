@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -24,7 +25,8 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
                  check_only: bool, write_provenance: bool,
                  timeout_seconds: int, pipeline_version: str | None = None,
                  nxf_ver: str | None = None,
-                 nxf_env: dict[str, str] | None = None) -> RunResult:
+                 nxf_env: dict[str, str] | None = None,
+                 allow_spaces: bool = False) -> RunResult:
     pipelines_dir = repo_root / "pipelines"
     discovery.find(name, pipelines_dir)                       # 404 if unknown
     # None → pinned latest (unchanged); a tag → that release, validated + materialized.
@@ -37,6 +39,10 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
     nxf_overlay = dict(nxf_env or {})
     if nxf_ver:
         nxf_overlay["NXF_VER"] = nxf_ver
+    # The Nextflow work directory for this run: NXF_WORK (overlay wins over the shell) if set,
+    # else Nextflow's default of <cwd>/work — cwd is the repo root. Used by the space check.
+    work_dir = Path(nxf_overlay.get("NXF_WORK") or os.environ.get("NXF_WORK")
+                    or repo_root / "work")
     param_schema = schema_mod.load_param_schema(st.path)
     input_schema = schema_mod.load_input_schema(st.path)
 
@@ -63,7 +69,8 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
 
     composed_profile = nextflow_command.compose_profile(profile, demo=demo)
     issues = preflight.check_environment(profile=composed_profile, output_dir=outdir,
-                                         submodule=st, repo_root=repo_root, resume=resume)
+                                         submodule=st, repo_root=repo_root, resume=resume,
+                                         work_dir=work_dir, allow_spaces=allow_spaces)
     if issues:
         raise NfclawError(ErrorCode.ENVIRONMENT, "Preflight checks failed.",
                           details={"issues": issues})
@@ -72,7 +79,6 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
     # engine to the pipeline's declared requirement. Non-blocking — Nextflow is the authority
     # and enforces this itself at launch; we just surface it earlier with a clear message.
     warnings = engine_version.check(st.path, nxf_ver=nxf_overlay.get("NXF_VER"))
-    warnings += preflight.space_advisories(submodule=st, output_dir=outdir)
 
     outdir.mkdir(parents=True, exist_ok=True)
     resolved = parameters.resolve_path_params(merged, param_schema)
@@ -85,8 +91,7 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
                          outputs_report=None, warnings=warnings)
 
     execution.run(cmd, cwd=repo_root, logs_dir=outdir / "provenance" / "logs",
-                  timeout_seconds=timeout_seconds, env_extra=nxf_overlay,
-                  diagnose_paths=(repo_root, outdir, st.path))
+                  timeout_seconds=timeout_seconds, env_extra=nxf_overlay)
     report = outputs.collect(outdir)
     if write_provenance:
         refs = param_schema.reference_path_params()
