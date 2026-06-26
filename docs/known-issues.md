@@ -34,6 +34,13 @@ deterministic check, no guessing. Fixes:
 **Why:** the host has no default IPv4 route; the JVM prefers IPv4 and never tries IPv6.
 **Fix:** `--nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true`. To skip remote config
 fetches entirely (offline): `--nxf-env NXF_OFFLINE=true`.
+**On an IPv6-only host you usually need BOTH this *and* the Docker host-network config (next
+section), together:** the JVM flag fixes Nextflow's own GitHub download, while host-network fixes
+DNS *inside* containers — neither alone is enough.
+```bash
+nfclaw run <name> --nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true \
+                  --config host-net.config …
+```
 
 ### No network at run time — a tool downloads a database
 **Symptom:** a step (e.g. BUSCO) hangs then fails trying to fetch a database it needs.
@@ -48,6 +55,9 @@ time, `import` in `.nf`). Many older releases hit this.
 **Fix:** pin an engine the release was written for: `--nxf-ver 25.10.2` (must still satisfy the
 pipeline's declared `nextflowVersion` minimum). If you hit it on most pipelines, set it once for the
 shell: `export NXF_VER=25.10.2` (nfclaw passes it through). See [`compatibility.md`](compatibility.md).
+Confirmed-affected releases that **do** run with `--nxf-ver 25.10.2` include `epitopeprediction`,
+`fetchngs`, `hgtseq`, `callingcards`, `funcscan`, `coproid` and `denovotranscript` 1.2.1. (`bactmap`
+1.0.0 hits this *and* further bugs and can't run in demo here — see the upstream table.)
 
 ### Docker bridge network has no DNS (IPv6-only host)
 **Symptom:** containers can't resolve hostnames; downloads inside a container fail even though the
@@ -61,16 +71,34 @@ docker { runOptions = "--network host" }
 config (also handy for custom resources, below).
 
 ### A container creates root-owned files that block publishing
-**Symptom:** a step (e.g. `CUSTOM_SRATOOLSNCBISETTINGS`, `macrel`) writes a file owned by root with
-mode `600`, and Nextflow can't copy it to `--outdir`.
-**Why:** Docker runs containers as root by default; the file lands in the work dir owned by root.
-**Fix:** map your user into the container via `--config` (`docker { runOptions = "-u \$(id -u):\$(id -g)" }`),
-or fix the file's permissions in the work dir and resume the run (`-resume`, see below).
+**Symptom:** a step writes a file/dir owned by root with restrictive permissions, and Nextflow —
+running as your user — can't read or publish it. Examples: `CUSTOM_SRATOOLSNCBISETTINGS` and
+`macrel` (mode `600`), or STAR in `rnaseq` (`_STARgenome/` / `_STARpass1/` as `drwx------`,
+failing with `AccessDeniedException`).
+**Why:** Docker runs containers as root by default; outputs land in the work dir owned by root.
+**Fix:** run the container as your user via a `--config` file. **Use literal numeric ids —
+`$(id -u)` does _not_ work here:** Nextflow passes `runOptions` verbatim into the generated
+`.command.run`, where `$(...)` is never shell-evaluated and breaks with
+`syntax error near unexpected token ')'`. Find your ids with `id -u` / `id -g` (commonly
+`1000:1000`) and hardcode them:
+```groovy
+// run-as-user.config
+docker { runOptions = "-u 1000:1000" }
+```
+`nfclaw run <name> --config run-as-user.config …`. (Or fix the file's permissions in the work dir
+and `-resume`.)
 
 ### `-resume` resumed the wrong session
 **Status: fixed.** `nfclaw run` now launches Nextflow **from the `--outdir`**, so each run owns its
 own `.nextflow/` history and cache. `--resume` resumes *this* outdir's session — it can no longer
 pick up another pipeline's run. Use a distinct `--outdir` per pipeline.
+
+### Launching several pipelines in parallel
+**Status: fixed.** Starting 2+ pipelines at once whose submodules were uninitialised used to race on
+`.git/config` (`could not lock config file`). `nfclaw run` now serialises submodule initialisation
+with a per-repo file lock (and re-checks under it), so concurrent first-time runs initialise each
+submodule exactly once. No action needed; for many pipelines you can also pre-init up front with
+`git submodule update --init`.
 
 ## Upstream pipeline bugs (documented, not patched)
 
@@ -84,6 +112,7 @@ is the nf-claw-side workaround.
 | `bacass` 2.6.1 (Unicycler) | `SyntaxWarning: invalid escape sequence '\d'` then failure on Python 3.12 | the `unicycler:0.5.1` container ships Python code not updated for 3.12 | choose another assembler: `--assembler megahit` |
 | `hgtseq` 1.1.0 | `a column named input1 ... is mandatory!` | the `test` profile's CSV uses the old header `sample,fastq_1,fastq_2`, but the release's schema expects `sample_group,input1,input2` | provide a matching samplesheet via `--input` (don't rely on `--demo`) |
 | `funcscan` 2.1.0 | `TypeError` in `ampcombi_download.py` building the DRAMP DB | rows with an empty `Sequence` become `NaN`; the script applies a regex to a float | pre-build the DB with the NaN rows filtered and pass `--amp_ampcombi_db /path/to/amp_DRAMP_database` |
+| `bactmap` 1.0.0 | won't run in `--demo` on any Nextflow here | three chained issues: NF 26 strict parser rejects `def check_max(obj, type)`; NF 25 treats `file("https://…", checkIfExists: true)` (bactmap.nf:13) as a local path → `No such file or directory: https://…`; NF 23's CAPSULE bootstrapper can't resolve Maven deps on this host | not runnable in demo — wait for an upstream fix / report; pin a different release with `--pipeline-version` if one works |
 
 When a workaround relies on a different release, confirm the symptom is gone there before relying
 on it — `nfclaw show <name> --pipeline-version X.Y.Z` prints that release's docs.
