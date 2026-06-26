@@ -8,6 +8,10 @@ reported upstream, never patched into the submodule.
 `nfclaw run` flags used below come from the runner; both `--nxf-ver` and `--nxf-env` are recorded
 in `<outdir>/provenance/` so a working invocation is reproducible.
 
+When a run fails, `nfclaw run` recognises the common causes below from the Nextflow log and
+**appends the likely cause and the exact fix to the error message** (alongside the full log path),
+so you can apply the right flag immediately instead of diagnosing by hand.
+
 ## Environment
 
 ### Path contains a space

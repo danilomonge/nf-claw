@@ -85,7 +85,8 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
                          outputs_report=None, warnings=warnings)
 
     execution.run(cmd, cwd=repo_root, logs_dir=outdir / "provenance" / "logs",
-                  timeout_seconds=timeout_seconds, env_extra=nxf_overlay)
+                  timeout_seconds=timeout_seconds, env_extra=nxf_overlay,
+                  diagnose_paths=(repo_root, outdir, st.path))
     report = outputs.collect(outdir)
     if write_provenance:
         refs = param_schema.reference_path_params()
