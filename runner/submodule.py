@@ -1,13 +1,40 @@
 from __future__ import annotations
 
+import contextlib
+import hashlib
 import subprocess
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
 from runner.errors import ErrorCode, NfclawError
 
+try:
+    import fcntl                                  # POSIX file locks (macOS/Linux)
+except ImportError:                              # pragma: no cover — Windows has no fcntl
+    fcntl = None
+
 REQUIRED_FILES = ("main.nf", "nextflow.config", "nextflow_schema.json")
 _GIT_TIMEOUT = 30
+
+
+@contextlib.contextmanager
+def _init_lock(repo_root: Path):
+    """Serialize `git submodule update` across concurrent nfclaw processes on the same repo.
+    Without it, parallel inits race on `.git/config` ("could not lock config file"). The lock
+    is an flock on a per-repo temp file — it never touches the working tree. No-op where flock
+    is unavailable (Windows)."""
+    if fcntl is None:
+        yield
+        return
+    key = hashlib.sha256(str(repo_root.resolve()).encode()).hexdigest()[:16]
+    lock_path = Path(tempfile.gettempdir()) / f"nfclaw-submodule-{key}.lock"
+    with open(lock_path, "w") as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(fh, fcntl.LOCK_UN)
 
 
 @dataclass(frozen=True)
@@ -52,9 +79,12 @@ def ensure_initialized(name: str, pipelines_dir: Path, repo_root: Path) -> Submo
     st = resolve(name, pipelines_dir)
     if not st.initialized:
         rel = f"pipelines/{name}/upstream"
-        subprocess.run(["git", "submodule", "update", "--init", "--depth", "1", rel],
-                       cwd=str(repo_root), check=True)
-        st = resolve(name, pipelines_dir)
+        with _init_lock(repo_root):
+            st = resolve(name, pipelines_dir)               # re-check: another run may have just done it
+            if not st.initialized:
+                subprocess.run(["git", "submodule", "update", "--init", "--depth", "1", rel],
+                               cwd=str(repo_root), check=True)
+                st = resolve(name, pipelines_dir)
     if not st.complete:
         raise NfclawError(
             ErrorCode.SUBMODULE_INCOMPLETE,
