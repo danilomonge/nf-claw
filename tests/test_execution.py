@@ -1,6 +1,4 @@
 import sys
-from pathlib import Path
-
 import pytest
 from runner import execution
 from runner.errors import NfclawError
@@ -39,18 +37,8 @@ def test_env_extra_preserves_inherited_environment(tmp_path, monkeypatch):
     assert (tmp_path / "logs" / "stdout.txt").read_text().strip() == "yes"
 
 
-def test_failure_enriches_error_from_stderr_signature(tmp_path):
-    cmd = [PY, "-c", "import sys; sys.stderr.write('java.net.SocketException: Network is "
-           "unreachable\\n'); sys.exit(1)"]
+def test_failure_points_to_log_and_known_issues(tmp_path):
     with pytest.raises(NfclawError) as exc:
-        execution.run(cmd, cwd=tmp_path, logs_dir=tmp_path / "logs", timeout_seconds=30)
-    assert "NXF_JVM_ARGS" in exc.value.fix                    # the diagnosed fix, not just "inspect log"
-    assert "Full log" in exc.value.fix                        # raw log still pointed to
-
-
-def test_failure_flags_space_via_diagnose_paths(tmp_path):
-    cmd = [PY, "-c", "import sys; sys.exit(1)"]
-    with pytest.raises(NfclawError) as exc:
-        execution.run(cmd, cwd=tmp_path, logs_dir=tmp_path / "logs", timeout_seconds=30,
-                      diagnose_paths=(Path("/vol/draft 2/out"),))
-    assert "space" in exc.value.fix.lower() and "NXF_WORK" in exc.value.fix
+        execution.run([PY, "-c", "import sys; sys.exit(1)"], cwd=tmp_path,
+                      logs_dir=tmp_path / "logs", timeout_seconds=30)
+    assert "stderr.txt" in exc.value.fix and "known-issues.md" in exc.value.fix

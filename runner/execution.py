@@ -7,7 +7,6 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from runner import diagnostics
 from runner.errors import ErrorCode, NfclawError
 
 
@@ -18,16 +17,8 @@ class ExecResult:
     stderr_path: Path
 
 
-def _stderr_tail(path: Path, limit: int = 8000) -> str:
-    try:
-        return path.read_text(encoding="utf-8", errors="replace")[-limit:]
-    except OSError:
-        return ""
-
-
 def run(command: list[str], *, cwd: Path, logs_dir: Path,
-        timeout_seconds: int, env_extra: dict[str, str] | None = None,
-        diagnose_paths: tuple[Path, ...] = ()) -> ExecResult:
+        timeout_seconds: int, env_extra: dict[str, str] | None = None) -> ExecResult:
     logs_dir.mkdir(parents=True, exist_ok=True)
     out_p, err_p = logs_dir / "stdout.txt", logs_dir / "stderr.txt"
     popen_kwargs = {} if sys.platform == "win32" else {"start_new_session": True}
@@ -50,12 +41,10 @@ def run(command: list[str], *, cwd: Path, logs_dir: Path,
                               fix="Increase --timeout or use a smaller dataset.",
                               details={"timeout_seconds": timeout_seconds})
     if code != 0:
-        # Turn the failure into an actionable hint where we recognise the cause, then always
-        # point at the full log. Lets the caller (and the agent) apply the right fix immediately.
-        hints = diagnostics.diagnose(_stderr_tail(err_p), paths=diagnose_paths)
-        fix = " ".join(hints + [f"Full log: {err_p}"])
         raise NfclawError(ErrorCode.EXECUTION_FAILED, "Nextflow execution failed.",
-                          fix=fix, details={"exit_code": code})
+                          fix=f"Inspect the log: {err_p}. Common causes and fixes: "
+                              "docs/known-issues.md.",
+                          details={"exit_code": code})
     return ExecResult(code, out_p, err_p)
 
 

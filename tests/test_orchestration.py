@@ -39,17 +39,51 @@ def test_full_run_invokes_execution(tmp_path, monkeypatch):
     assert called.get("ran") and not res.checked_only
 
 
-def test_execution_gets_diagnose_paths(tmp_path, monkeypatch):
-    # On failure, execution enriches the error from these paths (outdir/repo/tree spaces).
+def test_passes_effective_work_dir_and_allow_spaces_to_preflight(tmp_path, monkeypatch):
+    from pathlib import Path
     root = _make_pipeline(tmp_path, "mini")
-    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
     seen = {}
-    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: seen.update(k))
+    monkeypatch.setattr(orchestration.preflight, "check_environment",
+                        lambda **k: seen.update(k) or [])
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: None)
     orchestration.run_pipeline(
         "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
         profile="docker", params_file=None, cli_overrides={}, resume=False,
-        demo=True, check_only=False, write_provenance=False, timeout_seconds=10)
-    assert (tmp_path / "out") in seen["diagnose_paths"] and root in seen["diagnose_paths"]
+        demo=True, check_only=False, write_provenance=False, timeout_seconds=10,
+        nxf_env={"NXF_WORK": "/scratch/work"}, allow_spaces=True)
+    assert seen["work_dir"] == Path("/scratch/work")          # NXF_WORK overlay wins
+    assert seen["allow_spaces"] is True
+
+
+def test_work_dir_defaults_under_repo_when_no_nxf_work(tmp_path, monkeypatch):
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.delenv("NXF_WORK", raising=False)
+    seen = {}
+    monkeypatch.setattr(orchestration.preflight, "check_environment",
+                        lambda **k: seen.update(k) or [])
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: None)
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
+    assert seen["work_dir"] == root / "work"                  # Nextflow default: <cwd>/work
+
+
+def test_space_in_repo_path_blocks_the_run(tmp_path, monkeypatch):
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    root = _make_pipeline(tmp_path / "draft 2", "mini")        # repo path has a space
+    # real preflight, but isolate from tool/daemon checks so only the space rule can fire
+    monkeypatch.setattr(orchestration.preflight.shutil, "which", lambda x: "/usr/bin/" + x)
+    monkeypatch.setattr(orchestration.preflight.subprocess, "run",
+                        lambda *a, **k: type("R", (), {"returncode": 0, "stdout": "", "stderr": ""})())
+    with pytest.raises(NfclawError) as exc:
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+            profile="singularity", params_file=None, cli_overrides={}, resume=False,
+            demo=False, check_only=True, write_provenance=False, timeout_seconds=10)
+    assert exc.value.code == ErrorCode.ENVIRONMENT
+    assert any("space" in i for i in exc.value.details["issues"])
 
 
 def test_pipeline_version_routed_through_versions_ensure(tmp_path, monkeypatch):
@@ -153,16 +187,6 @@ def test_boolean_cli_string_is_coerced_in_params_file(tmp_path, monkeypatch):
         resume=False, demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
     params = json.loads((tmp_path / "out" / "provenance" / "params.json").read_text())
     assert params["skip_busco"] is True                       # CLI "true" → real boolean for nf-schema
-
-
-def test_space_in_path_surfaces_nonblocking_advisory(tmp_path, monkeypatch):
-    root = _make_pipeline(tmp_path / "draft 2", "mini")        # repo path contains a space
-    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
-    res = orchestration.run_pipeline(
-        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
-        profile="singularity", params_file=None, cli_overrides={}, resume=False,
-        demo=False, check_only=True, write_provenance=False, timeout_seconds=10)
-    assert any("space" in w.lower() for w in res.warnings)     # advisory, not a hard failure
 
 
 def test_invalid_param_rejected_before_execution(tmp_path, monkeypatch):

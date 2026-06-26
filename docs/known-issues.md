@@ -8,20 +8,23 @@ reported upstream, never patched into the submodule.
 `nfclaw run` flags used below come from the runner; both `--nxf-ver` and `--nxf-env` are recorded
 in `<outdir>/provenance/` so a working invocation is reproducible.
 
-When a run fails, `nfclaw run` recognises the common causes below from the Nextflow log and
-**appends the likely cause and the exact fix to the error message** (alongside the full log path),
-so you can apply the right flag immediately instead of diagnosing by hand.
+When a run fails for any other reason, the error points at the full Nextflow log and back to this
+file; match the symptom below and apply the fix.
 
 ## Environment
 
-### Path contains a space
+### Path contains a space — checked before the run, fails fast
 **Symptom:** a tool fails with a split path, e.g. `cannot create /vol/draft 2/...: Permission
 denied`, `Got unexpected extra argument(s)`, or a module that builds shell commands breaks.
 **Why:** many bioinformatics tools (and Nextflow's work directory) build shell commands without
 quoting their paths, so a space splits the argument. This affects **macOS and Linux** alike.
-**Fix:** use a space-free path for the repo. If you must keep a spaced path, at least move the
-work directory off it: `--nxf-env NXF_WORK=/a/space-free/dir` (keep `--outdir` wherever you need
-the results). `nfclaw run` prints a non-blocking advisory when it detects a space.
+**How nfclaw handles it:** `nfclaw run` checks the **repo path, the Nextflow work directory and
+`--outdir`** *before* launching and **fails fast**, naming exactly which path has the space — a
+deterministic check, no guessing. Fixes:
+- move the repo to a space-free path (recommended);
+- or set a space-free work directory: `--nxf-env NXF_WORK=/a/space-free/dir`, and use a space-free
+  `--outdir`;
+- or, if you know your pipeline tolerates spaces, pass `--allow-spaces` to run anyway.
 
 ### IPv6-only host — JVM can't reach GitHub
 **Symptom:** `java.net.SocketException: Network is unreachable` while Nextflow downloads

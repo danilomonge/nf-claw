@@ -79,6 +79,9 @@ def main(argv: list[str] | None = None) -> int:
                        metavar="KEY=VALUE",
                        help="set an NXF_* env var for this run (repeatable), e.g. "
                             "NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true")
+    p_run.add_argument("--allow-spaces", dest="allow_spaces", action="store_true",
+                       help="run even if a path contains spaces (off by default; spaces break "
+                            "many bioinformatics tools and Nextflow's work dir)")
     p_run.add_argument("--check", action="store_true")
     p_run.add_argument("--demo", action="store_true")
     p_run.add_argument("--resume", action="store_true")
@@ -141,7 +144,8 @@ def main(argv: list[str] | None = None) -> int:
                 resume=args.resume, demo=args.demo, check_only=args.check,
                 write_provenance=not args.no_provenance, timeout_seconds=args.timeout,
                 pipeline_version=args.pipeline_version,
-                nxf_ver=args.nxf_ver, nxf_env=_parse_nxf_env(args.nxf_env))
+                nxf_ver=args.nxf_ver, nxf_env=_parse_nxf_env(args.nxf_env),
+                allow_spaces=args.allow_spaces)
         except NfclawError as exc:
             print(str(exc), file=sys.stderr)
             return 1
