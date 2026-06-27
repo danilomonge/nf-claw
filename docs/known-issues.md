@@ -56,8 +56,10 @@ time, `import` in `.nf`). Many older releases hit this.
 pipeline's declared `nextflowVersion` minimum). If you hit it on most pipelines, set it once for the
 shell: `export NXF_VER=25.10.2` (nfclaw passes it through). See [`compatibility.md`](compatibility.md).
 Confirmed-affected releases that **do** run with `--nxf-ver 25.10.2` include `epitopeprediction`,
-`fetchngs`, `hgtseq`, `callingcards`, `funcscan`, `coproid` and `denovotranscript` 1.2.1. (`bactmap`
-1.0.0 hits this *and* further bugs and can't run in demo here — see the upstream table.)
+`fetchngs`, `hgtseq`, `callingcards`, `funcscan`, `coproid`, `denovotranscript` 1.2.1,
+`chipseq` 2.1.0 and `fastqrepair` 1.0.0 (e.g. chipseq's `def check_max(obj, type)` in
+`nextflow.config`). (`bactmap` 1.0.0 hits this *and* further bugs and can't run in demo here — see
+the upstream table.)
 
 ### Docker bridge network has no DNS (IPv6-only host)
 **Symptom:** containers can't resolve hostnames; downloads inside a container fail even though the
@@ -93,6 +95,17 @@ and `-resume`.)
 own `.nextflow/` history and cache. `--resume` resumes *this* outdir's session — it can no longer
 pick up another pipeline's run. Use a distinct `--outdir` per pipeline.
 
+### `--resume` fails with "Unable to acquire lock on session …"
+**Symptom:** after a run was interrupted (killed/timed out), re-running with `--resume` fails to
+acquire the session lock.
+**Why:** a hard kill leaves Nextflow's session lock behind; Nextflow refuses to resume because it
+can't tell the lock is stale rather than held by a live process (it never auto-clears it, by design,
+to avoid corrupting a concurrent run).
+**Fix:** make sure no Nextflow process for that `--outdir` is still running, then remove the stale
+lock under that outdir's state — `rm -f <outdir>/.nextflow/cache/*/LOCK` (or just start fresh in a
+new `--outdir`) — and `--resume` again. Because each run owns its `--outdir`'s `.nextflow/`, this only
+affects that one run.
+
 ### Launching several pipelines in parallel
 **Status: fixed.** Starting 2+ pipelines at once whose submodules were uninitialised used to race on
 `.git/config` (`could not lock config file`). `nfclaw run` now serialises submodule initialisation
@@ -111,7 +124,7 @@ is the nf-claw-side workaround.
 | `bamtofastq` (incl. 2.1.2 / 2.2.1) | `SAMTOOLS_FAIDX ([])` fails immediately | the `test` profile sets `genome = null` + `igenomes_ignore = true`, so `prepare_indices` routes an empty dummy channel into `SAMTOOLS_FAIDX` | provide a reference (`--fasta` / `--genome`); no fix in pure `--demo` mode — report upstream |
 | `bacass` 2.6.1 (Unicycler) | `SyntaxWarning: invalid escape sequence '\d'` then failure on Python 3.12 | the `unicycler:0.5.1` container ships Python code not updated for 3.12 | choose another assembler: `--assembler megahit` |
 | `hgtseq` 1.1.0 | `a column named input1 ... is mandatory!` | the `test` profile's CSV uses the old header `sample,fastq_1,fastq_2`, but the release's schema expects `sample_group,input1,input2` | provide a matching samplesheet via `--input` (don't rely on `--demo`) |
-| `funcscan` 2.1.0 | `TypeError` in `ampcombi_download.py` building the DRAMP DB | rows with an empty `Sequence` become `NaN`; the script applies a regex to a float | pre-build the DB with the NaN rows filtered and pass `--amp_ampcombi_db /path/to/amp_DRAMP_database` |
+| `funcscan` (incl. 2.1.0, 3.0.0) | `TypeError` in `ampcombi_download.py` building the DRAMP DB (persists across releases; NF 26 also needs `--nxf-ver 25.10.2`) | rows with an empty `Sequence` become `NaN`; the script applies a regex to a float | pre-build the DB with the NaN rows filtered and pass `--amp_ampcombi_db /path/to/amp_DRAMP_database` |
 | `bactmap` 1.0.0 | won't run in `--demo` on any Nextflow here | three chained issues: NF 26 strict parser rejects `def check_max(obj, type)`; NF 25 treats `file("https://…", checkIfExists: true)` (bactmap.nf:13) as a local path → `No such file or directory: https://…`; NF 23's CAPSULE bootstrapper can't resolve Maven deps on this host | not runnable in demo — wait for an upstream fix / report; pin a different release with `--pipeline-version` if one works |
 
 When a workaround relies on a different release, confirm the symptom is gone there before relying
