@@ -1,7 +1,7 @@
 ---
 name: funcscan
-version: 3.0.0
-commit: fa9db018e528ffb5149cdde928e2fa24e7c546fe
+version: 4.0.0
+commit: aee3dc965eb0c77267435544dda30da858763913
 ---
 
 # funcscan — full parameter reference
@@ -13,11 +13,11 @@ nf-core/funcscan pipeline parameters. Every parameter from the pinned `nextflow_
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--amp-ampcombi-cluster-coverage` | number |  |  |  |  | 0.8 | MMseqs2 alignment coverage. |
-| `--amp-ampcombi-cluster-covmode` | number |  |  |  |  | 0.0 | MMseqs2 coverage mode. |
+| `--amp-ampcombi-cluster-covmode` | number |  |  |  |  | 0 | MMseqs2 coverage mode. |
+| `--amp-ampcombi-cluster-keepsingletons` | boolean |  |  |  |  |  | Keep any hits that form a single member cluster. |
 | `--amp-ampcombi-cluster-minmembers` | integer |  |  |  |  | 0 | Remove clusters that don't have more AMP hits than this number. |
-| `--amp-ampcombi-cluster-mode` | number |  |  |  |  | 1.0 | MMseqs2 clustering mode. |
-| `--amp-ampcombi-cluster-removesingletons` | boolean |  |  |  |  |  | Remove any hits that form a single member cluster. |
-| `--amp-ampcombi-cluster-sensitivity` | number |  |  |  |  | 4.0 | Remove hits that have no stop codon upstream and downstream of the AMP. |
+| `--amp-ampcombi-cluster-mode` | number |  |  |  |  | 1 | MMseqs2 clustering mode. |
+| `--amp-ampcombi-cluster-sensitivity` | number |  |  |  |  | 4 | Remove hits that have no stop codon upstream and downstream of the AMP. |
 | `--amp-ampcombi-cluster-seqid` | number |  |  |  |  | 0.4 | MMseqs2 sequence identity. |
 
 ## amp_ampcombi2_parsetables
@@ -30,7 +30,7 @@ nf-core/funcscan pipeline parameters. Every parameter from the pinned `nextflow_
 | `--amp-ampcombi-parsetables-ampir` | string |  |  |  |  | .ampir.tsv | Assigns the file extension used to identify AMPIR output. |
 | `--amp-ampcombi-parsetables-amplify` | string |  |  |  |  | .amplify.tsv | Assigns the file extension used to identify AMPLIFY output. |
 | `--amp-ampcombi-parsetables-cutoff` | number |  |  |  |  | 0.6 | Specifies the prediction tools' cut-offs. |
-| `--amp-ampcombi-parsetables-dbevalue` | number |  |  |  |  | 5.0 | Remove all DRAMP annotations that have an e-value greater than this value. |
+| `--amp-ampcombi-parsetables-dbevalue` | number |  |  |  |  | 5 | Remove all DRAMP annotations that have an e-value greater than this value. |
 | `--amp-ampcombi-parsetables-hmmevalue` | number |  |  |  |  | 0.06 | Retain HMM hits that have an e-value lower than this. |
 | `--amp-ampcombi-parsetables-hmmsearch` | string |  |  |  |  | .hmmer_hmmsearch.txt | Assigns the file extension used to identify HMMER/HMMSEARCH output. |
 | `--amp-ampcombi-parsetables-macrel` | string |  |  |  |  | .macrel.prediction | Assigns the file extension used to identify MACREL output. |
@@ -154,7 +154,7 @@ nf-core/funcscan pipeline parameters. Every parameter from the pinned `nextflow_
 |---|---|---|---|---|---|---|---|
 | `--arg-amrfinderplus-coveragemin` | number |  |  |  | ≥ 0; ≤ 1 | 0.5 | Minimum coverage of the reference protein. |
 | `--arg-amrfinderplus-db` | string |  |  |  |  |  | Specify the path to a local version of the ARMFinderPlus database. |
-| `--arg-amrfinderplus-identmin` | number |  |  |  |  | -1.0 | Minimum percent identity to reference sequence. |
+| `--arg-amrfinderplus-identmin` | number |  |  |  |  | -1 | Minimum percent identity to reference sequence. |
 | `--arg-amrfinderplus-name` | boolean |  |  |  |  |  | Add identified column to AMRFinderPlus output. |
 | `--arg-amrfinderplus-plus` | boolean |  |  |  |  |  | Add the plus genes to the report. |
 | `--arg-amrfinderplus-translationtable` | integer |  |  |  | ≥ 1; ≤ 33 | 11 | Specify which NCBI genetic code to use for translated BLAST. |
@@ -205,9 +205,10 @@ nf-core/funcscan pipeline parameters. Every parameter from the pinned `nextflow_
 | `--arg-rgi-alignmenttool` | string |  |  | BLAST, DIAMOND |  | BLAST | Specify the alignment tool to be used. |
 | `--arg-rgi-data` | string |  |  | NA, wgs, plasmid, chromosome |  | NA | Specify a more specific data-type of input (e.g. plasmid, chromosome). |
 | `--arg-rgi-db` | string |  |  |  |  |  | Path to user-defined local CARD database. |
-| `--arg-rgi-includeloose` | boolean |  |  |  |  |  | Include all of loose, strict and perfect hits (i.e. ≥ 95% identity) found by RGI. |
+| `--arg-rgi-includeloose` | boolean |  |  |  |  |  | Include all of loose, strict and perfect hits (i.e. more than 95% identity) found by RGI. |
 | `--arg-rgi-includenudge` | boolean |  |  |  |  |  | Suppresses the default behaviour of RGI with `--arg_rgi_includeloose`. |
 | `--arg-rgi-lowquality` | boolean |  |  |  |  |  | Include screening of low quality contigs for partial genes. |
+| `--arg-rgi-removetemporaryfiles` | boolean |  |  |  |  |  | Specify to trigger RGI's internal cleanup of intermediate files. |
 | `--arg-rgi-savejson` | boolean |  |  |  |  |  | Save RGI output .json file. |
 | `--arg-rgi-savetmpfiles` | boolean |  |  |  |  |  | Specify to save intermediate temporary files in the results directory. |
 | `--arg-rgi-split-prodigal-jobs` | boolean |  |  |  |  | true | Run multiple prodigal jobs simultaneously for contigs in a fasta file. |
@@ -221,15 +222,30 @@ nf-core/funcscan pipeline parameters. Every parameter from the pinned `nextflow_
 | `--bgc-antismash-cbknownclusters` | boolean |  |  |  |  |  | Turn on clusterblast comparison against known gene clusters from the MIBiG database. |
 | `--bgc-antismash-cbsubclusters` | boolean |  |  |  |  |  | Turn on clusterblast comparison against known subclusters responsible for synthesising precursors. |
 | `--bgc-antismash-ccmibig` | boolean |  |  |  |  |  | Turn on ClusterCompare comparison against known gene clusters from the MIBiG database. |
+| `--bgc-antismash-clusterhmmer` | boolean |  |  |  |  |  | Run antiSMASH with --clusterhmmer mode with Pfam profiles |
 | `--bgc-antismash-contigminlength` | integer |  |  |  |  | 3000 | Minimum length a contig must have to be screened with antiSMASH. |
 | `--bgc-antismash-db` | string |  |  |  |  |  | Path to user-defined local antiSMASH database. |
+| `--bgc-antismash-fullhmmer` | boolean |  |  |  |  |  | Run antiSMASH with --fullhmmer mode with Pfam profiles |
 | `--bgc-antismash-hmmdetectionstrictness` | string |  |  | relaxed, strict, loose |  | relaxed | Defines which level of strictness to use for HMM-based cluster detection. |
 | `--bgc-antismash-pfam2go` | boolean |  |  |  |  |  | Run Pfam to Gene Ontology mapping module. |
 | `--bgc-antismash-rre` | boolean |  |  |  |  |  | Run RREFinder precision mode on all RiPP gene clusters. |
 | `--bgc-antismash-smcogtrees` | boolean |  |  |  |  |  | Generate phylogenetic trees of secondary metabolite group orthologs. |
 | `--bgc-antismash-taxon` | string |  |  | bacteria, fungi |  | bacteria | Specify which taxonomic classification of input sequence to use. |
 | `--bgc-antismash-tfbs` | boolean |  |  |  |  |  | Run TFBS finder on all gene clusters. |
+| `--bgc-antismash-tigrfam` | boolean |  |  |  |  |  | Run antiSMASH with --tigrfam annotation activated |
 | `--bgc-skip-antismash` | boolean |  |  |  |  |  | Skip antiSMASH during the BGC screening. |
+
+## bgc_bigslice
+
+| parameter | type | required | hidden | allowed values | constraints | default | description |
+|---|---|---|---|---|---|---|---|
+| `--bgc-bigslice-complete` | boolean |  |  |  |  |  | Run BiG-SLiCE in complete mode, re-clustering all BGCs into GCFs from scratch. |
+| `--bgc-bigslice-db` | string |  |  |  |  |  | Path to the pre-downloaded BiG-SLiCE HMM database directory. |
+| `--bgc-bigslice-exporttsv` | boolean |  |  |  |  |  | Export BiG-SLiCE results as TSV files in addition to the SQLite database. |
+| `--bgc-bigslice-nranks` | integer |  |  |  |  | 1 | Number of best GCF hits to report for each BGC membership assignment. |
+| `--bgc-bigslice-threshold` | number |  |  |  |  | 0.4 | Jaccard index threshold for considering a BGC as a member of a GCF. |
+| `--bgc-bigslice-thresholdpct` | number |  |  |  |  | -1 | Percentage-based BGC-to-GCF membership threshold. |
+| `--bgc-run-bigslice` | boolean |  |  |  |  |  | Run BiG-SLiCE to cluster detected BGCs into gene cluster families (GCFs). |
 
 ## bgc_deepbgc
 
@@ -252,9 +268,12 @@ nf-core/funcscan pipeline parameters. Every parameter from the pinned `nextflow_
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--bgc-gecco-cds` | integer |  |  |  |  | 3 | The minimum number of coding sequences a valid cluster must contain. |
+| `--bgc-gecco-convertformat` | string |  |  | gff, bigslice, fna, faa |  | gff | Specify output format for GECCO convert. |
+| `--bgc-gecco-convertmode` | string |  |  | clusters, gbk |  | clusters | Specify conversion mode for GECCO convert. |
 | `--bgc-gecco-edgedistance` | integer |  |  |  |  | 0 | The minimum number of annotated genes that must separate a cluster from the edge. |
 | `--bgc-gecco-mask` | boolean |  |  |  |  |  | Enable unknown region masking to prevent genes from stretching across unknown nucleotides. |
 | `--bgc-gecco-pfilter` | number |  |  |  |  | 1e-09 | The p-value cutoff for protein domains to be included. |
+| `--bgc-gecco-runconvert` | boolean |  |  |  |  |  | Enable GECCO file conversion to formats for downstream analysis. |
 | `--bgc-gecco-threshold` | number |  |  |  |  | 0.8 | The probability threshold for cluster detection. |
 | `--bgc-skip-gecco` | boolean |  |  |  |  |  | Skip GECCO during the BGC screening. |
 
@@ -275,6 +294,15 @@ nf-core/funcscan pipeline parameters. Every parameter from the pinned `nextflow_
 | `--bgc-hmmsearch-savetargets` | boolean |  |  |  |  |  | Save a simple tabular file summarising the per-target output. |
 | `--bgc-run-hmmsearch` | boolean |  |  |  |  |  | Run hmmsearch during BGC screening. |
 
+## cazyme_dbcan
+
+| parameter | type | required | hidden | allowed values | constraints | default | description |
+|---|---|---|---|---|---|---|---|
+| `--cazyme-dbcan-db` | string |  |  |  |  |  | Path to local dbCAN database folder. |
+| `--cazyme-skip-dbcan` | boolean |  |  |  |  |  | Skip dbCAN during the CAZyme screening. |
+| `--dbcan-skip-cgc` | boolean |  |  |  |  |  | Skip CGC during the dbCAN screening. |
+| `--dbcan-skip-substrate` | boolean |  |  |  |  |  | Skip substrate prediction during the dbCAN screening. |
+
 ## database_downloading_options
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
@@ -286,7 +314,8 @@ nf-core/funcscan pipeline parameters. Every parameter from the pinned `nextflow_
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--email-on-fail` | string |  | yes |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary, only when pipeline fails. |
-| `--hook-url` | string |  | yes |  |  |  | Incoming hook URL for messaging service |
+| `--help` | boolean or string |  |  |  |  |  | Display the help message. |
+| `--help-full` | boolean |  |  |  |  |  | Display the full detailed help message. |
 | `--max-multiqc-email-size` | string |  | yes |  | matches ^\d+(\.\d+)?\.?\s*(K\|M\|G\|T)?B$ | 25.MB | File size limit when attaching MultiQC reports to summary emails. |
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--multiqc-config` | string (file path) |  | yes |  |  |  | Custom config file to supply to MultiQC. |
@@ -295,6 +324,7 @@ nf-core/funcscan pipeline parameters. Every parameter from the pinned `nextflow_
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
 | `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--version` | boolean |  | yes |  |  |  | Display version and exit. |
@@ -337,6 +367,7 @@ nf-core/funcscan pipeline parameters. Every parameter from the pinned `nextflow_
 | `--run-amp-screening` | boolean |  |  |  |  |  | Activate antimicrobial peptide genes screening tools. |
 | `--run-arg-screening` | boolean |  |  |  |  |  | Activate antimicrobial resistance gene screening tools. |
 | `--run-bgc-screening` | boolean |  |  |  |  |  | Activate biosynthetic gene cluster screening tools. |
+| `--run-cazyme-screening` | boolean |  |  |  |  |  | Activate CAZyme and CAZyme gene cluster screening tools. |
 
 ## taxonomic_classification_general_options
 
@@ -360,11 +391,11 @@ nf-core/funcscan pipeline parameters. Every parameter from the pinned `nextflow_
 |---|---|---|---|---|---|---|---|
 | `--taxa-classification-mmseqs-taxonomy-lcamode` | integer |  |  |  |  | 3 | Specify the mode to assign the taxonomy. |
 | `--taxa-classification-mmseqs-taxonomy-lcaranks` | string |  |  |  |  | kingdom,phylum,class,order,family,genus,species | Specify the taxonomic levels to display in the result table. |
-| `--taxa-classification-mmseqs-taxonomy-orffilters` | number |  |  |  |  | 2.0 | Specify the ORF search sensitivity in the prefilter step. |
+| `--taxa-classification-mmseqs-taxonomy-orffilters` | number |  |  |  |  | 2 | Specify the ORF search sensitivity in the prefilter step. |
 | `--taxa-classification-mmseqs-taxonomy-savetmp` | boolean |  |  |  |  |  | Specify whether to save the temporary files. |
 | `--taxa-classification-mmseqs-taxonomy-searchtype` | integer |  |  |  |  | 2 | Specify the alignment type between database and query. |
-| `--taxa-classification-mmseqs-taxonomy-sensitivity` | number |  |  |  |  | 5.0 | Specify the speed and sensitivity for taxonomy assignment. |
+| `--taxa-classification-mmseqs-taxonomy-sensitivity` | number |  |  |  |  | 5 | Specify the speed and sensitivity for taxonomy assignment. |
 | `--taxa-classification-mmseqs-taxonomy-taxlineage` | integer |  |  |  |  | 1 | Specify whether to include or remove the taxonomic lineage. |
 | `--taxa-classification-mmseqs-taxonomy-votemode` | integer |  |  |  |  | 1 | Specify the weights of the taxonomic assignment. |
 
-<!-- Generated from nf-core/funcscan@fa9db018e528ffb5149cdde928e2fa24e7c546fe. Do not edit by hand. -->
+<!-- Generated from nf-core/funcscan@aee3dc965eb0c77267435544dda30da858763913. Do not edit by hand. -->

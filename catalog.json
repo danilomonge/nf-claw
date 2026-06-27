@@ -598,7 +598,7 @@
   },
   {
     "description": "Pipeline for screening for functional components of assembled contigs",
-    "input": "samplesheet (sample, fasta, protein, gbk)",
+    "input": "samplesheet (sample, fasta, protein, gbk, gff, gff_type)",
     "name": "funcscan",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "summary": "nf-core/funcscan is a bioinformatics best-practice analysis pipeline for the screening of nucleotide sequences such as assembled contigs for functional genes. It currently features mining for antimicrobial peptides, antibiotic resistance genes and biosynthetic gene clusters.",
@@ -610,6 +610,7 @@
       "AntiSMASH",
       "argNorm",
       "Bakta",
+      "BiG-SLiCE",
       "comBGC",
       "DeepARG",
       "DeepBGC",
@@ -626,9 +627,10 @@
       "PROKKA",
       "Pyrodigal",
       "RGI",
+      "dbCAN",
       "SeqKit"
     ],
-    "version": "3.0.0"
+    "version": "4.0.0"
   },
   {
     "description": "Assemble genomes from long ONT or pacbio HiFi reads",

@@ -1,14 +1,14 @@
 ---
 name: funcscan
 pipeline: nf-core/funcscan
-version: 3.0.0
-commit: fa9db018e528ffb5149cdde928e2fa24e7c546fe
+version: 4.0.0
+commit: aee3dc965eb0c77267435544dda30da858763913
 description: Pipeline for screening for functional components of assembled contigs
 summary: nf-core/funcscan is a bioinformatics best-practice analysis pipeline for the screening of nucleotide sequences such as assembled contigs for functional genes. It currently features mining for antimicrobial peptides, antibiotic resistance genes and biosynthetic gene clusters.
 has_samplesheet: true
-input: samplesheet (sample, fasta, protein, gbk)
+input: samplesheet (sample, fasta, protein, gbk, gff, gff_type)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: ABRicate, AMPir, AMPlify, AMRFinderPlus, AntiSMASH, argNorm, Bakta, comBGC, DeepARG, DeepBGC, fARGene, GECCO, AMPcombi, hAMRonization, HMMER, InterPro, InterProScan, Macrel, MMseqs2, Prodigal, PROKKA, Pyrodigal, RGI, SeqKit
+tools: ABRicate, AMPir, AMPlify, AMRFinderPlus, AntiSMASH, argNorm, Bakta, BiG-SLiCE, comBGC, DeepARG, DeepBGC, fARGene, GECCO, AMPcombi, hAMRonization, HMMER, InterPro, InterProScan, Macrel, MMseqs2, Prodigal, PROKKA, Pyrodigal, RGI, dbCAN, SeqKit
 ---
 # funcscan
 
@@ -31,10 +31,12 @@ This is the pinned latest release. To run a different one, list the available re
 | `fasta` | string (file path) | yes |  | matches ^\S+\.(fasta\|fas\|fna\|fa)(\.gz)?$ |
 | `protein` | string (file path) | no |  | matches ^\S+\.(faa\|fasta)(\.gz)?$ |
 | `gbk` | string (file path) | no |  | matches ^\S+\.(gbk\|gbff)(\.gz)?$ |
+| `gff` | string (file path) | no |  | matches ^\S+\.(gff\|gff3)(\.gz)?$ |
+| `gff_type` | string | no | NCBI_prok, prodigal, NCBI_euk, JGI |  |
 
 The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
-sample,fasta,protein,gbk
+sample,fasta,protein,gbk,gff,gff_type
 ```
 
 ## Required parameters
@@ -62,18 +64,20 @@ Beyond the required parameters above, every other parameter is optional. [refere
 - `arg_deeparg` (9 parameters)
 - `arg_fargene` (7 parameters)
 - `arg_hamronization` (1 parameter)
-- `arg_rgi` (10 parameters)
-- `bgc_antismash` (13 parameters)
+- `arg_rgi` (11 parameters)
+- `bgc_antismash` (16 parameters)
+- `bgc_bigslice` (7 parameters)
 - `bgc_deepbgc` (11 parameters)
-- `bgc_gecco` (6 parameters)
+- `bgc_gecco` (9 parameters)
 - `bgc_general_options` (2 parameters)
 - `bgc_hmmsearch` (5 parameters)
+- `cazyme_dbcan` (4 parameters)
 - `database_downloading_options` (1 parameter)
-- `generic_options` (13 parameters)
+- `generic_options` (15 parameters)
 - `input_output_options` (4 parameters)
 - `institutional_config_options` (6 parameters)
 - `protein_annotation` (6 parameters)
-- `screening_type_activation` (3 parameters)
+- `screening_type_activation` (4 parameters)
 - `taxonomic_classification_general_options` (3 parameters)
 - `taxonomic_classification_mmseqs2_databases` (3 parameters)
 - `taxonomic_classification_mmseqs2_taxonomy` (8 parameters)
@@ -81,12 +85,12 @@ Beyond the required parameters above, every other parameter is optional. [refere
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/funcscan/blob/3.0.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/funcscan/blob/4.0.0/docs/output.md
 
 ## Tools this pipeline runs
-The tools/methods this pipeline runs, per the authors' own list: ABRicate, AMPir, AMPlify, AMRFinderPlus, AntiSMASH, argNorm, Bakta, comBGC, DeepARG, DeepBGC, fARGene, GECCO, AMPcombi, hAMRonization, HMMER, InterPro, InterProScan, Macrel, MMseqs2, Prodigal, PROKKA, Pyrodigal, RGI, SeqKit.
+The tools/methods this pipeline runs, per the authors' own list: ABRicate, AMPir, AMPlify, AMRFinderPlus, AntiSMASH, argNorm, Bakta, BiG-SLiCE, comBGC, DeepARG, DeepBGC, fARGene, GECCO, AMPcombi, hAMRonization, HMMER, InterPro, InterProScan, Macrel, MMseqs2, Prodigal, PROKKA, Pyrodigal, RGI, dbCAN, SeqKit.
 
-Full list with references: https://github.com/nf-core/funcscan/blob/3.0.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/funcscan/blob/4.0.0/CITATIONS.md
 
 ## Demo
 ```bash
@@ -94,6 +98,6 @@ nfclaw run funcscan --demo --outdir results   # adds the upstream test profile (
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/funcscan/blob/3.0.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/funcscan/blob/4.0.0/docs/usage.md
 
-<!-- Generated from nf-core/funcscan@fa9db018e528ffb5149cdde928e2fa24e7c546fe. Do not edit by hand. -->
+<!-- Generated from nf-core/funcscan@aee3dc965eb0c77267435544dda30da858763913. Do not edit by hand. -->
