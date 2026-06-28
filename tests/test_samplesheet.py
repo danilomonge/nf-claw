@@ -25,6 +25,22 @@ def test_valid_sheet(tmp_path):
     assert samplesheet.validate(ss, SCH) == []
 
 
+# TSV samplesheets (e.g. nf-core/airrflow requires a strictly `.tsv` input): the validator must
+# split on TAB by file extension, not read the whole comma-delimited header as one column (which
+# reported every required column missing).
+def test_tsv_delimiter_detected(tmp_path):
+    (tmp_path / "r1.fq.gz").write_text("x")
+    ss = tmp_path / "ss.tsv"
+    ss.write_text("sample\tfastq_1\nA\tr1.fq.gz\n")
+    assert samplesheet.validate(ss, SCH) == []
+
+def test_tsv_missing_column_still_detected(tmp_path):
+    ss = tmp_path / "ss.tsv"
+    ss.write_text("sample\nA\n")               # tab-parsed header has only 'sample'
+    issues = samplesheet.validate(ss, SCH)
+    assert any("fastq_1" in i for i in issues)
+
+
 # Headerless single-column input (nf-core/fetchngs id list): DictReader must NOT eat line 1.
 UNNAMED = InputSchema(columns=(Column("", "string", False, "^SRR", None),))
 
