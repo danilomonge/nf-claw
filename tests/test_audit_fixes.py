@@ -12,6 +12,7 @@ from librarian import check_drift, write_catalog, write_skill
 from runner.schema import Column, InputSchema, Param, ParamSchema
 
 FIX = Path(__file__).parent / "fixtures"
+REPO = Path(__file__).resolve().parents[1]
 
 
 # --- F10 (revised): skill.md is deterministic — ONLY schema-required params + a group map.
@@ -115,6 +116,33 @@ def test_inputs_section_shows_enum_and_no_fabricated_values():
     assert "data/sample1_" not in out and "sample1" not in out  # no invented values
     csv = out.split("```csv\n")[1].split("```")[0].strip()
     assert csv == "sample,sex,fastq_1"                           # csv block is the real header only
+
+
+def test_samplesheet_docs_follow_schema_input_extension():
+    # nf-core/airrflow requires a .tsv input even though its prose description says
+    # comma-separated. The generated skill must follow the schema constraint, not prose.
+    insch = InputSchema(columns=(
+        Column("sample_id", "string", True, None, None),
+        Column("filename_R1", "string", True, None, "file-path"),
+    ))
+    ps = ParamSchema(title="t", description="d", params={
+        "input": Param("input", "string", None, None, "Path to comma-separated file",
+                       "file-path", True, "io", pattern=r"^\S+\.tsv$"),
+        "outdir": Param("outdir", "string", None, None, "out", "directory-path", True, "io"),
+    })
+    nf, raw = write_skill._run_invocation("airrflow", ps, insch)
+    assert "--input samplesheet.tsv" in nf and "--input samplesheet.tsv" in raw
+    out = write_skill._inputs_section(insch, ps)
+    assert "TSV" in out and "CSV" not in out
+    assert "```tsv\nsample_id\tfilename_R1\n```" in out
+
+
+def test_user_facing_commands_do_not_assume_bare_python():
+    # Some macOS/Linux environments have python3 but no python. User-facing commands and Make
+    # targets must not require a bare `python` executable to exist.
+    for rel in ("README.md", "AGENTS.md", "CLAUDE.md", "Makefile"):
+        text = (REPO / rel).read_text(encoding="utf-8")
+        assert "python -m " not in text
 
 
 def test_load_input_schema_captures_column_enum(tmp_path):

@@ -17,9 +17,9 @@ nf-core/airrflow is a bioinformatics best-practice pipeline to analyze B-cell re
 ## Run it
 ```bash
 git submodule update --init pipelines/airrflow/upstream   # first time only
-nfclaw run airrflow --input samplesheet.csv --outdir results -profile docker
+nfclaw run airrflow --input samplesheet.tsv --outdir results -profile docker
 # raw equivalent (the submodule is already pinned to this release, so no -r is needed):
-nextflow run pipelines/airrflow/upstream -profile docker --input samplesheet.csv --outdir results
+nextflow run pipelines/airrflow/upstream -profile docker --input samplesheet.tsv --outdir results
 ```
 
 This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions airrflow` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show airrflow --pipeline-version X.Y.Z` prints that release's docs).
@@ -41,9 +41,9 @@ This is the pinned latest release. To run a different one, list the available re
 | `filename_I1` | string | no |  | matches ^\S+$ |
 | `filename` | string | no |  | matches ^\S+$ |
 
-The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
-```csv
-sample_id,subject_id,species,pcr_target_locus,tissue,sex,age,biomaterial_provider,single_cell,filename_R1,filename_R2,filename_I1,filename
+The samplesheet is a TSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
+```tsv
+sample_id	subject_id	species	pcr_target_locus	tissue	sex	age	biomaterial_provider	single_cell	filename_R1	filename_R2	filename_I1	filename
 ```
 
 ## Required parameters

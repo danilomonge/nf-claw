@@ -27,9 +27,9 @@ Run-time errors (space-in-path, IPv6 host, no-network, Nextflow-version parse er
 
 ## Use
 ```bash
-pip install -e .             # first time: puts `nfclaw` on PATH (or use `python -m runner <cmd>`)
+pip install -e .             # first time: puts `nfclaw` on PATH (or use `python3 -m runner <cmd>`)
 
-nfclaw list                  # or: python -m runner list
+nfclaw list                  # or: python3 -m runner list
 nfclaw run rnaseq --input samplesheet.csv --outdir results -profile docker
 
 # run a specific (non-latest) release — default stays the pinned latest
