@@ -5,7 +5,7 @@ This repo is a library of nf-core pipelines. Each lives in `pipelines/<name>/`:
 
 ## Setup (first time)
 Install once, from the repo root, so the `nfclaw` command is on PATH: `pip install -e .`
-(use a virtualenv). No-install equivalent: run `python -m runner <cmd>` from the repo root
+(use a virtualenv). No-install equivalent: run `python3 -m runner <cmd>` from the repo root
 anywhere this doc shows `nfclaw <cmd>`.
 
 ## To run a pipeline

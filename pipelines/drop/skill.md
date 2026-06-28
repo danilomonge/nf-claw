@@ -17,9 +17,9 @@ nf-core/drop is a Nextflow rewrite of drop (Detection of RNA Outliers Pipeline),
 ## Run it
 ```bash
 git submodule update --init pipelines/drop/upstream   # first time only
-nfclaw run drop --input samplesheet.csv --outdir results --genome <genome> -profile docker
+nfclaw run drop --input samplesheet.tsv --outdir results --genome <genome> -profile docker
 # raw equivalent (the submodule is already pinned to this release, so no -r is needed):
-nextflow run pipelines/drop/upstream -profile docker --input samplesheet.csv --outdir results --genome <genome>
+nextflow run pipelines/drop/upstream -profile docker --input samplesheet.tsv --outdir results --genome <genome>
 ```
 
 This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions drop` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show drop --pipeline-version X.Y.Z` prints that release's docs).
@@ -47,9 +47,9 @@ This is the pinned latest release. To run a different one, list the available re
 | `TISSUE` | string | no |  |  |
 | `DISEASE` | string | no |  |  |
 
-The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
-```csv
-RNA_ID,RNA_BAM_FILE,RNA_BAI_FILE,DNA_ID,DNA_VCF_FILE,DNA_TBI_FILE,DROP_GROUP,PAIRED_END,COUNT_MODE,COUNT_OVERLAPS,STRAND,HPO_TERMS,GENE_COUNTS_FILE,GENE_ANNOTATION,GENOME,SPLICE_COUNTS_DIR,SEX,TISSUE,DISEASE
+The samplesheet is a TSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
+```tsv
+RNA_ID	RNA_BAM_FILE	RNA_BAI_FILE	DNA_ID	DNA_VCF_FILE	DNA_TBI_FILE	DROP_GROUP	PAIRED_END	COUNT_MODE	COUNT_OVERLAPS	STRAND	HPO_TERMS	GENE_COUNTS_FILE	GENE_ANNOTATION	GENOME	SPLICE_COUNTS_DIR	SEX	TISSUE	DISEASE
 ```
 
 ## Required parameters

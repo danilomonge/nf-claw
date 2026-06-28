@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import re
 import subprocess
 import tempfile
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -16,6 +18,14 @@ except ImportError:                              # pragma: no cover — Windows 
 
 REQUIRED_FILES = ("main.nf", "nextflow.config", "nextflow_schema.json")
 _GIT_TIMEOUT = 30
+_HEX_RE = re.compile(r"^[0-9a-f]{7,40}$")
+_THREAD_LOCKS: dict[str, threading.Lock] = {}
+_THREAD_LOCKS_GUARD = threading.Lock()
+
+
+def _thread_lock(key: str) -> threading.Lock:
+    with _THREAD_LOCKS_GUARD:
+        return _THREAD_LOCKS.setdefault(key, threading.Lock())
 
 
 @contextlib.contextmanager
@@ -24,17 +34,19 @@ def _init_lock(repo_root: Path):
     Without it, parallel inits race on `.git/config` ("could not lock config file"). The lock
     is an flock on a per-repo temp file — it never touches the working tree. No-op where flock
     is unavailable (Windows)."""
-    if fcntl is None:
-        yield
-        return
     key = hashlib.sha256(str(repo_root.resolve()).encode()).hexdigest()[:16]
-    lock_path = Path(tempfile.gettempdir()) / f"nfclaw-submodule-{key}.lock"
-    with open(lock_path, "w") as fh:
-        fcntl.flock(fh, fcntl.LOCK_EX)
-        try:
+    if fcntl is None:
+        with _thread_lock(key):
             yield
-        finally:
-            fcntl.flock(fh, fcntl.LOCK_UN)
+        return
+    with _thread_lock(key):
+        lock_path = Path(tempfile.gettempdir()) / f"nfclaw-submodule-{key}.lock"
+        with open(lock_path, "w") as fh:
+            fcntl.flock(fh, fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(fh, fcntl.LOCK_UN)
 
 
 @dataclass(frozen=True)
@@ -72,16 +84,45 @@ def resolve_at(name: str, path: Path) -> SubmoduleStatus:
 
 
 def resolve(name: str, pipelines_dir: Path) -> SubmoduleStatus:
-    return resolve_at(name, pipelines_dir / name / "upstream")
+    st = resolve_at(name, pipelines_dir / name / "upstream")
+    pinned = _committed_pin(pipelines_dir / name / "skill.md")
+    if (pinned and st.commit and st.commit == pinned.get("commit")
+            and _looks_like_commit_version(st.version, st.commit)):
+        return SubmoduleStatus(
+            name=st.name, path=st.path, initialized=st.initialized,
+            complete=st.complete, version=pinned["version"], commit=st.commit,
+            missing_files=st.missing_files,
+        )
+    return st
+
+
+def _looks_like_commit_version(version: str, commit: str) -> bool:
+    return bool(version and _HEX_RE.match(version) and commit.startswith(version))
+
+
+def _committed_pin(skill_md: Path) -> dict[str, str] | None:
+    try:
+        text = skill_md.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    if not text.startswith("---\n"):
+        return None
+    frontmatter = text.split("---", 2)[1]
+    data: dict[str, str] = {}
+    for line in frontmatter.splitlines():
+        key, sep, value = line.partition(":")
+        if sep and key.strip() in {"version", "commit"}:
+            data[key.strip()] = value.strip()
+    return data if data.get("version") and data.get("commit") else None
 
 
 def ensure_initialized(name: str, pipelines_dir: Path, repo_root: Path) -> SubmoduleStatus:
     st = resolve(name, pipelines_dir)
-    if not st.initialized:
+    if not st.complete:
         rel = f"pipelines/{name}/upstream"
         with _init_lock(repo_root):
             st = resolve(name, pipelines_dir)               # re-check: another run may have just done it
-            if not st.initialized:
+            if not st.complete:
                 subprocess.run(["git", "submodule", "update", "--init", "--depth", "1", rel],
                                cwd=str(repo_root), check=True)
                 st = resolve(name, pipelines_dir)

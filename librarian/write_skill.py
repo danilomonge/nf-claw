@@ -54,6 +54,19 @@ def _input_summary(insch: InputSchema | None) -> str:
     return "samplesheet (" + ", ".join(c.name for c in named) + ")"
 
 
+def _samplesheet_format(ps: ParamSchema | None) -> tuple[str, str, str]:
+    """Return (extension, display name, delimiter) for generated samplesheet examples.
+
+    nf-schema chooses the parser from the `--input` filename extension. Some upstream schemas
+    require `.tsv` while their prose still says "comma-separated", so prefer the schema pattern
+    over descriptions."""
+    input_param = ps.params.get("input") if ps else None
+    pattern = input_param.pattern if input_param else None
+    if pattern and r"\.tsv" in pattern and r"\.csv" not in pattern:
+        return "tsv", "TSV", "\t"
+    return "csv", "CSV", ","
+
+
 def _produces_multiqc(upstream: Path) -> bool:
     """A MultiQC report is a near-universal nf-core output; detect it from the pinned tree."""
     return ((upstream / "assets" / "multiqc_config.yml").exists()
@@ -165,7 +178,7 @@ def _outputs_section(name: str, st: SubmoduleStatus) -> str:
     )
 
 
-def _inputs_section(insch: InputSchema | None) -> str:
+def _inputs_section(insch: InputSchema | None, ps: ParamSchema | None = None) -> str:
     if insch is None:
         return "This pipeline does not use a samplesheet; configure inputs via parameters.\n"
     named = [c for c in insch.columns if c.name]
@@ -181,10 +194,11 @@ def _inputs_section(insch: InputSchema | None) -> str:
         allowed = ", ".join(c.enum) if c.enum else ""
         rows += (f"| `{c.name}` | {typ} | {'yes' if c.required else 'no'} | "
                  f"{_cell(allowed)} | {_constraints(c)} |\n")
-    header_line = ",".join(c.name for c in named)
+    ext, label, delimiter = _samplesheet_format(ps)
+    header_line = delimiter.join(c.name for c in named)
     return (f"{head}{rows}\n"
-            "The samplesheet is a CSV with this exact header; fill each value per the table above "
-            f"and `reference.md` (no example value is invented here):\n```csv\n{header_line}\n```\n")
+            f"The samplesheet is a {label} with this exact header; fill each value per the table above "
+            f"and `reference.md` (no example value is invented here):\n```{ext}\n{header_line}\n```\n")
 
 
 def _required_params(ps: ParamSchema) -> str:
@@ -222,7 +236,8 @@ def _run_invocation(name: str, ps: ParamSchema, insch: InputSchema | None,
     is shown as an explicit `<placeholder>` (those carrying a default are filled by nf-schema, so
     the one-liner stays runnable as printed). When rendering a non-pinned version, the nfclaw
     command carries `--pipeline-version <tag>` and the raw command targets that version's tree."""
-    inp = " --input samplesheet.csv" if insch is not None else ""
+    ext, _, _ = _samplesheet_format(ps)
+    inp = f" --input samplesheet.{ext}" if insch is not None else ""
     extra = "".join(f" --{p.name.replace('_', '-')} <{p.name}>"
                     for p in ps.params.values()
                     if p.required and p.name not in ("input", "outdir") and p.default is None)
@@ -280,7 +295,7 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"{raw_comment}\n"
         f"{raw_cmd}\n```\n\n"
         f"{version_note}"
-        f"## Inputs\n{_inputs_section(insch)}\n"
+        f"## Inputs\n{_inputs_section(insch, ps)}\n"
         f"## Required parameters\n{_required_params(ps)}\n"
         f"## Other parameters\n{_param_groups(ps)}\n"
         f"## Outputs\n{_outputs_section(name, st)}\n"

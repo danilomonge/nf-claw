@@ -64,6 +64,48 @@ def test_resolve_at_uses_explicit_path(tmp_path):
     assert st.complete is True
 
 
+def test_resolve_uses_committed_skill_version_when_shallow_tags_are_absent(tmp_path, monkeypatch):
+    # A shallow submodule may not have release tags locally, making `git describe --tags --always`
+    # return a short hash. If the committed skill.md matches the exact commit, the pinned release
+    # version in that file is the offline source of truth.
+    up = tmp_path / "sarek" / "upstream"
+    up.mkdir(parents=True)
+    for f in submodule.REQUIRED_FILES:
+        (up / f).write_text("x")
+    (tmp_path / "sarek" / "skill.md").write_text(
+        "---\nversion: 2.1.0\ncommit: abcdef1234567890\n---\n")
+
+    def fake_git(path, *args):
+        if args == ("rev-parse", "HEAD"):
+            return "abcdef1234567890"
+        if args == ("describe", "--tags", "--always"):
+            return "abcdef1"
+        return ""
+
+    monkeypatch.setattr(submodule, "_git", fake_git)
+    st = submodule.resolve("sarek", tmp_path)
+    assert st.version == "2.1.0"
+
+
+def test_resolve_keeps_git_tag_when_available_even_if_skill_is_stale(tmp_path, monkeypatch):
+    up = tmp_path / "sarek" / "upstream"
+    up.mkdir(parents=True)
+    for f in submodule.REQUIRED_FILES:
+        (up / f).write_text("x")
+    (tmp_path / "sarek" / "skill.md").write_text(
+        "---\nversion: abcdef1\ncommit: abcdef1234567890\n---\n")
+
+    def fake_git(path, *args):
+        if args == ("rev-parse", "HEAD"):
+            return "abcdef1234567890"
+        if args == ("describe", "--tags", "--always"):
+            return "2.1.0"
+        return ""
+
+    monkeypatch.setattr(submodule, "_git", fake_git)
+    assert submodule.resolve("sarek", tmp_path).version == "2.1.0"
+
+
 def test_incomplete_when_files_missing(tmp_path):
     up = tmp_path / "sarek" / "upstream"
     up.mkdir(parents=True)
