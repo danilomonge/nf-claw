@@ -56,10 +56,21 @@ time, `import` in `.nf`). Many older releases hit this.
 pipeline's declared `nextflowVersion` minimum). If you hit it on most pipelines, set it once for the
 shell: `export NXF_VER=25.10.2` (nfclaw passes it through). See [`compatibility.md`](compatibility.md).
 Confirmed-affected releases that **do** run with `--nxf-ver 25.10.2` include `epitopeprediction`,
-`fetchngs`, `hgtseq`, `callingcards`, `funcscan`, `coproid`, `denovotranscript` 1.2.1,
-`chipseq` 2.1.0 and `fastqrepair` 1.0.0 (e.g. chipseq's `def check_max(obj, type)` in
-`nextflow.config`). (`bactmap` 1.0.0 hits this *and* further bugs and can't run in demo here — see
-the upstream table.)
+`fetchngs`, `hgtseq`, `callingcards`, `coproid`, `denovotranscript` 1.2.1, `chipseq` 2.1.0,
+`fastqrepair` 1.0.0, `atacseq` 2.1.2, `circdna` 1.1.0, `sarek` 3.8.1, `genomeassembler` 1.1.0,
+`detaxizer` 1.3.0, `scrnaseq` 4.1.0 and `cutandrun` 3.2.2. Examples of what NF 26 rejects: chipseq's
+`def check_max(obj, type)` in `nextflow.config`; scrnaseq 4.1.0's `Invalid include source:
+conf/test_multiome.config` (the `test_multiome` profile `includeConfig`s a file not committed at the
+tag — NF 26 validates it at parse time even though the profile is unused, while the legacy parser
+skips it and the `--demo` run completes); and cutandrun 3.2.2's `Cannot invoke method optional() on
+null object`, from the deprecated output syntax `emit: html optional true` in
+`modules/local/for_patch/trimgalore/main.nf` (sibling modules already use the current
+`emit: …, optional: true`).
+**Exception — `funcscan` needs a _newer_ engine, not an older one:** funcscan 4.0.0 declares
+`nextflowVersion = '!>=25.10.4'`, so `--nxf-ver 25.10.2` is rejected at the version gate; use
+`--nxf-ver 25.10.4`.
+(`bactmap` 1.0.0 hits the parser issue *and* further bugs and can't run in demo here — see the
+upstream table.)
 
 ### Docker bridge network has no DNS (IPv6-only host)
 **Symptom:** containers can't resolve hostnames; downloads inside a container fail even though the
@@ -120,11 +131,10 @@ is the nf-claw-side workaround.
 
 | pipeline @ version | symptom | why it happens | workaround |
 |---|---|---|---|
-| `scrnaseq` 4.1.0 | won't run in `--demo` on either supported engine | **NF 26:** `Invalid include source: conf/test_multiome.config` — the `test_multiome` profile `includeConfig`s a file not committed at the tag, and NF 26 validates every `includeConfig` at parse time even for unused profiles (verified: the file is absent at the tag, referenced at `nextflow.config:230`). **NF 25.10.2:** parses, then fails at runtime with `No signature of method: java.util.ArrayList.combine()` (reported from a run). So pinning an older engine is **not** a fix here | not runnable in demo here — report upstream; pin a different release with `--pipeline-version` if one works (confirm before relying) |
 | `bamtofastq` (incl. 2.1.2 / 2.2.1) | `SAMTOOLS_FAIDX ([])` fails immediately | the `test` profile sets `genome = null` + `igenomes_ignore = true`, so `prepare_indices` routes an empty dummy channel into `SAMTOOLS_FAIDX` | provide a reference (`--fasta` / `--genome`); no fix in pure `--demo` mode — report upstream |
 | `bacass` 2.6.1 (Unicycler) | `SyntaxWarning: invalid escape sequence '\d'` then failure on Python 3.12 | the `unicycler:0.5.1` container ships Python code not updated for 3.12 | choose another assembler: `--assembler megahit` |
 | `hgtseq` 1.1.0 | `a column named input1 ... is mandatory!` | the `test` profile's CSV uses the old header `sample,fastq_1,fastq_2`, but the release's schema expects `sample_group,input1,input2` | provide a matching samplesheet via `--input` (don't rely on `--demo`) |
-| `funcscan` 2.1.0 – 4.0.0 (current pin), **DRAMP DB only** | `TypeError` in `ampcombi_download.py` when AMPcombi downloads the **DRAMP** database (`amp_ampcombi_db_id='DRAMP'`, the pipeline-wide default) — **not** hit by `--demo`, whose `test` profile overrides the id to `APD` (verified by source inspection through 4.0.0; on NF 26 it first needs `--nxf-ver 25.10.2`) | the DRAMP loop in `bin/ampcombi_download.py` calls `valid_sequence_pattern.match(row['Sequence'])` with no NaN guard; rows with an empty `Sequence` are read as `NaN` (a float), so the regex match raises. The APD code path parses FASTA records (always strings), so it has no such call on a `NaN` | for a production DRAMP run, pre-build the DB with the NaN rows filtered and pass `--amp_ampcombi_db /path/to/amp_DRAMP_database` |
+| `funcscan` 2.1.0 – 4.0.0 (current pin), **DRAMP DB only** | `TypeError` in `ampcombi_download.py` when AMPcombi downloads the **DRAMP** database (`amp_ampcombi_db_id='DRAMP'`, the pipeline-wide default) — **not** hit by `--demo`, whose `test` profile overrides the id to `APD` (verified by source inspection through 4.0.0; funcscan 4.0.0 declares `!>=25.10.4`, so run it with `--nxf-ver 25.10.4` — `25.10.2` is rejected at the version gate) | the DRAMP loop in `bin/ampcombi_download.py` calls `valid_sequence_pattern.match(row['Sequence'])` with no NaN guard; rows with an empty `Sequence` are read as `NaN` (a float), so the regex match raises. The APD code path parses FASTA records (always strings), so it has no such call on a `NaN` | for a production DRAMP run, pre-build the DB with the NaN rows filtered and pass `--amp_ampcombi_db /path/to/amp_DRAMP_database` |
 | `bactmap` 1.0.0 | won't run in `--demo` on any Nextflow here | three chained issues: NF 26 strict parser rejects `def check_max(obj, type)`; NF 25 treats `file("https://…", checkIfExists: true)` (bactmap.nf:13) as a local path → `No such file or directory: https://…`; NF 23's CAPSULE bootstrapper can't resolve Maven deps on this host | not runnable in demo — wait for an upstream fix / report; pin a different release with `--pipeline-version` if one works |
 
 When a workaround relies on a different release, confirm the symptom is gone there before relying
@@ -149,9 +159,14 @@ schema requires:
   `type: string` (pattern `^\S+$`) validation.
 - **`genomeassembler`** — set at least one of `--ont true` / `--hifi true` (it aborts at start with
   `At least one of params.ont, params.hifi needs to be true.`), even when you supply short reads.
-- **`funcscan`** — the `--demo`/`test` profile downloads the **APD** database from `aps.unmc.edu`
-  at run time; on a restricted network pre-supply it with `--amp_ampcombi_db /path/to/db` (which
-  also sidesteps the DRAMP bug in the table above).
+- **`funcscan`** — run it with `--nxf-ver 25.10.4` (it declares `!>=25.10.4`; `25.10.2` is rejected
+  at the version gate). The `--demo`/`test` profile turns on **all three** screenings
+  (`run_amp_screening`, `run_arg_screening`, `run_cazyme_screening`), each of which fetches a
+  database at run time: AMP/AMPcombi downloads **APD** from `aps.unmc.edu`, ARG/DeepARG downloads its
+  model from Zenodo, and CAZyme/dbCAN downloads a **~2.18 GB** database — slow downloads that can
+  appear to hang. On a constrained or slow network, pre-supply the AMP DB with
+  `--amp_ampcombi_db /path/to/db` (this also sidesteps the DRAMP bug in the table above) and skip the
+  heavy steps with `--run_cazyme_screening false` and `--arg_skip_deeparg true`.
 - **`ampliseq`** — the `test` profile caps memory at 6 GB; visualisation/export steps (e.g.
   `QIIME2_EXPORT_RELTAX`) may be OOM-killed (exit 137) without failing the pipeline. In production
   raise it with `--max_memory '<N>.GB'` (or a custom `--config`).
