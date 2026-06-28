@@ -17,8 +17,11 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
         # pattern checks are delegated to nf-schema, exactly as for named-column samplesheets.
         values = [ln.strip() for ln in path.read_text(encoding="utf-8").splitlines() if ln.strip()]
         return [] if values else ["input file has no values"]
+    # nf-schema picks the parser from the file extension; mirror that exactly so a `.tsv`
+    # (e.g. nf-core/airrflow, which mandates `.tsv`) is split on TAB, not read as one CSV column.
+    delimiter = "\t" if path.suffix.lower() == ".tsv" else ","
     with path.open(newline="", encoding="utf-8") as fh:
-        reader = csv.DictReader(fh)
+        reader = csv.DictReader(fh, delimiter=delimiter)
         header = set(reader.fieldnames or [])
         for col in named:
             if col.required and col.name not in header:

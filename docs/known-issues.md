@@ -120,11 +120,11 @@ is the nf-claw-side workaround.
 
 | pipeline @ version | symptom | why it happens | workaround |
 |---|---|---|---|
-| `scrnaseq` 4.1.0 | `Invalid include source: conf/test_multiome.config` | the `test_multiome` profile references a config file that was not committed at the tag; Nextflow 26 validates every `includeConfig` at parse time, even for unused profiles | report upstream; try another release via `--pipeline-version`; or use an engine whose parser does not pre-validate unused profiles |
+| `scrnaseq` 4.1.0 | won't run in `--demo` on either supported engine | **NF 26:** `Invalid include source: conf/test_multiome.config` — the `test_multiome` profile `includeConfig`s a file not committed at the tag, and NF 26 validates every `includeConfig` at parse time even for unused profiles (verified: the file is absent at the tag, referenced at `nextflow.config:230`). **NF 25.10.2:** parses, then fails at runtime with `No signature of method: java.util.ArrayList.combine()` (reported from a run). So pinning an older engine is **not** a fix here | not runnable in demo here — report upstream; pin a different release with `--pipeline-version` if one works (confirm before relying) |
 | `bamtofastq` (incl. 2.1.2 / 2.2.1) | `SAMTOOLS_FAIDX ([])` fails immediately | the `test` profile sets `genome = null` + `igenomes_ignore = true`, so `prepare_indices` routes an empty dummy channel into `SAMTOOLS_FAIDX` | provide a reference (`--fasta` / `--genome`); no fix in pure `--demo` mode — report upstream |
 | `bacass` 2.6.1 (Unicycler) | `SyntaxWarning: invalid escape sequence '\d'` then failure on Python 3.12 | the `unicycler:0.5.1` container ships Python code not updated for 3.12 | choose another assembler: `--assembler megahit` |
 | `hgtseq` 1.1.0 | `a column named input1 ... is mandatory!` | the `test` profile's CSV uses the old header `sample,fastq_1,fastq_2`, but the release's schema expects `sample_group,input1,input2` | provide a matching samplesheet via `--input` (don't rely on `--demo`) |
-| `funcscan` 2.1.0 – 4.0.0 (current pin) | `TypeError` in `ampcombi_download.py` building the DRAMP DB (verified by source inspection through 4.0.0; on NF 26 it first needs `--nxf-ver 25.10.2`) | the DRAMP loop in `bin/ampcombi_download.py` calls `valid_sequence_pattern.match(row['Sequence'])` with no NaN guard; rows with an empty `Sequence` are read as `NaN` (a float), so the regex match raises | pre-build the DB with the NaN rows filtered and pass `--amp_ampcombi_db /path/to/amp_DRAMP_database` |
+| `funcscan` 2.1.0 – 4.0.0 (current pin), **DRAMP DB only** | `TypeError` in `ampcombi_download.py` when AMPcombi downloads the **DRAMP** database (`amp_ampcombi_db_id='DRAMP'`, the pipeline-wide default) — **not** hit by `--demo`, whose `test` profile overrides the id to `APD` (verified by source inspection through 4.0.0; on NF 26 it first needs `--nxf-ver 25.10.2`) | the DRAMP loop in `bin/ampcombi_download.py` calls `valid_sequence_pattern.match(row['Sequence'])` with no NaN guard; rows with an empty `Sequence` are read as `NaN` (a float), so the regex match raises. The APD code path parses FASTA records (always strings), so it has no such call on a `NaN` | for a production DRAMP run, pre-build the DB with the NaN rows filtered and pass `--amp_ampcombi_db /path/to/amp_DRAMP_database` |
 | `bactmap` 1.0.0 | won't run in `--demo` on any Nextflow here | three chained issues: NF 26 strict parser rejects `def check_max(obj, type)`; NF 25 treats `file("https://…", checkIfExists: true)` (bactmap.nf:13) as a local path → `No such file or directory: https://…`; NF 23's CAPSULE bootstrapper can't resolve Maven deps on this host | not runnable in demo — wait for an upstream fix / report; pin a different release with `--pipeline-version` if one works |
 
 When a workaround relies on a different release, confirm the symptom is gone there before relying
@@ -132,12 +132,26 @@ on it — `nfclaw show <name> --pipeline-version X.Y.Z` prints that release's do
 
 ## Pipeline-specific run notes
 
-These are not bugs — just the right flag for a constrained environment:
+These are not bugs — just a flag or samplesheet value that a constrained environment or a strict
+schema requires:
 
 - **`fetchngs`** — if accessions have no ENA FTP URL, the pipeline falls back to `SRATOOLS_PREFETCH`
-  (needs NCBI SRA Cloud). With no such access, run metadata-only: `--skip_fastq_download`.
+  (needs NCBI SRA Cloud). With no such access, run metadata-only: `--skip_fastq_download`. (The
+  accession list may be `.csv`, `.tsv` **or `.txt`** at the pinned 1.12.0 — pattern
+  `^\S+\.(csv|tsv|txt)$`; a plain `.txt` id list is accepted.)
 - **`coproid`** — `SAM2LCA_UPDATEDB` downloads the NCBI taxonomy over FTP/IPv4 at run time. On a
   restricted host, pre-build the database and pass `--sam2lca_db /path/to/db`.
+- **`crisprseq`** — the samplesheet `reference` column is a **raw DNA sequence** (schema pattern
+  `^[ACTGNactgn]+$`), not a FASTA path as in most pipelines; put the sequence itself (e.g. `ACTG…`)
+  in that column.
+- **`createtaxdb`** — give each sample a **non-numeric** `id` (e.g. `seq1`, `chr1`). nf-schema
+  coerces a purely numeric string (`"1"`) to an integer, which then fails the `id` column's
+  `type: string` (pattern `^\S+$`) validation.
+- **`genomeassembler`** — set at least one of `--ont true` / `--hifi true` (it aborts at start with
+  `At least one of params.ont, params.hifi needs to be true.`), even when you supply short reads.
+- **`funcscan`** — the `--demo`/`test` profile downloads the **APD** database from `aps.unmc.edu`
+  at run time; on a restricted network pre-supply it with `--amp_ampcombi_db /path/to/db` (which
+  also sidesteps the DRAMP bug in the table above).
 - **`ampliseq`** — the `test` profile caps memory at 6 GB; visualisation/export steps (e.g.
   `QIIME2_EXPORT_RELTAX`) may be OOM-killed (exit 137) without failing the pipeline. In production
   raise it with `--max_memory '<N>.GB'` (or a custom `--config`).
