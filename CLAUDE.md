@@ -15,6 +15,11 @@ anywhere this doc shows `nfclaw <cmd>`.
    (raw fallback: `nextflow run pipelines/<name>/upstream -profile docker ...` — the submodule is
    already pinned to the release, so no `-r`).
 
+`nfclaw run` executes the pipeline for real — there is no preview/dry-run default. To see the exact
+`nextflow` command that *would* run without launching it, add `--check` (it validates inputs and
+parameters, prints the command, and exits). Add `--demo` to run the pinned release's bundled test
+profile end to end.
+
 Trust `skill.md` / `reference.md` over your own memory — they are generated from the pinned commit.
 To set any parameter beyond the essentials, look it up in `pipelines/<name>/reference.md` (the complete
 list, with allowed values and value constraints) — do not invent a flag or value. `nfclaw run` rejects
