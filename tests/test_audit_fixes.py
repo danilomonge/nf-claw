@@ -5,8 +5,11 @@ The surfacing pass guarantees every fact the loader captures is rendered downstr
 `Column.fmt` symmetric with `Param.fmt` (both carry file-path/directory-path), so a
 samplesheet directory column is no longer silently flattened to a plain string.
 """
+import re
 import shutil
 from pathlib import Path
+
+import pytest
 
 from librarian import check_drift, write_catalog, write_skill
 from runner.schema import Column, InputSchema, Param, ParamSchema
@@ -347,3 +350,60 @@ def test_reference_has_constraints_column_with_real_pattern():
     assert r"matches ^\S+\.(csv\|tsv)$" in input_row                 # pattern in the right cell, pipe escaped
     n_row = next(l for l in out.splitlines() if l.startswith("| `--n`"))
     assert "≥ 1" in n_row
+
+
+# --- Run-audit follow-up: two gaps were verified against the pinned releases when running
+#     pipelines — detaxizer's high-memory BBMAP_BBDUK step (80 GB) and circdna's schema-required
+#     run parameters. The symptom→fix map must document both, the run command must not be
+#     mistaken for a preview, and each documented fact must agree with its source of truth. ---
+KNOWN_ISSUES = (REPO / "docs" / "known-issues.md").read_text(encoding="utf-8")
+
+
+def test_known_issues_documents_detaxizer_bbduk_memory_workaround():
+    # The 80 GB process_high request aborts on a small host; the documented fix is a per-process
+    # memory cap passed through --config (the mechanism nfclaw already supports).
+    assert "BBMAP_BBDUK" in KNOWN_ISSUES and "detaxizer" in KNOWN_ISSUES
+    assert "exceeds available memory" in KNOWN_ISSUES        # the recognisable Nextflow symptom
+    assert "--config" in KNOWN_ISSUES                        # the supported knob
+    assert "withName: 'BBMAP_BBDUK'" in KNOWN_ISSUES         # a concrete, targeted cap
+
+
+def test_known_issues_documents_circdna_required_run_params():
+    assert "`circdna`" in KNOWN_ISSUES
+    assert "--input_format" in KNOWN_ISSUES and "--circle_identifier" in KNOWN_ISSUES
+
+
+def test_claude_md_states_run_is_real_with_check_for_dry_run():
+    # Pre-empt the "runner defaults to -preview" confusion: nfclaw run is a real run; --check is
+    # the dry run. Both facts must be stated where an agent decides how to run a pipeline.
+    text = (REPO / "CLAUDE.md").read_text(encoding="utf-8")
+    assert "no preview/dry-run default" in text
+    assert "--check" in text
+
+
+def test_circdna_required_params_match_committed_reference():
+    # Scientific rigor: the run note must agree with the schema-derived reference.md, not memory.
+    # reference.md is committed (not a submodule), so this always runs.
+    ref = (REPO / "pipelines" / "circdna" / "reference.md").read_text(encoding="utf-8")
+
+    def required(flag: str) -> str:
+        row = next(l for l in ref.splitlines() if l.startswith(f"| `{flag}`"))
+        return row.split("|")[3].strip()                     # parameter|type|required|... → cell 3
+
+    assert required("--input-format") == "yes"
+    assert required("--circle-identifier") == "yes"
+
+
+def test_detaxizer_bbduk_memory_note_matches_pinned_upstream():
+    # Source-of-truth check, skipped when the submodule isn't initialised (the pytest CI job checks
+    # out without submodules): the documented 80 GB + process_high label come from the pinned
+    # detaxizer release, so confirm the doc matches upstream whenever upstream is present.
+    up = REPO / "pipelines" / "detaxizer" / "upstream"
+    bbduk = up / "modules" / "nf-core" / "bbmap" / "bbduk" / "main.nf"
+    base = up / "conf" / "base.config"
+    if not (bbduk.exists() and base.exists()):
+        pytest.skip("detaxizer submodule not initialised")
+    assert "label 'process_high'" in bbduk.read_text(encoding="utf-8")
+    # the process_high tier (not process_high_memory) sizes memory at 80.GB
+    assert re.search(r"withLabel:process_high\b.*?80\.GB",
+                     base.read_text(encoding="utf-8"), re.S)

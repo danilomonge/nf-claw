@@ -47,6 +47,28 @@ nfclaw run <name> --nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true \
 **Fix:** disable that step. Booleans work from the CLI now, e.g. `--skip-busco true` (or a
 `--params-file '{"skip_busco": true}'`).
 
+### A process requests more memory than the host has — aborts before any work
+**Symptom:** a run aborts at scheduling time because a single step requests more RAM than the
+machine has, e.g. `Process requirement exceeds available memory -- req: 80 GB; avail: 62.8 GB`.
+Seen with `detaxizer` 1.3.0 run with `--classification_bbduk`: its `BBMAP_BBDUK` step carries
+nf-core's `process_high` label, which `conf/base.config` sizes at `80.GB * task.attempt` — more
+than a typical workstation or small VM has.
+**Why:** an nf-core `base.config` sizes each process by a resource *label*
+(`process_low/medium/high/high_memory`) tuned for an HPC cluster; one high-memory step can exceed
+a small host's physical RAM, and Nextflow refuses to schedule a task it knows can't fit.
+**Fix:** cap the offending process with a `--config` file (repeatable). Target it by name so the
+rest of the run keeps its normal resources:
+```groovy
+// cap-mem.config
+process {
+    withName: 'BBMAP_BBDUK' { memory = '12.GB' }
+}
+```
+`nfclaw run detaxizer --classification_bbduk … --config cap-mem.config`. To put a ceiling on
+*every* process at once, use Nextflow's native limit instead:
+`process { resourceLimits = [ memory: '12.GB', cpus: 4 ] }`. (Size the cap to your host and to what
+the tool actually needs — too low and the step itself fails or is OOM-killed.)
+
 ### Nextflow too new for an older release
 **Symptom:** `Unexpected input: ':'`, `Unexpected token`, `Invalid include source`, or
 `import ...` rejected — on Nextflow **26.x**, whose strict parser rejects older Groovy config
@@ -154,6 +176,11 @@ schema requires:
 - **`crisprseq`** — the samplesheet `reference` column is a **raw DNA sequence** (schema pattern
   `^[ACTGNactgn]+$`), not a FASTA path as in most pipelines; put the sequence itself (e.g. `ACTG…`)
   in that column.
+- **`circdna`** — two parameters are **required by the schema** for a real `--input` run:
+  `--input_format` (`FASTQ` or `BAM`) and `--circle_identifier` (one or more of
+  `circle_map_realign`, `circle_map_repeats`, `circle_finder`, `circexplorer2`,
+  `ampliconarchitect`, comma-separated). The `--demo`/`test` profile sets both, so a demo run needs
+  neither; a manual samplesheet run without them fails parameter validation at launch.
 - **`createtaxdb`** — give each sample a **non-numeric** `id` (e.g. `seq1`, `chr1`). nf-schema
   coerces a purely numeric string (`"1"`) to an integer, which then fails the `id` column's
   `type: string` (pattern `^\S+$`) validation.
