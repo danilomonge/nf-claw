@@ -70,6 +70,13 @@ class Column:
 @dataclass(frozen=True)
 class InputSchema:
     columns: tuple[Column, ...]
+    # Mutually-exclusive required column groups from the samplesheet's `items.oneOf`: each inner
+    # tuple is one allowed set of columns, and a row must satisfy EXACTLY ONE group (e.g.
+    # (("bam",), ("cram",)) for createpanelrefs, or (("sampleID","forwardReads"),
+    # ("sample","fastq_1")) for ampliseq's legacy-vs-standardized formats). Empty when the schema
+    # declares no such choice. nf-schema enforces the full rule (including any `not`/`anyOf`
+    # exclusions) at runtime; this captures the choice so the generated docs can surface it.
+    one_of: tuple[tuple[str, ...], ...] = ()
 
 
 def json_scalar(value: Any) -> str:
@@ -160,6 +167,15 @@ def load_input_schema(repo: Path) -> InputSchema | None:
     items = data.get("items", {})
     props = items.get("properties", {})
     required = set(items.get("required") or [])
+    # Mutually-exclusive required column groups: each `items.oneOf` branch that lists `required`
+    # columns is one allowed group (a row must satisfy exactly one). Branches without a `required`
+    # list carry no column choice and are skipped.
+    one_of: list[tuple[str, ...]] = []
+    for branch in items.get("oneOf") or []:
+        if isinstance(branch, dict):
+            req = branch.get("required")
+            if isinstance(req, list) and req:
+                one_of.append(tuple(str(r) for r in req))
     cols: list[Column] = []
     if isinstance(props, dict):
         for cname, cobj in props.items():
@@ -179,4 +195,4 @@ def load_input_schema(repo: Path) -> InputSchema | None:
                 max_length=cobj.get("maxLength"),
                 deprecated=bool(cobj.get("deprecated", False)),
             ))
-    return InputSchema(columns=tuple(cols))
+    return InputSchema(columns=tuple(cols), one_of=tuple(one_of))

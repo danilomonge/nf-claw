@@ -37,9 +37,16 @@ This is the pinned latest release. To run a different one, list the available re
 | `control` | string | no | control, sample |  |
 | `quant_reading` | number | no |  |  |
 
-The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
+The samplesheet is a CSV. Each row must include **exactly one** of these mutually-exclusive column groups (providing columns from more than one group fails validation):
+- `sampleID`, `forwardReads`
+- `sample`, `fastq_1`
+
+Fill each value per the table above and `reference.md`. Valid headers — pick the group that matches your data (optional columns from the table may be added):
 ```csv
-sampleID,forwardReads,reverseReads,sample,fastq_1,fastq_2,run,control,quant_reading
+sampleID,forwardReads
+```
+```csv
+sample,fastq_1
 ```
 
 ## Required parameters

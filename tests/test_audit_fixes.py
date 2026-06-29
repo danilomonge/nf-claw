@@ -394,6 +394,106 @@ def test_circdna_required_params_match_committed_reference():
     assert required("--circle-identifier") == "yes"
 
 
+# --- Run-audit batch 2: input-schema faithfulness. Two generator gaps surfaced when running
+#     pipelines: (a) a samplesheet's mutually-exclusive column groups (items.oneOf — bam/cram,
+#     ampliseq legacy/standardized, drop's RNA inputs) were flattened into one table with the
+#     choice hidden; (b) a parameter-driven pipeline that ships schema_input.json but declares no
+#     `input` param (drugresponseeval) was told to pass `--input`, which the runner rejects. ---
+def test_load_input_schema_captures_oneof_groups(tmp_path):
+    from runner import schema
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "schema_input.json").write_text(
+        '{"items": {"properties": {"sample": {"type": "string"}, '
+        '"bam": {"type": "string"}, "cram": {"type": "string"}}, '
+        '"required": ["sample"], '
+        '"oneOf": [{"required": ["bam"]}, {"required": ["cram"]}]}}')
+    insch = schema.load_input_schema(tmp_path)
+    assert insch.one_of == (("bam",), ("cram",))
+
+
+def test_load_input_schema_oneof_empty_when_absent(tmp_path):
+    from runner import schema
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "schema_input.json").write_text(
+        '{"items": {"properties": {"sample": {"type": "string"}}, "required": ["sample"]}}')
+    assert schema.load_input_schema(tmp_path).one_of == ()
+
+
+def test_inputs_section_surfaces_oneof_mutually_exclusive_groups():
+    # createpanelrefs-style: one always-required column + a bam-xor-cram choice.
+    insch = InputSchema(columns=(
+        Column("sample", "string", True, None, None),
+        Column("bam", "string", False, r"^\S+\.bam$", "file-path"),
+        Column("cram", "string", False, r"^\S+\.cram$", "file-path"),
+    ), one_of=(("bam",), ("cram",)))
+    out = write_skill._inputs_section(insch)
+    assert "exactly one" in out.lower() and "mutually-exclusive" in out
+    assert "`bam`" in out and "`cram`" in out          # the exclusive columns are listed as groups
+    assert "sample,bam" in out and "sample,cram" in out  # one valid header per group, with `sample`
+    assert "sample,bam,cram" not in out                  # never a single all-columns header
+
+
+def test_inputs_section_oneof_combines_base_required_with_each_group():
+    # ampliseq-style: no always-required column, two multi-column groups, no single header.
+    insch = InputSchema(columns=(
+        Column("sampleID", "string", False, None, None),
+        Column("forwardReads", "string", False, None, "file-path"),
+        Column("sample", "string", False, None, None),
+        Column("fastq_1", "string", False, None, "file-path"),
+    ), one_of=(("sampleID", "forwardReads"), ("sample", "fastq_1")))
+    out = write_skill._inputs_section(insch)
+    assert "sampleID,forwardReads" in out and "sample,fastq_1" in out
+    assert "sampleID,forwardReads,sample,fastq_1" not in out   # never mixes the two formats
+
+
+def test_inputs_section_without_oneof_keeps_single_exact_header():
+    insch = InputSchema(columns=(
+        Column("sample", "string", True, None, None),
+        Column("fastq_1", "string", True, None, "file-path"),
+    ))
+    out = write_skill._inputs_section(insch)
+    assert "sample,fastq_1" in out
+    assert "exactly one" not in out.lower() and "mutually-exclusive" not in out
+
+
+def test_render_skips_input_when_pipeline_has_no_input_param(tmp_path):
+    # A parameter-driven pipeline (e.g. drugresponseeval) ships assets/schema_input.json but
+    # declares no `input` param. The skill must NOT tell the agent to pass --input, and must show
+    # the schema-required parameters instead.
+    from runner.submodule import SubmoduleStatus
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "schema_input.json").write_text(
+        '{"items": {"properties": {"col": {"type": "string"}}, "required": ["col"]}}')
+    (tmp_path / "nextflow_schema.json").write_text(
+        '{"title": "t", "definitions": {"io": {"properties": {'
+        '"outdir": {"type": "string", "format": "directory-path"}, '
+        '"dataset_name": {"type": "string"}}, "required": ["outdir", "dataset_name"]}}}')
+    st = SubmoduleStatus(name="p", path=tmp_path, initialized=True, complete=True,
+                         version="1.0.0", commit="abc", missing_files=())
+    skill, _ = write_skill.render_status(st)
+    assert "--input" not in skill                       # no samplesheet flag for a param-driven run
+    assert "does not use a samplesheet" in skill
+    assert "has_samplesheet: false" in skill
+    assert "--dataset-name <dataset_name>" in skill     # required-without-default → placeholder
+
+
+def test_render_shows_input_when_pipeline_has_input_param(tmp_path):
+    from runner.submodule import SubmoduleStatus
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "schema_input.json").write_text(
+        '{"items": {"properties": {"sample": {"type": "string"}}, "required": ["sample"]}}')
+    (tmp_path / "nextflow_schema.json").write_text(
+        '{"title": "t", "definitions": {"io": {"properties": {'
+        '"input": {"type": "string", "format": "file-path"}, '
+        '"outdir": {"type": "string", "format": "directory-path"}}, '
+        '"required": ["input", "outdir"]}}}')
+    st = SubmoduleStatus(name="p", path=tmp_path, initialized=True, complete=True,
+                         version="1.0.0", commit="abc", missing_files=())
+    skill, _ = write_skill.render_status(st)
+    assert "--input samplesheet.csv" in skill
+    assert "has_samplesheet: true" in skill
+
+
 def test_detaxizer_bbduk_memory_note_matches_pinned_upstream():
     # Source-of-truth check, skipped when the submodule isn't initialised (the pytest CI job checks
     # out without submodules): the documented 80 GB + process_high label come from the pinned
@@ -407,3 +507,41 @@ def test_detaxizer_bbduk_memory_note_matches_pinned_upstream():
     # the process_high tier (not process_high_memory) sizes memory at 80.GB
     assert re.search(r"withLabel:process_high\b.*?80\.GB",
                      base.read_text(encoding="utf-8"), re.S)
+
+
+def test_known_issues_documents_coproid_genome_sheet_and_required_dbs():
+    # coproid's mutual exclusivity lives in a SECONDARY samplesheet (--genome_sheet /
+    # schema_genomes.json) the generator doesn't render, so the symptom→fix map must cover it.
+    assert "`coproid`" in KNOWN_ISSUES and "--genome_sheet" in KNOWN_ISSUES
+    assert "igenome" in KNOWN_ISSUES and "fasta" in KNOWN_ISSUES
+    assert "--kraken2_db" in KNOWN_ISSUES
+
+
+def test_generated_skills_surface_input_oneof_exclusivity():
+    # Regression guard: the committed skill.md for every pipeline whose --input schema has
+    # mutually-exclusive column groups must surface the choice (not flatten it into one table).
+    for name in ("createpanelrefs", "ampliseq", "drop"):
+        skill = (REPO / "pipelines" / name / "skill.md").read_text(encoding="utf-8")
+        assert "mutually-exclusive column groups" in skill, name
+    amp = (REPO / "pipelines" / "ampliseq" / "skill.md").read_text(encoding="utf-8")
+    assert "sampleID,forwardReads" in amp and "sample,fastq_1" in amp   # legacy vs standardized
+
+
+def test_drugresponseeval_skill_has_no_input_flag():
+    # drugresponseeval declares no `input` param; its committed skill must not tell the agent to
+    # pass --input (the runner rejects unknown flags and would fail fast).
+    skill = (REPO / "pipelines" / "drugresponseeval" / "skill.md").read_text(encoding="utf-8")
+    assert "--input" not in skill
+    assert "does not use a samplesheet" in skill
+
+
+def test_coproid_genome_sheet_oneof_matches_pinned_upstream():
+    # Source-of-truth check (skips without the submodule): the documented igenome-xor-fasta choice
+    # is the real schema_genomes.json oneOf.
+    import json
+    sg = REPO / "pipelines" / "coproid" / "upstream" / "assets" / "schema_genomes.json"
+    if not sg.exists():
+        pytest.skip("coproid submodule not initialised")
+    groups = [tuple(b.get("required", []))
+              for b in json.loads(sg.read_text(encoding="utf-8"))["items"]["oneOf"]]
+    assert ("igenome",) in groups and ("fasta",) in groups

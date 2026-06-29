@@ -33,9 +33,16 @@ This is the pinned latest release. To run a different one, list the available re
 | `cram` | string (file path) | no |  | matches ^\S+\.cram$ |
 | `crai` | string (file path) | no |  | matches ^\S+\.crai$ |
 
-The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
+The samplesheet is a CSV. Each row must include **exactly one** of these mutually-exclusive column groups (providing columns from more than one group fails validation):
+- `bam`
+- `cram`
+
+Fill each value per the table above and `reference.md`. Valid headers — pick the group that matches your data (optional columns from the table may be added):
 ```csv
-sample,bam,bai,cram,crai
+sample,bam
+```
+```csv
+sample,cram
 ```
 
 ## Required parameters
