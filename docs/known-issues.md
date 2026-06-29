@@ -171,8 +171,14 @@ schema requires:
   (needs NCBI SRA Cloud). With no such access, run metadata-only: `--skip_fastq_download`. (The
   accession list may be `.csv`, `.tsv` **or `.txt`** at the pinned 1.12.0 — pattern
   `^\S+\.(csv|tsv|txt)$`; a plain `.txt` id list is accepted.)
-- **`coproid`** — `SAM2LCA_UPDATEDB` downloads the NCBI taxonomy over FTP/IPv4 at run time. On a
-  restricted host, pre-build the database and pass `--sam2lca_db /path/to/db`.
+- **`coproid`** — needs **two** samplesheets: `--input` (the fastq sheet documented in `skill.md`)
+  and a separate, required `--genome_sheet`. Each `--genome_sheet` row needs
+  `genome_name,taxid,genome_size` plus **exactly one** of `igenome` or `fasta` — these are mutually
+  exclusive (`assets/schema_genomes.json` declares `oneOf`), so filling both fails with `Value
+  matches against more than one schema`; for a custom reference, leave `igenome` blank and give a
+  `fasta` path. `--kraken2_db` is also required and has no default — supply a real Kraken2 database.
+  Separately, `SAM2LCA_UPDATEDB` downloads the NCBI taxonomy over FTP/IPv4 at run time; on a
+  restricted host pre-build it and pass `--sam2lca_db /path/to/db`.
 - **`crisprseq`** — the samplesheet `reference` column is a **raw DNA sequence** (schema pattern
   `^[ACTGNactgn]+$`), not a FASTA path as in most pipelines; put the sequence itself (e.g. `ACTG…`)
   in that column.

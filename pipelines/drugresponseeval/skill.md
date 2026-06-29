@@ -5,8 +5,8 @@ version: 1.2.2
 commit: 84cb752a7ca4584fcb95fcb7492aceb4137a3df7
 description: This pipeline evaluates drug response models in various settings on a variety of datasets.
 summary: DrEval is a bioinformatics framework that includes a PyPI package (drevalpy) and a Nextflow pipeline (this repo). DrEval ensures that evaluations are statistically sound, biologically meaningful, and reproducible. DrEval simplifies the implementation of drug response prediction models, allowing researchers to focus on advancing their modeling innovations by automating standardized evaluation protocols and preprocessing workflows. With DrEval, hyperparameter tuning is fair and consistent. With its flexible model interface, DrEval supports any model type, ranging from statistical models to complex neural networks. By contributing your model to the DrEval catalog, you can increase your work's exposure, reusability, and transferability.
-has_samplesheet: true
-input: samplesheet (sample, fastq_1, fastq_2)
+has_samplesheet: false
+input: parameters (no samplesheet)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
 tools: DrEvalPy, CurveCurator, DIPK, MOLI, SRMF, SuperFELT
 ---
@@ -17,24 +17,15 @@ DrEval is a bioinformatics framework that includes a PyPI package (drevalpy) and
 ## Run it
 ```bash
 git submodule update --init pipelines/drugresponseeval/upstream   # first time only
-nfclaw run drugresponseeval --input samplesheet.csv --outdir results -profile docker
+nfclaw run drugresponseeval --outdir results -profile docker
 # raw equivalent (the submodule is already pinned to this release, so no -r is needed):
-nextflow run pipelines/drugresponseeval/upstream -profile docker --input samplesheet.csv --outdir results
+nextflow run pipelines/drugresponseeval/upstream -profile docker --outdir results
 ```
 
 This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions drugresponseeval` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show drugresponseeval --pipeline-version X.Y.Z` prints that release's docs).
 
 ## Inputs
-| column | type | required | allowed values | constraints |
-|---|---|---|---|---|
-| `sample` | string | yes |  | matches ^\S+$ |
-| `fastq_1` | string (file path) | yes |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
-| `fastq_2` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
-
-The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
-```csv
-sample,fastq_1,fastq_2
-```
+This pipeline does not use a samplesheet; configure inputs via parameters.
 
 ## Required parameters
 | parameter | type | allowed values | constraints | description |

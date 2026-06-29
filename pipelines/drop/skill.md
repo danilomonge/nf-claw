@@ -47,9 +47,20 @@ This is the pinned latest release. To run a different one, list the available re
 | `TISSUE` | string | no |  |  |
 | `DISEASE` | string | no |  |  |
 
-The samplesheet is a TSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
+The samplesheet is a TSV. Each row must include **exactly one** of these mutually-exclusive column groups (providing columns from more than one group fails validation):
+- `RNA_BAM_FILE`
+- `GENE_COUNTS_FILE`, `GENE_ANNOTATION`
+- `SPLICE_COUNTS_DIR`
+
+Fill each value per the table above and `reference.md`. Valid headers — pick the group that matches your data (optional columns from the table may be added):
 ```tsv
-RNA_ID	RNA_BAM_FILE	RNA_BAI_FILE	DNA_ID	DNA_VCF_FILE	DNA_TBI_FILE	DROP_GROUP	PAIRED_END	COUNT_MODE	COUNT_OVERLAPS	STRAND	HPO_TERMS	GENE_COUNTS_FILE	GENE_ANNOTATION	GENOME	SPLICE_COUNTS_DIR	SEX	TISSUE	DISEASE
+RNA_ID	DROP_GROUP	STRAND	RNA_BAM_FILE
+```
+```tsv
+RNA_ID	DROP_GROUP	STRAND	GENE_COUNTS_FILE	GENE_ANNOTATION
+```
+```tsv
+RNA_ID	DROP_GROUP	STRAND	SPLICE_COUNTS_DIR
 ```
 
 ## Required parameters

@@ -195,6 +195,22 @@ def _inputs_section(insch: InputSchema | None, ps: ParamSchema | None = None) ->
         rows += (f"| `{c.name}` | {typ} | {'yes' if c.required else 'no'} | "
                  f"{_cell(allowed)} | {_constraints(c)} |\n")
     ext, label, delimiter = _samplesheet_format(ps)
+    if insch.one_of:
+        # Mutually-exclusive column groups (items.oneOf): there is no single canonical header, so
+        # list each allowed group and show one valid header per group (always-required columns +
+        # that group). Surfacing this is exactly the signal an agent needs not to fill, say, both
+        # `bam` and `cram`, or to mix ampliseq's legacy and standardized columns.
+        base = [c.name for c in named if c.required]               # always-required columns
+        groups = "\n".join("- " + ", ".join(f"`{col}`" for col in grp) for grp in insch.one_of)
+        headers = "".join(
+            f"```{ext}\n{delimiter.join(list(dict.fromkeys(base + list(grp))))}\n```\n"
+            for grp in insch.one_of)
+        return (f"{head}{rows}\n"
+                f"The samplesheet is a {label}. Each row must include **exactly one** of these "
+                "mutually-exclusive column groups (providing columns from more than one group "
+                f"fails validation):\n{groups}\n\n"
+                "Fill each value per the table above and `reference.md`. Valid headers — pick the "
+                f"group that matches your data (optional columns from the table may be added):\n{headers}")
     header_line = delimiter.join(c.name for c in named)
     return (f"{head}{rows}\n"
             f"The samplesheet is a {label} with this exact header; fill each value per the table above "
@@ -345,8 +361,13 @@ def render_status(st: SubmoduleStatus, *, pipeline_version: str | None = None) -
     None for the pinned default so the committed docs stay byte-stable."""
     ps = schema_mod.load_param_schema(st.path)
     insch = schema_mod.load_input_schema(st.path)
-    return (_render_skill(st.name, st, ps, insch, pipeline_version),
-            _render_reference(st.name, st, ps, insch))
+    # nf-core convention: a samplesheet is consumed via the `--input` parameter. A pipeline can
+    # ship assets/schema_input.json without declaring an `input` param (it is parameter-driven —
+    # e.g. drugresponseeval). There the file is not a `--input` samplesheet, so the skill must not
+    # tell the agent to pass `--input` (the runner rejects unknown flags and would fail fast).
+    samplesheet = insch if (insch is not None and "input" in ps.params) else None
+    return (_render_skill(st.name, st, ps, samplesheet, pipeline_version),
+            _render_reference(st.name, st, ps, samplesheet))
 
 
 def render(name: str, *, pipelines_dir: Path) -> tuple[str, str]:
