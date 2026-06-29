@@ -30,3 +30,14 @@ fastquorum	https://github.com/nf-core/fastquorum.git	latest-release
 funcscan	https://github.com/nf-core/funcscan.git	latest-release
 genomeassembler	https://github.com/nf-core/genomeassembler.git	latest-release
 hgtseq	https://github.com/nf-core/hgtseq.git	latest-release
+hic	https://github.com/nf-core/hic.git	latest-release
+hicar	https://github.com/nf-core/hicar.git	latest-release
+hlatyping	https://github.com/nf-core/hlatyping.git	latest-release
+isoseq	https://github.com/nf-core/isoseq.git	latest-release
+longraredisease	https://github.com/nf-core/longraredisease.git	latest-release
+lsmquant	https://github.com/nf-core/lsmquant.git	latest-release
+mag	https://github.com/nf-core/mag.git	latest-release
+magmap	https://github.com/nf-core/magmap.git	latest-release
+marsseq	https://github.com/nf-core/marsseq.git	latest-release
+metaboigniter	https://github.com/nf-core/metaboigniter.git	latest-release
+metapep	https://github.com/nf-core/metapep.git	latest-release

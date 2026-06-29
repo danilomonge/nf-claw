@@ -91,3 +91,36 @@
 [submodule "pipelines/hgtseq/upstream"]
 	path = pipelines/hgtseq/upstream
 	url = https://github.com/nf-core/hgtseq.git
+[submodule "pipelines/hic/upstream"]
+	path = pipelines/hic/upstream
+	url = https://github.com/nf-core/hic.git
+[submodule "pipelines/hicar/upstream"]
+	path = pipelines/hicar/upstream
+	url = https://github.com/nf-core/hicar.git
+[submodule "pipelines/hlatyping/upstream"]
+	path = pipelines/hlatyping/upstream
+	url = https://github.com/nf-core/hlatyping.git
+[submodule "pipelines/isoseq/upstream"]
+	path = pipelines/isoseq/upstream
+	url = https://github.com/nf-core/isoseq.git
+[submodule "pipelines/longraredisease/upstream"]
+	path = pipelines/longraredisease/upstream
+	url = https://github.com/nf-core/longraredisease.git
+[submodule "pipelines/lsmquant/upstream"]
+	path = pipelines/lsmquant/upstream
+	url = https://github.com/nf-core/lsmquant.git
+[submodule "pipelines/mag/upstream"]
+	path = pipelines/mag/upstream
+	url = https://github.com/nf-core/mag.git
+[submodule "pipelines/magmap/upstream"]
+	path = pipelines/magmap/upstream
+	url = https://github.com/nf-core/magmap.git
+[submodule "pipelines/marsseq/upstream"]
+	path = pipelines/marsseq/upstream
+	url = https://github.com/nf-core/marsseq.git
+[submodule "pipelines/metaboigniter/upstream"]
+	path = pipelines/metaboigniter/upstream
+	url = https://github.com/nf-core/metaboigniter.git
+[submodule "pipelines/metapep/upstream"]
+	path = pipelines/metapep/upstream
+	url = https://github.com/nf-core/metapep.git
