@@ -545,3 +545,39 @@ def test_coproid_genome_sheet_oneof_matches_pinned_upstream():
     groups = [tuple(b.get("required", []))
               for b in json.loads(sg.read_text(encoding="utf-8"))["items"]["oneOf"]]
     assert ("igenome",) in groups and ("fasta",) in groups
+
+
+# --- Run-audit batch 3: demo-run failures. Three verified additions to the symptom→fix map —
+#     marsseq (NF 26 parser → --nxf-ver 25.10.2), lsmquant (declares !>=25.10.4 → --nxf-ver
+#     25.10.4) and metapep (demo's DOWNLOAD_PROTEINS fetches from NCBI Entrez via a secret). Each
+#     is checked against the doc and the pinned upstream (source-of-truth tests skip without it). ---
+def test_known_issues_documents_marsseq_lsmquant_metapep():
+    assert "`marsseq`" in KNOWN_ISSUES and "`lsmquant`" in KNOWN_ISSUES
+    assert "`metapep`" in KNOWN_ISSUES
+    assert "--nxf-ver 25.10.4" in KNOWN_ISSUES          # lsmquant/funcscan newer-engine pin
+    assert "NCBI_EMAIL" in KNOWN_ISSUES                 # metapep secret
+
+
+def test_marsseq_has_nf26_blocking_check_max_in_pinned_config():
+    cfg = REPO / "pipelines" / "marsseq" / "upstream" / "nextflow.config"
+    if not cfg.exists():
+        pytest.skip("marsseq submodule not initialised")
+    text = cfg.read_text(encoding="utf-8")
+    assert "def check_max(obj, type)" in text           # the NF 26 strict-parser blocker
+    assert "!>=23.04.0" in text                          # old engine req → 25.10.2 satisfies it
+
+
+def test_lsmquant_requires_newer_engine_in_pinned_schema():
+    cfg = REPO / "pipelines" / "lsmquant" / "upstream" / "nextflow.config"
+    if not cfg.exists():
+        pytest.skip("lsmquant submodule not initialised")
+    assert "!>=25.10.4" in cfg.read_text(encoding="utf-8")
+
+
+def test_metapep_demo_downloads_from_ncbi_via_secret_in_pinned_upstream():
+    mod = (REPO / "pipelines" / "metapep" / "upstream" / "modules" / "local"
+           / "download_proteins.nf")
+    if not mod.exists():
+        pytest.skip("metapep submodule not initialised")
+    text = mod.read_text(encoding="utf-8")
+    assert 'secret "NCBI_EMAIL"' in text and "download_proteins_entrez.py" in text

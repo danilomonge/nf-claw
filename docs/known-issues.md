@@ -80,17 +80,20 @@ shell: `export NXF_VER=25.10.2` (nfclaw passes it through). See [`compatibility.
 Confirmed-affected releases that **do** run with `--nxf-ver 25.10.2` include `epitopeprediction`,
 `fetchngs`, `hgtseq`, `callingcards`, `coproid`, `denovotranscript` 1.2.1, `chipseq` 2.1.0,
 `fastqrepair` 1.0.0, `atacseq` 2.1.2, `circdna` 1.1.0, `sarek` 3.8.1, `genomeassembler` 1.1.0,
-`detaxizer` 1.3.0, `scrnaseq` 4.1.0 and `cutandrun` 3.2.2. Examples of what NF 26 rejects: chipseq's
-`def check_max(obj, type)` in `nextflow.config`; scrnaseq 4.1.0's `Invalid include source:
-conf/test_multiome.config` (the `test_multiome` profile `includeConfig`s a file not committed at the
-tag — NF 26 validates it at parse time even though the profile is unused, while the legacy parser
-skips it and the `--demo` run completes); and cutandrun 3.2.2's `Cannot invoke method optional() on
-null object`, from the deprecated output syntax `emit: html optional true` in
-`modules/local/for_patch/trimgalore/main.nf` (sibling modules already use the current
-`emit: …, optional: true`).
-**Exception — `funcscan` needs a _newer_ engine, not an older one:** funcscan 4.0.0 declares
-`nextflowVersion = '!>=25.10.4'`, so `--nxf-ver 25.10.2` is rejected at the version gate; use
-`--nxf-ver 25.10.4`.
+`detaxizer` 1.3.0, `scrnaseq` 4.1.0, `cutandrun` 3.2.2 and `marsseq` 1.0.3. Examples of what NF 26
+rejects: chipseq's **and** marsseq's `def check_max(obj, type)` in `nextflow.config` (marsseq 1.0.3
+declares only `!>=23.04.0`, so unpinned it parses under NF 26 and fails at launch with a
+`nextflow.cli.Launcher` error — `--nxf-ver 25.10.2` fixes it; note its `test` profile also sets
+`genome = 'mm10'`, which pulls the mm10 reference from AWS iGenomes and needs network); scrnaseq
+4.1.0's `Invalid include source: conf/test_multiome.config` (the `test_multiome` profile
+`includeConfig`s a file not committed at the tag — NF 26 validates it at parse time even though the
+profile is unused, while the legacy parser skips it and the `--demo` run completes); and cutandrun
+3.2.2's `Cannot invoke method optional() on null object`, from the deprecated output syntax
+`emit: html optional true` in `modules/local/for_patch/trimgalore/main.nf` (sibling modules already
+use the current `emit: …, optional: true`).
+**Exception — some releases need a _newer_ engine, not an older one:** `funcscan` 4.0.0 and
+`lsmquant` 1.0.2 declare `nextflowVersion = '!>=25.10.4'`, so `--nxf-ver 25.10.2` is rejected at the
+version gate (the symptom can read as a parameter/validation failure); use `--nxf-ver 25.10.4`.
 (`bactmap` 1.0.0 hits the parser issue *and* further bugs and can't run in demo here — see the
 upstream table.)
 
@@ -187,6 +190,13 @@ schema requires:
   `circle_map_realign`, `circle_map_repeats`, `circle_finder`, `circexplorer2`,
   `ampliconarchitect`, comma-separated). The `--demo`/`test` profile sets both, so a demo run needs
   neither; a manual samplesheet run without them fails parameter validation at launch.
+- **`metapep`** — the `--demo`/`test` profile runs `DOWNLOAD_PROTEINS`, which fetches protein
+  sequences from **NCBI Entrez** at run time (`download_proteins_entrez.py --email $NCBI_EMAIL`) and
+  reads a Nextflow **secret** named `NCBI_EMAIL` (the module declares `secret "NCBI_EMAIL"`). Without
+  it the step fails with a `ProcessFailedException` in `DOWNLOAD_PROTEINS`. Set the secret once
+  before running and ensure outbound NCBI access: `nextflow secrets set NCBI_EMAIL you@example.com`
+  (and `nextflow secrets set NCBI_KEY <key>` for a higher NCBI rate limit). Secrets live in the
+  Nextflow store and are inherited by `nfclaw run`.
 - **`createtaxdb`** — give each sample a **non-numeric** `id` (e.g. `seq1`, `chr1`). nf-schema
   coerces a purely numeric string (`"1"`) to an integer, which then fails the `id` column's
   `type: string` (pattern `^\S+$`) validation.
