@@ -1,7 +1,7 @@
 ---
 name: sarek
-version: 3.8.1
-commit: 4bd2948f98c5bf7b785c91cf6708fffccab25467
+version: 3.9.0
+commit: b97952e5bac68d5deb93d4a3349a45f146be9830
 ---
 
 # sarek — full parameter reference
@@ -44,7 +44,7 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--vep-phenotypes` | boolean |  |  |  |  |  | Enable the use of the VEP Phenotypes plugin. |
 | `--vep-spliceai` | boolean |  |  |  |  |  | Enable the use of the VEP SpliceAI plugin. |
 | `--vep-spliceregion` | boolean |  |  |  |  |  | Enable the use of the VEP SpliceRegion plugin. |
-| `--vep-version` | string |  |  |  |  | 115.0-0 | Should reflect the VEP version used in the container. |
+| `--vep-version` | string |  |  |  |  | 115.2-1 | Should reflect the VEP version used in the container. |
 
 ## fastq_preprocessing
 
@@ -78,7 +78,6 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--email-on-fail` | string |  | yes |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary, only when pipeline fails. |
 | `--help` | boolean or string |  |  |  |  |  | Display the help message. |
 | `--help-full` | boolean |  |  |  |  |  | Display the full detailed help message. |
-| `--hook-url` | string |  | yes |  |  |  | Incoming hook URL for messaging service |
 | `--max-multiqc-email-size` | string |  | yes |  | matches ^\d+(\.\d+)?\.?\s*(K\|M\|G\|T)?B$ | 25.MB | File size limit when attaching MultiQC reports to summary emails. |
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--multiqc-config` | string (file path) |  | yes |  |  |  | Custom config file to supply to MultiQC. |
@@ -191,6 +190,7 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--snpeff-cache` | string (directory path) |  |  |  |  | s3://annotation-cache/snpeff_cache/ | Path to snpEff cache. |
 | `--snpeff-db` | string |  |  |  |  |  | snpEff DB version. |
 | `--vep-cache` | string (directory path) |  |  |  |  | s3://annotation-cache/vep_cache/ | Path to VEP cache. |
+| `--vep-cache-preflight-check` | boolean |  |  |  |  |  | Force preflight check for local VEP cache download |
 | `--vep-cache-version` | string |  |  |  |  |  | VEP cache version. |
 | `--vep-genome` | string |  |  |  |  |  | VEP genome. |
 | `--vep-species` | string |  |  |  |  |  | VEP species. |
@@ -240,4 +240,4 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--sentieon-dnascope-pcr-indel-model` | string |  |  |  | matches ^(NONE\|HOSTILE\|AGGRESSIVE\|CONSERVATIVE)(?<!,)$ | CONSERVATIVE | Option for selecting the PCR indel model used by Sentieon Dnascope. |
 | `--sentieon-haplotyper-emit-mode` | string |  |  |  | matches ^(all\|confident\|gvcf\|variant\|gvcf,all\|gvcf,confident\|gvcf,variant\|all,gvcf\|confident,gvcf\|variant,gvcf)(?<!,)$ | variant | Option for selecting output and emit-mode of Sentieon's Haplotyper. |
 
-<!-- Generated from nf-core/sarek@4bd2948f98c5bf7b785c91cf6708fffccab25467. Do not edit by hand. -->
+<!-- Generated from nf-core/sarek@b97952e5bac68d5deb93d4a3349a45f146be9830. Do not edit by hand. -->

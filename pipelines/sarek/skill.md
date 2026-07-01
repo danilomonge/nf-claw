@@ -1,8 +1,8 @@
 ---
 name: sarek
 pipeline: nf-core/sarek
-version: 3.8.1
-commit: 4bd2948f98c5bf7b785c91cf6708fffccab25467
+version: 3.9.0
+commit: b97952e5bac68d5deb93d4a3349a45f146be9830
 description: An open-source analysis pipeline to detect germline or somatic variants from whole genome or targeted sequencing
 summary: nf-core/sarek is a workflow designed to detect variants on whole genome or targeted sequencing data. Initially designed for Human, and Mouse, it can work on any species with a reference genome. Sarek can also handle tumour / normal pairs and could include additional relapses.
 has_samplesheet: true
@@ -61,25 +61,25 @@ Beyond the required parameters above, every other parameter is optional. [refere
 - `annotation` (33 parameters)
 - `fastq_preprocessing` (9 parameters)
 - `general_reference_genome_options` (5 parameters)
-- `generic_options` (18 parameters)
+- `generic_options` (17 parameters)
 - `input_output_options` (4 parameters)
 - `institutional_config_options` (10 parameters)
 - `main_options` (7 parameters)
 - `post_variant_calling` (10 parameters)
 - `preprocessing` (6 parameters)
-- `reference_genome_options` (35 parameters)
+- `reference_genome_options` (36 parameters)
 - `umi_processing` (10 parameters)
 - `variant_calling` (25 parameters)
 
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/sarek/blob/3.8.1/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/sarek/blob/3.9.0/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: ASCAT, alleleCount, BCFTools, BGZip, BWA-MEM, BWA-MEM2, CNVKIT, Condel, Control-FREEC, dbNSFP, DeepVariant, DragMap, EnsemblVEP, FastP, FastQC, FGBio, FreeBayes, GATK, GNU sed, goleft indexcov, HaplotypeCaller Joint Germline, LOFTEE, Manta, Mastermind, Mosdepth, MSIsensor2, MSISensorPro, MultiQC, NGSCheckMate, NVIDIA Clara Parabricks, Phenotypes, PIGZ, P7Zip, SAMtools, snpEff, SpliceAI, SpliceRegion, SPRING, Strelka2, SVDB, Tabix, TIDDIT, Varlociraptor, VCFTools, vcflib, Lofreq, MuSE, R, RColorBrewer.
 
-Full list with references: https://github.com/nf-core/sarek/blob/3.8.1/CITATIONS.md
+Full list with references: https://github.com/nf-core/sarek/blob/3.9.0/CITATIONS.md
 
 ## Demo
 ```bash
@@ -87,6 +87,6 @@ nfclaw run sarek --demo --outdir results   # adds the upstream test profile (-pr
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/sarek/blob/3.8.1/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/sarek/blob/3.9.0/docs/usage.md
 
-<!-- Generated from nf-core/sarek@4bd2948f98c5bf7b785c91cf6708fffccab25467. Do not edit by hand. -->
+<!-- Generated from nf-core/sarek@b97952e5bac68d5deb93d4a3349a45f146be9830. Do not edit by hand. -->
