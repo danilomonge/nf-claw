@@ -80,7 +80,8 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
     composed_profile = nextflow_command.compose_profile(profile, demo=demo)
     issues = preflight.check_environment(profile=composed_profile, output_dir=outdir,
                                          submodule=st, repo_root=repo_root, resume=resume,
-                                         work_dir=work_dir, allow_spaces=allow_spaces)
+                                         work_dir=work_dir, allow_spaces=allow_spaces,
+                                         check_only=check_only)
     if issues:
         raise NfclawError(ErrorCode.ENVIRONMENT, "Preflight checks failed.",
                           details={"issues": issues})

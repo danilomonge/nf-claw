@@ -574,6 +574,26 @@ def test_lsmquant_requires_newer_engine_in_pinned_schema():
     assert "!>=25.10.4" in cfg.read_text(encoding="utf-8")
 
 
+# --- Run-audit batch 4: setup/flow fixes. (1) The `nfclaw` console script fails with
+#     ModuleNotFoundError when the editable install can't be found (a space in the install path
+#     breaks site's path hook, or a wrong-Python install) — documented with the `python -m runner`
+#     fallback. (2) `--check` must not be blocked by a non-empty outdir (a real-run-only guard). ---
+def test_known_issues_documents_module_not_found_and_python_m_fallback():
+    assert "ModuleNotFoundError" in KNOWN_ISSUES and "No module named 'runner'" in KNOWN_ISSUES
+    assert "python3 -m runner" in KNOWN_ISSUES          # the no-install fallback that always works
+    assert "space-free path" in KNOWN_ISSUES
+
+
+def test_preflight_check_only_signature_skips_empty_outdir_guard():
+    # The guard is threaded through check_only, not hard-coded, so --check can validate over an
+    # existing results dir. (Behaviour is covered end-to-end in tests/test_orchestration.py.)
+    import inspect
+    from runner import preflight
+    assert "check_only" in inspect.signature(preflight.check_environment).parameters
+    src = inspect.getsource(preflight.check_environment)
+    assert "not check_only" in src and "is not empty" in src
+
+
 def test_metapep_demo_downloads_from_ncbi_via_secret_in_pinned_upstream():
     mod = (REPO / "pipelines" / "metapep" / "upstream" / "modules" / "local"
            / "download_proteins.nf")

@@ -9,7 +9,7 @@ from runner.submodule import SubmoduleStatus
 
 def check_environment(*, profile: str, output_dir: Path, submodule: SubmoduleStatus,
                       repo_root: Path, resume: bool, work_dir: Path | None = None,
-                      allow_spaces: bool = False) -> list[str]:
+                      allow_spaces: bool = False, check_only: bool = False) -> list[str]:
     issues: list[str] = []
     for tool, hint in (("git", ""), ("nextflow", ""), ("java", " (Nextflow needs Java 17+)")):
         if shutil.which(tool) is None:
@@ -44,7 +44,10 @@ def check_environment(*, profile: str, output_dir: Path, submodule: SubmoduleSta
             ignored = False
         if not ignored:
             issues.append(f"--outdir must be outside the repo or a gitignored path (got {output_dir})")
-    if output_dir.exists() and any(output_dir.iterdir()) and not resume:
+    # A non-empty outdir is a guard for an actual run — it would clobber a previous run's results.
+    # `--check` only validates params and prints the command without launching, so this guard must
+    # not block it: a dry run against an existing results directory is legitimate.
+    if output_dir.exists() and any(output_dir.iterdir()) and not resume and not check_only:
         issues.append(f"--outdir is not empty: {output_dir} (use -resume or a fresh dir)")
     issues += _space_issues(repo_root=repo_root, output_dir=output_dir,
                             work_dir=work_dir, allow_spaces=allow_spaces)

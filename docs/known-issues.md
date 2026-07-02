@@ -15,6 +15,25 @@ file; match the symptom below and apply the fix.
 
 ## Environment
 
+### `nfclaw` aborts with `ModuleNotFoundError: No module named 'runner'`
+**Symptom:** the installed `nfclaw` command fails immediately — before doing any work — with
+`ModuleNotFoundError: No module named 'runner'` (or `'librarian'`).
+**Why:** `nfclaw` is a console script that imports the repo's `runner` package, which relies on the
+`pip install -e .` editable install being active in the **same** Python the command runs under. Two
+things break that import: **(1) a space in the install path** — Python's `site` module does not
+execute an editable install's path hook when the virtualenv/site-packages path contains a space, so
+`runner` never lands on `sys.path` (this repo already requires a space-free path for *runs*; the same
+applies to the *install*); **(2)** the editable install was done with a **different Python** than the
+one `nfclaw`'s shebang points to (e.g. a `--user` install whose site-packages isn't on that
+interpreter's path). This happens before any nfclaw code runs, so it can't be caught by the run-time
+space check.
+**Fix:**
+- Use a **space-free path** for both the repo and the virtualenv (on macOS also avoid iCloud paths),
+  and run `pip install -e .` inside the virtualenv you actually use.
+- Or skip the console script and use the **no-install equivalent from the repo root**:
+  `python3 -m runner <cmd>` (and `python3 -m librarian <cmd>`). It needs no install — the repo root
+  is already on `sys.path` — and resolves the pinned pipelines correctly.
+
 ### Path contains a space — checked before the run, fails fast
 **Symptom:** a tool fails with a split path, e.g. `cannot create /vol/draft 2/...: Permission
 denied`, `Got unexpected extra argument(s)`, or a module that builds shell commands breaks.
