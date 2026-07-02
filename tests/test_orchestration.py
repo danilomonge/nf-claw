@@ -86,6 +86,45 @@ def test_space_in_repo_path_blocks_the_run(tmp_path, monkeypatch):
     assert any("space" in i for i in exc.value.details["issues"])
 
 
+def _healthy_env(monkeypatch):
+    # real preflight, but tools present and docker daemon healthy, so only the rule under test fires
+    monkeypatch.setattr(orchestration.preflight.shutil, "which", lambda x: "/usr/bin/" + x)
+    monkeypatch.setattr(orchestration.preflight.subprocess, "run",
+                        lambda *a, **k: type("R", (), {"returncode": 0, "stdout": "", "stderr": ""})())
+
+
+def test_check_only_allows_nonempty_outdir(tmp_path, monkeypatch):
+    # --check validates without launching, so an existing (non-empty) results dir must not block it.
+    root = _make_pipeline(tmp_path / "repo", "mini")
+    _healthy_env(monkeypatch)
+    out = tmp_path / "out"                                    # outside the repo
+    out.mkdir()
+    (out / "prev.txt").write_text("a previous run's results")
+    res = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=out,
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
+    assert res.checked_only and "nextflow" in res.command
+
+
+def test_full_run_still_blocks_nonempty_outdir(tmp_path, monkeypatch):
+    # The guard is intact for an actual run: a non-empty outdir without --resume is rejected.
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    root = _make_pipeline(tmp_path / "repo", "mini")
+    _healthy_env(monkeypatch)
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "prev.txt").write_text("a previous run's results")
+    with pytest.raises(NfclawError) as exc:
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=out,
+            profile="docker", params_file=None, cli_overrides={}, resume=False,
+            demo=True, check_only=False, write_provenance=False, timeout_seconds=10)
+    assert exc.value.code == ErrorCode.ENVIRONMENT
+    assert any("not empty" in i for i in exc.value.details["issues"])
+
+
 def test_configs_passed_to_build_as_extra_configs(tmp_path, monkeypatch):
     root = _make_pipeline(tmp_path, "mini")
     monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])

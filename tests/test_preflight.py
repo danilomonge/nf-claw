@@ -84,6 +84,22 @@ def test_allow_spaces_overrides_the_block(tmp_path, monkeypatch):
     assert not any("space" in i for i in issues)
 
 
+def test_nonempty_outdir_blocks_run_but_not_check(tmp_path, monkeypatch):
+    # The non-empty-outdir guard protects an actual run from clobbering prior results; it must not
+    # block `--check`, which only validates params and prints the command without launching.
+    _clean_env(monkeypatch)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    out = tmp_path / "out"                                  # outside the repo, so only the empty rule can fire
+    out.mkdir()
+    (out / "old.txt").write_text("a previous run")
+    common = dict(profile="singularity", submodule=_st(repo / "up"),
+                  repo_root=repo, resume=False, output_dir=out)
+    assert any("--outdir is not empty" in i for i in preflight.check_environment(**common))
+    assert not any("not empty" in i
+                   for i in preflight.check_environment(**common, check_only=True))
+
+
 def test_no_spaces_no_block(tmp_path, monkeypatch):
     _clean_env(monkeypatch)
     issues = preflight.check_environment(profile="singularity", output_dir=tmp_path / "out_x",
