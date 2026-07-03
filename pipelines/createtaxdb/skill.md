@@ -1,14 +1,14 @@
 ---
 name: createtaxdb
 pipeline: nf-core/createtaxdb
-version: 3.0.0
-commit: e561e64257492bb337a4ade1555ecb772156a0c2
+version: 3.1.0
+commit: b01a0f8ed96a5990d15470828dfa92a22cf08bba
 description: Parallelised and automated creation of metagenomic classifier databases of different tools
 summary: nf-core/createtaxdb is a bioinformatics pipeline that constructs custom metagenomic classifier databases for multiple classifiers and profilers from the same input reference genome set in a highly automated and parallelised manner. It supports both nucleotide and protein based classifiers and profilers. The pipeline is designed to be a companion pipeline to nf-core/taxprofiler for taxonomic profiling of metagenomic data, but can be used for any context.
 has_samplesheet: true
 input: samplesheet (id, taxid, fasta_dna, fasta_aa)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: Bracken, Centrifuge, DIAMOND, ganon, Kaiju, KMCP, Kraken2, KrakenUniq, MALT, MetaCache, MultiQC, SeqKit2, sourmash, sylph
+tools: Bracken, Centrifuge, Centrifuger, DIAMOND, ganon, Kaiju, KMCP, Kraken2, KrakenUniq, MALT, MetaCache, MultiQC, SeqKit2, sourmash, sylph
 ---
 # createtaxdb
 
@@ -47,7 +47,7 @@ id,taxid,fasta_dna,fasta_aa
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):
-- `database_building_options` (31 parameters)
+- `database_building_options` (33 parameters)
 - `generate_samplesheet_options` (2 parameters)
 - `generic_options` (16 parameters)
 - `input_file_preprocessing` (3 parameters)
@@ -57,12 +57,12 @@ Beyond the required parameters above, every other parameter is optional. [refere
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/createtaxdb/blob/3.0.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/createtaxdb/blob/3.1.0/docs/output.md
 
 ## Tools this pipeline runs
-The tools/methods this pipeline runs, per the authors' own list: Bracken, Centrifuge, DIAMOND, ganon, Kaiju, KMCP, Kraken2, KrakenUniq, MALT, MetaCache, MultiQC, SeqKit2, sourmash, sylph.
+The tools/methods this pipeline runs, per the authors' own list: Bracken, Centrifuge, Centrifuger, DIAMOND, ganon, Kaiju, KMCP, Kraken2, KrakenUniq, MALT, MetaCache, MultiQC, SeqKit2, sourmash, sylph.
 
-Full list with references: https://github.com/nf-core/createtaxdb/blob/3.0.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/createtaxdb/blob/3.1.0/CITATIONS.md
 
 ## Demo
 ```bash
@@ -70,6 +70,6 @@ nfclaw run createtaxdb --demo --outdir results   # adds the upstream test profil
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/createtaxdb/blob/3.0.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/createtaxdb/blob/3.1.0/docs/usage.md
 
-<!-- Generated from nf-core/createtaxdb@e561e64257492bb337a4ade1555ecb772156a0c2. Do not edit by hand. -->
+<!-- Generated from nf-core/createtaxdb@b01a0f8ed96a5990d15470828dfa92a22cf08bba. Do not edit by hand. -->

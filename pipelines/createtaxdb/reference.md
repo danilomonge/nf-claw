@@ -1,7 +1,7 @@
 ---
 name: createtaxdb
-version: 3.0.0
-commit: e561e64257492bb337a4ade1555ecb772156a0c2
+version: 3.1.0
+commit: b01a0f8ed96a5990d15470828dfa92a22cf08bba
 ---
 
 # createtaxdb — full parameter reference
@@ -15,6 +15,7 @@ nf-core/createtaxdb pipeline parameters. Every parameter from the pinned `nextfl
 | `--bracken-build-options` | string |  |  |  |  |  | Specify parameters being given to bracken build. Parameters must be supplied in quotes: `--<tool>_build_options "--your_param"`. |
 | `--build-bracken` | boolean |  |  |  |  |  | Turn on extending of Kraken2 database to include Bracken files. Requires nucleotide FASTA File input. |
 | `--build-centrifuge` | boolean |  |  |  |  |  | Turn on building of Centrifuge database. Requires nucleotide FASTA file input. |
+| `--build-centrifuger` | boolean |  |  |  |  |  | Turn on building of Centrifuger database. Requires nucleotide FASTA file input. |
 | `--build-diamond` | boolean |  |  |  |  |  | Turn on building of DIAMOND database. Requires amino-acid FASTA file input. |
 | `--build-ganon` | boolean |  |  |  |  |  | Turn on building of ganon database. Requires nucleotide FASTA file input. |
 | `--build-kaiju` | boolean |  |  |  |  |  | Turn on building of Kaiju database. Requires amino-acid FASTA file input. |
@@ -27,6 +28,7 @@ nf-core/createtaxdb pipeline parameters. Every parameter from the pinned `nextfl
 | `--build-sourmash-protein` | boolean |  |  |  |  |  | Whether to build a sourmash reference from the provided amino acid sequences. |
 | `--build-sylph` | boolean |  |  |  |  |  | Turn on building of sylph database. Requires nucleotide FASTA file input. |
 | `--centrifuge-build-options` | string |  |  |  |  |  | Specify parameters being given to centrifuge-build. Parameters must be supplied in quotes: `--<tool>_build_options "--your_param"`. |
+| `--centrifuger-build-options` | string |  |  |  |  |  | Specify parameters being given to centrifuger-build. Parameters must be supplied in quotes: `--<tool>_build_options "--your_param"`. |
 | `--diamond-build-options` | string |  |  |  |  |  | Specify parameters being given to diamond makedb. Parameters must be supplied in quotes: `--<tool>_build_options "--your_param"`. |
 | `--ganon-build-options` | string |  |  |  |  |  | Specify parameters being given to ganon buildcustom. Parameters must be supplied in quotes: `--<tool>_build_options "--your_param"`. |
 | `--kaiju-build-options` | string |  |  |  |  |  | Specify parameters being given to kaiju-mkbwt. Parameters must be supplied in quotes: `--<tool>_build_options "--your_param"`. |
@@ -109,4 +111,4 @@ nf-core/createtaxdb pipeline parameters. Every parameter from the pinned `nextfl
 | `--custom-config-base` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/configs/master | Base directory for Institutional configs. |
 | `--custom-config-version` | string |  | yes |  |  | master | Git commit id for Institutional configs. |
 
-<!-- Generated from nf-core/createtaxdb@e561e64257492bb337a4ade1555ecb772156a0c2. Do not edit by hand. -->
+<!-- Generated from nf-core/createtaxdb@b01a0f8ed96a5990d15470828dfa92a22cf08bba. Do not edit by hand. -->
