@@ -307,6 +307,7 @@
     "tools": [
       "Bracken",
       "Centrifuge",
+      "Centrifuger",
       "DIAMOND",
       "ganon",
       "Kaiju",
@@ -320,7 +321,7 @@
       "sourmash",
       "sylph"
     ],
-    "version": "3.0.0"
+    "version": "3.1.0"
   },
   {
     "description": "Pipeline for the analysis of CRISPR data",
