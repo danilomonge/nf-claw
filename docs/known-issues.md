@@ -10,6 +10,12 @@ recorded in `<outdir>/provenance/` so a working invocation is reproducible. Flag
 dashes or underscores — `nfclaw` normalises `--skip-busco` and `--skip_busco` alike (the raw
 `nextflow run` needs the pipeline's exact spelling, usually underscores).
 
+**Passing a value that begins with a dash** (e.g. an "extra args" pass-through such as rnaseq's
+`--extra_star_align_args`): use the `--param=value` form so the value is not mistaken for another
+flag — `--extra_star_align_args='--outFilterMismatchNmax 5'` (or put it in a `--params-file`). The
+two-token form `--extra_star_align_args '--outFilterMismatchNmax 5'` is rejected fast with an
+`unknown parameter` error rather than run incorrectly, so this is never a silent failure.
+
 When a run fails for any other reason, the error points at the full Nextflow log and back to this
 file; match the symptom below and apply the fix.
 

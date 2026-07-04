@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,26 @@ WRAPPER_CONTROLS = {
 }
 
 
+def _declared_property_names(node) -> set[str]:
+    """Every key under any `properties` object in the raw schema — a superset of the pipeline's
+    parameter names. Used to tell an *upstream removal* (a legacy flag that no longer exists in the
+    schema at all) apart from a *parser regression* (a param the schema still declares but that
+    `load_param_schema` dropped). nf-claw wraps pipelines unmodified, so a param upstream deleted is
+    correctly absent and must not fail this test; a param the schema still declares must not be lost.
+    """
+    names: set[str] = set()
+    if isinstance(node, dict):
+        props = node.get("properties")
+        if isinstance(props, dict):
+            names |= set(props)
+        for value in node.values():
+            names |= _declared_property_names(value)
+    elif isinstance(node, list):
+        for value in node:
+            names |= _declared_property_names(value)
+    return names
+
+
 @pytest.mark.skipif(not (SAREK / "nextflow_schema.json").exists(),
                     reason="sarek submodule not initialized")
 def test_schema_covers_legacy_sarek_allowlist():
@@ -27,5 +48,11 @@ def test_schema_covers_legacy_sarek_allowlist():
         if line.strip()
     } - WRAPPER_CONTROLS
     known = schema.load_param_schema(SAREK).known_params()
-    missing = legacy - known
-    assert missing == set(), f"schema misses legacy sarek flags: {sorted(missing)}"
+    declared = _declared_property_names(
+        json.loads((SAREK / "nextflow_schema.json").read_text(encoding="utf-8")))
+    # A legacy flag missing from `known` is fine when upstream removed it from the schema entirely
+    # (e.g. `hook_url`, dropped from the nf-core template). The regression this guards is the parser
+    # dropping a param the pinned schema STILL declares — that intersection must be empty.
+    parser_dropped = (legacy - known) & declared
+    assert parser_dropped == set(), \
+        f"schema declares these legacy sarek flags but the parser dropped them: {sorted(parser_dropped)}"
