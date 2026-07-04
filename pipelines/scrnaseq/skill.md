@@ -1,8 +1,8 @@
 ---
 name: scrnaseq
 pipeline: nf-core/scrnaseq
-version: 4.1.0
-commit: f7bf36d7c7e4bddc5302c3facd8d19ca83e22226
+version: 4.2.0
+commit: 3fc17b4f971a89e47c88337de71d0e777ffad8cc
 description: Pipeline for processing 10x Genomics single cell rnaseq data
 summary: nf-core/scrnaseq is a bioinformatics best-practice analysis pipeline for processing 10x Genomics single-cell RNA-seq data.
 has_samplesheet: true
@@ -49,28 +49,28 @@ sample,fastq_1,fastq_2,fastq_barcode,expected_cells,seq_center,sample_type,featu
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):
-- `cellranger_multi_options` (9 parameters)
+- `cellranger_multi_options` (10 parameters)
 - `cellranger_options` (2 parameters)
 - `cellrangerarc_options` (3 parameters)
-- `generic_options` (16 parameters)
+- `generic_options` (15 parameters)
 - `input_output_options` (4 parameters)
 - `institutional_config_options` (6 parameters)
 - `kallisto_bus_options` (4 parameters)
 - `mandatory_arguments` (3 parameters)
 - `reference_genome_options` (9 parameters)
-- `simpleaf_options` (2 parameters)
-- `skip_tools` (4 parameters)
+- `simpleaf_options` (4 parameters)
+- `skip_tools` (5 parameters)
 - `starsolo_options` (4 parameters)
 
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/scrnaseq/blob/4.1.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/scrnaseq/blob/4.2.0/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: FastQC, MultiQC, Simpleaf, Alevin-fry, Alevin, Salmon, Kallisto/Bustools, StarSolo.
 
-Full list with references: https://github.com/nf-core/scrnaseq/blob/4.1.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/scrnaseq/blob/4.2.0/CITATIONS.md
 
 ## Demo
 ```bash
@@ -78,6 +78,6 @@ nfclaw run scrnaseq --demo --outdir results   # adds the upstream test profile (
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/scrnaseq/blob/4.1.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/scrnaseq/blob/4.2.0/docs/usage.md
 
-<!-- Generated from nf-core/scrnaseq@f7bf36d7c7e4bddc5302c3facd8d19ca83e22226. Do not edit by hand. -->
+<!-- Generated from nf-core/scrnaseq@3fc17b4f971a89e47c88337de71d0e777ffad8cc. Do not edit by hand. -->

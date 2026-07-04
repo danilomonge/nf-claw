@@ -1,7 +1,7 @@
 ---
 name: scrnaseq
-version: 4.1.0
-commit: f7bf36d7c7e4bddc5302c3facd8d19ca83e22226
+version: 4.2.0
+commit: 3fc17b4f971a89e47c88337de71d0e777ffad8cc
 ---
 
 # scrnaseq — full parameter reference
@@ -18,6 +18,7 @@ nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_
 | `--gex-barcode-sample-assignment` | string (file path) |  |  |  |  |  | This is only necessary to override Cell Ranger's default cell calling and tag calling steps. In most cases, you need to only use the `cellranger_multi_barcodes` parameter. Please refer to the [10x documentation](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/running-pipelines/cr-3p-multi#barcode-asst) for more information about this file. |
 | `--gex-cmo-set` | string (file path) |  |  |  |  |  | Provide a Cell Multiplexing Oligo (CMO) description file when working with multiplexed samples. This is only necessary if you with to override Cell Ranger's default CMO-set. Please refer to the [10x documentation](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/running-pipelines/cr-3p-multi#cmo-ref) about CMO references for more details. |
 | `--gex-frna-probe-set` | string (file path) |  |  |  |  |  | Provide a probe set for fixed RNA-seq profiling (used with FFPE samples). Please refer to the [10x documentation about probesets](https://www.10xgenomics.com/support/single-cell-gene-expression-flex/documentation/steps/probe-sets/chromium-frp-probe-set-files) for more details. |
+| `--gex-reference-version` | string |  |  |  |  |  | Reference version (e.g. GRCh38, GRCm39). Required if `gex_frna_probe_set` is used and `cellranger_index` is not set. Must match the genome version in the `gex_frna_probe_set` file. |
 | `--gex-target-panel` | string (file path) |  |  |  |  |  | Provide a panel description for targeted sequencing. |
 | `--skip-cellrangermulti-vdjref` | boolean |  |  |  |  |  | Skip mkvdjref if not using VDJ data with cellranger/multi |
 | `--vdj-inner-enrichment-primers` | string (file path) |  |  |  |  |  | This argument takes a .txt file containing primer sequences that were used to enrich cDNA for V(D)J sequences. This is only necessary if you with to override Cell Ranger's defaults. |
@@ -44,7 +45,6 @@ nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_
 | `--email-on-fail` | string |  | yes |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary, only when pipeline fails. |
 | `--help` | boolean or string |  |  |  |  |  | Display the help message. |
 | `--help-full` | boolean |  |  |  |  |  | Display the full detailed help message. |
-| `--hook-url` | string |  | yes |  |  |  | Incoming hook URL for messaging service |
 | `--max-multiqc-email-size` | string |  | yes |  | matches ^\d+(\.\d+)?\.?\s*(K\|M\|G\|T)?B$ | 25.MB | File size limit when attaching MultiQC reports to summary emails. |
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--multiqc-config` | string (file path) |  | yes |  |  |  | Custom config file to supply to MultiQC. |
@@ -107,12 +107,14 @@ nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_
 | `--save-align-intermeds` | boolean |  |  |  |  |  | Specify this parameter to save the intermediate alignment files (STAR, CellRanger) to the results. |
 | `--save-reference` | boolean |  |  |  |  |  | Specify this parameter to save the indices created (STAR, Kallisto, Simpleaf) to the results. |
 | `--transcript-fasta` | string (file path) |  |  |  |  |  | A cDNA FASTA file |
-| `--txp2gene` | string (file path) |  |  |  |  |  | Path to transcript to gene mapping file. This allows the specification of a transcript to gene mapping file for Kallisto/BUS and Alevin-fry with AlevinQC. |
+| `--txp2gene` | string (file path) |  |  |  |  |  | Path to transcript to gene mapping file. This allows the specification of a transcript to gene mapping file for Kallisto/BUS and Alevin-fry. |
 
 ## simpleaf_options
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
+| `--qcatch-n-partitions` | integer |  |  |  |  |  | Number of partitions (max barcodes) for QCatch's empty_drops step. |
+| `--remove-doublets` | boolean |  |  |  |  |  | Enable doublet detection and removal using Scrublet via QCatch. |
 | `--simpleaf-index` | string |  |  |  |  |  | Path to pre-built Simpleaf index. |
 | `--simpleaf-umi-resolution` | string |  |  | cr-like, cr-like-em, parsimony, parsimony-em, parsimony-gene, parsimony-gene-em |  | cr-like | UMI resolution strategy to deduplicate UMIs. |
 
@@ -124,6 +126,7 @@ nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_
 | `--skip-emptydrops` | boolean |  |  |  | deprecated |  |  |
 | `--skip-fastqc` | boolean |  |  |  |  |  | Skip FastQC |
 | `--skip-multiqc` | boolean |  |  |  |  |  | Skip MultiQC Report |
+| `--skip-qcatch` | boolean |  |  |  |  |  | Skip qcatch QC for simpleaf aligner |
 
 ## starsolo_options
 
@@ -134,4 +137,4 @@ nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_
 | `--star-ignore-sjdbgtf` | string |  |  |  |  |  | Ignore the SJDB GTF file. |
 | `--star-index` | string |  |  |  |  |  | Specify a path to the precomputed STAR index. |
 
-<!-- Generated from nf-core/scrnaseq@f7bf36d7c7e4bddc5302c3facd8d19ca83e22226. Do not edit by hand. -->
+<!-- Generated from nf-core/scrnaseq@3fc17b4f971a89e47c88337de71d0e777ffad8cc. Do not edit by hand. -->
