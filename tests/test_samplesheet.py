@@ -41,6 +41,20 @@ def test_tsv_missing_column_still_detected(tmp_path):
     assert any("fastq_1" in i for i in issues)
 
 
+# A UTF-8 BOM (common in spreadsheet-exported CSVs) must not make the first required column read
+# as missing: the validator reads utf-8-sig so a leading BOM is stripped before header parsing.
+def test_utf8_bom_header_is_stripped(tmp_path):
+    (tmp_path / "r1.fq.gz").write_text("x")
+    ss = tmp_path / "ss.csv"
+    ss.write_bytes(b"\xef\xbb\xbf" + b"sample,fastq_1\nA,r1.fq.gz\n")   # leading BOM
+    assert samplesheet.validate(ss, SCH) == []                          # was "missing column 'sample'"
+
+def test_bom_does_not_mask_a_genuinely_missing_column(tmp_path):
+    ss = tmp_path / "ss.csv"
+    ss.write_bytes(b"\xef\xbb\xbf" + b"sample\nA\n")                     # BOM + fastq_1 truly absent
+    assert any("fastq_1" in i for i in samplesheet.validate(ss, SCH))
+
+
 # Headerless single-column input (nf-core/fetchngs id list): DictReader must NOT eat line 1.
 UNNAMED = InputSchema(columns=(Column("", "string", False, "^SRR", None),))
 

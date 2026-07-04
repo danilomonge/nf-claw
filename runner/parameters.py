@@ -68,8 +68,11 @@ def coerce_to_schema(merged: dict[str, Any], schema: ParamSchema) -> dict[str, A
 
 
 def _load_params_file(path: Path) -> dict:
+    # utf-8-sig so a leading UTF-8 BOM (e.g. from a Windows editor) is stripped: json.loads rejects
+    # a BOM outright, so without this a BOM'd params file fails with a cryptic parse error. No-op
+    # without a BOM.
     if path.suffix.lower() == ".json":
-        return json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8-sig"))
     try:
         import yaml  # optional dependency
     except ModuleNotFoundError as exc:
@@ -78,7 +81,7 @@ def _load_params_file(path: Path) -> dict:
             f"Reading YAML params file '{path}' requires pyyaml.",
             fix="Use a .json params file, or `pip install pyyaml`.",
         ) from exc
-    return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    return yaml.safe_load(path.read_text(encoding="utf-8-sig")) or {}
 
 
 def merge(*, cli_overrides: dict[str, Any], params_file: Path | None,
