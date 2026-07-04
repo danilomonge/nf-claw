@@ -78,6 +78,27 @@ def test_merge_resolve_and_write(tmp_path):
     assert data["input"].startswith("/") and data["input"].endswith("rel/ss.csv")  # made absolute
 
 
+def test_params_file_non_object_raises_clean_error(tmp_path):
+    # A params file must be an object (param -> value). A top-level list/scalar is malformed and
+    # must fail with a clear NfclawError, not a cryptic dict.update TypeError.
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    for content in ("[1, 2, 3]", '"a string"', "42"):
+        pf = tmp_path / "p.json"
+        pf.write_text(content)
+        with pytest.raises(NfclawError) as exc:
+            parameters.merge(cli_overrides={}, params_file=pf, input_path=None, outdir=tmp_path / "o")
+        assert exc.value.code == ErrorCode.PARAMS_INVALID
+        assert "object of parameters" in str(exc.value)
+
+
+def test_params_file_empty_object_is_ok(tmp_path):
+    pf = tmp_path / "p.json"
+    pf.write_text("{}")
+    merged = parameters.merge(cli_overrides={}, params_file=pf, input_path=None, outdir=tmp_path / "o")
+    assert merged["outdir"].endswith("/o")   # empty params object merges cleanly
+
+
 def test_params_file_with_utf8_bom_loads(tmp_path):
     # A JSON params file saved with a leading UTF-8 BOM (e.g. a Windows editor) must load, not fail
     # with a cryptic json error: the loader reads utf-8-sig so the BOM is stripped.

@@ -80,7 +80,7 @@ export function SkillsExplorer({ skills }: { skills: SkillSummary[] }) {
 
       <div className="mt-6 grid gap-5 lg:grid-cols-2">
         {results.map(({ skill, matchedParams }) => (
-          <SkillCard key={skill.name} skill={skill} matchedParams={matchedParams} query={q} />
+          <SkillCard key={skill.name} skill={skill} matchedParams={matchedParams} />
         ))}
       </div>
       {results.length === 0 && (
@@ -93,11 +93,9 @@ export function SkillsExplorer({ skills }: { skills: SkillSummary[] }) {
 function SkillCard({
   skill,
   matchedParams,
-  query,
 }: {
   skill: SkillSummary;
   matchedParams: SkillSummary["params"];
-  query: string;
 }) {
   const [open, setOpen] = useState(false);
 

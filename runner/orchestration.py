@@ -19,7 +19,7 @@ class RunResult:
     warnings: list[str] = field(default_factory=list)
 
 
-def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
+def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                  outdir: Path, profile: str, params_file: Path | None,
                  cli_overrides: dict, resume: bool, demo: bool,
                  check_only: bool, write_provenance: bool,
@@ -64,7 +64,10 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
     param_schema = schema_mod.load_param_schema(st.path)
     input_schema = schema_mod.load_input_schema(st.path)
 
-    if input_path is not None and input_schema is not None:
+    # Only a local samplesheet (a Path) gets the deterministic pre-check. A remote --input (URL, a
+    # str) can't be read locally — Nextflow stages it and nf-schema validates it at runtime — so it
+    # is forwarded unchanged, exactly as nf-core pipelines accept it.
+    if isinstance(input_path, Path) and input_schema is not None:
         problems = samplesheet.validate(input_path, input_schema)
         if problems:
             raise NfclawError(ErrorCode.SAMPLESHEET_INVALID,

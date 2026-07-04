@@ -156,6 +156,29 @@ def test_missing_config_fails_fast(tmp_path, monkeypatch):
     assert exc.value.code == ErrorCode.ENVIRONMENT and "config" in str(exc.value).lower()
 
 
+def test_url_input_skips_local_validation_and_is_forwarded(tmp_path, monkeypatch):
+    # A remote --input (URL) can't be read locally, so it must skip the samplesheet pre-check and be
+    # forwarded to Nextflow unchanged (nf-schema stages + validates it). Mirrors nf-core behavior.
+    import json
+    from runner.schema import Column, InputSchema
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    # Force a non-None input schema so the ONLY thing that skips the pre-check is the URL (str) type.
+    monkeypatch.setattr(orchestration.schema_mod, "load_input_schema",
+                        lambda repo: InputSchema(columns=(Column("sample", "string", True, None, None),)))
+    called = {}
+    monkeypatch.setattr(orchestration.samplesheet, "validate",
+                        lambda *a, **k: called.setdefault("validated", True) or [])
+    url = "https://raw.githubusercontent.com/nf-core/x/samplesheet.csv"
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=url, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=False, check_only=True, write_provenance=False, timeout_seconds=10)
+    assert "validated" not in called                          # local pre-check skipped for a URL
+    params = json.loads((tmp_path / "out" / "provenance" / "params.json").read_text())
+    assert params["input"] == url                             # forwarded unchanged, not mangled
+
+
 def test_missing_params_file_fails_fast(tmp_path, monkeypatch):
     # A --params-file the user named but that doesn't exist must fail fast, not be silently
     # dropped (which would run with none of its values). Mirrors the --config contract.

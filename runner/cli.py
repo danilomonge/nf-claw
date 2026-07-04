@@ -12,6 +12,17 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
+def _input_value(raw: str | None) -> "Path | str | None":
+    """Resolve a local `--input` to an absolute Path; pass a remote URL through unchanged.
+
+    A URL (contains `://`) must NOT go through `Path().resolve()`, which would mangle it into a
+    bogus local path (e.g. `/repo/https:/host/ss.csv`). nf-core pipelines accept a remote
+    samplesheet URL — Nextflow stages it and nf-schema validates it — so nfclaw forwards it as-is."""
+    if not raw:
+        return None
+    return raw if "://" in raw else Path(raw).expanduser().resolve()
+
+
 def _parse_nxf_env(items: list[str]) -> dict[str, str]:
     """Parse repeatable `--nxf-env KEY=VALUE` into a dict, restricted to `NXF_*` variables.
 
@@ -145,7 +156,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             res = orchestration.run_pipeline(
                 args.name, repo_root=root,
-                input_path=Path(args.input).expanduser().resolve() if args.input else None,
+                input_path=_input_value(args.input),
                 outdir=Path(args.outdir).expanduser().resolve(),
                 profile=args.profile,
                 params_file=Path(args.params_file) if args.params_file else None,

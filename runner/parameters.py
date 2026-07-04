@@ -72,20 +72,30 @@ def _load_params_file(path: Path) -> dict:
     # a BOM outright, so without this a BOM'd params file fails with a cryptic parse error. No-op
     # without a BOM.
     if path.suffix.lower() == ".json":
-        return json.loads(path.read_text(encoding="utf-8-sig"))
-    try:
-        import yaml  # optional dependency
-    except ModuleNotFoundError as exc:
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+    else:
+        try:
+            import yaml  # optional dependency
+        except ModuleNotFoundError as exc:
+            raise NfclawError(
+                ErrorCode.ENVIRONMENT,
+                f"Reading YAML params file '{path}' requires pyyaml.",
+                fix="Use a .json params file, or `pip install pyyaml`.",
+            ) from exc
+        data = yaml.safe_load(path.read_text(encoding="utf-8-sig")) or {}
+    # A params file is a map of parameter -> value (what Nextflow's -params-file expects). A
+    # top-level list or scalar is malformed; catch it here with a clear error instead of letting
+    # the later `dict.update()` blow up with a cryptic TypeError.
+    if not isinstance(data, dict):
         raise NfclawError(
-            ErrorCode.ENVIRONMENT,
-            f"Reading YAML params file '{path}' requires pyyaml.",
-            fix="Use a .json params file, or `pip install pyyaml`.",
-        ) from exc
-    return yaml.safe_load(path.read_text(encoding="utf-8-sig")) or {}
+            ErrorCode.PARAMS_INVALID,
+            f"--params-file must contain an object of parameters, got {type(data).__name__}: {path}",
+            fix='Use a top-level object like {"param": value}, not a list or a bare scalar.')
+    return data
 
 
 def merge(*, cli_overrides: dict[str, Any], params_file: Path | None,
-          input_path: Path | None, outdir: Path) -> dict[str, Any]:
+          input_path: "Path | str | None", outdir: Path) -> dict[str, Any]:
     """Build the full parameter map (params-file < --input/--outdir < CLI) without touching
     disk, so the merged result can be validated before anything is written or executed."""
     merged: dict[str, Any] = {}

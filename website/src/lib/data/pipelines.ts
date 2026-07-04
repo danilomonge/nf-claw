@@ -6,7 +6,6 @@ import {
   splitFrontmatter,
   tableUnder,
   parseTableAt,
-  sectionLines,
   codeBlockUnder,
   proseUnder,
   splitAllowed,
