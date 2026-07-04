@@ -54,13 +54,15 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     in_lines = [f"{_sha256(p)}  {p}" for p in input_paths if p.is_file()]
-    (prov / "inputs.sha256").write_text("\n".join(in_lines) + ("\n" if in_lines else ""))
+    (prov / "inputs.sha256").write_text("\n".join(in_lines) + ("\n" if in_lines else ""),
+                                        encoding="utf-8")
 
     out_lines = [f"{_sha256(p)}  {rel}"
                  for p in sorted(outdir.rglob("*"))
                  if p.is_file() and prov not in p.parents
                  and not is_nextflow_internal(rel := p.relative_to(outdir))]
-    (prov / "outputs.sha256").write_text("\n".join(out_lines) + ("\n" if out_lines else ""))
+    (prov / "outputs.sha256").write_text("\n".join(out_lines) + ("\n" if out_lines else ""),
+                                         encoding="utf-8")
 
     sv = outdir / "pipeline_info" / "software_versions.yml"
     if sv.exists():

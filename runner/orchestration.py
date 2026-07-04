@@ -39,6 +39,14 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: Path | None,
             raise NfclawError(ErrorCode.ENVIRONMENT, f"--config file not found: {c}",
                               fix="Pass a path to an existing Nextflow config file.")
         extra_configs.append(cfg)
+    # A --params-file the user named must exist: nfclaw reads it itself (merge, below), so a typo'd
+    # path would otherwise be silently dropped and the run proceed with none of its values. Fail
+    # fast, naming the path — the same fail-fast contract as --config above.
+    if params_file is not None:
+        params_file = params_file.expanduser()
+        if not params_file.is_file():
+            raise NfclawError(ErrorCode.PARAMS_INVALID, f"--params-file not found: {params_file}",
+                              fix="Pass a path to an existing JSON or YAML params file.")
     # None → pinned latest (unchanged); a tag → that release, validated + materialized.
     # Everything downstream consumes `st`/`st.path`, so it all targets the chosen version.
     st = versions.ensure(name, pipeline_version, pipelines_dir=pipelines_dir,

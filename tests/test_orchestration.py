@@ -156,6 +156,39 @@ def test_missing_config_fails_fast(tmp_path, monkeypatch):
     assert exc.value.code == ErrorCode.ENVIRONMENT and "config" in str(exc.value).lower()
 
 
+def test_missing_params_file_fails_fast(tmp_path, monkeypatch):
+    # A --params-file the user named but that doesn't exist must fail fast, not be silently
+    # dropped (which would run with none of its values). Mirrors the --config contract.
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    ran: dict = {}
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: ran.setdefault("x", True))
+    with pytest.raises(NfclawError) as exc:
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+            profile="docker", params_file=Path("/no/such/params.json"), cli_overrides={},
+            resume=False, demo=True, check_only=False, write_provenance=False, timeout_seconds=10)
+    assert exc.value.code == ErrorCode.PARAMS_INVALID and "params-file" in str(exc.value).lower()
+    assert "x" not in ran                                         # never reached execution
+
+
+def test_existing_params_file_is_used(tmp_path, monkeypatch):
+    # The happy path still works: an existing params-file is read and its values reach the run.
+    import json
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    pf = tmp_path / "p.json"
+    pf.write_text('{"aligner": "hisat2"}')
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=pf, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
+    params = json.loads((tmp_path / "out" / "provenance" / "params.json").read_text())
+    assert params["aligner"] == "hisat2"
+
+
 def test_runs_from_outdir_with_shared_work_dir(tmp_path, monkeypatch):
     root = _make_pipeline(tmp_path, "mini")
     monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
