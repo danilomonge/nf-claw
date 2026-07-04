@@ -60,7 +60,7 @@ make build
 Full step-by-step, with the version-policy column and the checks to run, is in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## How it stays current
-Three scheduled workflows keep the library — and the site — up to date with no manual edits:
+Five workflows keep the library — and the site — up to date with no manual edits:
 - **`auto-update.yml`** (daily): finds each pipeline's newest release with `git ls-remote --tags`
   (pure git, no APIs), checks it out, regenerates context, and opens a PR. The PR is gated by the
   drift check in the same job and then **merged automatically**, which triggers a site rebuild.

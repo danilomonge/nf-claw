@@ -15,6 +15,11 @@ anywhere this doc shows `nfclaw <cmd>`.
    (raw fallback: `nextflow run pipelines/<name>/upstream -profile docker ...` — the submodule is
    already pinned to the release, so no `-r`).
 
+`nfclaw run` executes the pipeline for real — there is no preview/dry-run default. To see the exact
+`nextflow` command that *would* run without launching it, add `--check` (it validates inputs and
+parameters, prints the command, and exits). Add `--demo` to run the pinned release's bundled test
+profile end to end.
+
 Trust `skill.md` / `reference.md` over your own memory — they are generated from the pinned commit.
 To set any parameter beyond the essentials, look it up in `pipelines/<name>/reference.md` (the complete
 list, with allowed values and value constraints) — do not invent a flag or value. `nfclaw run` rejects
@@ -46,7 +51,7 @@ engine and its runtime explicit and reproducible (both are recorded in `<outdir>
   e.g. a docker host-network config (`docker { runOptions = "--network host" }`) or custom resources.
 
 Any other environment (proxies, `JAVA_HOME`, …) is inherited from your shell unchanged. Each run
-launches Nextflow from its `--outdir`, so its `.nextflow/` history is isolated and `-resume` resumes
+launches Nextflow from its `--outdir`, so its `.nextflow/` history is isolated and `--resume` resumes
 that run (use a distinct `--outdir` per pipeline).
 
 If a pipeline's `upstream/` is empty, initialise it first:

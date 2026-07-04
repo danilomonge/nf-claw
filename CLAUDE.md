@@ -51,7 +51,7 @@ engine and its runtime explicit and reproducible (both are recorded in `<outdir>
   e.g. a docker host-network config (`docker { runOptions = "--network host" }`) or custom resources.
 
 Any other environment (proxies, `JAVA_HOME`, …) is inherited from your shell unchanged. Each run
-launches Nextflow from its `--outdir`, so its `.nextflow/` history is isolated and `-resume` resumes
+launches Nextflow from its `--outdir`, so its `.nextflow/` history is isolated and `--resume` resumes
 that run (use a distinct `--outdir` per pipeline).
 
 If a pipeline's `upstream/` is empty, initialise it first:
