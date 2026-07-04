@@ -31,8 +31,9 @@ space check.
 - Use a **space-free path** for both the repo and the virtualenv (on macOS also avoid iCloud paths),
   and run `pip install -e .` inside the virtualenv you actually use.
 - Or skip the console script and use the **no-install equivalent from the repo root**:
-  `python3 -m runner <cmd>` (and `python3 -m librarian <cmd>`). It needs no install — the repo root
-  is already on `sys.path` — and resolves the pinned pipelines correctly.
+  `python3 -m runner <cmd>` (maintenance runs the same way: `make <target>`, or
+  `python3 -m librarian.<module>` — e.g. `python3 -m librarian.write_skill --all`). It needs no
+  install — the repo root is already on `sys.path` — and resolves the pinned pipelines correctly.
 
 ### Path contains a space — checked before the run, fails fast
 **Symptom:** a tool fails with a split path, e.g. `cannot create /vol/draft 2/...: Permission
@@ -63,8 +64,8 @@ nfclaw run <name> --nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true \
 
 ### No network at run time — a tool downloads a database
 **Symptom:** a step (e.g. BUSCO) hangs then fails trying to fetch a database it needs.
-**Fix:** disable that step. Booleans work from the CLI now, e.g. `--skip-busco true` (or a
-`--params-file '{"skip_busco": true}'`).
+**Fix:** disable that step. Booleans work from the CLI now, e.g. `--skip-busco true` (or put
+`{"skip_busco": true}` in a JSON file and pass it as `--params-file params.json`).
 
 ### A process requests more memory than the host has — aborts before any work
 **Symptom:** a run aborts at scheduling time because a single step requests more RAM than the

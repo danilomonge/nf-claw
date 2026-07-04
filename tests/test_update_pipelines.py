@@ -10,6 +10,23 @@ def test_select_latest_none_when_no_semver():
     assert up.select_latest(["dev", "main"]) is None
 
 
+def test_relative_sources_resolved_against_repo_root(monkeypatch, tmp_path):
+    # A relative --sources must resolve against --repo-root, not the CWD, so the source list and
+    # `bump` (which builds paths from repo-root) always target the same repo — even when the caller
+    # runs from elsewhere. Regression guard for the CWD/repo-root split.
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "sources.tsv").write_text("a\thttps://x/a.git\tlatest-release\n")
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    seen: list[str] = []
+    monkeypatch.setattr(up, "bump", lambda name, url, root: (seen.append(name), "1.0.0")[1])
+    monkeypatch.chdir(elsewhere)                              # run from outside the repo
+    rc = up.main(["--sources", "sources.tsv", "--repo-root", str(repo)])
+    assert rc == 0
+    assert seen == ["a"]                                      # found the repo's sources.tsv, not CWD's
+
+
 def test_one_failure_does_not_block_others(monkeypatch, tmp_path, capsys):
     tsv = tmp_path / "sources.tsv"
     tsv.write_text("a\thttps://x/a.git\nb\thttps://x/b.git\n")

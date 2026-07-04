@@ -49,7 +49,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repo-root", default=".")
     args = parser.parse_args(argv)
     root = Path(args.repo_root).resolve()
-    for src in read_sources(Path(args.sources)):
+    # Resolve a relative --sources against --repo-root (not the CWD), so `bump` — which builds every
+    # path from `root` — and the source list always refer to the same repo. Matches discover_pipelines.
+    sources_path = Path(args.sources)
+    if not sources_path.is_absolute():
+        sources_path = root / sources_path
+    for src in read_sources(sources_path):
         if src.policy != "latest-release":
             # Only "latest-release" pipelines are auto-bumped; anything else (e.g. a pinned
             # version) is left untouched so the policy column in sources.tsv is honoured.

@@ -154,6 +154,24 @@ def test_run_threads_config(tmp_path, monkeypatch):
     assert captured["configs"] == [str(cfg), str(cfg)]            # repeatable, threaded through
 
 
+def test_run_passes_through_pipeline_flag_that_prefixes_a_reserved_flag(tmp_path, monkeypatch):
+    # A pipeline parameter whose name is a prefix of a reserved nfclaw flag (e.g. `--res` vs
+    # `--resume`, `--time` vs `--timeout`) must reach the pipeline as an override, not be silently
+    # swallowed by argparse abbreviation. Guards the passthrough contract (allow_abbrev=False).
+    from runner import orchestration
+    captured = {}
+    monkeypatch.setattr(orchestration, "run_pipeline",
+                        lambda *a, **k: captured.update(k) or orchestration.RunResult(
+                            "CMD", Path("/o"), True, None))
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    rc = cli.main(["run", "x", "--outdir", str(tmp_path / "out"),
+                   "--res", "5", "--time", "30"])
+    assert rc == 0
+    assert captured["cli_overrides"] == {"res": "5", "time": "30"}   # forwarded, not misparsed
+    assert captured["resume"] is False                               # reserved --resume untouched
+    assert captured["timeout_seconds"] == 60 * 60 * 12               # reserved --timeout untouched
+
+
 def test_run_threads_allow_spaces(tmp_path, monkeypatch):
     from runner import orchestration
     captured = {}

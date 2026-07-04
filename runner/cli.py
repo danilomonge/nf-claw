@@ -66,7 +66,12 @@ def main(argv: list[str] | None = None) -> int:
     p_show.add_argument("--pipeline-version", dest="pipeline_version")
     p_versions = sub.add_parser("versions")
     p_versions.add_argument("name")
-    p_run = sub.add_parser("run")
+    # allow_abbrev=False: `run` forwards every unknown flag to the pipeline (via parse_known_args
+    # → _collect_overrides). With abbreviation on, a pipeline flag that is a prefix of a reserved
+    # nfclaw flag (e.g. `--res`, `--time`) would be silently swallowed as `--resume`/`--timeout`
+    # instead of passed through. Turning it off keeps reserved flags exact and lets everything else
+    # reach Nextflow. Full flag names and single-dash `-profile` are unaffected.
+    p_run = sub.add_parser("run", allow_abbrev=False)
     p_run.add_argument("name")
     p_run.add_argument("--input")
     p_run.add_argument("--outdir", required=True)
