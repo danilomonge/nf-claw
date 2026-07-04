@@ -1,4 +1,3 @@
-from pathlib import Path
 from runner import nextflow_command as nc
 
 def test_compose_profile_orders_test_first_modifiers_last():

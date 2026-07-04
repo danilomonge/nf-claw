@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 
 from librarian import write_catalog
 

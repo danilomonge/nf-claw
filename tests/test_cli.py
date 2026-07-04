@@ -26,6 +26,15 @@ def test_show_prints_skill(tmp_path, monkeypatch, capsys):
     assert "# sarek" in capsys.readouterr().out
 
 
+def test_input_value_resolves_local_but_passes_url_through():
+    from pathlib import Path
+    assert cli._input_value(None) is None
+    url = "https://raw.githubusercontent.com/nf-core/x/ss.csv"
+    assert cli._input_value(url) == url                       # URL forwarded unchanged, not resolved
+    local = cli._input_value("rel/ss.csv")
+    assert isinstance(local, Path) and local.is_absolute()    # local made absolute
+
+
 def test_collect_overrides_parses_flags():
     ov = cli._collect_overrides(["--tools", "strelka", "--wes"])
     assert ov == {"tools": "strelka", "wes": True}

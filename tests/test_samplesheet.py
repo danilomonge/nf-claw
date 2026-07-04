@@ -18,6 +18,25 @@ def test_missing_input_file(tmp_path):
     issues = samplesheet.validate(ss, SCH)
     assert any("file not found" in i for i in issues)
 
+def test_binary_samplesheet_is_flagged_not_crashed(tmp_path):
+    # A non-text file (e.g. an .xlsx handed in as a .csv) must return a clear issue, not raise
+    # UnicodeDecodeError. Covers both the named-column and headerless branches.
+    ss = tmp_path / "book.csv"
+    ss.write_bytes(bytes([0x50, 0x4b, 0x03, 0x04]) + bytes(range(200, 256)))   # not UTF-8
+    named = samplesheet.validate(ss, SCH)
+    assert named and "not valid UTF-8" in named[0]
+    unnamed = samplesheet.validate(ss, InputSchema(columns=(Column("", "string", False, None, None),)))
+    assert unnamed and "not valid UTF-8" in unnamed[0]
+
+
+def test_directory_as_samplesheet_is_flagged_not_crashed(tmp_path):
+    # --input pointing at a directory must return a clear issue, not raise IsADirectoryError.
+    d = tmp_path / "adir"
+    d.mkdir()
+    issues = samplesheet.validate(d, SCH)
+    assert issues and "not a file" in issues[0]
+
+
 def test_valid_sheet(tmp_path):
     (tmp_path / "r1.fq.gz").write_text("x")
     ss = tmp_path / "ss.csv"

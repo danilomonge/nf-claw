@@ -100,6 +100,18 @@ def test_nonempty_outdir_blocks_run_but_not_check(tmp_path, monkeypatch):
                    for i in preflight.check_environment(**common, check_only=True))
 
 
+def test_outdir_that_is_a_file_is_flagged_cleanly(tmp_path, monkeypatch):
+    # An --outdir pointing at an existing file must be reported clearly, not blow up later in
+    # iterdir()/mkdir() with an uncaught NotADirectoryError/FileExistsError.
+    _clean_env(monkeypatch)
+    f = tmp_path / "afile"
+    f.write_text("x")
+    issues = preflight.check_environment(profile="singularity", output_dir=f,
+                                         submodule=_st(tmp_path / "up"), repo_root=tmp_path,
+                                         resume=False, check_only=True)
+    assert any("not a directory" in i for i in issues)
+
+
 def test_no_spaces_no_block(tmp_path, monkeypatch):
     _clean_env(monkeypatch)
     issues = preflight.check_environment(profile="singularity", output_dir=tmp_path / "out_x",

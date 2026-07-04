@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, FileText } from "lucide-react";
-import { Reveal, StaggerGroup, StaggerItem } from "@/components/ui/reveal";
+import { StaggerGroup, StaggerItem } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
 import type { DocPage } from "@/lib/types";
 
