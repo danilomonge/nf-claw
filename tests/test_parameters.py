@@ -78,6 +78,15 @@ def test_merge_resolve_and_write(tmp_path):
     assert data["input"].startswith("/") and data["input"].endswith("rel/ss.csv")  # made absolute
 
 
+def test_params_file_with_utf8_bom_loads(tmp_path):
+    # A JSON params file saved with a leading UTF-8 BOM (e.g. a Windows editor) must load, not fail
+    # with a cryptic json error: the loader reads utf-8-sig so the BOM is stripped.
+    pf = tmp_path / "p.json"
+    pf.write_bytes(b"\xef\xbb\xbf" + b'{"aligner": "star"}')
+    merged = parameters.merge(cli_overrides={}, params_file=pf, input_path=None, outdir=tmp_path / "o")
+    assert merged["aligner"] == "star"
+
+
 def test_params_file_values_are_validated(tmp_path):
     # A typo or bad enum inside a --params-file must fail fast, exactly like a CLI flag.
     ps = schema.load_param_schema(FIX / "mini")
