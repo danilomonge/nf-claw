@@ -5,8 +5,8 @@ needs to run is therefore decided by that pinned release, not by nf-claw. Two ru
 
 ## Only DSL2 pipelines are supported
 
-Nextflow removed the original DSL1 syntax in **22.03**, so a DSL1 pipeline cannot run on any
-currently-supported engine. nf-claw only includes **DSL2** pipelines:
+Nextflow removed the original DSL1 syntax in **22.12** (DSL2 became the default in 22.03), so a
+DSL1 pipeline cannot run on any currently-supported engine. nf-claw only includes **DSL2** pipelines:
 
 - Auto-discovery (`librarian/discover_pipelines.py`) skips any pipeline whose nf-core entry is
   not DSL2, so DSL1 pipelines are never onboarded.

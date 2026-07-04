@@ -43,7 +43,7 @@ def fetch_catalog(url: str = NFCORE_PIPELINES_JSON) -> list[dict]:
 def candidates(workflows: list[dict]) -> list[tuple[str, str, str]]:
     """(name, git url, latest stable tag) for live, runnable pipelines.
 
-    Only DSL2 pipelines are eligible: DSL1 was removed in Nextflow 22.03, so a
+    Only DSL2 pipelines are eligible: DSL1 was removed in Nextflow 22.12, so a
     DSL1 pipeline cannot run on any supported engine and has no place in an
     agent-runnable library.
     """

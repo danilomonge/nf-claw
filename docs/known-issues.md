@@ -150,9 +150,9 @@ failing with `AccessDeniedException`).
 docker { runOptions = "-u 1000:1000" }
 ```
 `nfclaw run <name> --config run-as-user.config …`. (Or fix the file's permissions in the work dir
-and `-resume`.)
+and `--resume`.)
 
-### `-resume` resumed the wrong session
+### `--resume` resumed the wrong session
 **Status: fixed.** `nfclaw run` now launches Nextflow **from the `--outdir`**, so each run owns its
 own `.nextflow/` history and cache. `--resume` resumes *this* outdir's session — it can no longer
 pick up another pipeline's run. Use a distinct `--outdir` per pipeline.
