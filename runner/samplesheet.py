@@ -8,8 +8,10 @@ from runner.schema import InputSchema
 
 def validate(path: Path, input_schema: InputSchema) -> list[str]:
     issues: list[str] = []
-    if not path.exists():
-        return [f"samplesheet not found: {path}"]
+    if not path.is_file():
+        # Covers both a missing path and one that exists but is a directory — reading either as a
+        # samplesheet would otherwise raise FileNotFoundError/IsADirectoryError as a raw traceback.
+        return [f"samplesheet not found or not a file: {path}"]
     named = [c for c in input_schema.columns if c.name]
     # Read as utf-8-sig so a leading UTF-8 BOM (common in spreadsheet-exported CSVs) is stripped:
     # otherwise a leading BOM stays glued to the first header (it reads as `\ufeffsample`) and a

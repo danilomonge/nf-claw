@@ -44,10 +44,15 @@ def check_environment(*, profile: str, output_dir: Path, submodule: SubmoduleSta
             ignored = False
         if not ignored:
             issues.append(f"--outdir must be outside the repo or a gitignored path (got {output_dir})")
+    # An --outdir that exists but is a file (not a directory) can never work — nfclaw creates it and
+    # writes the provenance bundle under it. Catch it here with a clear message instead of letting
+    # `iterdir()`/`mkdir()` raise NotADirectoryError/FileExistsError as an uncaught traceback.
+    if output_dir.exists() and not output_dir.is_dir():
+        issues.append(f"--outdir exists but is not a directory: {output_dir}")
     # A non-empty outdir is a guard for an actual run — it would clobber a previous run's results.
     # `--check` only validates params and prints the command without launching, so this guard must
     # not block it: a dry run against an existing results directory is legitimate.
-    if output_dir.exists() and any(output_dir.iterdir()) and not resume and not check_only:
+    elif output_dir.is_dir() and any(output_dir.iterdir()) and not resume and not check_only:
         issues.append(f"--outdir is not empty: {output_dir} (use -resume or a fresh dir)")
     issues += _space_issues(repo_root=repo_root, output_dir=output_dir,
                             work_dir=work_dir, allow_spaces=allow_spaces)

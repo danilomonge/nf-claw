@@ -18,6 +18,14 @@ def test_missing_input_file(tmp_path):
     issues = samplesheet.validate(ss, SCH)
     assert any("file not found" in i for i in issues)
 
+def test_directory_as_samplesheet_is_flagged_not_crashed(tmp_path):
+    # --input pointing at a directory must return a clear issue, not raise IsADirectoryError.
+    d = tmp_path / "adir"
+    d.mkdir()
+    issues = samplesheet.validate(d, SCH)
+    assert issues and "not a file" in issues[0]
+
+
 def test_valid_sheet(tmp_path):
     (tmp_path / "r1.fq.gz").write_text("x")
     ss = tmp_path / "ss.csv"
