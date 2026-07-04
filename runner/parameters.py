@@ -70,9 +70,23 @@ def coerce_to_schema(merged: dict[str, Any], schema: ParamSchema) -> dict[str, A
 def _load_params_file(path: Path) -> dict:
     # utf-8-sig so a leading UTF-8 BOM (e.g. from a Windows editor) is stripped: json.loads rejects
     # a BOM outright, so without this a BOM'd params file fails with a cryptic parse error. No-op
-    # without a BOM.
+    # without a BOM. A binary file (e.g. an .xlsx by mistake) raises UnicodeDecodeError — report it
+    # as a clear error rather than a raw traceback.
+    try:
+        text = path.read_text(encoding="utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise NfclawError(
+            ErrorCode.PARAMS_INVALID,
+            f"--params-file is not valid UTF-8 text: {path}",
+            fix="Pass a plain-text JSON or YAML file, not a binary one.") from exc
     if path.suffix.lower() == ".json":
-        data = json.loads(path.read_text(encoding="utf-8-sig"))
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise NfclawError(
+                ErrorCode.PARAMS_INVALID,
+                f"--params-file is not valid JSON: {path} ({exc})",
+                fix="Fix the JSON syntax, or use a .yaml params file.") from exc
     else:
         try:
             import yaml  # optional dependency
@@ -82,7 +96,13 @@ def _load_params_file(path: Path) -> dict:
                 f"Reading YAML params file '{path}' requires pyyaml.",
                 fix="Use a .json params file, or `pip install pyyaml`.",
             ) from exc
-        data = yaml.safe_load(path.read_text(encoding="utf-8-sig")) or {}
+        try:
+            data = yaml.safe_load(text) or {}
+        except yaml.YAMLError as exc:
+            raise NfclawError(
+                ErrorCode.PARAMS_INVALID,
+                f"--params-file is not valid YAML: {path} ({exc})",
+                fix="Fix the YAML syntax, or use a .json params file.") from exc
     # A params file is a map of parameter -> value (what Nextflow's -params-file expects). A
     # top-level list or scalar is malformed; catch it here with a clear error instead of letting
     # the later `dict.update()` blow up with a cryptic TypeError.

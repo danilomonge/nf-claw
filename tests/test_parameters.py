@@ -92,6 +92,24 @@ def test_params_file_non_object_raises_clean_error(tmp_path):
         assert "object of parameters" in str(exc.value)
 
 
+def test_malformed_params_file_raises_clean_error(tmp_path):
+    # Malformed JSON and a binary file must fail with a clear NfclawError, not a raw
+    # JSONDecodeError/UnicodeDecodeError traceback.
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    bad_json = tmp_path / "bad.json"
+    bad_json.write_text('{"aligner": "star"')                    # unterminated
+    with pytest.raises(NfclawError) as exc:
+        parameters.merge(cli_overrides={}, params_file=bad_json, input_path=None, outdir=tmp_path / "o")
+    assert exc.value.code == ErrorCode.PARAMS_INVALID and "not valid JSON" in str(exc.value)
+
+    binary = tmp_path / "book.json"
+    binary.write_bytes(bytes([0xff, 0xfe, 0x00, 0x01]))
+    with pytest.raises(NfclawError) as exc:
+        parameters.merge(cli_overrides={}, params_file=binary, input_path=None, outdir=tmp_path / "o")
+    assert exc.value.code == ErrorCode.PARAMS_INVALID and "not valid UTF-8" in str(exc.value)
+
+
 def test_params_file_empty_object_is_ok(tmp_path):
     pf = tmp_path / "p.json"
     pf.write_text("{}")
