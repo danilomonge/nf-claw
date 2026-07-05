@@ -27,6 +27,11 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
             values = [ln.strip() for ln in path.read_text(encoding="utf-8-sig").splitlines()
                       if ln.strip()]
             return [] if values else ["input file has no values"]
+        if path.suffix.lower() not in (".csv", ".tsv"):
+            # Some nf-core pipelines (notably Sarek) accept JSON/YAML inputs while also shipping a
+            # tabular schema_input.json. We cannot parse those formats with DictReader, so only the
+            # existence check above is local; nf-schema performs the format-specific validation.
+            return []
         # nf-schema picks the parser from the file extension; mirror that exactly so a `.tsv`
         # (e.g. nf-core/airrflow, which mandates `.tsv`) is split on TAB, not read as one CSV column.
         delimiter = "\t" if path.suffix.lower() == ".tsv" else ","
@@ -54,4 +59,45 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
                     p = base / p
                 if not p.exists():
                     issues.append(f"row {i}: file not found for '{col.name}': {val}")
+        values = {col.name: (row.get(col.name) or "").strip() for col in named}
+        for trigger, required in input_schema.dependent_required:
+            if values.get(trigger):
+                for req in required:
+                    if not values.get(req):
+                        issues.append(f"row {i}: '{trigger}' requires '{req}'")
+        branches = input_schema.any_of_dependent_required
+        if branches and not _any_branch_satisfied(values, branches):
+            issues.append(f"row {i}: {_any_of_message(branches)}")
     return issues
+
+
+def _branch_satisfied(values: dict[str, str], branch: tuple[str, tuple[str, ...]]) -> bool:
+    trigger, required = branch
+    return not values.get(trigger) or all(values.get(req) for req in required)
+
+
+def _any_branch_satisfied(
+    values: dict[str, str],
+    branches: tuple[tuple[tuple[str, tuple[str, ...]], ...], ...],
+) -> bool:
+    return any(all(_branch_satisfied(values, requirement) for requirement in option)
+               for option in branches)
+
+
+def _any_of_message(branches: tuple[tuple[tuple[str, tuple[str, ...]], ...], ...]) -> str:
+    options: list[str] = []
+    triggers = sorted({trigger for option in branches for trigger, _ in option})
+    if len(triggers) == 1 and all(len(option) == 1 and option[0][0] == triggers[0]
+                                  for option in branches):
+        reqs = [req for option in branches for req in option[0][1]]
+        return (f"when '{triggers[0]}' is set, provide one of: "
+                + ", ".join(f"'{req}'" for req in reqs))
+    for option in branches:
+        parts: list[str] = []
+        for trigger, required in option:
+            reqs = ", ".join(f"'{req}'" for req in required)
+            parts.append(f"{reqs} when '{trigger}' is set")
+        options.append(" and ".join(parts))
+    if len(triggers) == 1:
+        return f"when '{triggers[0]}' is set, provide one of: {', '.join(options)}"
+    return f"provide one of these conditional column sets: {', '.join(options)}"

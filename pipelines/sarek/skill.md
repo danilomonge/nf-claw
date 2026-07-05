@@ -45,6 +45,11 @@ This is the pinned latest release. To run a different one, list the available re
 | `vcf` | string (file path) | no |  | matches ^\S+\.vcf(\.gz)?$ |
 | `variantcaller` | string | no |  |  |
 
+Additional row validation rules from the schema:
+- When `fastq_2` is set, also provide `fastq_1`.
+- When `spring_2` is set, also provide `spring_1`.
+- At least one of these conditional requirements must be satisfied: `fastq_1` when `lane` is set; `spring_1` when `lane` is set; `bam` when `lane` is set.
+
 The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
 patient,sample,sex,status,lane,fastq_1,fastq_2,spring_1,spring_2,table,cram,crai,bam,bai,contamination,vcf,variantcaller
