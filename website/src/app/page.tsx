@@ -22,7 +22,9 @@ export default async function HomePage() {
   const meta = getRepoMeta();
   const summaries = pipelines.map(toSummary);
   const skills = pipelines.map(toSkill);
-  const commits = getCommits(14);
+  // Fetch more commits than ever fit on screen: the Update history panel crops
+  // and fades the list to the exact height of the automation column beside it.
+  const commits = getCommits(40);
   const workflows = getWorkflows();
   const docs = getDocs();
   const liveRuns = await getLiveRuns();

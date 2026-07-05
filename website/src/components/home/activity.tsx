@@ -64,16 +64,19 @@ export function LiveStatus({
       </Reveal>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.3fr_1fr]">
-        {/* commit feed */}
-        <Reveal>
-          <div className="glass h-full p-6">
+        {/* commit feed — the list fills exactly the height of the right column
+            (absolute inset within a flex-1 area), so however much automation
+            content there is, the timeline never leaves dead space below it. */}
+        <Reveal className="h-full">
+          <div className="glass flex h-full flex-col p-6">
             <div className="mb-5 flex items-center gap-2">
               <GitCommitHorizontal className="h-4 w-4 text-claw-400" />
               <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-fog-dim">
                 Update history
               </h3>
             </div>
-            <ol className="relative space-y-1 before:absolute before:left-[5px] before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-white/[0.07]">
+            <div className="relative min-h-[24rem] flex-1">
+              <ol className="mask-fade-list absolute inset-0 space-y-1 overflow-hidden before:absolute before:left-[5px] before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-white/[0.07]">
               {commits.map((c) => (
                 <li key={c.hash} className="relative flex gap-4 py-2.5 pl-6">
                   <span className="absolute left-0 top-3.5 h-2.5 w-2.5 rounded-full border-2 border-ink-900 bg-claw-500/80" />
@@ -102,7 +105,8 @@ export function LiveStatus({
                   </div>
                 </li>
               ))}
-            </ol>
+              </ol>
+            </div>
           </div>
         </Reveal>
 

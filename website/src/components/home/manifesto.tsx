@@ -26,6 +26,10 @@ const PRINCIPLES = [
 export function Manifesto({ pipelines }: { pipelines: PipelineSummary[] }) {
   const reduce = useReducedMotion();
   const track = [...pipelines, ...pipelines];
+  // The marquee travels half the track (one full set of names) per cycle, so the
+  // duration must scale with the pipeline count to keep a constant, calm speed
+  // no matter how large the library grows.
+  const marqueeDuration = Math.max(40, pipelines.length * 4);
 
   return (
     <section className="relative border-y border-white/[0.06] py-16">
@@ -33,7 +37,7 @@ export function Manifesto({ pipelines }: { pipelines: PipelineSummary[] }) {
       <div className="mask-fade-x relative overflow-hidden">
         <div
           className="flex w-max gap-8 will-change-transform"
-          style={reduce ? undefined : { animation: "marquee 36s linear infinite" }}
+          style={reduce ? undefined : { animation: `marquee ${marqueeDuration}s linear infinite` }}
         >
           {track.map((p, i) => (
             <span key={`${p.name}-${i}`} className="flex items-center gap-3 whitespace-nowrap">

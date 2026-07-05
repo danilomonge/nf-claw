@@ -120,6 +120,11 @@
     -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
     mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
   }
+  /* For lists cropped to a fixed area: hold fully opaque longer, then fade out. */
+  .mask-fade-list {
+    -webkit-mask-image: linear-gradient(to bottom, black 72%, transparent 99%);
+    mask-image: linear-gradient(to bottom, black 72%, transparent 99%);
+  }
   .mask-fade-x {
     -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
     mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);

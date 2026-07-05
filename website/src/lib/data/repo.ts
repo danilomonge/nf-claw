@@ -41,7 +41,11 @@ export function getCommitCount(): number {
 }
 
 export function getTags(): { name: string; date: string | null }[] {
-  const out = git(["tag", "--sort=-creatordate", "--format=%(refname:short)%x1f%(creatordate:iso-strict)"]);
+  // NOTE: `git tag` uses the ref-filter format language, where a byte escape is
+  // `%1f` — NOT the pretty-format `%x1f` that `git log` uses. Using `%x1f` here
+  // emits the literal text "%x1f", so the split below never separates name from
+  // date (the tag title then swallows the raw separator and the date).
+  const out = git(["tag", "--sort=-creatordate", "--format=%(refname:short)%1f%(creatordate:iso-strict)"]);
   if (!out) return [];
   return out
     .split("\n")
