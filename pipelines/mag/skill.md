@@ -36,6 +36,11 @@ This is the pinned latest release. To run a different one, list the available re
 | `long_reads` | string (file path) | no |  | matches ^\S+\.f(ast)?q\.gz$ |
 | `long_reads_platform` | string | no | OXFORD_NANOPORE, OXFORD_NANOPORE_HQ, PACBIO_CLR, PACBIO_HIFI |  |
 
+Additional row validation rules from the schema:
+- When `short_reads_2` is set, also provide `short_reads_1`.
+- When `short_reads_1` is set, also provide `short_reads_platform`.
+- When `long_reads` is set, also provide `long_reads_platform`.
+
 The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
 sample,run,group,short_reads_1,short_reads_2,short_reads_platform,long_reads,long_reads_platform

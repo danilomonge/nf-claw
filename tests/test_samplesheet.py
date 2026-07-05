@@ -60,6 +60,55 @@ def test_tsv_missing_column_still_detected(tmp_path):
     assert any("fastq_1" in i for i in issues)
 
 
+def test_non_tabular_named_input_is_deferred_to_nf_schema(tmp_path):
+    # nf-core/sarek accepts YAML/JSON inputs even though it ships schema_input.json for tabular
+    # samplesheets. The local pre-check must not parse those files as CSV and reject them before
+    # Nextflow/nf-schema gets the format-specific validation.
+    ss = tmp_path / "samples.json"
+    ss.write_text('[{"patient": "P1", "sample": "S1"}]\n')
+    assert samplesheet.validate(ss, SCH) == []
+
+
+SAREK_LIKE = InputSchema(
+    columns=(
+        Column("patient", "string", True, None, None),
+        Column("sample", "string", True, None, None),
+        Column("lane", "integer or string", False, r"^\S+$", None),
+        Column("fastq_1", "string", False, None, "file-path"),
+        Column("fastq_2", "string", False, None, "file-path"),
+        Column("spring_1", "string", False, None, "file-path"),
+        Column("bam", "string", False, None, "file-path"),
+    ),
+    dependent_required=(("fastq_2", ("fastq_1",)),),
+    any_of_dependent_required=(
+        (("lane", ("fastq_1",)),),
+        (("lane", ("spring_1",)),),
+        (("lane", ("bam",)),),
+    ),
+)
+
+
+def test_dependent_required_column_rule_is_reported(tmp_path):
+    ss = tmp_path / "ss.csv"
+    ss.write_text("patient,sample,fastq_2\nP1,S1,R2.fastq.gz\n")
+    issues = samplesheet.validate(ss, SAREK_LIKE)
+    assert "row 2: 'fastq_2' requires 'fastq_1'" in issues
+
+
+def test_anyof_dependent_required_column_rule_is_reported(tmp_path):
+    ss = tmp_path / "ss.csv"
+    ss.write_text("patient,sample,lane\nP1,S1,1\n")
+    issues = samplesheet.validate(ss, SAREK_LIKE)
+    assert any("when 'lane' is set" in i and "fastq_1" in i and "bam" in i for i in issues)
+
+
+def test_anyof_dependent_required_accepts_one_valid_branch(tmp_path):
+    (tmp_path / "reads.bam").write_text("x")
+    ss = tmp_path / "ss.csv"
+    ss.write_text("patient,sample,lane,bam\nP1,S1,1,reads.bam\n")
+    assert samplesheet.validate(ss, SAREK_LIKE) == []
+
+
 # A UTF-8 BOM (common in spreadsheet-exported CSVs) must not make the first required column read
 # as missing: the validator reads utf-8-sig so a leading BOM is stripped before header parsing.
 def test_utf8_bom_header_is_stripped(tmp_path):

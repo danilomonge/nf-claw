@@ -34,6 +34,11 @@ This is the pinned latest release. To run a different one, list the available re
 | `gff` | string (file path) | no |  | matches ^\S+\.(gff\|gff3)(\.gz)?$ |
 | `gff_type` | string | no | NCBI_prok, prodigal, NCBI_euk, JGI |  |
 
+Additional row validation rules from the schema:
+- When `protein` is set, also provide `gbk`.
+- When `gbk` is set, also provide `protein`.
+- When `gff` is set, also provide `protein`.
+
 The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
 sample,fasta,protein,gbk,gff,gff_type

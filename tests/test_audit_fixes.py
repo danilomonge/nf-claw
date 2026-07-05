@@ -40,6 +40,14 @@ def test_nextflow_accept_rejects_invalid_pipeline_name(tmp_path):
     assert "../bad\trejected" in result.read_text(encoding="utf-8")
 
 
+def test_nextflow_accept_timeout_is_portable():
+    text = (REPO / "scripts" / "nextflow_accept.sh").read_text(encoding="utf-8")
+    assert "_run_with_timeout()" in text
+    assert "command -v timeout" in text
+    assert "command -v gtimeout" in text
+    assert "NXF_VER=\"$ver\" _run_with_timeout 900 nextflow run" in text
+
+
 # --- F10 (revised): skill.md is deterministic — ONLY schema-required params + a group map.
 #     The earlier heuristic (required-or-no-default, schema order, cap 20) was removed: for
 #     scientific use the agent must not rely on a guessed "importance" subset. ---
@@ -476,6 +484,29 @@ def test_inputs_section_without_oneof_keeps_single_exact_header():
     out = write_skill._inputs_section(insch)
     assert "sample,fastq_1" in out
     assert "exactly one" not in out.lower() and "mutually-exclusive" not in out
+
+
+def test_inputs_section_surfaces_dependent_required_rules():
+    insch = InputSchema(
+        columns=(
+            Column("patient", "string", True, None, None),
+            Column("sample", "string", True, None, None),
+            Column("lane", "integer or string", False, r"^\S+$", None),
+            Column("fastq_1", "string", False, None, "file-path"),
+            Column("fastq_2", "string", False, None, "file-path"),
+            Column("bam", "string", False, None, "file-path"),
+        ),
+        dependent_required=(("fastq_2", ("fastq_1",)),),
+        any_of_dependent_required=(
+            (("lane", ("fastq_1",)),),
+            (("lane", ("bam",)),),
+        ),
+    )
+    out = write_skill._inputs_section(insch)
+    assert "Additional row validation rules" in out
+    assert "When `fastq_2` is set, also provide `fastq_1`." in out
+    assert "At least one of these conditional requirements must be satisfied" in out
+    assert "`fastq_1` when `lane` is set" in out and "`bam` when `lane` is set" in out
 
 
 def test_render_skips_input_when_pipeline_has_no_input_param(tmp_path):

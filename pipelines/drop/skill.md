@@ -52,6 +52,10 @@ The samplesheet is a TSV. Each row must include **exactly one** of these mutuall
 - `GENE_COUNTS_FILE`, `GENE_ANNOTATION`
 - `SPLICE_COUNTS_DIR`
 
+Additional row validation rules from the schema:
+- When `DNA_ID` is set, also provide `DNA_VCF_FILE`, `GENOME`.
+- When `DNA_VCF_FILE` is set, also provide `DNA_ID`.
+
 Fill each value per the table above and `reference.md`. Valid headers — pick the group that matches your data (optional columns from the table may be added):
 ```tsv
 RNA_ID	DROP_GROUP	STRAND	RNA_BAM_FILE

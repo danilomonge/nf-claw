@@ -77,6 +77,11 @@ class InputSchema:
     # declares no such choice. nf-schema enforces the full rule (including any `not`/`anyOf`
     # exclusions) at runtime; this captures the choice so the generated docs can surface it.
     one_of: tuple[tuple[str, ...], ...] = ()
+    # Conditional row rules from `items.dependentRequired`, plus `items.anyOf` branches that are
+    # themselves dependentRequired maps. These are deterministic column-presence constraints, so
+    # the runner can fail malformed tabular inputs before launching Nextflow.
+    dependent_required: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    any_of_dependent_required: tuple[tuple[tuple[str, tuple[str, ...]], ...], ...] = ()
 
 
 def json_scalar(value: Any) -> str:
@@ -176,6 +181,13 @@ def load_input_schema(repo: Path) -> InputSchema | None:
             req = branch.get("required")
             if isinstance(req, list) and req:
                 one_of.append(tuple(str(r) for r in req))
+    dependent_required = _dependent_required(items.get("dependentRequired"))
+    any_of_dependent_required: list[tuple[tuple[str, tuple[str, ...]], ...]] = []
+    for branch in items.get("anyOf") or []:
+        if isinstance(branch, dict):
+            deps = _dependent_required(branch.get("dependentRequired"))
+            if deps:
+                any_of_dependent_required.append(deps)
     cols: list[Column] = []
     if isinstance(props, dict):
         for cname, cobj in props.items():
@@ -195,4 +207,21 @@ def load_input_schema(repo: Path) -> InputSchema | None:
                 max_length=cobj.get("maxLength"),
                 deprecated=bool(cobj.get("deprecated", False)),
             ))
-    return InputSchema(columns=tuple(cols), one_of=tuple(one_of))
+    return InputSchema(
+        columns=tuple(cols),
+        one_of=tuple(one_of),
+        dependent_required=dependent_required,
+        any_of_dependent_required=tuple(any_of_dependent_required),
+    )
+
+
+def _dependent_required(obj: Any) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    if not isinstance(obj, dict):
+        return ()
+    out: list[tuple[str, tuple[str, ...]]] = []
+    for key, values in obj.items():
+        if isinstance(values, list):
+            reqs = tuple(str(v) for v in values if v)
+            if reqs:
+                out.append((str(key), reqs))
+    return tuple(out)

@@ -209,12 +209,37 @@ def _inputs_section(insch: InputSchema | None, ps: ParamSchema | None = None) ->
                 f"The samplesheet is a {label}. Each row must include **exactly one** of these "
                 "mutually-exclusive column groups (providing columns from more than one group "
                 f"fails validation):\n{groups}\n\n"
+                f"{_dependent_rules_section(insch)}"
                 "Fill each value per the table above and `reference.md`. Valid headers — pick the "
                 f"group that matches your data (optional columns from the table may be added):\n{headers}")
     header_line = delimiter.join(c.name for c in named)
     return (f"{head}{rows}\n"
+            f"{_dependent_rules_section(insch)}"
             f"The samplesheet is a {label} with this exact header; fill each value per the table above "
             f"and `reference.md` (no example value is invented here):\n```{ext}\n{header_line}\n```\n")
+
+
+def _dependent_rules_section(insch: InputSchema) -> str:
+    lines: list[str] = []
+    for trigger, required in insch.dependent_required:
+        reqs = ", ".join(f"`{req}`" for req in required)
+        lines.append(f"- When `{trigger}` is set, also provide {reqs}.")
+    options: list[str] = []
+    for branch in insch.any_of_dependent_required:
+        parts: list[str] = []
+        for trigger, required in branch:
+            reqs = ", ".join(f"`{req}`" for req in required)
+            parts.append(f"{reqs} when `{trigger}` is set")
+        options.append(" and ".join(parts))
+    if options:
+        lines.append(
+            "- At least one of these conditional requirements must be satisfied: "
+            + "; ".join(options)
+            + "."
+        )
+    if not lines:
+        return ""
+    return "Additional row validation rules from the schema:\n" + "\n".join(lines) + "\n\n"
 
 
 def _required_params(ps: ParamSchema) -> str:

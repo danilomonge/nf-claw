@@ -27,6 +27,32 @@ def test_input_schema_columns():
     assert cols["sample"].required is True
 
 
+def test_input_schema_captures_dependent_required_rules(tmp_path):
+    import json
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "schema_input.json").write_text(json.dumps({
+        "items": {
+            "properties": {
+                "lane": {"type": "string"},
+                "fastq_1": {"type": "string"},
+                "fastq_2": {"type": "string"},
+                "bam": {"type": "string"},
+            },
+            "dependentRequired": {"fastq_2": ["fastq_1"]},
+            "anyOf": [
+                {"dependentRequired": {"lane": ["fastq_1"]}},
+                {"dependentRequired": {"lane": ["bam"]}},
+            ],
+        }
+    }))
+    insch = schema.load_input_schema(tmp_path)
+    assert insch.dependent_required == (("fastq_2", ("fastq_1",)),)
+    assert insch.any_of_dependent_required == (
+        (("lane", ("fastq_1",)),),
+        (("lane", ("bam",)),),
+    )
+
+
 def test_no_input_schema_returns_none():
     assert schema.load_input_schema(FIX / "mini_no_input") is None
 

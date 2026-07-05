@@ -19,6 +19,18 @@
 # Exits non-zero if any pipeline is rejected.
 set -uo pipefail
 
+_run_with_timeout() {
+  seconds="$1"
+  shift
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$seconds" "$@"
+  elif command -v gtimeout >/dev/null 2>&1; then
+    gtimeout "$seconds" "$@"
+  else
+    "$@"
+  fi
+}
+
 names=("$@")
 if [ "${#names[@]}" -eq 0 ]; then
   mapfile -t names < <(nfclaw list | cut -f1)
@@ -60,7 +72,7 @@ for name in "${names[@]}"; do
   fi
   echo "::group::$name (nextflow $ver)"
   log="$tmp/$name.out"
-  NXF_VER="$ver" timeout 900 nextflow run "$up" -profile test,docker \
+  NXF_VER="$ver" _run_with_timeout 900 nextflow run "$up" -profile test,docker \
     -c "$cfg" --outdir "$out" -work-dir "$work" -preview > "$log" 2>&1 && rc=0 || rc=$?
   if [ "$rc" = 0 ]; then
     tail -6 "$log"
