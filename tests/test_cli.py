@@ -47,6 +47,16 @@ def test_collect_overrides_handles_equals_form():
     assert ov == {"tools": "strelka,mutect2", "wes": True, "step": "mapping"}
 
 
+def test_collect_overrides_rejects_stray_tokens():
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+
+    with pytest.raises(NfclawError) as exc:
+        cli._collect_overrides(["orphan.csv"])
+    assert exc.value.code == ErrorCode.PARAMS_INVALID
+    assert "unexpected extra argument" in str(exc.value)
+
+
 def test_run_prints_command_and_outputs_summary(tmp_path, monkeypatch, capsys):
     from runner import orchestration
     from runner.outputs import OutputsReport

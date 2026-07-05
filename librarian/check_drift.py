@@ -7,14 +7,23 @@ import tempfile
 from pathlib import Path
 
 from librarian import write_catalog, write_skill
+from runner import submodule as submod
 
 
 def check(pipelines_dir: Path) -> list[str]:
     drift: list[str] = []
     for d in sorted(p for p in pipelines_dir.iterdir() if p.is_dir()):
         name = d.name
+        st = submod.resolve(name, pipelines_dir)
+        if not st.complete:
+            missing = ", ".join(st.missing_files)
+            drift.append(
+                f"{name}/upstream is incomplete (missing {missing}; "
+                f"run `git submodule update --init pipelines/{name}/upstream`)"
+            )
+            continue
         fresh = dict(zip(("skill.md", "reference.md"),
-                         write_skill.render(name, pipelines_dir=pipelines_dir)))
+                         write_skill.render_status(st)))
         for fname, expected in fresh.items():           # compare in memory; never touch the tree
             committed = d / fname
             if not committed.exists():

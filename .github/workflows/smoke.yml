@@ -19,6 +19,9 @@ on:
     - cron: "0 6 * * 3"      # weekly, Wednesday 06:00 UTC
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   smoke:
     runs-on: ubuntu-latest

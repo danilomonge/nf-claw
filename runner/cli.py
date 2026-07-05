@@ -63,7 +63,11 @@ def _collect_overrides(extras: list[str]) -> dict:
                 out[key] = True                               # --flag (boolean)
                 i += 1
         else:
-            i += 1
+            raise NfclawError(
+                ErrorCode.PARAMS_INVALID,
+                f"unexpected extra argument: {tok!r}",
+                fix="Pipeline parameters must be passed as --param value or --param=value.",
+            )
     return out
 
 

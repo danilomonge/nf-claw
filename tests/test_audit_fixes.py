@@ -5,8 +5,10 @@ The surfacing pass guarantees every fact the loader captures is rendered downstr
 `Column.fmt` symmetric with `Param.fmt` (both carry file-path/directory-path), so a
 samplesheet directory column is no longer silently flattened to a plain string.
 """
+import os
 import re
 import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -16,6 +18,26 @@ from runner.schema import Column, InputSchema, Param, ParamSchema
 
 FIX = Path(__file__).parent / "fixtures"
 REPO = Path(__file__).resolve().parents[1]
+
+
+def test_nextflow_accept_rejects_invalid_pipeline_name(tmp_path):
+    result = tmp_path / "accept.tsv"
+    env = {
+        **os.environ,
+        "NFCLAW_RESULT_FILE": str(result),
+        "GITHUB_STEP_SUMMARY": str(tmp_path / "summary.md"),
+        "RUNNER_TEMP": str(tmp_path),
+    }
+    proc = subprocess.run(
+        ["bash", str(REPO / "scripts" / "nextflow_accept.sh"), "../bad"],
+        cwd=REPO,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 1
+    assert "Invalid pipeline name" in proc.stdout
+    assert "../bad\trejected" in result.read_text(encoding="utf-8")
 
 
 # --- F10 (revised): skill.md is deterministic — ONLY schema-required params + a group map.

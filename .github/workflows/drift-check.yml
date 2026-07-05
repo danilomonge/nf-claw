@@ -1,5 +1,7 @@
 name: drift-check
 on: [pull_request]
+permissions:
+  contents: read
 jobs:
   drift:
     runs-on: ubuntu-latest

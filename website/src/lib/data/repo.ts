@@ -161,12 +161,15 @@ function extractTagline(): { tagline: string; description: string } {
     .replace(/\s+/g, " ")
     .trim();
   // The headline tagline is the first sentence of the README's lead paragraph.
+  // The description is the rest of that paragraph, so the hero does not repeat
+  // the headline verbatim; single-sentence leads still fall back to the full text.
   const firstSentence = clean.match(/^.*?[.!?](?=\s|$)/)?.[0] ?? clean;
+  const rest = clean.slice(firstSentence.length).trim();
   return {
     tagline:
       firstSentence ||
       "A self-maintaining library of nf-core pipelines for AI agents.",
-    description: clean,
+    description: rest || clean,
   };
 }
 
