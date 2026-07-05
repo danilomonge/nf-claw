@@ -30,6 +30,16 @@ def test_drift_when_skill_edited(tmp_path):
     assert any("stale" in d for d in check_drift.check(pdir))
 
 
+def test_drift_reports_incomplete_submodule_without_traceback(tmp_path):
+    pdir = tmp_path / "pipelines"
+    (pdir / "empty" / "upstream").mkdir(parents=True)
+    drift = check_drift.check(pdir)
+    assert (
+        "empty/upstream is incomplete (missing main.nf, nextflow.config, nextflow_schema.json; "
+        "run `git submodule update --init pipelines/empty/upstream`)"
+    ) in drift
+
+
 def test_check_drift_never_writes(tmp_path, monkeypatch):
     # The gate compares in memory via render(); it must never call the writing path.
     pdir = _seed(tmp_path, "mini")

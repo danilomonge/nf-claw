@@ -42,6 +42,12 @@ printf 'report.enabled=false\ntimeline.enabled=false\ntrace.enabled=false\ndag.e
 
 fail=0
 for name in "${names[@]}"; do
+  if [[ ! "$name" =~ ^[A-Za-z0-9._-]+$ ]]; then
+    echo "::error::Invalid pipeline name: $name"
+    printf '%s\trejected\n' "$name" >> "$result"
+    fail=1
+    continue
+  fi
   up="pipelines/$name/upstream"
   out="$tmp/prev-$name"
   work="$tmp/work-$name"

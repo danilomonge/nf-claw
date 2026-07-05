@@ -19,6 +19,9 @@ on:
       - "pipelines/*/skill.md"
       - ".github/workflows/nextflow-validate.yml"
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
