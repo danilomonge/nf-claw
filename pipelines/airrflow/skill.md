@@ -41,16 +41,18 @@ This is the pinned latest release. To run a different one, list the available re
 | `filename_I1` | string | no |  | matches ^\S+$ |
 | `filename` | string | no |  | matches ^\S+$ |
 
+`--input` must match `^\S+\.tsv$`.
+
 The samplesheet is a TSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```tsv
 sample_id	subject_id	species	pcr_target_locus	tissue	sex	age	biomaterial_provider	single_cell	filename_R1	filename_R2	filename_I1	filename
 ```
 
 ## Required parameters
-| parameter | type | allowed values | constraints | description |
-|---|---|---|---|---|
-| `--input` | string (file path) |  | matches ^\S+\.tsv$ | Path to comma-separated file containing information about the samples in the experiment. |
-| `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--input` | string (file path) |  |  | matches ^\S+\.tsv$ | Path to comma-separated file containing information about the samples in the experiment. |
+| `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):

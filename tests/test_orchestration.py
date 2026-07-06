@@ -79,7 +79,8 @@ def test_space_in_repo_path_blocks_the_run(tmp_path, monkeypatch):
                         lambda *a, **k: type("R", (), {"returncode": 0, "stdout": "", "stderr": ""})())
     with pytest.raises(NfclawError) as exc:
         orchestration.run_pipeline(
-            "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+            "mini", repo_root=root, input_path="https://example.test/samplesheet.csv",
+            outdir=tmp_path / "out",
             profile="singularity", params_file=None, cli_overrides={}, resume=False,
             demo=False, check_only=True, write_provenance=False, timeout_seconds=10)
     assert exc.value.code == ErrorCode.ENVIRONMENT
@@ -347,3 +348,30 @@ def test_invalid_param_rejected_before_execution(tmp_path, monkeypatch):
     assert exc.value.code == ErrorCode.PARAMS_INVALID
     assert "x" not in ran                                         # never reached execution
     assert any("must be one of" in i for i in exc.value.details["issues"])
+
+
+def test_missing_required_param_rejected_before_preflight(tmp_path, monkeypatch):
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    root = _make_pipeline(tmp_path, "mini")
+    reached_preflight = {}
+    monkeypatch.setattr(orchestration.preflight, "check_environment",
+                        lambda **k: reached_preflight.setdefault("x", True) or [])
+    with pytest.raises(NfclawError) as exc:
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+            profile="docker", params_file=None, cli_overrides={}, resume=False,
+            demo=False, check_only=True, write_provenance=False, timeout_seconds=10)
+    assert exc.value.code == ErrorCode.PARAMS_INVALID
+    assert "missing required parameter '--input'" in str(exc.value)
+    assert "x" not in reached_preflight
+
+
+def test_demo_allows_required_input_to_come_from_test_profile(tmp_path, monkeypatch):
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    res = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
+    assert res.checked_only and "-profile test,docker" in res.command

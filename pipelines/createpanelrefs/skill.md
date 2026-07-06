@@ -33,6 +33,8 @@ This is the pinned latest release. To run a different one, list the available re
 | `cram` | string (file path) | no |  | matches ^\S+\.cram$ |
 | `crai` | string (file path) | no |  | matches ^\S+\.crai$ |
 
+`--input` must match `^\S+\.csv$`.
+
 The samplesheet is a CSV. Each row must include **exactly one** of these mutually-exclusive column groups (providing columns from more than one group fails validation):
 - `bam`
 - `cram`
@@ -46,11 +48,11 @@ sample,cram
 ```
 
 ## Required parameters
-| parameter | type | allowed values | constraints | description |
-|---|---|---|---|---|
-| `--input` | string (file path) |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
-| `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--tools` | string |  | matches ^((cnvkit\|germlinecnvcaller\|gens\|mutect2)?,?)*(?<!,)$ | Tools to use for building Panel of Normals or models. |
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--input` | string (file path) |  |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
+| `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| `--tools` | string |  |  | matches ^((cnvkit\|germlinecnvcaller\|gens\|mutect2)?,?)*(?<!,)$ | Tools to use for building Panel of Normals or models. |
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):

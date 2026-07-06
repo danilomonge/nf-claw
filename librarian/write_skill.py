@@ -195,6 +195,8 @@ def _inputs_section(insch: InputSchema | None, ps: ParamSchema | None = None) ->
         rows += (f"| `{c.name}` | {typ} | {'yes' if c.required else 'no'} | "
                  f"{_cell(allowed)} | {_constraints(c)} |\n")
     ext, label, delimiter = _samplesheet_format(ps)
+    input_note = _input_pattern_note(ps)
+    tabular_intro = _tabular_intro(label, ps)
     if insch.one_of:
         # Mutually-exclusive column groups (items.oneOf): there is no single canonical header, so
         # list each allowed group and show one valid header per group (always-required columns +
@@ -206,6 +208,7 @@ def _inputs_section(insch: InputSchema | None, ps: ParamSchema | None = None) ->
             f"```{ext}\n{delimiter.join(list(dict.fromkeys(base + list(grp))))}\n```\n"
             for grp in insch.one_of)
         return (f"{head}{rows}\n"
+                f"{input_note}"
                 f"The samplesheet is a {label}. Each row must include **exactly one** of these "
                 "mutually-exclusive column groups (providing columns from more than one group "
                 f"fails validation):\n{groups}\n\n"
@@ -214,9 +217,25 @@ def _inputs_section(insch: InputSchema | None, ps: ParamSchema | None = None) ->
                 f"group that matches your data (optional columns from the table may be added):\n{headers}")
     header_line = delimiter.join(c.name for c in named)
     return (f"{head}{rows}\n"
+            f"{input_note}"
             f"{_dependent_rules_section(insch)}"
-            f"The samplesheet is a {label} with this exact header; fill each value per the table above "
+            f"{tabular_intro}; fill each value per the table above "
             f"and `reference.md` (no example value is invented here):\n```{ext}\n{header_line}\n```\n")
+
+
+def _input_pattern_note(ps: ParamSchema | None) -> str:
+    input_param = ps.params.get("input") if ps else None
+    if input_param and input_param.pattern:
+        return f"`--input` must match `{input_param.pattern}`.\n\n"
+    return ""
+
+
+def _tabular_intro(label: str, ps: ParamSchema | None) -> str:
+    input_param = ps.params.get("input") if ps else None
+    pattern = input_param.pattern if input_param else ""
+    if pattern and "csv" in pattern and "tsv" in pattern:
+        return "For tabular CSV/TSV input, use this exact header"
+    return f"The samplesheet is a {label} with this exact header"
 
 
 def _dependent_rules_section(insch: InputSchema) -> str:
@@ -248,12 +267,14 @@ def _required_params(ps: ParamSchema) -> str:
     if not required:
         return ("_The schema marks no parameter required; the pipeline runs with defaults. "
                 "See reference.md to customise._\n")
-    out = ("| parameter | type | allowed values | constraints | description |\n"
-           "|---|---|---|---|---|\n")
+    out = ("| parameter | type | default | allowed values | constraints | description |\n"
+           "|---|---|---|---|---|---|\n")
     for p in required:
         allowed = ", ".join(p.enum) if p.enum else ""
+        default = "" if p.default is None else json_scalar(p.default)
         out += (f"| `--{p.name.replace('_', '-')}` | {_type_with_fmt(p.type, p.fmt)} | "
-                f"{_cell(allowed)} | {_constraints(p)} | {_cell(p.description)} |\n")
+                f"{_cell(default)} | {_cell(allowed)} | {_constraints(p)} | "
+                f"{_cell(p.description)} |\n")
     return out
 
 

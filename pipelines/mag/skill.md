@@ -36,6 +36,8 @@ This is the pinned latest release. To run a different one, list the available re
 | `long_reads` | string (file path) | no |  | matches ^\S+\.f(ast)?q\.gz$ |
 | `long_reads_platform` | string | no | OXFORD_NANOPORE, OXFORD_NANOPORE_HQ, PACBIO_CLR, PACBIO_HIFI |  |
 
+`--input` must match `^\S+\.csv$`.
+
 Additional row validation rules from the schema:
 - When `short_reads_2` is set, also provide `short_reads_1`.
 - When `short_reads_1` is set, also provide `short_reads_platform`.
@@ -47,10 +49,10 @@ sample,run,group,short_reads_1,short_reads_2,short_reads_platform,long_reads,lon
 ```
 
 ## Required parameters
-| parameter | type | allowed values | constraints | description |
-|---|---|---|---|---|
-| `--input` | string (file path) |  | matches ^\S+\.csv$ | CSV samplesheet file containing information about the samples in the experiment. |
-| `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--input` | string (file path) |  |  | matches ^\S+\.csv$ | CSV samplesheet file containing information about the samples in the experiment. |
+| `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):

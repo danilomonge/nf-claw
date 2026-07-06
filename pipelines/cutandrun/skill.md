@@ -33,16 +33,18 @@ This is the pinned latest release. To run a different one, list the available re
 | `fastq_2` | string | yes |  | matches ^\S+\.f(ast)?q\.gz$ |
 | `control` | string | yes |  | matches ^\S+$ |
 
+`--input` must match `^\S+\.csv$`.
+
 The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
 group,replicate,fastq_1,fastq_2,control
 ```
 
 ## Required parameters
-| parameter | type | allowed values | constraints | description |
-|---|---|---|---|---|
-| `--input` | string (file path) |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
-| `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to store on Cloud infrastructure. |
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--input` | string (file path) |  |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
+| `--outdir` | string (directory path) | ./results |  |  | The output directory where the results will be saved. You have to use absolute paths to store on Cloud infrastructure. |
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):

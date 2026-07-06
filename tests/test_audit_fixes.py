@@ -61,6 +61,19 @@ def test_required_params_lists_only_required_in_schema_order():
     assert "--input" in out and "--outdir" in out          # required → shown
     assert "aligner" not in out                            # optional (even no-default) → not shown
     assert out.index("--input") < out.index("--outdir")    # schema order preserved
+    assert "| parameter | type | default | allowed values | constraints | description |" in out
+
+
+def test_required_params_show_defaults_for_required_defaulted_params():
+    # Sarek's `--step` is schema-required but defaults to `mapping`; surfacing that default keeps
+    # agents from pausing to choose a value that the pinned pipeline already defines.
+    ps = ParamSchema(title="t", description="d", params={
+        "step": Param("step", "string", "mapping", ("mapping", "annotate"),
+                      "Starting step", None, True, "io"),
+    })
+    out = write_skill._required_params(ps)
+    row = next(line for line in out.splitlines() if line.startswith("| `--step`"))
+    assert "| mapping |" in row
 
 
 def test_param_groups_maps_every_group_with_counts():
@@ -486,6 +499,22 @@ def test_inputs_section_without_oneof_keeps_single_exact_header():
     assert "exactly one" not in out.lower() and "mutually-exclusive" not in out
 
 
+def test_inputs_section_surfaces_input_pattern_for_multi_format_samplesheets():
+    # Sarek accepts csv/tsv/yaml/yml/json at the `--input` parameter level, so the generated skill
+    # must not leave agents with a CSV-only mental model.
+    insch = InputSchema(columns=(
+        Column("patient", "string", True, None, None),
+        Column("sample", "string", True, None, None),
+    ))
+    ps = ParamSchema(title="t", description="d", params={
+        "input": Param("input", "string", None, None, "ss", "file-path", False, "io",
+                       pattern=r"^\S+\.(csv|tsv|yaml|yml|json)$"),
+    })
+    out = write_skill._inputs_section(insch, ps)
+    assert r"`--input` must match `^\S+\.(csv|tsv|yaml|yml|json)$`." in out
+    assert "For tabular CSV/TSV input" in out
+
+
 def test_inputs_section_surfaces_dependent_required_rules():
     insch = InputSchema(
         columns=(
@@ -609,6 +638,13 @@ def test_known_issues_documents_marsseq_lsmquant_metapep():
     assert "`metapep`" in KNOWN_ISSUES
     assert "--nxf-ver 25.10.4" in KNOWN_ISSUES          # lsmquant/funcscan newer-engine pin
     assert "NCBI_EMAIL" in KNOWN_ISSUES                 # metapep secret
+
+
+def test_known_issues_documents_sarek_input_false_schema_conflict():
+    assert "`sarek` 3.9.0" in KNOWN_ISSUES
+    assert "--input false" in KNOWN_ISSUES
+    assert "--build_only_index" in KNOWN_ISSUES
+    assert "omit `--input`" in KNOWN_ISSUES
 
 
 def test_marsseq_has_nf26_blocking_check_max_in_pinned_config():

@@ -135,3 +135,33 @@ def test_params_file_values_are_validated(tmp_path):
     errs = parameters.validate_params(merged, ps)
     assert any("bowtie" in e and "must be one of" in e for e in errs)   # enum caught
     assert any("alnger" in e and "unknown" in e for e in errs)         # typo caught
+
+
+def test_missing_required_without_default_is_reported(tmp_path):
+    ps = schema.load_param_schema(FIX / "mini")
+    errs = parameters.missing_required_params({"outdir": str(tmp_path / "out")}, ps)
+    assert errs == ["missing required parameter '--input'"]
+
+
+def test_missing_required_ignores_schema_defaults():
+    ps = schema.ParamSchema(title="t", description="d", params={
+        "outdir": schema.Param("outdir", "string", None, None, "out", None, True, "io"),
+        "step": schema.Param("step", "string", "mapping", ("mapping", "annotate"),
+                             "start step", None, True, "io"),
+    })
+    assert parameters.missing_required_params({"outdir": "/tmp/out"}, ps) == []
+
+
+def test_validate_params_checks_schema_value_constraints():
+    ps = schema.ParamSchema(title="t", description="d", params={
+        "input": schema.Param("input", "string", None, None, "ss", None, False, "io",
+                              pattern=r"^\S+\.csv$"),
+        "percent": schema.Param("percent", "number", None, None, "p", None, False, "io",
+                                minimum=0, maximum=100),
+        "label": schema.Param("label", "string", None, None, "l", None, False, "io",
+                              min_length=2, max_length=4),
+    })
+    errs = parameters.validate_params({"input": "samples.xlsx", "percent": 120, "label": "x"}, ps)
+    assert any("--input" in e and "must match" in e for e in errs)
+    assert any("--percent" in e and "<= 100" in e for e in errs)
+    assert any("--label" in e and "length >= 2" in e for e in errs)

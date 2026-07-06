@@ -36,16 +36,18 @@ This is the pinned latest release. To run a different one, list the available re
 | `maternal_id` | string | no |  | matches ^\S+$ |
 | `paternal_id` | string | no |  | matches ^\S+$ |
 
+`--input` must match `^\S+\.csv$`.
+
 The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
 sample,file_path,hpo_terms,sex,phenotype,family_id,maternal_id,paternal_id
 ```
 
 ## Required parameters
-| parameter | type | allowed values | constraints | description |
-|---|---|---|---|---|
-| `--input` | string (file path) |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
-| `--fasta-file` | string (file path) |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ | Path to FASTA genome file. |
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--input` | string (file path) |  |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
+| `--fasta-file` | string (file path) |  |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ | Path to FASTA genome file. |
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):

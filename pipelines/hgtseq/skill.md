@@ -31,19 +31,21 @@ This is the pinned latest release. To run a different one, list the available re
 | `fastq_1` | string | yes |  | matches ^\S+\.f(ast)?q\.gz$ |
 | `fastq_2` | string | no |  |  |
 
+`--input` must match `^\S+\.csv$`.
+
 The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
 sample,fastq_1,fastq_2
 ```
 
 ## Required parameters
-| parameter | type | allowed values | constraints | description |
-|---|---|---|---|---|
-| `--input` | string (file path) |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
-| `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--taxonomy-id` | number |  |  | TaxID of samples used as input |
-| `--krakendb` | string |  |  | A local path to kraken database folder or compressed database file, or a URL to a compressed database file, in tar.gz format |
-| `--kronadb` | string |  |  | A local path or a URL to a .tab krona taxonomy file; it can also receive a compressed .tab file in tar.gz format |
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--input` | string (file path) |  |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
+| `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| `--taxonomy-id` | number |  |  |  | TaxID of samples used as input |
+| `--krakendb` | string | None |  |  | A local path to kraken database folder or compressed database file, or a URL to a compressed database file, in tar.gz format |
+| `--kronadb` | string | None |  |  | A local path or a URL to a .tab krona taxonomy file; it can also receive a compressed .tab file in tar.gz format |
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):

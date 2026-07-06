@@ -34,6 +34,8 @@ This is the pinned latest release. To run a different one, list the available re
 | `gff` | string (file path) | no |  | matches ^\S+\.(gff\|gff3)(\.gz)?$ |
 | `gff_type` | string | no | NCBI_prok, prodigal, NCBI_euk, JGI |  |
 
+`--input` must match `^\S+\.csv$`.
+
 Additional row validation rules from the schema:
 - When `protein` is set, also provide `gbk`.
 - When `gbk` is set, also provide `protein`.
@@ -45,10 +47,10 @@ sample,fasta,protein,gbk,gff,gff_type
 ```
 
 ## Required parameters
-| parameter | type | allowed values | constraints | description |
-|---|---|---|---|---|
-| `--input` | string (file path) |  | matches ^\S+\.csv$ | Path to comma-separated file containing sample names and paths to corresponding FASTA files, and optional annotation files. |
-| `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--input` | string (file path) |  |  | matches ^\S+\.csv$ | Path to comma-separated file containing sample names and paths to corresponding FASTA files, and optional annotation files. |
+| `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):

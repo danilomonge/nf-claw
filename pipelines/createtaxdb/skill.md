@@ -32,18 +32,20 @@ This is the pinned latest release. To run a different one, list the available re
 | `fasta_dna` | string (file path) | no |  | matches ^\S+\.(fasta\|fas\|fa\|fna)(\.gz)?$ |
 | `fasta_aa` | string (file path) | no |  | matches ^\S+\.(fasta\|fas\|fa\|faa)(\.gz)?$ |
 
+`--input` must match `^\S+\.csv$`.
+
 The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
 id,taxid,fasta_dna,fasta_aa
 ```
 
 ## Required parameters
-| parameter | type | allowed values | constraints | description |
-|---|---|---|---|---|
-| `--input` | string (file path) |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
-| `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--dbname` | string |  |  | Specify name that resulting databases will be prefixed with. |
-| `--unzip-batch-size` | integer |  |  | How many files to unzip in parallel in a single job. |
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--input` | string (file path) |  |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
+| `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| `--dbname` | string |  |  |  | Specify name that resulting databases will be prefixed with. |
+| `--unzip-batch-size` | integer | 10000 |  |  | How many files to unzip in parallel in a single job. |
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):

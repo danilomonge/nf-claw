@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 from runner.errors import ErrorCode, NfclawError
-from runner.schema import ParamSchema, json_scalar
+from runner.schema import Param, ParamSchema, json_scalar
 
 
 def validate_params(cli_overrides: dict[str, Any], schema: ParamSchema) -> list[str]:
@@ -26,6 +27,60 @@ def validate_params(cli_overrides: dict[str, Any], schema: ParamSchema) -> list[
             if param.enum and json_scalar(value) not in param.enum:
                 errors.append(f"parameter '{flag}={value}' is not allowed; "
                               f"must be one of: {', '.join(param.enum)}")
+            if not (param.enum and json_scalar(value) in param.enum):
+                errors.extend(_value_shape_errors(flag, value, param))
+    return errors
+
+
+def missing_required_params(merged: dict[str, Any], schema: ParamSchema) -> list[str]:
+    """Schema-required params without defaults must be supplied before launching Nextflow.
+
+    Required params that carry a schema default are intentionally not flagged: nf-schema applies the
+    default, and generated docs surface it so agents do not need to invent a value.
+    """
+    errors: list[str] = []
+    for name, param in schema.params.items():
+        if not param.required or param.default is not None:
+            continue
+        value = merged.get(name)
+        if value is None or value == "":
+            errors.append(f"missing required parameter '--{name.replace('_', '-')}'")
+    return errors
+
+
+def _value_shape_errors(flag: str, value: Any, param: Param) -> list[str]:
+    errors: list[str] = []
+    scalar_type = param.type
+    if scalar_type == "string" and not isinstance(value, str):
+        errors.append(f"parameter '{flag}' expects a string, got {type(value).__name__}")
+        return errors
+    if scalar_type == "boolean" and not isinstance(value, bool):
+        errors.append(f"parameter '{flag}' expects a boolean, got {type(value).__name__}")
+        return errors
+    if scalar_type == "integer" and (not isinstance(value, int) or isinstance(value, bool)):
+        errors.append(f"parameter '{flag}' expects an integer, got {type(value).__name__}")
+        return errors
+    if scalar_type == "number" and (
+        not isinstance(value, (int, float)) or isinstance(value, bool)
+    ):
+        errors.append(f"parameter '{flag}' expects a number, got {type(value).__name__}")
+        return errors
+    if param.pattern and isinstance(value, str):
+        try:
+            matches = re.search(param.pattern, value) is not None
+        except re.error:
+            matches = True
+        if not matches:
+            errors.append(f"parameter '{flag}' value {value!r} must match {param.pattern}")
+    if param.min_length is not None and isinstance(value, str) and len(value) < param.min_length:
+        errors.append(f"parameter '{flag}' length >= {param.min_length} required")
+    if param.max_length is not None and isinstance(value, str) and len(value) > param.max_length:
+        errors.append(f"parameter '{flag}' length <= {param.max_length} required")
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        if param.minimum is not None and value < param.minimum:
+            errors.append(f"parameter '{flag}' must be >= {param.minimum}")
+        if param.maximum is not None and value > param.maximum:
+            errors.append(f"parameter '{flag}' must be <= {param.maximum}")
     return errors
 
 

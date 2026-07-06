@@ -33,16 +33,18 @@ This is the pinned latest release. To run a different one, list the available re
 | `flowcell` | string | yes |  |  |
 | `per_flowcell_manifest` | string (file path) | no |  |  |
 
+`--input` must match `^\S+\.csv$`.
+
 The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
 id,samplesheet,lane,flowcell,per_flowcell_manifest
 ```
 
 ## Required parameters
-| parameter | type | allowed values | constraints | description |
-|---|---|---|---|---|
-| `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--demultiplexer` | string | bases2fastq, bcl2fastq, bclconvert, fqtk, sgdemux, mkfastq, mgikit |  | Demultiplexer to use. |
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| `--demultiplexer` | string | bclconvert | bases2fastq, bcl2fastq, bclconvert, fqtk, sgdemux, mkfastq, mgikit |  | Demultiplexer to use. |
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):
