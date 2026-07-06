@@ -37,6 +37,8 @@ This is the pinned latest release. To run a different one, list the available re
 | `control` | string | no | control, sample |  |
 | `quant_reading` | number | no |  |  |
 
+`--input` must match `^\S+\.(tsv|csv|yml|yaml|txt)$`.
+
 The samplesheet is a CSV. Each row must include **exactly one** of these mutually-exclusive column groups (providing columns from more than one group fails validation):
 - `sampleID`, `forwardReads`
 - `sample`, `fastq_1`
@@ -50,9 +52,9 @@ sample,fastq_1
 ```
 
 ## Required parameters
-| parameter | type | allowed values | constraints | description |
-|---|---|---|---|---|
-| `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):

@@ -45,21 +45,23 @@ This is the pinned latest release. To run a different one, list the available re
 | `vcf` | string (file path) | no |  | matches ^\S+\.vcf(\.gz)?$ |
 | `variantcaller` | string | no |  |  |
 
+`--input` must match `^\S+\.(csv|tsv|yaml|yml|json)$`.
+
 Additional row validation rules from the schema:
 - When `fastq_2` is set, also provide `fastq_1`.
 - When `spring_2` is set, also provide `spring_1`.
 - At least one of these conditional requirements must be satisfied: `fastq_1` when `lane` is set; `spring_1` when `lane` is set; `bam` when `lane` is set.
 
-The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
+For tabular CSV/TSV input, use this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
 patient,sample,sex,status,lane,fastq_1,fastq_2,spring_1,spring_2,table,cram,crai,bam,bai,contamination,vcf,variantcaller
 ```
 
 ## Required parameters
-| parameter | type | allowed values | constraints | description |
-|---|---|---|---|---|
-| `--step` | string | mapping, markduplicates, prepare_recalibration, recalibrate, variant_calling, annotate |  | Starting step |
-| `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--step` | string | mapping | mapping, markduplicates, prepare_recalibration, recalibrate, variant_calling, annotate |  | Starting step |
+| `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):

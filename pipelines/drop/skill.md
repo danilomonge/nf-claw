@@ -47,6 +47,8 @@ This is the pinned latest release. To run a different one, list the available re
 | `TISSUE` | string | no |  |  |
 | `DISEASE` | string | no |  |  |
 
+`--input` must match `^\S+\.tsv$`.
+
 The samplesheet is a TSV. Each row must include **exactly one** of these mutually-exclusive column groups (providing columns from more than one group fails validation):
 - `RNA_BAM_FILE`
 - `GENE_COUNTS_FILE`, `GENE_ANNOTATION`
@@ -68,11 +70,11 @@ RNA_ID	DROP_GROUP	STRAND	SPLICE_COUNTS_DIR
 ```
 
 ## Required parameters
-| parameter | type | allowed values | constraints | description |
-|---|---|---|---|---|
-| `--input` | string (file path) |  | matches ^\S+\.tsv$ | Path to the samplesheet file used by the pipeline. The file should be a TSV file. Equivalent to the `sampleAnnotation` parameter in the snakemake pipeline. |
-| `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. Equivalent to the `root` parameter in the snakemake pipeline. |
-| `--genome` | string | hg19, hs37d5 , hg38, GRCh38 |  | Equivalent to the `genomeAssembly` parameter in the snakemake pipeline. Either hg19/hs37d5 or hg38/GRCh38, depending on the genome assembly used for mapping |
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--input` | string (file path) |  |  | matches ^\S+\.tsv$ | Path to the samplesheet file used by the pipeline. The file should be a TSV file. Equivalent to the `sampleAnnotation` parameter in the snakemake pipeline. |
+| `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. Equivalent to the `root` parameter in the snakemake pipeline. |
+| `--genome` | string |  | hg19, hs37d5 , hg38, GRCh38 |  | Equivalent to the `genomeAssembly` parameter in the snakemake pipeline. Either hg19/hs37d5 or hg38/GRCh38, depending on the genome assembly used for mapping |
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):

@@ -109,6 +109,36 @@ def test_anyof_dependent_required_accepts_one_valid_branch(tmp_path):
     assert samplesheet.validate(ss, SAREK_LIKE) == []
 
 
+def test_column_enum_pattern_and_range_rules_are_reported(tmp_path):
+    (tmp_path / "r1.fq.gz").write_text("x")
+    sch = InputSchema(columns=(
+        Column("sample", "string", True, r"^\S+$", None),
+        Column("fastq_1", "string", True, r".+\.f(ast)?q\.gz$", "file-path"),
+        Column("strandedness", "string", True, None, None,
+               enum=("forward", "reverse", "unstranded", "auto")),
+        Column("percent_mapped", "number", False, None, None, minimum=0, maximum=100),
+    ))
+    ss = tmp_path / "ss.csv"
+    ss.write_text("sample,fastq_1,strandedness,percent_mapped\n"
+                  "bad sample,r1.fq.gz,sideways,101\n")
+    issues = samplesheet.validate(ss, sch)
+    assert any("sample" in i and "must match" in i for i in issues)
+    assert any("strandedness" in i and "must be one of" in i for i in issues)
+    assert any("percent_mapped" in i and "<= 100" in i for i in issues)
+
+
+def test_column_integer_type_rule_is_reported(tmp_path):
+    sch = InputSchema(columns=(
+        Column("patient", "string", True, None, None),
+        Column("sample", "string", True, None, None),
+        Column("status", "integer", False, None, None, enum=("0", "1")),
+    ))
+    ss = tmp_path / "ss.csv"
+    ss.write_text("patient,sample,status\nP1,S1,tumor\n")
+    issues = samplesheet.validate(ss, sch)
+    assert any("status" in i and "integer" in i for i in issues)
+
+
 # A UTF-8 BOM (common in spreadsheet-exported CSVs) must not make the first required column read
 # as missing: the validator reads utf-8-sig so a leading BOM is stripped before header parsing.
 def test_utf8_bom_header_is_stripped(tmp_path):

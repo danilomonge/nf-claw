@@ -28,14 +28,14 @@ This is the pinned latest release. To run a different one, list the available re
 This pipeline does not use a samplesheet; configure inputs via parameters.
 
 ## Required parameters
-| parameter | type | allowed values | constraints | description |
-|---|---|---|---|---|
-| `--models` | string |  |  | Model to be tested. |
-| `--baselines` | string |  |  | Baselines to be tested. |
-| `--run-id` | string |  |  | Run name for the pipeline. The subdirectory in results will be named like this. |
-| `--dataset-name` | string |  |  | Name of the dataset. Pre-supplied datasets are CTRPv2, CTRPv1, CCLE, GDSC1, GDSC2, TOYv1, TOYv2, BeatAML2, and PDX_Bruna. |
-| `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. Default is results/ |
-| `--test-mode` | string |  | matches ^((LPO\|LCO\|LTO\|LDO)?,?)*(?<!,)$ | Run the pipeline in test mode LPO (Leave-random-Pairs-Out), LCO (Leave-Cell-line-Out), or LDO (Leave-Drug-Out). |
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--models` | string | NaiveDrugMeanPredictor |  |  | Model to be tested. |
+| `--baselines` | string | NaiveMeanEffectsPredictor |  |  | Baselines to be tested. |
+| `--run-id` | string | my_run |  |  | Run name for the pipeline. The subdirectory in results will be named like this. |
+| `--dataset-name` | string | CTRPv2 |  |  | Name of the dataset. Pre-supplied datasets are CTRPv2, CTRPv1, CCLE, GDSC1, GDSC2, TOYv1, TOYv2, BeatAML2, and PDX_Bruna. |
+| `--outdir` | string (directory path) | results |  |  | The output directory where the results will be saved. Default is results/ |
+| `--test-mode` | string | LCO |  | matches ^((LPO\|LCO\|LTO\|LDO)?,?)*(?<!,)$ | Run the pipeline in test mode LPO (Leave-random-Pairs-Out), LCO (Leave-Cell-line-Out), or LDO (Leave-Drug-Out). |
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):

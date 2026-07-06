@@ -32,18 +32,20 @@ This is the pinned latest release. To run a different one, list the available re
 | `pbi` | string (file path) | no |  | matches (^\S+\.bam\.pbi$\|^None$) |
 | `reads` | string (file path) | no |  | matches (^\S+\.fa\.gz$\|^None$) |
 
+`--input` must match `^\S+\.csv$`.
+
 The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
 sample,bam,pbi,reads
 ```
 
 ## Required parameters
-| parameter | type | allowed values | constraints | description |
-|---|---|---|---|---|
-| `--input` | string (file path) |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
-| `--outdir` | string (directory path) |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--primers` | string |  |  | Fasta file of primers sequences |
-| `--aligner` | string | minimap2, ultra |  | Aligner to use for mapping: minimap2 or ultra |
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--input` | string (file path) |  |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
+| `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| `--primers` | string |  |  |  | Fasta file of primers sequences |
+| `--aligner` | string |  | minimap2, ultra |  | Aligner to use for mapping: minimap2 or ultra |
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):

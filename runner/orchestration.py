@@ -82,6 +82,8 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # before validating and writing the params-file, so nf-schema sees correctly-typed values.
     merged = parameters.coerce_to_schema(merged, param_schema)
     param_errors = parameters.validate_params(merged, param_schema)
+    if not demo:
+        param_errors.extend(parameters.missing_required_params(merged, param_schema))
     if param_errors:
         raise NfclawError(ErrorCode.PARAMS_INVALID,
                           "Parameters failed validation (fix before running).",

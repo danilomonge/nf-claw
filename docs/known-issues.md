@@ -236,6 +236,12 @@ schema requires:
   appear to hang. On a constrained or slow network, pre-supply the AMP DB with
   `--amp_ampcombi_db /path/to/db` (this also sidesteps the DRAMP bug in the table above) and skip the
   heavy steps with `--run_cazyme_screening false` and `--arg_skip_deeparg true`.
+- **`sarek` 3.9.0** — upstream usage examples for cache/index-only runs show
+  `--build_only_index --input false`, but the pinned release's nf-schema rejects `--input false`
+  because `input` is declared as a string path. For cache/index-only runs, omit `--input` instead
+  and set the cache/index parameters explicitly (for example `--build_only_index true`,
+  `--download_cache true`, and the relevant `--tools` value). Normal analysis runs should still pass
+  a real samplesheet with `--input`.
 - **`ampliseq`** — the `test` profile caps memory at 6 GB; visualisation/export steps (e.g.
   `QIIME2_EXPORT_RELTAX`) may be OOM-killed (exit 137) without failing the pipeline. In production
   raise it with `--max_memory '<N>.GB'` (or a custom `--config`).

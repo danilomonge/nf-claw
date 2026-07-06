@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import re
 from pathlib import Path
 
 from runner.schema import InputSchema
@@ -53,6 +54,8 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
             val = (row.get(col.name) or "").strip()
             if col.required and not val:
                 issues.append(f"row {i}: empty required '{col.name}'")
+            if val:
+                issues.extend(_value_issues(i, col, val))
             if col.is_path and val and "://" not in val:
                 p = Path(val)
                 if not p.is_absolute():
@@ -68,6 +71,41 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
         branches = input_schema.any_of_dependent_required
         if branches and not _any_branch_satisfied(values, branches):
             issues.append(f"row {i}: {_any_of_message(branches)}")
+    return issues
+
+
+def _value_issues(row_num: int, col, value: str) -> list[str]:
+    issues: list[str] = []
+    prefix = f"row {row_num}: '{col.name}'"
+    if col.enum and value not in col.enum:
+        issues.append(f"{prefix} value {value!r} must be one of: {', '.join(col.enum)}")
+    numeric: int | float | None = None
+    if col.type == "integer":
+        try:
+            numeric = int(value)
+        except ValueError:
+            issues.append(f"{prefix} expects an integer, got {value!r}")
+    elif col.type == "number":
+        try:
+            numeric = float(value)
+        except ValueError:
+            issues.append(f"{prefix} expects a number, got {value!r}")
+    if col.pattern:
+        try:
+            matches = re.search(col.pattern, value) is not None
+        except re.error:
+            matches = True
+        if not matches:
+            issues.append(f"{prefix} value {value!r} must match {col.pattern}")
+    if col.min_length is not None and len(value) < col.min_length:
+        issues.append(f"{prefix} length must be >= {col.min_length}")
+    if col.max_length is not None and len(value) > col.max_length:
+        issues.append(f"{prefix} length must be <= {col.max_length}")
+    if numeric is not None:
+        if col.minimum is not None and numeric < col.minimum:
+            issues.append(f"{prefix} must be >= {col.minimum}")
+        if col.maximum is not None and numeric > col.maximum:
+            issues.append(f"{prefix} must be <= {col.maximum}")
     return issues
 
 

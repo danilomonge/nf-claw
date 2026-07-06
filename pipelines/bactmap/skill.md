@@ -28,10 +28,10 @@ This is the pinned latest release. To run a different one, list the available re
 This pipeline does not use a samplesheet; configure inputs via parameters.
 
 ## Required parameters
-| parameter | type | allowed values | constraints | description |
-|---|---|---|---|---|
-| `--input` | string |  |  | Path to a sample sheet describing paths to input fastq files |
-| `--reference` | string |  |  | Path to a fasta file of the reference sequence |
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--input` | string |  |  |  | Path to a sample sheet describing paths to input fastq files |
+| `--reference` | string |  |  |  | Path to a fasta file of the reference sequence |
 
 ## Other parameters
 Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):
