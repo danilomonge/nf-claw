@@ -124,3 +124,36 @@
 [submodule "pipelines/metapep/upstream"]
 	path = pipelines/metapep/upstream
 	url = https://github.com/nf-core/metapep.git
+[submodule "pipelines/mcmicro/upstream"]
+	path = pipelines/mcmicro/upstream
+	url = https://github.com/nf-core/mcmicro.git
+[submodule "pipelines/metatdenovo/upstream"]
+	path = pipelines/metatdenovo/upstream
+	url = https://github.com/nf-core/metatdenovo.git
+[submodule "pipelines/methylong/upstream"]
+	path = pipelines/methylong/upstream
+	url = https://github.com/nf-core/methylong.git
+[submodule "pipelines/methylseq/upstream"]
+	path = pipelines/methylseq/upstream
+	url = https://github.com/nf-core/methylseq.git
+[submodule "pipelines/mhcquant/upstream"]
+	path = pipelines/mhcquant/upstream
+	url = https://github.com/nf-core/mhcquant.git
+[submodule "pipelines/molkart/upstream"]
+	path = pipelines/molkart/upstream
+	url = https://github.com/nf-core/molkart.git
+[submodule "pipelines/multiplesequencealign/upstream"]
+	path = pipelines/multiplesequencealign/upstream
+	url = https://github.com/nf-core/multiplesequencealign.git
+[submodule "pipelines/nanoseq/upstream"]
+	path = pipelines/nanoseq/upstream
+	url = https://github.com/nf-core/nanoseq.git
+[submodule "pipelines/nanostring/upstream"]
+	path = pipelines/nanostring/upstream
+	url = https://github.com/nf-core/nanostring.git
+[submodule "pipelines/nascent/upstream"]
+	path = pipelines/nascent/upstream
+	url = https://github.com/nf-core/nascent.git
+[submodule "pipelines/oncoanalyser/upstream"]
+	path = pipelines/oncoanalyser/upstream
+	url = https://github.com/nf-core/oncoanalyser.git
