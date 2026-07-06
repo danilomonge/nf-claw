@@ -647,6 +647,14 @@ def test_known_issues_documents_sarek_input_false_schema_conflict():
     assert "omit `--input`" in KNOWN_ISSUES
 
 
+def test_known_issues_documents_sarek_test_profile_not_extra_config():
+    assert "`sarek` 3.9.0" in KNOWN_ISSUES
+    assert "--config pipelines/sarek/upstream/conf/test.config" in KNOWN_ISSUES
+    assert "-profile test,docker" in KNOWN_ISSUES
+    assert "S3 iGenomes" in KNOWN_ISSUES
+    assert "custom samplesheet" in KNOWN_ISSUES
+
+
 def test_marsseq_has_nf26_blocking_check_max_in_pinned_config():
     cfg = REPO / "pipelines" / "marsseq" / "upstream" / "nextflow.config"
     if not cfg.exists():
