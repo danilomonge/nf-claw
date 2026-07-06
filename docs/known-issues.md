@@ -242,6 +242,13 @@ schema requires:
   and set the cache/index parameters explicitly (for example `--build_only_index true`,
   `--download_cache true`, and the relevant `--tools` value). Normal analysis runs should still pass
   a real samplesheet with `--input`.
+- **`sarek` 3.9.0** — do not use
+  `--config pipelines/sarek/upstream/conf/test.config` to turn a normal analysis run into a
+  test-data run with a custom samplesheet. Extra config files are loaded after Sarek's profile/config
+  initialisation wires iGenomes paths, so the run can still validate default S3 iGenomes paths before
+  the test config overrides them. Use the real test profile instead:
+  `nfclaw run sarek --input samplesheet_sarek.csv --outdir results -profile test,docker`. For the
+  bundled upstream test data, prefer `nfclaw run sarek --demo --outdir results`.
 - **`ampliseq`** — the `test` profile caps memory at 6 GB; visualisation/export steps (e.g.
   `QIIME2_EXPORT_RELTAX`) may be OOM-killed (exit 137) without failing the pipeline. In production
   raise it with `--max_memory '<N>.GB'` (or a custom `--config`).
