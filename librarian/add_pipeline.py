@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,26 +14,47 @@ class Source:
     policy: str
 
 
+_PIPELINE_NAME_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+
+
+def valid_pipeline_name(name: str) -> bool:
+    """Whether `name` is safe to use as a pipeline slug and path component."""
+    return bool(_PIPELINE_NAME_RE.fullmatch(name))
+
+
+def validate_pipeline_name(name: str) -> str:
+    if not valid_pipeline_name(name):
+        raise ValueError(
+            f"invalid pipeline name {name!r}; use only letters, numbers, dot, underscore and dash"
+        )
+    return name
+
+
 def read_sources(tsv: Path) -> list[Source]:
     out: list[Source] = []
-    for line in tsv.read_text(encoding="utf-8").splitlines():
+    for line_num, line in enumerate(tsv.read_text(encoding="utf-8").splitlines(), start=1):
         line = line.strip()
         if not line or line.startswith("#"):
             continue
         parts = line.split("\t") if "\t" in line else line.split()
-        name, url = parts[0].strip(), parts[1].strip()
+        if len(parts) < 2:
+            raise ValueError(f"invalid sources.tsv row {line_num}: expected name and url")
+        name, url = validate_pipeline_name(parts[0].strip()), parts[1].strip()
         policy = parts[2].strip() if len(parts) > 2 else "latest-release"
         out.append(Source(name, url, policy))
     return out
 
 
 def gitmodules_text(sources: list[Source]) -> str:
-    return "".join(
-        f'[submodule "pipelines/{s.name}/upstream"]\n'
-        f"\tpath = pipelines/{s.name}/upstream\n"
-        f"\turl = {s.url}\n"
-        for s in sources
-    )
+    out: list[str] = []
+    for source in sources:
+        name = validate_pipeline_name(source.name)
+        out.append(
+            f'[submodule "pipelines/{name}/upstream"]\n'
+            f"\tpath = pipelines/{name}/upstream\n"
+            f"\turl = {source.url}\n"
+        )
+    return "".join(out)
 
 
 def main(argv: list[str] | None = None) -> int:

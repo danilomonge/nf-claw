@@ -1,3 +1,5 @@
+import pytest
+
 from librarian import add_pipeline
 
 
@@ -6,6 +8,13 @@ def test_read_sources_tsv(tmp_path):
     tsv.write_text("# c\nrnaseq\thttps://x/rnaseq.git\tlatest-release\n")
     srcs = add_pipeline.read_sources(tsv)
     assert srcs[0].name == "rnaseq" and srcs[0].policy == "latest-release"
+
+
+def test_read_sources_rejects_path_like_pipeline_name(tmp_path):
+    tsv = tmp_path / "sources.tsv"
+    tsv.write_text("../bad\thttps://x/bad.git\tlatest-release\n")
+    with pytest.raises(ValueError, match="invalid pipeline name"):
+        add_pipeline.read_sources(tsv)
 
 
 def test_gitmodules_text():

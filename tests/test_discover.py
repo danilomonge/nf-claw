@@ -33,6 +33,12 @@ WORKFLOWS = [
         "is_DSL2": False,  # DSL1 -> not runnable on a modern Nextflow, must be skipped
         "releases": [{"tag_name": "1.0.0"}],
     },
+    {
+        "name": "../bad",
+        "full_name": "nf-core/bad",
+        "archived": False,
+        "releases": [{"tag_name": "1.0.0"}],
+    },
 ]
 
 
@@ -45,7 +51,7 @@ def test_latest_stable_picks_highest_semver_ignoring_dev():
 def test_candidates_filters_archived_dsl1_releaseless_and_builds_url():
     cands = dp.candidates(WORKFLOWS)
     names = [c[0] for c in cands]
-    # sorted; abotyper (no release) + oldpipe (archived) + clipseq (DSL1) dropped
+    # sorted; abotyper (no release) + oldpipe (archived) + clipseq (DSL1) + bad name dropped
     assert names == ["demo", "rnaseq"]
     assert ("demo", "https://github.com/nf-core/demo.git", "v1.2.0") in cands
     assert ("rnaseq", "https://github.com/nf-core/rnaseq.git", "3.26.0") in cands

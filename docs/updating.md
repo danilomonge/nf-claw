@@ -13,3 +13,8 @@ New pipelines are onboarded separately by `discover-pipelines.yml` (weekly): it 
 pipelines not yet tracked, scaffolds each, drops any Nextflow rejects, and — if the unit tests, the
 drift gate and the `-preview` acceptance check all pass — auto-merges the batch. See
 [`compatibility.md`](compatibility.md) for the version/engine rules.
+
+Both update paths treat pipeline names as path components and git submodule identifiers, so the
+librarian validates every name from `sources.tsv` and from remote discovery metadata before using it.
+Only letters, numbers, dots, underscores and dashes are accepted; malformed names are skipped during
+discovery or rejected while reading the source list.
