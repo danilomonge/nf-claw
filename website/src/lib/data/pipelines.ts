@@ -120,12 +120,15 @@ function parseSamplesheet(skill: string): SamplesheetColumn[] {
 function parseRequired(skill: string): RequiredParam[] {
   const table = tableUnder(skill, "Required parameters");
   if (!table) return [];
+  // The librarian emits six columns: parameter, type, default, allowed values,
+  // constraints, description. This view intentionally omits `default` (column 2),
+  // so the remaining fields start at column 3 — not column 2.
   return table.rows.map((r) => ({
     name: unticked(r[0] ?? ""),
     type: r[1] ?? "",
-    allowed: splitAllowed(r[2] ?? ""),
-    constraints: r[3] ?? "",
-    description: r[4] ?? "",
+    allowed: splitAllowed(r[3] ?? ""),
+    constraints: r[4] ?? "",
+    description: r[5] ?? "",
   }));
 }
 
