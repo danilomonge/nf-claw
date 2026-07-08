@@ -68,9 +68,20 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
     if sv.exists():
         shutil.copy2(sv, prov / "software_versions.yml")
 
-    # `cd` to the outdir first: nfclaw launches Nextflow from there, so re-running this lands the
-    # engine state (.nextflow/) in the same place — a faithful, self-contained replay.
-    (prov / "commands.sh").write_text(
+    # A faithful, self-contained replay:
+    #  - `cd` to the outdir first: nfclaw launches Nextflow from there, so re-running this lands the
+    #    engine state (.nextflow/) in the same place;
+    #  - re-export the exact NXF_* overrides the run applied (the engine pin from --nxf-ver, plus any
+    #    --nxf-env such as NXF_JVM_ARGS on an IPv6 host or NXF_OFFLINE). A run that only succeeds with
+    #    a pinned engine or one of these flags would not reproduce without them, so the replay script
+    #    must carry them — recording them only in the manifest is not enough.
+    # `--config` files are already in `command_str` (as `-c <path>`), so they replay as-is.
+    env_exports = "".join(f"export {key}={shlex.quote(value)}\n"
+                          for key, value in sorted((env_extra or {}).items()))
+    commands = prov / "commands.sh"
+    commands.write_text(
         "#!/usr/bin/env bash\nset -euo pipefail\n"
-        f"cd {shlex.quote(str(outdir))}\n{command_str}\n", encoding="utf-8")
+        f"cd {shlex.quote(str(outdir))}\n"
+        f"{env_exports}{command_str}\n", encoding="utf-8")
+    commands.chmod(0o755)                             # so the documented replay works as `./commands.sh`
     return prov
