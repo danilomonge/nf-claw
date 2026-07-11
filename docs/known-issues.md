@@ -126,31 +126,39 @@ upstream table.)
 ### Docker bridge network has no DNS (IPv6-only host)
 **Symptom:** containers can't resolve hostnames; downloads inside a container fail even though the
 host has connectivity. Docker's bridge uses the IPv4 DNS `8.8.8.8`, unreachable on an IPv6-only host.
-**Fix:** give containers the host network via a config file, passed with `--config`:
+**Fix:** give containers the host network via a config file, passed with `--config`. `docker.runOptions`
+is a single string that a `--config` **replaces** (it does not merge with the pipeline's value), so keep
+nf-core's default user mapping in the same string — otherwise the container reverts to running as root
+and its outputs become root-owned (see the next section):
 ```groovy
-// host-net.config
-docker { runOptions = "--network host" }
+// host-net.config — one runOptions string: host network + nf-core's default user mapping
+docker { runOptions = "--network host -u $(id -u):$(id -g)" }
 ```
-`nfclaw run <name> --config host-net.config …`. `--config` is repeatable and accepts any Nextflow
-config (also handy for custom resources, below).
+`nfclaw run <name> --config host-net.config …`. `--config` is repeatable, but two files that each set
+`docker.runOptions` do **not** combine — the last one wins — so put every option you need in one string.
+`--config` accepts any Nextflow config (also handy for custom resources, below).
 
 ### A container creates root-owned files that block publishing
 **Symptom:** a step writes a file/dir owned by root with restrictive permissions, and Nextflow —
 running as your user — can't read or publish it. Examples: `CUSTOM_SRATOOLSNCBISETTINGS` and
 `macrel` (mode `600`), or STAR in `rnaseq` (`_STARgenome/` / `_STARpass1/` as `drwx------`,
 failing with `AccessDeniedException`).
-**Why:** Docker runs containers as root by default; outputs land in the work dir owned by root.
-**Fix:** run the container as your user via a `--config` file. **Use literal numeric ids —
-`$(id -u)` does _not_ work here:** Nextflow passes `runOptions` verbatim into the generated
-`.command.run`, where `$(...)` is never shell-evaluated and breaks with
-`syntax error near unexpected token ')'`. Find your ids with `id -u` / `id -g` (commonly
-`1000:1000`) and hardcode them:
+**Why:** nf-core's `docker` profile already maps your host user into the container
+(`docker.runOptions = '-u $(id -u):$(id -g)'`), which normally prevents this. The trap is that
+`docker.runOptions` is a single string: any `--config` that sets it (for example the host-network file
+above) **replaces** the pipeline's value instead of adding to it, so the mapping is dropped and the
+container falls back to root — its outputs then land in the work dir owned by root.
+**Fix:** keep the user mapping in your `--config`, folded into the same `runOptions` string as any other
+option you set. Use nf-core's own mapping — Nextflow writes it into the generated `.command.run`, where
+the shell evaluates `$(id -u)`/`$(id -g)` at launch:
 ```groovy
 // run-as-user.config
-docker { runOptions = "-u 1000:1000" }
+docker { runOptions = "-u $(id -u):$(id -g)" }
 ```
-`nfclaw run <name> --config run-as-user.config …`. (Or fix the file's permissions in the work dir
-and `--resume`.)
+If your shell ever trips over the substitution (`syntax error near unexpected token ')'`), hardcode the
+numeric ids instead — find them with `id -u` / `id -g` (commonly `1000:1000`):
+`docker { runOptions = "-u 1000:1000" }`. `nfclaw run <name> --config run-as-user.config …`. (Or fix
+the file's permissions in the work dir and `--resume`.)
 
 ### `--resume` resumed the wrong session
 **Status: fixed.** `nfclaw run` now launches Nextflow **from the `--outdir`**, so each run owns its
