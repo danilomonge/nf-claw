@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 from librarian import write_skill
-from librarian.add_pipeline import read_sources
+from librarian.add_pipeline import read_sources, validate_pipeline_name
 
 _SEMVER = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
 
@@ -27,6 +27,7 @@ def remote_tags(url: str) -> list[str]:
 
 
 def bump(name: str, url: str, repo_root: Path) -> str | None:
+    name = validate_pipeline_name(name)
     latest = select_latest(remote_tags(url))
     if latest is None:
         return None

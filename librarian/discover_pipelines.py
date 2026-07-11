@@ -17,7 +17,7 @@ import urllib.request
 from pathlib import Path
 
 from librarian import write_skill
-from librarian.add_pipeline import read_sources
+from librarian.add_pipeline import read_sources, valid_pipeline_name, validate_pipeline_name
 
 NFCORE_PIPELINES_JSON = "https://nf-co.re/pipelines.json"
 _SEMVER = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
@@ -55,8 +55,9 @@ def candidates(workflows: list[dict]) -> list[tuple[str, str, str]]:
             continue
         name = wf.get("name")
         tag = latest_stable(wf.get("releases", []))
-        if not name or not tag:
+        if not name or not valid_pipeline_name(str(name)) or not tag:
             continue
+        name = str(name)
         full = wf.get("full_name") or f"nf-core/{name}"
         out.append((name, f"https://github.com/{full}.git", tag))
     return sorted(out)
@@ -74,6 +75,7 @@ def _run(args: list[str], **kw) -> subprocess.CompletedProcess:
 
 
 def _rollback(name: str, repo_root: Path) -> None:
+    name = validate_pipeline_name(name)
     rel = f"pipelines/{name}/upstream"
     _run(["git", "-C", str(repo_root), "submodule", "deinit", "-f", rel])
     _run(["git", "-C", str(repo_root), "rm", "-f", rel])
@@ -83,6 +85,7 @@ def _rollback(name: str, repo_root: Path) -> None:
 
 def add_one(name: str, url: str, tag: str, repo_root: Path) -> bool:
     """Add one pipeline submodule pinned to `tag` and generate its context."""
+    name = validate_pipeline_name(name)
     up = repo_root / "pipelines" / name / "upstream"
     try:
         _run(
@@ -108,6 +111,7 @@ def add_one(name: str, url: str, tag: str, repo_root: Path) -> bool:
 
 def _remove_source(sources_path: Path, name: str) -> None:
     """Drop the row for `name` from sources.tsv (keeps comments and others)."""
+    name = validate_pipeline_name(name)
     if not sources_path.exists():
         return
     kept = [
@@ -120,6 +124,7 @@ def _remove_source(sources_path: Path, name: str) -> None:
 
 def remove_one(name: str, repo_root: Path, sources_path: Path) -> None:
     """Completely remove a pipeline: its submodule, generated files and source row."""
+    name = validate_pipeline_name(name)
     _rollback(name, repo_root)
     _run(["git", "-C", str(repo_root), "config", "-f", ".gitmodules",
           "--remove-section", f"submodule.pipelines/{name}/upstream"])
@@ -128,6 +133,7 @@ def remove_one(name: str, repo_root: Path, sources_path: Path) -> None:
 
 
 def _append_source(sources_path: Path, name: str, url: str) -> None:
+    name = validate_pipeline_name(name)
     text = sources_path.read_text(encoding="utf-8")
     sep = "" if text.endswith("\n") or not text else "\n"
     with sources_path.open("a", encoding="utf-8") as f:
