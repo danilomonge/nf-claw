@@ -48,7 +48,8 @@ engine and its runtime explicit and reproducible (both are recorded in `<outdir>
     `--nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true`
   - skip remote config fetches entirely: `--nxf-env NXF_OFFLINE=true`
 - `--config PATH` (or `-c`, repeatable) — pass an extra Nextflow config straight through (`-c`),
-  e.g. a docker host-network config (`docker { runOptions = "--network host" }`) or custom resources.
+  e.g. a docker host-network config (`docker { runOptions = "--network host -u $(id -u):$(id -g)" }` —
+  a custom `runOptions` replaces the pipeline's default user mapping, so keep it) or custom resources.
 
 Any other environment (proxies, `JAVA_HOME`, …) is inherited from your shell unchanged. Each run
 launches Nextflow from its `--outdir`, so its `.nextflow/` history is isolated and `--resume` resumes
