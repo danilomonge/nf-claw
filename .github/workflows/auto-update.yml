@@ -11,7 +11,7 @@ jobs:
       pull-requests: write
       actions: write          # to dispatch the deploy after merge
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           submodules: recursive
           fetch-depth: 0
@@ -19,7 +19,7 @@ jobs:
       # version deterministically (otherwise the in-job drift gate can fail spuriously).
       - name: Fetch submodule tags
         run: git submodule foreach 'git fetch -q --tags origin 2>/dev/null || true'
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.11"
       - run: pip install -e .
@@ -28,7 +28,7 @@ jobs:
       # Self-gate: a PR opened with GITHUB_TOKEN does not trigger drift-check.yml, so the drift
       # gate must run here. If regeneration left anything stale, fail now — never open a bad PR.
       - run: python -m librarian.check_drift
-      - uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c # v6
+      - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         id: cpr
         with:
           branch: auto-update-pipelines
