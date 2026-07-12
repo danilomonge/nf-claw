@@ -42,6 +42,10 @@ nfclaw run rnaseq --nxf-ver 25.10.2 --input ss.csv --outdir results -profile doc
 nfclaw run rnaseq --nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true ...      # IPv6-only host (JVM → GitHub)
 ```
 
+The editable install is intentional: `nfclaw` reads pinned submodules and generated context from
+this checkout. A standalone wheel contains the Python runtime but not the pipeline library, so the
+CLI exits with a setup error instead of silently reporting an empty catalog.
+
 ## Maintain
 ```bash
 make build     # regenerate skill.md/reference.md/catalog from the submodules

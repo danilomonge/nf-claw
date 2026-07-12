@@ -123,6 +123,25 @@ def test_show_unknown_pipeline_with_version_errors_cleanly(tmp_path, monkeypatch
     assert "pipeline_not_found" in capsys.readouterr().err
 
 
+def test_show_unknown_pipeline_without_version_errors_cleanly(tmp_path, monkeypatch, capsys):
+    root = _seed(tmp_path)
+    monkeypatch.setattr(cli, "_repo_root", lambda: root)
+    assert cli.main(["show", "nope"]) == 1
+    captured = capsys.readouterr()
+    assert "pipeline_not_found" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_non_editable_install_reports_missing_repository_content(tmp_path, monkeypatch, capsys):
+    # A wheel contains the Python packages but intentionally not the large pipeline library.
+    # Never make `nfclaw list` silently look valid with zero pipelines in that situation.
+    monkeypatch.setattr(cli, "__file__", str(tmp_path / "site-packages" / "runner" / "cli.py"))
+    assert cli.main(["list"]) == 1
+    captured = capsys.readouterr()
+    assert "environment" in captured.err
+    assert "pip install -e ." in captured.err
+
+
 def test_versions_empty_reports_none_found(tmp_path, monkeypatch, capsys):
     from runner import versions
     root = _seed(tmp_path)

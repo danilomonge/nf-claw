@@ -7,8 +7,10 @@ def test_compose_profile_dedups():
     assert nc.compose_profile("docker,docker") == "docker"
 
 def test_build_command_shape(tmp_path):
-    up = tmp_path / "upstream"; up.mkdir()
-    pf = tmp_path / "params.json"; pf.write_text("{}")
+    up = tmp_path / "upstream"
+    up.mkdir()
+    pf = tmp_path / "params.json"
+    pf.write_text("{}")
     cmd, s = nc.build(upstream=up, profile="docker", params_file=pf, resume=True)
     assert cmd[:2] == ["nextflow", "run"]
     assert "-profile" in cmd and "docker" in cmd

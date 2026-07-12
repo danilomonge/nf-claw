@@ -14,7 +14,14 @@ _NXF_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:-edge)?$")
 
 
 def _repo_root() -> Path:
-    return Path(__file__).resolve().parent.parent
+    root = Path(__file__).resolve().parent.parent
+    if not (root / "pipelines").is_dir():
+        raise NfclawError(
+            ErrorCode.ENVIRONMENT,
+            "nf-claw repository content was not found next to the installed package.",
+            fix="Run from a cloned nf-claw repository and install it with `pip install -e .`.",
+        )
+    return root
 
 
 def _input_value(raw: str | None) -> "Path | str | None":
@@ -136,7 +143,11 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("--timeout", type=_positive_int, default=60 * 60 * 12)
 
     args, extras = parser.parse_known_args(argv)
-    root = _repo_root()
+    try:
+        root = _repo_root()
+    except NfclawError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
     pdir = root / "pipelines"
 
     if args.cmd == "list":
@@ -146,21 +157,20 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.cmd == "show":
-        if args.pipeline_version:
-            try:
-                discovery.find(args.name, pdir)                # 404 before any git work
+        try:
+            p = discovery.find(args.name, pdir)                # 404 before any git work
+            if args.pipeline_version:
                 st = versions.ensure(args.name, args.pipeline_version,
                                      pipelines_dir=pdir, repo_root=root)
-            except NfclawError as exc:
-                print(str(exc), file=sys.stderr)
-                return 1
-            if versions.is_cached(st):                         # a non-pinned version → generate on demand
-                skill_path, ref_path = versions.generate_docs(st, dest_dir=st.path.parent)
-                print(skill_path.read_text(encoding="utf-8"))
-                print(f"reference.md for this version cached at {ref_path}", file=sys.stderr)
-                return 0
-            # requested version IS the pin → fall through to the committed skill.md
-        p = discovery.find(args.name, pdir)
+                if versions.is_cached(st):                     # a non-pinned version → generate on demand
+                    skill_path, ref_path = versions.generate_docs(st, dest_dir=st.path.parent)
+                    print(skill_path.read_text(encoding="utf-8"))
+                    print(f"reference.md for this version cached at {ref_path}", file=sys.stderr)
+                    return 0
+                # requested version IS the pin → fall through to the committed skill.md
+        except NfclawError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
         print(p.skill_md.read_text(encoding="utf-8") if p.skill_md.exists()
               else f"(no skill.md for {args.name})")
         return 0
