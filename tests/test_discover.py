@@ -57,6 +57,18 @@ def test_candidates_filters_archived_dsl1_releaseless_and_builds_url():
     assert ("rnaseq", "https://github.com/nf-core/rnaseq.git", "3.26.0") in cands
 
 
+def test_candidates_never_trusts_non_nfcore_full_name():
+    workflows = [{
+        "name": "demo",
+        "full_name": "attacker/demo",
+        "archived": False,
+        "releases": [{"tag_name": "1.0.0"}],
+    }]
+    assert dp.candidates(workflows) == [
+        ("demo", "https://github.com/nf-core/demo.git", "1.0.0")
+    ]
+
+
 def test_new_pipelines_excludes_already_tracked():
     fresh = dp.new_pipelines(WORKFLOWS, existing={"rnaseq"})
     assert [c[0] for c in fresh] == ["demo"]

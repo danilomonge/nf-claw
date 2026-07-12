@@ -23,8 +23,9 @@ profile end to end.
 Trust `skill.md` / `reference.md` over your own memory — they are generated from the pinned commit.
 To set any parameter beyond the essentials, look it up in `pipelines/<name>/reference.md` (the complete
 list, with allowed values and value constraints) — do not invent a flag or value. `nfclaw run` rejects
-unknown flags and values outside a parameter's allowed set before it starts, and `nf-schema` validates
-the rest (types, patterns, ranges) at runtime. Only read `upstream/` for deep dives.
+unknown flags, invalid allowed values and unambiguous scalar/shape errors before it starts;
+`nf-schema` remains authoritative for the complete schema (especially conditionals and complex
+constraints) at runtime. Only read `upstream/` for deep dives.
 
 ## To run a specific (non-latest) version
 The default is always the pinned latest release. To run any other published release instead:

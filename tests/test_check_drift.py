@@ -51,3 +51,22 @@ def test_check_drift_never_writes(tmp_path, monkeypatch):
         raise AssertionError("check_drift must not write files")
     monkeypatch.setattr(write_skill, "generate", _boom)
     assert check_drift.check(pdir) == []
+
+
+def test_drift_reports_manifest_set_and_remote_mismatches(tmp_path):
+    pdir = _seed(tmp_path, "mini")
+    write_skill.generate("mini", pipelines_dir=pdir)
+    write_catalog.generate(pipelines_dir=pdir,
+                           out_md=tmp_path / "catalog.md", out_json=tmp_path / "catalog.json")
+    (tmp_path / "sources.tsv").write_text(
+        "mini\thttps://github.com/nf-core/wrong.git\tlatest-release\n"
+        "extra\thttps://github.com/nf-core/extra.git\tlatest-release\n"
+    )
+    (tmp_path / ".gitmodules").write_text(
+        '[submodule "pipelines/mini/upstream"]\n'
+        "\tpath = pipelines/mini/upstream\n"
+        "\turl = https://github.com/nf-core/mini.git\n"
+    )
+    drift = check_drift.check(pdir)
+    assert "sources.tsv has unknown pipelines: extra" in drift
+    assert any(item.startswith("mini remote differs:") for item in drift)

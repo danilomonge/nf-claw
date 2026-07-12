@@ -93,6 +93,29 @@ def test_commands_sh_quotes_env_values_with_spaces(tmp_path):
     assert "export NXF_JVM_ARGS='-Dx=y -Dz=w'" in (prov / "commands.sh").read_text()
 
 
+def test_sensitive_nxf_env_is_redacted_and_omitted_from_replay(tmp_path):
+    out = tmp_path / "out"
+    out.mkdir()
+    overlay = {
+        "NXF_GITHUB_TOKEN": "top-secret-token",
+        "NXF_JVM_ARGS": "-DproxyPassword=hunter2",
+        "NXF_VER": "25.10.2",
+    }
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="nextflow run x",
+                            submodule=_st(tmp_path / "up"), input_paths=[], env_extra=overlay)
+    manifest = json.loads((prov / "run_manifest.json").read_text())
+    assert manifest["nextflow_env"] == {
+        "NXF_GITHUB_TOKEN": "<redacted>",
+        "NXF_JVM_ARGS": "<redacted>",
+        "NXF_VER": "25.10.2",
+    }
+    assert manifest["redacted_nextflow_env"] == ["NXF_GITHUB_TOKEN", "NXF_JVM_ARGS"]
+    replay = (prov / "commands.sh").read_text()
+    assert "top-secret-token" not in replay and "hunter2" not in replay
+    assert "export NXF_VER=25.10.2" in replay
+    assert "Export these before replay: NXF_GITHUB_TOKEN NXF_JVM_ARGS" in replay
+
+
 def test_commands_sh_has_no_exports_without_env(tmp_path):
     # No env overlay → no stray export lines (keeps the replay script byte-stable).
     out = tmp_path / "out"

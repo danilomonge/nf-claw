@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import subprocess
 import urllib.request
 from pathlib import Path
@@ -58,8 +59,10 @@ def candidates(workflows: list[dict]) -> list[tuple[str, str, str]]:
         if not name or not valid_pipeline_name(str(name)) or not tag:
             continue
         name = str(name)
-        full = wf.get("full_name") or f"nf-core/{name}"
-        out.append((name, f"https://github.com/{full}.git", tag))
+        # The discovery feed is metadata, not an authority to select an arbitrary repository.
+        # nf-claw only wraps nf-core pipelines, so derive the origin from the validated slug
+        # instead of trusting a mutable `full_name` field from the remote JSON.
+        out.append((name, f"https://github.com/nf-core/{name}.git", tag))
     return sorted(out)
 
 
@@ -79,8 +82,16 @@ def _rollback(name: str, repo_root: Path) -> None:
     rel = f"pipelines/{name}/upstream"
     _run(["git", "-C", str(repo_root), "submodule", "deinit", "-f", rel])
     _run(["git", "-C", str(repo_root), "rm", "-f", rel])
-    _run(["rm", "-rf", str(repo_root / "pipelines" / name)])
-    _run(["rm", "-rf", str(repo_root / ".git" / "modules" / rel)])
+    shutil.rmtree(repo_root / "pipelines" / name, ignore_errors=True)
+    # `.git` is a file in a linked worktree. Ask Git for the real administrative path so failed
+    # discovery is cleaned up correctly for both ordinary clones and agent worktrees.
+    git_path = _run(["git", "-C", str(repo_root), "rev-parse", "--git-path",
+                     f"modules/{rel}"])
+    if git_path.returncode == 0 and git_path.stdout.strip():
+        modules_dir = Path(git_path.stdout.strip())
+        if not modules_dir.is_absolute():
+            modules_dir = repo_root / modules_dir
+        shutil.rmtree(modules_dir, ignore_errors=True)
 
 
 def add_one(name: str, url: str, tag: str, repo_root: Path) -> bool:
