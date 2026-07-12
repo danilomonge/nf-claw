@@ -287,9 +287,9 @@ def test_reference_surfaces_hidden_fmt_and_title():
     assert "| hidden |" in out                           # hidden column present
     assert "string (file path)" in out                   # Param.fmt surfaced
     assert "string (directory path)" in out              # directory-path Param.fmt surfaced
-    email_row = next(l for l in out.splitlines() if l.startswith("| `--email`"))
+    email_row = next(line for line in out.splitlines() if line.startswith("| `--email`"))
     assert email_row.split("|")[4].strip() == "yes"      # hidden cell = yes for hidden param
-    input_row = next(l for l in out.splitlines() if l.startswith("| `--input`"))
+    input_row = next(line for line in out.splitlines() if line.startswith("| `--input`"))
     assert input_row.split("|")[4].strip() == ""         # non-hidden → blank hidden cell
 
 
@@ -345,7 +345,7 @@ def test_reference_renders_boolean_default_as_json_literal():
         "validate_params": Param("validate_params", "boolean", True, None, "d", None, False, "g"),
     })
     out = write_skill._render_reference("p", st, ps, None)
-    row = next(l for l in out.splitlines() if l.startswith("| `--validate-params`"))
+    row = next(line for line in out.splitlines() if line.startswith("| `--validate-params`"))
     assert "| true |" in row and "True" not in row
 
 
@@ -413,9 +413,9 @@ def test_reference_has_constraints_column_with_real_pattern():
     })
     out = write_skill._render_reference("pZ", st, ps, None)
     assert "| constraints |" in out                                  # column present
-    input_row = next(l for l in out.splitlines() if l.startswith("| `--input`"))
+    input_row = next(line for line in out.splitlines() if line.startswith("| `--input`"))
     assert r"matches ^\S+\.(csv\|tsv)$" in input_row                 # pattern in the right cell, pipe escaped
-    n_row = next(l for l in out.splitlines() if l.startswith("| `--n`"))
+    n_row = next(line for line in out.splitlines() if line.startswith("| `--n`"))
     assert "≥ 1" in n_row
 
 
@@ -454,7 +454,7 @@ def test_circdna_required_params_match_committed_reference():
     ref = (REPO / "pipelines" / "circdna" / "reference.md").read_text(encoding="utf-8")
 
     def required(flag: str) -> str:
-        row = next(l for l in ref.splitlines() if l.startswith(f"| `{flag}`"))
+        row = next(line for line in ref.splitlines() if line.startswith(f"| `{flag}`"))
         return row.split("|")[3].strip()                     # parameter|type|required|... → cell 3
 
     assert required("--input-format") == "yes"
