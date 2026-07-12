@@ -49,11 +49,11 @@ def _sensitive_env(key: str, value: str) -> bool:
     )
 
 
-def _safe_env(env_extra: dict[str, str] | None) -> tuple[dict[str, str], list[str]]:
+def _safe_env(env: dict[str, str] | None) -> tuple[dict[str, str], list[str]]:
     """Return provenance-safe values and the names whose values were redacted."""
     recorded: dict[str, str] = {}
     redacted: list[str] = []
-    for key, value in sorted((env_extra or {}).items()):
+    for key, value in sorted((env or {}).items()):
         if _sensitive_env(key, value):
             recorded[key] = "<redacted>"
             redacted.append(key)
@@ -62,18 +62,33 @@ def _safe_env(env_extra: dict[str, str] | None) -> tuple[dict[str, str], list[st
     return recorded, redacted
 
 
+def effective_nxf_env(env_extra: dict[str, str] | None = None) -> dict[str, str]:
+    """Every NXF_* variable the run actually saw: inherited from the shell, then the overlay.
+
+    Nextflow reads its settings from the ambient environment, so an exported NXF_OFFLINE or NXF_VER
+    shapes the run just as much as `--nxf-env`/`--nxf-ver` does. Recording only the overlay would
+    leave the replay script silently missing whatever made the run work.
+    """
+    env = {k: v for k, v in os.environ.items() if k.startswith("NXF_")}
+    env.update(env_extra or {})        # the overlay wins, exactly as it does at launch
+    return env
+
+
 def write(*, outdir: Path, pipeline: str, command_str: str,
           submodule: SubmoduleStatus, input_paths: list[Path],
-          env_extra: dict[str, str] | None = None) -> Path:
+          env_extra: dict[str, str] | None = None,
+          outcome: str = "success") -> Path:
     prov = outdir / "provenance"
     prov.mkdir(parents=True, exist_ok=True)
 
-    recorded_env, redacted_env = _safe_env(env_extra)
+    nxf_env = effective_nxf_env(env_extra)
+    recorded_env, redacted_env = _safe_env(nxf_env)
     manifest = {
         "pipeline": pipeline,
         "version": submodule.version,
         "commit": submodule.commit,
         "command": command_str,
+        "outcome": outcome,
         "ran_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "nextflow": _nextflow_version(env_extra),
         "nextflow_env": recorded_env,
@@ -101,14 +116,14 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
     # A faithful, self-contained replay:
     #  - `cd` to the outdir first: nfclaw launches Nextflow from there, so re-running this lands the
     #    engine state (.nextflow/) in the same place;
-    #  - re-export the exact NXF_* overrides the run applied (the engine pin from --nxf-ver, plus any
-    #    --nxf-env such as NXF_JVM_ARGS on an IPv6 host or NXF_OFFLINE). A run that only succeeds with
-    #    a pinned engine or one of these flags would not reproduce without them, so the replay script
-    #    must carry them — recording them only in the manifest is not enough.
+    #  - re-export every NXF_* variable the run actually saw: the overlay nfclaw applied (--nxf-ver,
+    #    --nxf-env) *and* whatever the shell already exported (NXF_OFFLINE, NXF_VER, …). Nextflow
+    #    reads all of them, so a run that only succeeds with a pinned engine, an IPv6 flag or offline
+    #    mode would not reproduce unless the script carries them — the manifest alone is not enough.
     # `--config` files are already in `command_str` (as `-c <path>`), so they replay as-is.
     env_exports = "".join(
         f"export {key}={shlex.quote(value)}\n"
-        for key, value in sorted((env_extra or {}).items())
+        for key, value in sorted(nxf_env.items())
         if key not in redacted_env
     )
     if redacted_env:

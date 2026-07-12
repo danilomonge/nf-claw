@@ -39,6 +39,54 @@ def test_full_run_invokes_execution(tmp_path, monkeypatch):
     assert called.get("ran") and not res.checked_only
 
 
+def test_failed_run_still_writes_the_provenance_bundle(tmp_path, monkeypatch):
+    # The replay script matters most after a failure — that is when the run gets fixed and retried.
+    import json
+
+    import pytest
+
+    from runner.errors import ErrorCode, NfclawError
+
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+
+    def boom(*a, **k):
+        raise NfclawError(ErrorCode.EXECUTION_FAILED, "Nextflow exited 1")
+
+    monkeypatch.setattr(orchestration.execution, "run", boom)
+    with pytest.raises(NfclawError, match="Nextflow exited 1"):   # the real cause still surfaces
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+            profile="docker", params_file=None, cli_overrides={}, resume=False,
+            demo=True, check_only=False, write_provenance=True, timeout_seconds=10)
+    prov = tmp_path / "out" / "provenance"
+    assert (prov / "commands.sh").exists()                       # replayable once the cause is fixed
+    assert json.loads((prov / "run_manifest.json").read_text())["outcome"] == "failed"
+
+
+def test_provenance_failure_never_masks_the_run_failure(tmp_path, monkeypatch):
+    import pytest
+
+    from runner.errors import ErrorCode, NfclawError
+
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+
+    def boom(*a, **k):
+        raise NfclawError(ErrorCode.EXECUTION_FAILED, "Nextflow exited 1")
+
+    def prov_boom(*a, **k):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(orchestration.execution, "run", boom)
+    monkeypatch.setattr(orchestration.provenance, "write", prov_boom)
+    with pytest.raises(NfclawError, match="Nextflow exited 1"):
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+            profile="docker", params_file=None, cli_overrides={}, resume=False,
+            demo=True, check_only=False, write_provenance=True, timeout_seconds=10)
+
+
 def test_passes_effective_work_dir_and_allow_spaces_to_preflight(tmp_path, monkeypatch):
     from pathlib import Path
     root = _make_pipeline(tmp_path, "mini")

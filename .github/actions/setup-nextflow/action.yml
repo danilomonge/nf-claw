@@ -1,0 +1,25 @@
+name: Setup Nextflow
+description: >-
+  Install the pinned Nextflow launcher on the runner. Downloads to the runner temp
+  directory, never into the checked-out repository, so no build artifact can be picked
+  up by a workflow that commits its working tree.
+
+runs:
+  using: composite
+  steps:
+    - name: Install Nextflow
+      shell: bash
+      # Pinned to a commit of the launcher script and verified by checksum: the launcher is
+      # fetched over the network on every job, so pinning + verifying is what keeps that
+      # supply chain reproducible. Bump both values together.
+      env:
+        NEXTFLOW_COMMIT: 701c82c1035b5813d0cbcfe60fb83d209743934c
+        NEXTFLOW_SHA256: 968af86ff461c8c78a0704d46a0f0af0be52adf1dd15298b16f50a5463385456
+      run: |
+        set -euo pipefail
+        launcher="$RUNNER_TEMP/nextflow"
+        curl --fail --show-error --silent --location --proto '=https' --tlsv1.2 \
+          --output "$launcher" \
+          "https://raw.githubusercontent.com/nextflow-io/nextflow/${NEXTFLOW_COMMIT}/nextflow"
+        echo "${NEXTFLOW_SHA256}  ${launcher}" | sha256sum --check --strict
+        sudo install -m 0755 "$launcher" /usr/local/bin/nextflow
