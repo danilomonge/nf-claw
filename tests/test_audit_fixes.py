@@ -67,9 +67,41 @@ def test_auto_update_validates_changed_releases_before_merge():
     assert "git diff --cached --name-only" in text
     assert 'scripts/nextflow_accept.sh "${updated[@]}"' in text
     assert acceptance < final_gate < create_pr
+    assert "uses: ./.github/actions/setup-nextflow" in text   # checksum-verified install (below)
+
+
+def test_setup_nextflow_action_verifies_the_checksum_and_stays_out_of_the_repo():
+    # The launcher is fetched from the network on every job, so the install must stay pinned and
+    # checksum-verified — and must never land in the working tree: a workflow that commits its tree
+    # (auto-update, discover-pipelines) would otherwise sweep the downloaded file into a PR.
+    text = (REPO / ".github" / "actions" / "setup-nextflow" / "action.yml").read_text(
+        encoding="utf-8")
     assert "sha256sum --check --strict" in text
-    assert '--output "$RUNNER_TEMP/nextflow"' in text
+    assert 'launcher="$RUNNER_TEMP/nextflow"' in text
+    assert "--output nextflow" not in text                     # i.e. never into the repo root
+
+
+def test_the_launcher_is_not_tracked_in_the_repo():
     assert not (REPO / "nextflow").exists()
+
+
+def test_every_workflow_installs_nextflow_through_the_pinned_action():
+    # One pinned, checksum-verified install for the whole repo — no workflow may hand-roll its own.
+    for wf in sorted((REPO / ".github" / "workflows").glob("*.yml")):
+        text = wf.read_text(encoding="utf-8")
+        if "nextflow" not in text.lower():
+            continue
+        assert "raw.githubusercontent.com/nextflow-io/nextflow" not in text, (
+            f"{wf.name} downloads the launcher itself; use ./.github/actions/setup-nextflow")
+
+
+def test_pr_bots_only_stage_what_they_generate():
+    # `create-pull-request` stages every dirty path by default, so a stray build artifact left in
+    # the working tree gets committed and auto-merged. Both bots must scope what they may stage.
+    for name in ("auto-update.yml", "discover-pipelines.yml"):
+        text = (REPO / ".github" / "workflows" / name).read_text(encoding="utf-8")
+        assert "peter-evans/create-pull-request@" in text
+        assert "add-paths:" in text, f"{name} lets the bot commit any dirty path"
 
 
 # --- F10 (revised): skill.md is deterministic — ONLY schema-required params + a group map.

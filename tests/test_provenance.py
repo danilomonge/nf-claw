@@ -125,6 +125,56 @@ def test_commands_sh_has_no_exports_without_env(tmp_path):
     assert "export " not in (prov / "commands.sh").read_text()
 
 
+def test_inherited_nxf_env_is_recorded_and_replayed(tmp_path, monkeypatch):
+    # NXF_OFFLINE exported in the shell (not via --nxf-env) still shapes the run, so the bundle must
+    # carry it: replaying elsewhere without it would try to reach the network and fail.
+    monkeypatch.setenv("NXF_OFFLINE", "true")
+    out = tmp_path / "out"
+    out.mkdir()
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="nextflow run x",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    assert json.loads((prov / "run_manifest.json").read_text())["nextflow_env"] == {
+        "NXF_OFFLINE": "true"}
+    assert "export NXF_OFFLINE=true" in (prov / "commands.sh").read_text()
+
+
+def test_overlay_wins_over_inherited_nxf_env(tmp_path, monkeypatch):
+    # --nxf-ver overrides an exported NXF_VER at launch, so provenance must record the pin that
+    # actually ran, not the shell's value.
+    monkeypatch.setenv("NXF_VER", "24.04.0")
+    out = tmp_path / "out"
+    out.mkdir()
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="x",
+                            submodule=_st(tmp_path / "up"), input_paths=[],
+                            env_extra={"NXF_VER": "25.10.2"})
+    assert json.loads((prov / "run_manifest.json").read_text())["nextflow_env"] == {
+        "NXF_VER": "25.10.2"}
+    assert "export NXF_VER=25.10.2" in (prov / "commands.sh").read_text()
+
+
+def test_inherited_sensitive_nxf_env_is_redacted(tmp_path, monkeypatch):
+    # The shell is a far larger surface than the overlay, so redaction has to cover it too.
+    monkeypatch.setenv("NXF_GITHUB_TOKEN", "top-secret-token")
+    out = tmp_path / "out"
+    out.mkdir()
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="x",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    manifest = json.loads((prov / "run_manifest.json").read_text())
+    assert manifest["nextflow_env"] == {"NXF_GITHUB_TOKEN": "<redacted>"}
+    assert "top-secret-token" not in (prov / "commands.sh").read_text()
+
+
+def test_outcome_is_recorded(tmp_path):
+    out = tmp_path / "out"
+    out.mkdir()
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="x",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    assert json.loads((prov / "run_manifest.json").read_text())["outcome"] == "success"
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="x",
+                            submodule=_st(tmp_path / "up"), input_paths=[], outcome="failed")
+    assert json.loads((prov / "run_manifest.json").read_text())["outcome"] == "failed"
+
+
 def test_commands_sh_is_executable(tmp_path):
     out = tmp_path / "out"
     out.mkdir()

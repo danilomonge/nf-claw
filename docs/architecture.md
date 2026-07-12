@@ -13,8 +13,12 @@ Three zones:
   `-params-file`, runs `nextflow run`, and writes a provenance bundle. Nextflow's `nf-schema`
   plugin remains authoritative at runtime, including for conditional requirements and any schema
   constraints the lightweight pre-check cannot interpret safely.
-  Applied `NXF_*` overrides are captured for replay, but values that look like credentials are
-  redacted from the manifest and replay script; the script names variables to supply externally.
+  The bundle is written whether the run succeeds or fails — a failed run is precisely when the
+  replay script is needed — and `run_manifest.json` records which it was (`outcome`).
+  Every `NXF_*` variable the run saw is captured for replay, both the overrides nfclaw applied
+  (`--nxf-ver`, `--nxf-env`) and those inherited from the shell (e.g. an exported `NXF_OFFLINE`),
+  since Nextflow reads all of them. Values that look like credentials are redacted from the
+  manifest and replay script; the script names those variables to supply externally.
 - **`librarian/`** — maintenance (run via `make`): generates `skill.md`/`reference.md`/`catalog.*`
   from each submodule, and bumps submodules to the latest release.
 

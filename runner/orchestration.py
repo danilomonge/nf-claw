@@ -119,17 +119,32 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
         return RunResult(command=cmd_str, outdir=outdir, checked_only=True,
                          outputs_report=None, warnings=warnings)
 
+    refs = param_schema.reference_path_params()
+    prov_inputs = [Path(v) for k, v in resolved.items()
+                   if k in refs and k != "outdir" and isinstance(v, str) and "://" not in v]
+
+    def record(outcome: str) -> None:
+        provenance.write(outdir=outdir, pipeline=name, command_str=cmd_str, submodule=st,
+                         input_paths=prov_inputs, env_extra=nxf_overlay, outcome=outcome)
+
     # Launch from the outdir so each run owns its `.nextflow/` history and cache: `-resume` then
     # resumes THIS run, never another pipeline's session. Paths in the command are absolute, so
     # the cwd only decides where the engine state lands.
-    execution.run(cmd, cwd=outdir, logs_dir=outdir / "provenance" / "logs",
-                  timeout_seconds=timeout_seconds, env_extra=nxf_overlay)
+    try:
+        execution.run(cmd, cwd=outdir, logs_dir=outdir / "provenance" / "logs",
+                      timeout_seconds=timeout_seconds, env_extra=nxf_overlay)
+    except BaseException:
+        # A failed run is exactly when the bundle is needed most: `commands.sh` is what replays the
+        # run once the cause is fixed, and the checksums record what it did manage to produce. Write
+        # it, then re-raise — a provenance error must never replace the real failure as the cause.
+        if write_provenance:
+            try:
+                record("failed")
+            except Exception:                         # best effort; must not mask the real failure
+                pass
+        raise
     report = outputs.collect(outdir)
     if write_provenance:
-        refs = param_schema.reference_path_params()
-        prov_inputs = [Path(v) for k, v in resolved.items()
-                       if k in refs and k != "outdir" and isinstance(v, str) and "://" not in v]
-        provenance.write(outdir=outdir, pipeline=name, command_str=cmd_str, submodule=st,
-                         input_paths=prov_inputs, env_extra=nxf_overlay)
+        record("success")
     return RunResult(command=cmd_str, outdir=outdir, checked_only=False,
                      outputs_report=report, warnings=warnings)

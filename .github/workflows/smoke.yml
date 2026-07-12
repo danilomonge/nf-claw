@@ -36,14 +36,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - name: Install Nextflow
-        run: |
-          curl --fail --show-error --silent --location --proto '=https' --tlsv1.2 \
-            --output nextflow \
-            https://raw.githubusercontent.com/nextflow-io/nextflow/701c82c1035b5813d0cbcfe60fb83d209743934c/nextflow
-          echo "968af86ff461c8c78a0704d46a0f0af0be52adf1dd15298b16f50a5463385456  nextflow" \
-            | sha256sum --check --strict
-          sudo install -m 0755 nextflow /usr/local/bin/nextflow
+      - uses: ./.github/actions/setup-nextflow
       - name: Build + preflight the demo command for every pipeline
         run: |
           fail=0

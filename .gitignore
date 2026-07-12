@@ -24,6 +24,10 @@ work/
 results/
 *.pyc
 
+# The Nextflow launcher, if installed into the repo root (`curl -s https://get.nextflow.io | bash`).
+# It is a local tool, never part of the library — anchored so pipeline sources are unaffected.
+/nextflow
+
 # per-version cache: materialized worktrees + on-demand docs for non-pinned releases
 pipelines/*/.versions/
 
