@@ -69,6 +69,24 @@ def test_work_dir_defaults_under_repo_when_no_nxf_work(tmp_path, monkeypatch):
     assert seen["work_dir"] == root / "work"                  # Nextflow default: <cwd>/work
 
 
+def test_relative_nxf_work_is_resolved_before_nextflow_changes_cwd(tmp_path, monkeypatch):
+    root = _make_pipeline(tmp_path / "repo", "mini")
+    caller = tmp_path / "caller"
+    caller.mkdir()
+    monkeypatch.chdir(caller)
+    seen = {}
+    monkeypatch.setattr(orchestration.preflight, "check_environment",
+                        lambda **k: seen.update(k) or [])
+    result = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10,
+        nxf_env={"NXF_WORK": "scratch/work"})
+    expected = (caller / "scratch/work").resolve()
+    assert seen["work_dir"] == expected
+    assert f"-work-dir {expected}" in result.command
+
+
 def test_space_in_repo_path_blocks_the_run(tmp_path, monkeypatch):
     import pytest
     from runner.errors import ErrorCode, NfclawError

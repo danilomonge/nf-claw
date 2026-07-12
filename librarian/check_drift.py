@@ -23,7 +23,7 @@ def check(pipelines_dir: Path) -> list[str]:
             )
             continue
         fresh = dict(zip(("skill.md", "reference.md"),
-                         write_skill.render_status(st)))
+                         write_skill.render_status(st), strict=True))
         for fname, expected in fresh.items():           # compare in memory; never touch the tree
             committed = d / fname
             if not committed.exists():

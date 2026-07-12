@@ -20,9 +20,7 @@ def select_latest(tags: list[str]) -> str | None:
 
 def remote_tags(url: str) -> list[str]:
     r = subprocess.run(["git", "ls-remote", "--tags", "--refs", url],
-                       capture_output=True, text=True, timeout=60)
-    if r.returncode != 0:
-        return []
+                       capture_output=True, text=True, timeout=60, check=True)
     return [line.split("\t")[-1].rsplit("/", 1)[-1] for line in r.stdout.splitlines()]
 
 
@@ -33,7 +31,7 @@ def bump(name: str, url: str, repo_root: Path) -> str | None:
         return None
     up = repo_root / "pipelines" / name / "upstream"
     subprocess.run(["git", "-C", str(up), "fetch", "--tags", "--depth", "1",
-                    "origin", f"refs/tags/{latest}:refs/tags/{latest}"], check=False)
+                    "origin", f"refs/tags/{latest}:refs/tags/{latest}"], check=True)
     subprocess.run(["git", "-C", str(up), "checkout", f"tags/{latest}"], check=True)
     # Record the gitlink at the tag we just checked out, so the committed pin IS the release
     # and a later `git submodule update` cannot reset the working tree off it. (Matches
@@ -55,6 +53,7 @@ def main(argv: list[str] | None = None) -> int:
     sources_path = Path(args.sources)
     if not sources_path.is_absolute():
         sources_path = root / sources_path
+    failures = 0
     for src in read_sources(sources_path):
         if src.policy != "latest-release":
             # Only "latest-release" pipelines are auto-bumped; anything else (e.g. a pinned
@@ -66,7 +65,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{src.name}: {'bumped to ' + tag if tag else 'no release tag found'}")
         except Exception as exc:                          # one failure never blocks others
             print(f"{src.name}: ERROR {exc}")
-    return 0
+            failures += 1
+    return 1 if failures else 0
 
 
 if __name__ == "__main__":

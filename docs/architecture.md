@@ -8,11 +8,11 @@ Three zones:
   value constraints and default). Both are derived deterministically from the schema — never
   hand-curated, so they cannot drift from the pinned code.
 - **`runner/`** — the runtime invoked as `nfclaw`. Discovers pipelines, runs deterministic
-  pre-checks against the pipeline's own schema (samplesheet columns, unknown flags, enum values —
-  failing fast before Nextflow starts), composes a `-params-file`, runs `nextflow run`, and writes
-  a provenance bundle. Fuller validation (types, value patterns, numeric ranges, conditional
-  requirements) is delegated to Nextflow's `nf-schema` plugin at runtime; the runner deliberately
-  does not re-implement pattern/range checks locally, to avoid regex-dialect false positives.
+  pre-checks against the pipeline's own schema (samplesheet columns, unknown flags, scalar types,
+  enum values and compatible value constraints — failing fast before Nextflow starts), composes a
+  `-params-file`, runs `nextflow run`, and writes a provenance bundle. Nextflow's `nf-schema`
+  plugin remains authoritative at runtime, including for conditional requirements and any schema
+  constraints the lightweight pre-check cannot interpret safely.
 - **`librarian/`** — maintenance (run via `make`): generates `skill.md`/`reference.md`/`catalog.*`
   from each submodule, and bumps submodules to the latest release.
 

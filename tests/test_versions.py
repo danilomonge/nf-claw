@@ -157,6 +157,35 @@ def test_materialize_is_idempotent(tmp_path):
     assert first.path == second.path and second.complete is True
 
 
+def test_materialize_rebuilds_a_partial_cache(tmp_path):
+    pdir = tmp_path / "pipelines"
+    _upstream_repo_with_tag(pdir, "p", "1.2.0")
+    dest = versions.cache_dir("p", "1.2.0", pdir) / "upstream"
+    dest.mkdir(parents=True)
+    (dest / "main.nf").write_text("partial\n")               # old check mistook this for complete
+    st = versions.materialize("p", "1.2.0", pipelines_dir=pdir, repo_root=tmp_path)
+    assert st.complete is True
+    assert (st.path / "nextflow_schema.json").exists()
+
+
+def test_materialize_failure_is_a_structured_error(tmp_path, monkeypatch):
+    from runner.submodule import SubmoduleStatus
+    upstream = tmp_path / "pipelines" / "p" / "upstream"
+    upstream.mkdir(parents=True)
+    incomplete = SubmoduleStatus("p", upstream, False, False, "", "", ("main.nf",))
+    monkeypatch.setattr(versions.submod, "resolve_at", lambda *a, **k: incomplete)
+    monkeypatch.setattr(versions, "_has_tag", lambda *a, **k: False)
+    monkeypatch.setattr(
+        versions, "_fetch_tag",
+        lambda *a, **k: (_ for _ in ()).throw(
+            subprocess.CalledProcessError(1, ["git", "fetch"], stderr="offline")))
+    with pytest.raises(NfclawError) as exc:
+        versions.materialize("p", "1.2.0", pipelines_dir=tmp_path / "pipelines",
+                             repo_root=tmp_path)
+    assert exc.value.code == ErrorCode.SUBMODULE_INCOMPLETE
+    assert "offline" in str(exc.value)
+
+
 # --- generate_docs: reuse the librarian renderer for an arbitrary version's tree ---
 def test_generate_docs_writes_version_markdowns(tmp_path):
     import shutil
