@@ -50,7 +50,7 @@ def _url_for(name: str, repo_root: Path) -> str | None:
 def remote_tags(url: str) -> list[str]:
     """Tag names published by the upstream remote (empty on any failure — caller falls back)."""
     try:
-        r = subprocess.run(["git", "ls-remote", "--tags", "--refs", url],
+        r = subprocess.run(["git", "ls-remote", "--tags", "--refs", "--", url],
                            capture_output=True, text=True, timeout=60)
     except (subprocess.SubprocessError, FileNotFoundError, OSError):
         return []

@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import shlex
 import shutil
 import subprocess
@@ -12,6 +13,13 @@ from pathlib import Path
 
 from runner.outputs import is_nextflow_internal
 from runner.submodule import SubmoduleStatus
+
+
+_SENSITIVE_KEY_PARTS = ("TOKEN", "SECRET", "PASSWORD", "CREDENTIAL", "API_KEY",
+                        "ACCESS_KEY", "PRIVATE_KEY", "AUTH")
+_SENSITIVE_VALUE_RE = re.compile(
+    r"(?i)(?:token|secret|password|credential|api[_-]?key|access[_-]?key|private[_-]?key)\s*[=:]"
+)
 
 
 def _sha256(path: Path) -> str:
@@ -34,12 +42,33 @@ def _nextflow_version(env_extra: dict[str, str] | None = None) -> str:
         return ""
 
 
+def _sensitive_env(key: str, value: str) -> bool:
+    upper = key.upper()
+    return any(part in upper for part in _SENSITIVE_KEY_PARTS) or bool(
+        _SENSITIVE_VALUE_RE.search(value)
+    )
+
+
+def _safe_env(env_extra: dict[str, str] | None) -> tuple[dict[str, str], list[str]]:
+    """Return provenance-safe values and the names whose values were redacted."""
+    recorded: dict[str, str] = {}
+    redacted: list[str] = []
+    for key, value in sorted((env_extra or {}).items()):
+        if _sensitive_env(key, value):
+            recorded[key] = "<redacted>"
+            redacted.append(key)
+        else:
+            recorded[key] = value
+    return recorded, redacted
+
+
 def write(*, outdir: Path, pipeline: str, command_str: str,
           submodule: SubmoduleStatus, input_paths: list[Path],
           env_extra: dict[str, str] | None = None) -> Path:
     prov = outdir / "provenance"
     prov.mkdir(parents=True, exist_ok=True)
 
+    recorded_env, redacted_env = _safe_env(env_extra)
     manifest = {
         "pipeline": pipeline,
         "version": submodule.version,
@@ -47,7 +76,8 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         "command": command_str,
         "ran_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "nextflow": _nextflow_version(env_extra),
-        "nextflow_env": dict(env_extra or {}),       # NXF_* overrides nfclaw applied (for replay)
+        "nextflow_env": recorded_env,
+        "redacted_nextflow_env": redacted_env,
         "os": platform.platform(),
     }
     (prov / "run_manifest.json").write_text(
@@ -76,8 +106,15 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
     #    a pinned engine or one of these flags would not reproduce without them, so the replay script
     #    must carry them — recording them only in the manifest is not enough.
     # `--config` files are already in `command_str` (as `-c <path>`), so they replay as-is.
-    env_exports = "".join(f"export {key}={shlex.quote(value)}\n"
-                          for key, value in sorted((env_extra or {}).items()))
+    env_exports = "".join(
+        f"export {key}={shlex.quote(value)}\n"
+        for key, value in sorted((env_extra or {}).items())
+        if key not in redacted_env
+    )
+    if redacted_env:
+        names = " ".join(redacted_env)
+        env_exports += ("# Sensitive values were omitted from provenance. Export these before "
+                        f"replay: {names}\n")
     commands = prov / "commands.sh"
     commands.write_text(
         "#!/usr/bin/env bash\nset -euo pipefail\n"

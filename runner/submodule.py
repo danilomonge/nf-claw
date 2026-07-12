@@ -18,6 +18,7 @@ except ImportError:                              # pragma: no cover — Windows 
 
 REQUIRED_FILES = ("main.nf", "nextflow.config", "nextflow_schema.json")
 _GIT_TIMEOUT = 30
+_INIT_TIMEOUT = 300
 _HEX_RE = re.compile(r"^[0-9a-f]{7,40}$")
 _THREAD_LOCKS: dict[str, threading.Lock] = {}
 _THREAD_LOCKS_GUARD = threading.Lock()
@@ -127,7 +128,7 @@ def ensure_initialized(name: str, pipelines_dir: Path, repo_root: Path) -> Submo
                     subprocess.run(
                         ["git", "submodule", "update", "--init", "--depth", "1", rel],
                         cwd=str(repo_root), check=True, capture_output=True, text=True,
-                        timeout=_GIT_TIMEOUT,
+                        timeout=_INIT_TIMEOUT,
                     )
                 except (subprocess.SubprocessError, FileNotFoundError, OSError) as exc:
                     detail = getattr(exc, "stderr", "") or str(exc)

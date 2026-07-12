@@ -25,16 +25,48 @@ jobs:
       - run: pip install -e .
       - run: python -m librarian.update_pipelines --repo-root .
       - run: python -m librarian.write_catalog
-      # Self-gate: a PR opened with GITHUB_TOKEN does not trigger drift-check.yml, so the drift
-      # gate must run here. If regeneration left anything stale, fail now — never open a bad PR.
-      - run: python -m librarian.check_drift
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Install Nextflow
+        run: |
+          curl --fail --show-error --silent --location --proto '=https' --tlsv1.2 \
+            --output nextflow \
+            https://raw.githubusercontent.com/nextflow-io/nextflow/701c82c1035b5813d0cbcfe60fb83d209743934c/nextflow
+          echo "968af86ff461c8c78a0704d46a0f0af0be52adf1dd15298b16f50a5463385456  nextflow" \
+            | sha256sum --check --strict
+          sudo install -m 0755 nextflow /usr/local/bin/nextflow
+      # A release bump changes a staged gitlink. Validate only those pipelines through Nextflow;
+      # this keeps the daily job bounded while preventing an incompatible release from being
+      # auto-merged. Quoting the array preserves every validated pipeline slug as one argument.
+      - name: Validate updated pipelines through Nextflow
+        run: |
+          mapfile -t updated < <(
+            git diff --cached --name-only --diff-filter=AM \
+              | sed -nE 's#^pipelines/([A-Za-z0-9._-]+)/upstream$#\1#p'
+          )
+          if (( ${#updated[@]} )); then
+            NFCLAW_KEEP_SUBMODULES=1 bash scripts/nextflow_accept.sh "${updated[@]}"
+          else
+            echo "No pipeline release changed."
+          fi
+      # PRs opened with GITHUB_TOKEN do not trigger the ordinary test/drift workflows, so the
+      # complete local gates must pass here before this write-capable job opens or merges a PR.
+      - name: Unit tests + final drift gate
+        run: |
+          pip install "pytest>=8,<10"
+          pytest -q
+          python -m librarian.check_drift
       - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         id: cpr
         with:
           branch: auto-update-pipelines
           title: "chore: auto-update pipelines to latest releases"
           commit-message: "chore: bump pipelines + regenerate context"
-          body: "Automated: bumped submodules to latest release tags and regenerated skill.md/reference.md/catalog."
+          body: >-
+            Automated: bumped submodules to latest release tags, regenerated
+            skill.md/reference.md/catalog, and passed unit, drift, and Nextflow acceptance checks.
       # The in-job drift gate above already validated the change, so the PR is
       # safe to merge automatically. The merge push is made with GITHUB_TOKEN
       # and so does not trigger the push-driven deploy — dispatch it explicitly

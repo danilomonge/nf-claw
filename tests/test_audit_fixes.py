@@ -40,12 +40,34 @@ def test_nextflow_accept_rejects_invalid_pipeline_name(tmp_path):
     assert "../bad\trejected" in result.read_text(encoding="utf-8")
 
 
+@pytest.mark.parametrize("name", [".", ".."])
+def test_nextflow_accept_rejects_special_path_components(tmp_path, name):
+    env = {**os.environ, "NFCLAW_RESULT_FILE": str(tmp_path / "result.tsv")}
+    proc = subprocess.run(
+        ["bash", "scripts/nextflow_accept.sh", name],
+        cwd=Path(__file__).parent.parent, env=env, capture_output=True, text=True,
+    )
+    assert proc.returncode != 0
+    assert "Invalid pipeline name" in proc.stdout
+
+
 def test_nextflow_accept_timeout_is_portable():
     text = (REPO / "scripts" / "nextflow_accept.sh").read_text(encoding="utf-8")
     assert "_run_with_timeout()" in text
     assert "command -v timeout" in text
     assert "command -v gtimeout" in text
     assert "NXF_VER=\"$ver\" _run_with_timeout 900 nextflow run" in text
+
+
+def test_auto_update_validates_changed_releases_before_merge():
+    text = (REPO / ".github" / "workflows" / "auto-update.yml").read_text(encoding="utf-8")
+    acceptance = text.index("Validate updated pipelines through Nextflow")
+    final_gate = text.index("Unit tests + final drift gate")
+    create_pr = text.index("peter-evans/create-pull-request@")
+    assert "git diff --cached --name-only" in text
+    assert 'scripts/nextflow_accept.sh "${updated[@]}"' in text
+    assert acceptance < final_gate < create_pr
+    assert "sha256sum --check --strict" in text
 
 
 # --- F10 (revised): skill.md is deterministic — ONLY schema-required params + a group map.

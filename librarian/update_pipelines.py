@@ -19,7 +19,7 @@ def select_latest(tags: list[str]) -> str | None:
 
 
 def remote_tags(url: str) -> list[str]:
-    r = subprocess.run(["git", "ls-remote", "--tags", "--refs", url],
+    r = subprocess.run(["git", "ls-remote", "--tags", "--refs", "--", url],
                        capture_output=True, text=True, timeout=60, check=True)
     return [line.split("\t")[-1].rsplit("/", 1)[-1] for line in r.stdout.splitlines()]
 
