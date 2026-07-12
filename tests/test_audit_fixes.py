@@ -68,6 +68,8 @@ def test_auto_update_validates_changed_releases_before_merge():
     assert 'scripts/nextflow_accept.sh "${updated[@]}"' in text
     assert acceptance < final_gate < create_pr
     assert "sha256sum --check --strict" in text
+    assert '--output "$RUNNER_TEMP/nextflow"' in text
+    assert not (REPO / "nextflow").exists()
 
 
 # --- F10 (revised): skill.md is deterministic — ONLY schema-required params + a group map.
