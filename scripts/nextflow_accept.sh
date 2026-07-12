@@ -54,7 +54,7 @@ printf 'report.enabled=false\ntimeline.enabled=false\ntrace.enabled=false\ndag.e
 
 fail=0
 for name in "${names[@]}"; do
-  if [[ ! "$name" =~ ^[A-Za-z0-9._-]+$ ]]; then
+  if [[ ! "$name" =~ ^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?$ ]]; then
     echo "::error::Invalid pipeline name: $name"
     printf '%s\trejected\n' "$name" >> "$result"
     fail=1
@@ -63,7 +63,14 @@ for name in "${names[@]}"; do
   up="pipelines/$name/upstream"
   out="$tmp/prev-$name"
   work="$tmp/work-$name"
-  git submodule update --init --depth 1 "$up" >/dev/null 2>&1 || true
+  if ! git submodule update --init --depth 1 "$up" >"$tmp/$name-submodule.out" 2>&1; then
+    cat "$tmp/$name-submodule.out"
+    echo "::error::Could not initialize $name submodule"
+    echo "| \`$name\` | n/a | ❌ |" >> "$summary"
+    printf '%s\trejected\n' "$name" >> "$result"
+    fail=1
+    continue
+  fi
   ver=$(grep -hoE "nextflowVersion[[:space:]]*=[[:space:]]*'[^']+'" "$up/nextflow.config" 2>/dev/null \
         | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | head -1)
   ver="${ver:-25.10.4}"

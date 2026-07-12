@@ -14,7 +14,7 @@ class Source:
     policy: str
 
 
-_PIPELINE_NAME_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+_PIPELINE_NAME_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$")
 
 
 def valid_pipeline_name(name: str) -> bool:
@@ -25,7 +25,8 @@ def valid_pipeline_name(name: str) -> bool:
 def validate_pipeline_name(name: str) -> str:
     if not valid_pipeline_name(name):
         raise ValueError(
-            f"invalid pipeline name {name!r}; use only letters, numbers, dot, underscore and dash"
+            f"invalid pipeline name {name!r}; use letters, numbers, dot, underscore and dash, "
+            "starting and ending with a letter or number"
         )
     return name
 

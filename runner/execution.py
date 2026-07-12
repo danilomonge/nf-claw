@@ -35,11 +35,11 @@ def run(command: list[str], *, cwd: Path, logs_dir: Path,
                               fix="Ensure `nextflow` is installed and on PATH.") from exc
         try:
             code = proc.wait(timeout=timeout_seconds)
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as exc:
             _terminate(proc)
             raise NfclawError(ErrorCode.EXECUTION_FAILED, "Execution timed out.",
                               fix="Increase --timeout or use a smaller dataset.",
-                              details={"timeout_seconds": timeout_seconds})
+                              details={"timeout_seconds": timeout_seconds}) from exc
     if code != 0:
         raise NfclawError(ErrorCode.EXECUTION_FAILED, "Nextflow execution failed.",
                           fix=f"Inspect the log: {err_p}. Common causes and fixes: "

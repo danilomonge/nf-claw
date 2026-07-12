@@ -58,9 +58,10 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     if nxf_ver:
         nxf_overlay["NXF_VER"] = nxf_ver
     # The Nextflow work directory for this run: NXF_WORK (overlay wins over the shell) if set,
-    # else Nextflow's default of <cwd>/work — cwd is the repo root. Used by the space check.
+    # else the repository work directory. Resolve it before Nextflow changes cwd to the outdir,
+    # so a relative user value has one stable meaning in preflight, execution and provenance.
     work_dir = Path(nxf_overlay.get("NXF_WORK") or os.environ.get("NXF_WORK")
-                    or repo_root / "work")
+                    or repo_root / "work").expanduser().resolve()
     param_schema = schema_mod.load_param_schema(st.path)
     input_schema = schema_mod.load_input_schema(st.path)
 

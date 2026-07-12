@@ -123,8 +123,20 @@ def ensure_initialized(name: str, pipelines_dir: Path, repo_root: Path) -> Submo
         with _init_lock(repo_root):
             st = resolve(name, pipelines_dir)               # re-check: another run may have just done it
             if not st.complete:
-                subprocess.run(["git", "submodule", "update", "--init", "--depth", "1", rel],
-                               cwd=str(repo_root), check=True)
+                try:
+                    subprocess.run(
+                        ["git", "submodule", "update", "--init", "--depth", "1", rel],
+                        cwd=str(repo_root), check=True, capture_output=True, text=True,
+                        timeout=_GIT_TIMEOUT,
+                    )
+                except (subprocess.SubprocessError, FileNotFoundError, OSError) as exc:
+                    detail = getattr(exc, "stderr", "") or str(exc)
+                    raise NfclawError(
+                        ErrorCode.SUBMODULE_INCOMPLETE,
+                        f"Could not initialize pipeline '{name}' submodule.",
+                        fix=f"Check network access, then run: git submodule update --init {rel}",
+                        details={"git_error": detail.strip()},
+                    ) from exc
                 st = resolve(name, pipelines_dir)
     if not st.complete:
         raise NfclawError(

@@ -7,6 +7,8 @@ Versions track upstream **release tags** (`latest-release` in `sources.tsv`).
 already validated it — **auto-merges** that PR, then dispatches `deploy-pages` to rebuild the site.
 The gate runs **in the job** (a PR opened with `GITHUB_TOKEN` would not trigger the
 `drift-check`/`tests` workflows on its own), so a broken upstream release cannot land stale context.
+Every source is attempted, but any tag lookup, fetch or checkout failure makes the maintenance job
+fail after the scan instead of silently treating an unreachable upstream as “no new release.”
 Manual: `make update`.
 
 New pipelines are onboarded separately by `discover-pipelines.yml` (weekly): it finds DSL2 nf-core
@@ -16,5 +18,6 @@ drift gate and the `-preview` acceptance check all pass — auto-merges the batc
 
 Both update paths treat pipeline names as path components and git submodule identifiers, so the
 librarian validates every name from `sources.tsv` and from remote discovery metadata before using it.
-Only letters, numbers, dots, underscores and dashes are accepted; malformed names are skipped during
-discovery or rejected while reading the source list.
+Only letters, numbers, dots, underscores and dashes are accepted, and every name must start and end
+with a letter or number. Malformed names are skipped during discovery or rejected while reading the
+source list.

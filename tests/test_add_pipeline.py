@@ -17,6 +17,20 @@ def test_read_sources_rejects_path_like_pipeline_name(tmp_path):
         add_pipeline.read_sources(tsv)
 
 
+@pytest.mark.parametrize("name", [".", "..", ".hidden", "hidden.", "-bad", "bad-"])
+def test_pipeline_name_rejects_special_or_hidden_path_components(name):
+    # These contain no slash, but are still unsafe path components. In particular, `..` would
+    # make the discovery rollback remove the repository root instead of one pipeline directory.
+    assert not add_pipeline.valid_pipeline_name(name)
+    with pytest.raises(ValueError, match="invalid pipeline name"):
+        add_pipeline.validate_pipeline_name(name)
+
+
+@pytest.mark.parametrize("name", ["a", "rnaseq", "pipe_2", "pipe.v2", "Pipe-2"])
+def test_pipeline_name_accepts_safe_slugs(name):
+    assert add_pipeline.validate_pipeline_name(name) == name
+
+
 def test_gitmodules_text():
     from librarian.add_pipeline import Source
     text = add_pipeline.gitmodules_text([Source("sarek", "https://x/sarek.git", "latest-release")])

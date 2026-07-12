@@ -212,6 +212,22 @@ def test_run_rejects_malformed_nxf_env(tmp_path, monkeypatch, capsys):
     assert "KEY=VALUE" in capsys.readouterr().err
 
 
+def test_nxf_env_rejects_invalid_environment_name():
+    import pytest
+    from runner.errors import NfclawError
+    with pytest.raises(NfclawError, match="invalid environment variable name"):
+        cli._parse_nxf_env(["NXF_BAD-NAME=value"])
+
+
+def test_timeout_and_engine_version_are_validated(tmp_path, monkeypatch):
+    import pytest
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    for args in (["--timeout", "0"], ["--timeout", "-1"], ["--nxf-ver", "latest"]):
+        with pytest.raises(SystemExit) as exc:
+            cli.main(["run", "x", "--outdir", str(tmp_path / "out"), *args])
+        assert exc.value.code == 2
+
+
 def test_run_surfaces_engine_warning_on_stderr(tmp_path, monkeypatch, capsys):
     from runner import orchestration
     monkeypatch.setattr(orchestration, "run_pipeline",

@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
 from runner import discovery, orchestration, versions
 from runner.errors import ErrorCode, NfclawError
+
+
+_ENV_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_NXF_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:-edge)?$")
 
 
 def _repo_root() -> Path:
@@ -39,8 +44,26 @@ def _parse_nxf_env(items: list[str]) -> dict[str, str]:
             raise NfclawError(ErrorCode.PARAMS_INVALID,
                               f"--nxf-env only accepts NXF_* variables (got {key!r}); "
                               "other environment is inherited from the shell.")
+        if not _ENV_NAME_RE.fullmatch(key):
+            raise NfclawError(ErrorCode.PARAMS_INVALID,
+                              f"--nxf-env has an invalid environment variable name: {key!r}.")
         env[key] = value
     return env
+
+
+def _positive_int(raw: str) -> int:
+    value = int(raw)
+    if value <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return value
+
+
+def _nxf_version(raw: str) -> str:
+    if not _NXF_VERSION_RE.fullmatch(raw):
+        raise argparse.ArgumentTypeError(
+            "must be a full Nextflow version such as 25.10.2 or 25.10.2-edge"
+        )
+    return raw
 
 
 def _collect_overrides(extras: list[str]) -> dict:
@@ -93,7 +116,7 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("-profile", "--profile", dest="profile", default="docker")
     p_run.add_argument("--params-file", dest="params_file")
     p_run.add_argument("--pipeline-version", dest="pipeline_version")
-    p_run.add_argument("--nxf-ver", dest="nxf_ver",
+    p_run.add_argument("--nxf-ver", dest="nxf_ver", type=_nxf_version,
                        help="pin the Nextflow engine version for this run (sets NXF_VER)")
     p_run.add_argument("--nxf-env", dest="nxf_env", action="append", default=[],
                        metavar="KEY=VALUE",
@@ -110,7 +133,7 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("--demo", action="store_true")
     p_run.add_argument("--resume", action="store_true")
     p_run.add_argument("--no-provenance", action="store_true")
-    p_run.add_argument("--timeout", type=int, default=60 * 60 * 12)
+    p_run.add_argument("--timeout", type=_positive_int, default=60 * 60 * 12)
 
     args, extras = parser.parse_known_args(argv)
     root = _repo_root()

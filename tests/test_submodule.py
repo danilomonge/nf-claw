@@ -114,3 +114,25 @@ def test_incomplete_when_files_missing(tmp_path):
     assert st.initialized is True
     assert st.complete is False
     assert "nextflow.config" in st.missing_files
+
+
+def test_init_failure_is_reported_as_structured_nfclaw_error(tmp_path, monkeypatch):
+    import subprocess
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+
+    up = tmp_path / "pipelines" / "mini" / "upstream"
+    up.mkdir(parents=True)
+
+    real_run = submodule.subprocess.run
+
+    def fail_init(args, **kwargs):
+        if args[:3] == ["git", "submodule", "update"]:
+            raise subprocess.CalledProcessError(1, args, stderr="network unavailable")
+        return real_run(args, **kwargs)
+
+    monkeypatch.setattr(submodule.subprocess, "run", fail_init)
+    with pytest.raises(NfclawError) as exc:
+        submodule.ensure_initialized("mini", tmp_path / "pipelines", tmp_path)
+    assert exc.value.code == ErrorCode.SUBMODULE_INCOMPLETE
+    assert "network unavailable" in str(exc.value)

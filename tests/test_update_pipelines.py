@@ -40,7 +40,7 @@ def test_one_failure_does_not_block_others(monkeypatch, tmp_path, capsys):
 
     monkeypatch.setattr(up, "bump", fake_bump)
     rc = up.main(["--sources", str(tsv), "--repo-root", str(tmp_path)])
-    assert rc == 0
+    assert rc == 1  # process every source, but fail the automation so partial errors are visible
     assert calls == ["a", "b"]  # b still processed after a raised
     out = capsys.readouterr().out
     assert "a: ERROR" in out and "b: bumped to 1.2.3" in out

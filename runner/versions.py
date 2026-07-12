@@ -159,11 +159,25 @@ def materialize(name: str, tag: str, *, pipelines_dir: Path, repo_root: Path) ->
     Reuses the submodule's object store; fetches the tag only if it isn't present yet."""
     upstream = pipelines_dir / name / "upstream"
     dest = cache_dir(name, tag, pipelines_dir) / "upstream"
-    if not (dest / "main.nf").exists():                       # not materialized yet
-        if not _has_tag(upstream, tag):
-            _fetch_tag(upstream, tag)
-        _add_worktree(upstream, dest, tag)
-    st = submod.resolve_at(name, dest)
+    # Reuse the repository-wide git mutation lock: parallel agents may ask for the same release,
+    # and git worktree registration plus cache replacement are not safe to race. Rebuild any
+    # partial cache rather than treating the presence of main.nf alone as proof it is complete.
+    try:
+        with submod._init_lock(repo_root):
+            st = submod.resolve_at(name, dest)
+            if not st.complete:
+                if not _has_tag(upstream, tag):
+                    _fetch_tag(upstream, tag)
+                _add_worktree(upstream, dest, tag)
+                st = submod.resolve_at(name, dest)
+    except (subprocess.SubprocessError, FileNotFoundError, OSError) as exc:
+        detail = getattr(exc, "stderr", "") or str(exc)
+        raise NfclawError(
+            ErrorCode.SUBMODULE_INCOMPLETE,
+            f"Could not materialize nf-core/{name}@{tag}.",
+            fix="Check git/network access and retry; the version cache is safe to recreate.",
+            details={"git_error": detail.strip()},
+        ) from exc
     if not st.complete:
         raise NfclawError(
             ErrorCode.SUBMODULE_INCOMPLETE,
