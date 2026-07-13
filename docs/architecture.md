@@ -26,6 +26,11 @@ Three zones:
   writing a second, differently-named set of reports beside them.
   A resource ceiling (`--limit-cpus`/`--limit-memory`/`--limit-time`) is likewise materialised into
   the bundle as `resource_limits.config` and passed with `-c`, so it too replays.
+  `commands.sh` reproduces the run into a **fresh** output directory (default `<outdir>.replay`,
+  overridable by argument) and refuses a target that already holds files: an nf-core pipeline
+  publishes into `--outdir` and cannot re-publish over a previous run's files, so replaying in place
+  fails on contact. `--check` is side-effect-free for the same reason — it stages its params file in
+  a temp directory, never in `--outdir`, so a dry run cannot spoil the directory the real run needs.
 - **`librarian/`** — maintenance (run via `make`): generates `skill.md`/`reference.md`/`catalog.*`
   from each submodule, and bumps submodules to the latest release.
 

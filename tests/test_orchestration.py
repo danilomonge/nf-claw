@@ -1,3 +1,5 @@
+import pathlib
+import re
 import shutil
 from pathlib import Path
 
@@ -15,6 +17,17 @@ def _make_pipeline(tmp_path, name):
     return tmp_path
 
 
+def _staged_params(res):
+    """The params file the run's command actually names.
+
+    `--check` stages it outside --outdir (a dry run must leave the output directory alone), so
+    tests read it from the command rather than assuming a location.
+    """
+    import json
+    return json.loads(pathlib.Path(
+        re.search(r"-params-file (\S+)", res.command).group(1)).read_text())
+
+
 def test_check_only_returns_command(tmp_path, monkeypatch):
     root = _make_pipeline(tmp_path, "mini")
     monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
@@ -23,7 +36,13 @@ def test_check_only_returns_command(tmp_path, monkeypatch):
         profile="docker", params_file=None, cli_overrides={}, resume=False,
         demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
     assert res.checked_only and "nextflow" in res.command
-    assert (tmp_path / "out" / "provenance" / "params.json").exists()
+    # The params file the printed command names must exist, so the command runs as printed...
+    params = re.search(r"-params-file (\S+)", res.command).group(1)
+    assert pathlib.Path(params).is_file()
+    # ...but it must NOT be staged inside --outdir: `--check` launches nothing, so it has to leave
+    # the output directory exactly as it found it. Creating it, or dropping a provenance/ directory
+    # in it, made the next real run fail the "--outdir is not empty" guard over an empty result set.
+    assert not (tmp_path / "out").exists()
 
 
 def test_full_run_invokes_execution(tmp_path, monkeypatch):
@@ -237,12 +256,12 @@ def test_url_input_skips_local_validation_and_is_forwarded(tmp_path, monkeypatch
     monkeypatch.setattr(orchestration.samplesheet, "validate",
                         lambda *a, **k: called.setdefault("validated", True) or [])
     url = "https://raw.githubusercontent.com/nf-core/x/samplesheet.csv"
-    orchestration.run_pipeline(
+    res = orchestration.run_pipeline(
         "mini", repo_root=root, input_path=url, outdir=tmp_path / "out",
         profile="docker", params_file=None, cli_overrides={}, resume=False,
         demo=False, check_only=True, write_provenance=False, timeout_seconds=10)
     assert "validated" not in called                          # local pre-check skipped for a URL
-    params = json.loads((tmp_path / "out" / "provenance" / "params.json").read_text())
+    params = _staged_params(res)
     assert params["input"] == url                             # forwarded unchanged, not mangled
 
 
@@ -271,11 +290,11 @@ def test_existing_params_file_is_used(tmp_path, monkeypatch):
     monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
     pf = tmp_path / "p.json"
     pf.write_text('{"aligner": "hisat2"}')
-    orchestration.run_pipeline(
+    res = orchestration.run_pipeline(
         "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
         profile="docker", params_file=pf, cli_overrides={}, resume=False,
         demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
-    params = json.loads((tmp_path / "out" / "provenance" / "params.json").read_text())
+    params = _staged_params(res)
     assert params["aligner"] == "hisat2"
 
 
@@ -391,11 +410,11 @@ def test_boolean_cli_string_is_coerced_in_params_file(tmp_path, monkeypatch):
     import json
     root = _make_pipeline_with_bool(tmp_path)
     monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
-    orchestration.run_pipeline(
+    res = orchestration.run_pipeline(
         "boolp", repo_root=root, input_path=None, outdir=tmp_path / "out",
         profile="docker", params_file=None, cli_overrides={"skip_busco": "true"},
         resume=False, demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
-    params = json.loads((tmp_path / "out" / "provenance" / "params.json").read_text())
+    params = _staged_params(res)
     assert params["skip_busco"] is True                       # CLI "true" → real boolean for nf-schema
 
 
@@ -469,9 +488,11 @@ def test_resource_limits_become_a_config_passed_to_nextflow(tmp_path, monkeypatc
         profile="docker", params_file=None, cli_overrides={}, resume=False,
         demo=True, check_only=True, write_provenance=False, timeout_seconds=10,
         limits=resources.parse(4, "15.GB", "1.h"))
-    cfg = tmp_path / "out" / "provenance" / "resource_limits.config"
-    assert cfg.exists() and "resourceLimits" in cfg.read_text()
-    assert f"-c {cfg}" in res.command                  # and it is actually applied to the run
+    cfg = pathlib.Path(re.search(r"-c (\S+)", res.command).group(1))
+    assert cfg.name == "resource_limits.config"
+    assert cfg.is_file() and "resourceLimits" in cfg.read_text()
+    assert cfg.parent == pathlib.Path(
+        re.search(r"-params-file (\S+)", res.command).group(1)).parent   # staged with the params
 
 
 def test_no_config_is_generated_when_no_limit_is_given(tmp_path, monkeypatch):
@@ -481,8 +502,8 @@ def test_no_config_is_generated_when_no_limit_is_given(tmp_path, monkeypatch):
         "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
         profile="docker", params_file=None, cli_overrides={}, resume=False,
         demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
-    assert not (tmp_path / "out" / "provenance" / "resource_limits.config").exists()
     assert "-c " not in res.command
+    assert not (tmp_path / "out").exists()             # --check stages nothing in the outdir
 
 
 def test_an_explicit_config_still_overrides_the_generated_ceiling(tmp_path, monkeypatch):
@@ -498,7 +519,7 @@ def test_an_explicit_config_still_overrides_the_generated_ceiling(tmp_path, monk
         profile="docker", params_file=None, cli_overrides={}, resume=False,
         demo=True, check_only=True, write_provenance=False, timeout_seconds=10,
         configs=[str(mine)], limits=resources.parse(4, None, None))
-    generated = str(tmp_path / "out" / "provenance" / "resource_limits.config")
+    generated = re.search(r"-c (\S*resource_limits\.config)", res.command).group(1)
     assert res.command.index(generated) < res.command.index(str(mine))
 
 
@@ -528,9 +549,41 @@ def test_a_release_without_the_report_suffix_param_is_untouched(tmp_path, monkey
 
     root = _make_pipeline(tmp_path, "mini")
     monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
-    orchestration.run_pipeline(
+    res = orchestration.run_pipeline(
         "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
         profile="docker", params_file=None, cli_overrides={}, resume=False,
         demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
-    params = json.loads((tmp_path / "out" / "provenance" / "params.json").read_text())
-    assert "trace_report_suffix" not in params
+    assert "trace_report_suffix" not in _staged_params(res)
+
+
+def test_check_leaves_an_existing_outdir_untouched(tmp_path, monkeypatch):
+    # The reported failure in full: --check against a results directory must not add anything to it.
+    root = _make_pipeline(tmp_path, "mini")
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "results.txt").write_text("a previous run")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=out,
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
+    assert [p.name for p in out.iterdir()] == ["results.txt"]      # nothing added
+
+
+def test_a_real_run_after_a_check_is_not_blocked_as_non_empty(tmp_path, monkeypatch):
+    # The end-to-end regression, asserted against the REAL preflight guard: after a --check, the
+    # output directory must still look untouched to it, so the next real run is not refused.
+    from runner import preflight
+
+    root = _make_pipeline(tmp_path, "mini")
+    out = tmp_path / "out"                       # outside the repo root, as a real --outdir is
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=out, profile="docker",
+        params_file=None, cli_overrides={}, resume=False, demo=True, check_only=True,
+        write_provenance=False, timeout_seconds=10)
+    st = submodule.resolve("mini", root / "pipelines")
+    issues = preflight.check_environment(
+        profile="docker", output_dir=out, submodule=st, repo_root=tmp_path / "repo",
+        resume=False, check_only=False, allow_spaces=True)
+    assert not any("not empty" in i for i in issues), issues

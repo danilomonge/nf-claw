@@ -198,6 +198,42 @@ with a per-repo file lock (and re-checks under it), so concurrent first-time run
 submodule exactly once. No action needed; for many pipelines you can also pre-init up front with
 `git submodule update --init`.
 
+### Replaying a run: `provenance/commands.sh` reproduces into a *fresh* directory
+**Status: fixed.** The replay script used to re-run into the original `--outdir` and failed on
+contact: an nf-core pipeline publishes into `--outdir`, and it cannot re-publish over a previous
+run's files. Nextflow refuses to overwrite the reports it is configured to write
+(`pipeline_info/execution_trace_*.txt`, and the report/timeline/DAG beside it), and a module that
+emits a fixed-name artefact — sarek's BCO `pipeline_info/manifest_*.bco.json` — collides outright.
+
+`commands.sh` now reproduces the run into a **new** directory, defaulting to `<outdir>.replay`:
+```bash
+./results/provenance/commands.sh                 # → results.replay/
+./results/provenance/commands.sh /tmp/check-it   # or name the target yourself
+```
+It refuses a target that already holds files (rather than half-overwriting one), launches Nextflow
+from the target so the engine's `.nextflow/` state never touches the original run, and passes
+`--outdir "$target"` — which overrides the value in the recorded params file, so one argument
+redirects the whole run. Everything else is byte-for-byte the recorded command, so the reproduction
+can be compared against the original bundle's `outputs.sha256`.
+
+A replay re-executes the pipeline: that *is* the reproduction. It is not a `--resume`, and it does
+not read the original run's cache unless the recorded command's work directory still exists.
+
+### `--check` never writes into `--outdir`
+**Status: fixed.** `--check` validates parameters and prints the command without launching, so it
+must leave the output directory exactly as it found it. It used to create `--outdir` and stage
+`provenance/params.json` in it, which then made the *next* real run fail preflight with
+`--outdir is not empty` — over a directory that held no results at all. The files `--check` stages
+now go to a temp directory instead (the printed command still runs as printed, since it names them
+by absolute path).
+
+### `WARN: Unrecognised config option: validation.defaultIgnoreParams` / `validation.monochromeLogs`
+**Not an nf-claw issue — harmless.** These options are set by the *pipeline's own* `nextflow.config`
+(e.g. `nf-core/scrnaseq` 4.2.0, lines 361–364) and belong to the `validation` scope contributed by
+the `nf-schema` plugin the pipeline declares. nf-claw neither sets nor forwards them, and it wraps
+each release **unmodified**, so there is nothing to change here: the warning comes from Nextflow
+parsing the upstream config, and the run proceeds normally. Report it upstream if it bothers you.
+
 ## Upstream pipeline bugs (documented, not patched)
 
 These are defects in a specific pinned release. The robust fix lives upstream in nf-core; below

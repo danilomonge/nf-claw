@@ -30,8 +30,7 @@ def test_defensive_without_pipeline_info(tmp_path):
     assert (prov / "run_manifest.json").exists()
 
 
-def test_excludes_nextflow_internals_and_cds_to_outdir(tmp_path):
-    import shlex
+def test_excludes_nextflow_internals(tmp_path):
     out = tmp_path / "out"
     out.mkdir()
     (out / "result.txt").write_text("data")
@@ -42,8 +41,53 @@ def test_excludes_nextflow_internals_and_cds_to_outdir(tmp_path):
                             submodule=_st(tmp_path / "up"), input_paths=[])
     sha = (prov / "outputs.sha256").read_text()
     assert "result.txt" in sha and ".nextflow" not in sha          # internals not checksummed
-    commands = (prov / "commands.sh").read_text()
-    assert f"cd {shlex.quote(str(out))}" in commands               # replay lands state in the outdir
+
+
+def test_replay_reproduces_into_a_fresh_outdir_not_the_original(tmp_path):
+    # An nf-core pipeline publishes into --outdir and cannot re-publish over a previous run's files:
+    # Nextflow will not overwrite pipeline_info/execution_trace_*.txt, and sarek's BCO manifest
+    # collides outright. Replaying in place therefore failed on contact. --outdir on the command
+    # line overrides the params file, so the whole run is redirected by one argument.
+    out = tmp_path / "out"
+    out.mkdir()
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="nextflow run x",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    script = (prov / "commands.sh").read_text()
+    assert f"default_target='{out}.replay'" in script or f"default_target={out}.replay" in script
+    assert 'cd -- "$target"' in script                  # engine state lands beside the new results
+    assert script.rstrip().endswith('--outdir "$target"')
+    assert f"cd {out}\n" not in script                  # never the original directory
+
+
+def test_replay_refuses_a_target_that_already_holds_results(tmp_path):
+    # Executed, not just string-matched: the guard is the whole point of the script.
+    import subprocess
+
+    out = tmp_path / "out"
+    out.mkdir()
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="true",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    occupied = tmp_path / "occupied"
+    occupied.mkdir()
+    (occupied / "results.txt").write_text("a previous run")
+    r = subprocess.run([str(prov / "commands.sh"), str(occupied)],
+                       capture_output=True, text=True)
+    assert r.returncode == 1 and "not empty" in r.stderr
+    assert (occupied / "results.txt").read_text() == "a previous run"      # left untouched
+
+
+def test_replay_runs_in_the_target_directory(tmp_path):
+    # The replay must launch from the target, so `.nextflow/` state never lands in the original run.
+    import subprocess
+
+    out = tmp_path / "out"
+    out.mkdir()
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="pwd >pwd.txt; echo",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    target = tmp_path / "fresh"
+    r = subprocess.run([str(prov / "commands.sh"), str(target)], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    assert (target / "pwd.txt").read_text().strip() == str(target)
 
 
 def test_records_nextflow_env_and_probes_version_with_it(tmp_path, monkeypatch):
@@ -80,8 +124,9 @@ def test_commands_sh_reexports_nxf_env_for_faithful_replay(tmp_path):
     # Deterministic order (sorted), exported before the command, then the command itself.
     assert "export NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true" in lines
     assert "export NXF_VER=25.10.2" in lines
+    run_line = next(i for i, line in enumerate(lines) if line.startswith("nextflow run x"))
     assert lines.index("export NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true") \
-        < lines.index("export NXF_VER=25.10.2") < lines.index("nextflow run x")
+        < lines.index("export NXF_VER=25.10.2") < run_line
 
 
 def test_commands_sh_quotes_env_values_with_spaces(tmp_path):
