@@ -95,13 +95,55 @@ def test_every_workflow_installs_nextflow_through_the_pinned_action():
             f"{wf.name} downloads the launcher itself; use ./.github/actions/setup-nextflow")
 
 
+def _add_paths(workflow: str) -> set[str]:
+    """The `add-paths:` allowlist of a bot workflow."""
+    text = (REPO / ".github" / "workflows" / workflow).read_text(encoding="utf-8")
+    assert "peter-evans/create-pull-request@" in text
+    assert "add-paths:" in text, f"{workflow} lets the bot commit any dirty path"
+    block = text.split("add-paths: |", 1)[1]
+    paths = set()
+    for line in block.splitlines()[1:]:
+        if not line.strip() or not line.startswith((" ", "\t")) or line.strip().endswith(":"):
+            break
+        paths.add(line.strip())
+    return paths
+
+
 def test_pr_bots_only_stage_what_they_generate():
     # `create-pull-request` stages every dirty path by default, so a stray build artifact left in
     # the working tree gets committed and auto-merged. Both bots must scope what they may stage.
     for name in ("auto-update.yml", "discover-pipelines.yml"):
-        text = (REPO / ".github" / "workflows" / name).read_text(encoding="utf-8")
-        assert "peter-evans/create-pull-request@" in text
-        assert "add-paths:" in text, f"{name} lets the bot commit any dirty path"
+        assert _add_paths(name), f"{name} lets the bot commit any dirty path"
+
+
+def test_pr_bots_stage_every_manifest_they_write():
+    # The other edge of the same knife: an allowlist that is *too narrow* silently drops part of the
+    # bot's own work from its PR, and the in-job drift gate cannot catch it — that gate runs against
+    # the complete working tree, before create-pull-request decides what to commit. Discovery
+    # registers each new pipeline in sources.tsv (`_append_source`) as well as in .gitmodules and
+    # pipelines/; omitting sources.tsv once merged 11 pipelines with no source rows.
+    discover = _add_paths("discover-pipelines.yml")
+    for manifest in ("pipelines", "sources.tsv", ".gitmodules", "catalog.json", "catalog.md"):
+        assert manifest in discover, f"discovery writes {manifest} but never stages it"
+    update = _add_paths("auto-update.yml")
+    for manifest in ("pipelines", "catalog.json", "catalog.md"):
+        assert manifest in update, f"the update bot writes {manifest} but never stages it"
+
+
+def test_every_pipeline_is_registered_in_sources_tsv():
+    # The invariant the narrow allowlist broke, asserted on the artefact itself so it holds no
+    # matter which mechanism breaks it next: pipelines/, .gitmodules and sources.tsv describe one
+    # and the same set of pipelines. (check_drift enforces this too, but it only runs in the
+    # workflows a bot merge does not trigger — this runs on every PR.)
+    import re
+
+    sources = (REPO / "sources.tsv").read_text(encoding="utf-8")
+    registered = {line.split("\t")[0] for line in sources.splitlines()
+                  if line.strip() and not line.startswith("#")}
+    submodules = set(re.findall(r"path = pipelines/([^/\n]+)/upstream",
+                                (REPO / ".gitmodules").read_text(encoding="utf-8")))
+    assert submodules - registered == set(), "pipelines missing a sources.tsv row"
+    assert registered - submodules == set(), "sources.tsv rows with no pipeline"
 
 
 # --- F10 (revised): skill.md is deterministic — ONLY schema-required params + a group map.
