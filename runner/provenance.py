@@ -114,13 +114,21 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         shutil.copy2(sv, prov / "software_versions.yml")
 
     # A faithful, self-contained replay:
-    #  - `cd` to the outdir first: nfclaw launches Nextflow from there, so re-running this lands the
-    #    engine state (.nextflow/) in the same place;
+    #  - reproduce into a FRESH output directory, never the original. An nf-core pipeline publishes
+    #    into `--outdir`, and re-publishing over a previous run's files does not work: Nextflow
+    #    refuses to overwrite the reports it is configured to write (`pipeline_info/
+    #    execution_trace_*.txt` and friends), and modules that emit a fixed-name artefact — sarek's
+    #    BCO `pipeline_info/manifest_*.bco.json` — collide outright. Replaying in place therefore
+    #    failed on contact, which is also what made the bundle unusable as a *check*: a reproduction
+    #    you can compare against `outputs.sha256` has to land somewhere clean. `--outdir` on the
+    #    command line overrides the value in the params file, so one argument redirects the whole run.
+    #  - `cd` into that directory first: nfclaw launches Nextflow from the outdir, so the engine
+    #    state (`.nextflow/`) lands beside the results it belongs to and never touches the original.
     #  - re-export every NXF_* variable the run actually saw: the overlay nfclaw applied (--nxf-ver,
     #    --nxf-env) *and* whatever the shell already exported (NXF_OFFLINE, NXF_VER, …). Nextflow
     #    reads all of them, so a run that only succeeds with a pinned engine, an IPv6 flag or offline
     #    mode would not reproduce unless the script carries them — the manifest alone is not enough.
-    # `--config` files are already in `command_str` (as `-c <path>`), so they replay as-is.
+    # `--config` files and the params file are absolute in `command_str`, so they replay as-is.
     env_exports = "".join(
         f"export {key}={shlex.quote(value)}\n"
         for key, value in sorted(nxf_env.items())
@@ -130,10 +138,27 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         names = " ".join(redacted_env)
         env_exports += ("# Sensitive values were omitted from provenance. Export these before "
                         f"replay: {names}\n")
+    default_target = shlex.quote(f"{outdir}.replay")
     commands = prov / "commands.sh"
     commands.write_text(
-        "#!/usr/bin/env bash\nset -euo pipefail\n"
-        f"cd {shlex.quote(str(outdir))}\n"
-        f"{env_exports}{command_str}\n", encoding="utf-8")
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        "# Replay of this run. Reproduces it into a FRESH output directory — an nf-core pipeline\n"
+        "# publishes into --outdir and cannot re-publish over a previous run's files, so replaying\n"
+        "# into the original one fails immediately. Pass a directory to choose the target:\n"
+        "#     ./commands.sh /path/to/fresh-dir\n"
+        # The default is assigned on its own line, not inlined into ${1:-...}: inside the parameter
+        # expansion the shell would treat shlex's quotes as literal characters of the path.
+        f"default_target={default_target}\n"
+        "target=\"${1:-$default_target}\"\n"
+        "mkdir -p -- \"$target\"\n"
+        "if [ -n \"$(ls -A -- \"$target\")\" ]; then\n"
+        "  echo \"nfclaw replay: target directory is not empty: $target\" >&2\n"
+        "  echo \"Pass an empty or non-existent directory: ./commands.sh /path/to/fresh-dir\" >&2\n"
+        "  exit 1\n"
+        "fi\n"
+        "cd -- \"$target\"\n"
+        f"{env_exports}{command_str} --outdir \"$target\"\n",
+        encoding="utf-8")
     commands.chmod(0o755)                             # so the documented replay works as `./commands.sh`
     return prov

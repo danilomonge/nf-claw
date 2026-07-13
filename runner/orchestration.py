@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -111,9 +112,20 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # and enforces this itself at launch; we just surface it earlier with a clear message.
     warnings = engine_version.check(st.path, nxf_ver=nxf_overlay.get("NXF_VER"))
 
-    outdir.mkdir(parents=True, exist_ok=True)
+    # Where the files nfclaw generates for the run (params file, resource-limits config) are staged.
+    # A real run stages them in its own provenance bundle. `--check` must not: it validates and
+    # prints the command *without launching*, so it has to leave `--outdir` exactly as it found it —
+    # creating it, or dropping a provenance/ directory in it, makes the next real run fail the
+    # "--outdir is not empty" guard against a directory that holds no results at all. The staged
+    # files are still written (to a temp directory that outlives the process), so the command
+    # `--check` prints stays runnable as printed.
+    if check_only:
+        staging = Path(tempfile.mkdtemp(prefix="nfclaw-check-"))
+    else:
+        outdir.mkdir(parents=True, exist_ok=True)
+        staging = outdir / "provenance"
     resolved = parameters.resolve_path_params(merged, param_schema)
-    params_file_out = parameters.write_params_file(resolved, outdir / "provenance" / "params.json")
+    params_file_out = parameters.write_params_file(resolved, staging / "params.json")
 
     # A resource ceiling (--limit-cpus/--limit-memory/--limit-time) becomes a generated Nextflow
     # config passed with `-c`, exactly as nf-core's configuration docs prescribe. It goes *first*
@@ -121,7 +133,7 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # so `commands.sh` — which carries the same absolute `-c` path — replays the same ceiling.
     if limits is not None and not limits.is_empty():
         extra_configs.insert(0, resources.write_config(
-            limits, outdir / "provenance" / "resource_limits.config"))
+            limits, staging / "resource_limits.config"))
 
     # Pass the work dir explicitly so it stays off the outdir (shared, content-hashed — fine),
     # and any extra `-c` configs. nfclaw launches Nextflow from the outdir (below) so each run

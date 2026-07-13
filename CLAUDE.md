@@ -17,8 +17,18 @@ anywhere this doc shows `nfclaw <cmd>`.
 
 `nfclaw run` executes the pipeline for real — there is no preview/dry-run default. To see the exact
 `nextflow` command that *would* run without launching it, add `--check` (it validates inputs and
-parameters, prints the command, and exits). Add `--demo` to run the pinned release's bundled test
-profile end to end.
+parameters, prints the command, and exits; it writes nothing into `--outdir`, so you can still use
+that directory for the real run). Add `--demo` to run the pinned release's bundled test profile end
+to end.
+
+## Replaying a run
+`<outdir>/provenance/commands.sh` re-runs the recorded command. It reproduces the run into a **fresh**
+directory (default `<outdir>.replay`, or pass one: `./commands.sh /path/to/fresh-dir`) and refuses a
+target that already holds files. That is deliberate: an nf-core pipeline publishes into `--outdir`
+and cannot re-publish over a previous run's files, so replaying in place fails immediately on
+`pipeline_info/execution_trace_*.txt` (and on sarek's `manifest_*.bco.json`). A replay re-executes
+the pipeline — it is a reproduction, not a `--resume` — and the result can be compared against the
+original bundle's `outputs.sha256`.
 
 Trust `skill.md` / `reference.md` over your own memory — they are generated from the pinned commit.
 To set any parameter beyond the essentials, look it up in `pipelines/<name>/reference.md` (the complete
