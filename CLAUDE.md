@@ -85,6 +85,17 @@ git · python 3.11+ (install nfclaw with `pip install -e .`) · nextflow (Java 1
 singularity. **Use a space-free path on macOS *and* Linux** — many bioinformatics tools and
 Nextflow's work directory mishandle spaces in paths; on macOS also avoid iCloud paths.
 
+## Warnings are not failures
+A run (and its replay, which executes the identical command) can print warnings that are **not**
+faults and are **not** nf-claw's: Nextflow reporting the `validation.*` config scope as unrecognised
+(its linter does not see plugin-contributed scopes — upstream nf-schema issue), a pinned release
+setting a parameter its own plugin removed (scrnaseq's `validationSchemaIgnoreParams` — `nfclaw run`
+prints an advisory explaining it before launching), or a `test` profile that deliberately sets
+conflicting references (rnaseq's `--gtf` with `--gff`). They are catalogued with their real cause in
+[`docs/known-issues.md`](docs/known-issues.md) under "Warnings a run prints that are not faults".
+Check there before reporting one: nf-claw wraps releases **unmodified**, so an upstream warning is
+reproduced faithfully by design, not introduced.
+
 ## Run-time errors
 Spaces in a path break many tools, so `nfclaw run` checks the repo path, the Nextflow work
 directory and `--outdir` **before** launching and **fails fast** naming the offending path (pass
