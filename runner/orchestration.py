@@ -6,8 +6,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from runner import (discovery, engine_version, execution, nextflow_command,
-                    outputs, parameters, preflight, provenance, resources,
-                    samplesheet, versions)
+                    outputs, parameters, plugin_compat, preflight, provenance,
+                    resources, samplesheet, versions)
 from runner import schema as schema_mod
 from runner.errors import ErrorCode, NfclawError
 
@@ -111,6 +111,9 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # engine to the pipeline's declared requirement. Non-blocking — Nextflow is the authority
     # and enforces this itself at launch; we just surface it earlier with a clear message.
     warnings = engine_version.check(st.path, nxf_ver=nxf_overlay.get("NXF_VER"))
+    # Same contract: advisory, never blocking. Explains a warning the pinned release will emit for a
+    # reason that is invisible in its log, so it is not mistaken for a fault in the run or in nfclaw.
+    warnings += plugin_compat.check(st.path)
 
     # Where the files nfclaw generates for the run (params file, resource-limits config) are staged.
     # A real run stages them in its own provenance bundle. `--check` must not: it validates and

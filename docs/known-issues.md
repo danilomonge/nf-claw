@@ -227,12 +227,54 @@ must leave the output directory exactly as it found it. It used to create `--out
 now go to a temp directory instead (the printed command still runs as printed, since it names them
 by absolute path).
 
-### `WARN: Unrecognised config option: validation.defaultIgnoreParams` / `validation.monochromeLogs`
-**Not an nf-claw issue — harmless.** These options are set by the *pipeline's own* `nextflow.config`
-(e.g. `nf-core/scrnaseq` 4.2.0, lines 361–364) and belong to the `validation` scope contributed by
-the `nf-schema` plugin the pipeline declares. nf-claw neither sets nor forwards them, and it wraps
-each release **unmodified**, so there is nothing to change here: the warning comes from Nextflow
-parsing the upstream config, and the run proceeds normally. Report it upstream if it bothers you.
+## Warnings a run prints that are not faults
+
+These appear in a **normal run and in its replay alike** — the replay executes the identical
+recorded command, so any warning the original printed, it prints too. None of them affects results,
+and none originates in nf-claw. They are catalogued here with their real cause so they are not
+re-investigated, and not mistaken for a defect in the run.
+
+### `WARN: Unrecognized config option 'validation.defaultIgnoreParams'` / `'validation.monochromeLogs'`
+**Nextflow's config linter, not the pipeline and not nf-claw. Harmless.** Both options are set by the
+*pipeline's own* `nextflow.config` (e.g. `nf-core/scrnaseq` 4.2.0 lines 361–364) inside the
+`validation` scope, which is contributed by the `nf-schema` plugin that same file declares. Nextflow's
+strict config parser validates config options against the scopes it knows *before* plugins are
+loaded, and nf-schema does not register a `ConfigScope` for `validation` — so the parser reports a
+scope it cannot see as unrecognised. The option is read correctly by the plugin at run time and the
+pipeline behaves normally. Tracked upstream:
+[nextflow-io/nf-schema#117](https://github.com/nextflow-io/nf-schema/issues/117).
+Nothing to do; the warning depends on the engine version, not on how the run was launched.
+
+### `WARN: --validationSchemaIgnoreParams: genomes` is not a valid parameter (scrnaseq `--demo`)
+**A real bug — but in the pinned release, not in nf-claw.** `nf-core/scrnaseq` 4.2.0 declares
+`nf-schema@2.5.1`, yet three of its test profiles (`conf/test.config`, `conf/test_full.config`,
+`conf/test_cellranger_multi.config`) still set `validationSchemaIgnoreParams`, an **nf-validation
+1.x** parameter that nf-schema 2.x removed (its replacement is the `validation.defaultIgnoreParams`
+config option, which the same file already sets — see the
+[migration guide](https://nextflow-io.github.io/nf-schema/latest/migration_guide/)). The pipeline's
+own `nextflow_schema.json` does not declare it either, so nf-schema reports the parameter as invalid.
+The option is **inert**: it does nothing and results are unaffected.
+
+nf-claw wraps releases **unmodified**, so this cannot be fixed here — but `nfclaw run` now *detects*
+it from the pinned tree and prints an advisory before launching, so the warning arrives explained:
+
+```
+warning: conf/test.config sets `validationSchemaIgnoreParams`, an nf-validation 1.x parameter
+removed in nf-schema 2.x ... the option is inert and does not affect results.
+```
+
+The check is deliberately narrow: a release that declares **nf-validation 1.x** is using that
+parameter *correctly* and is never flagged (nine pinned releases do, including `fetchngs` and
+`chipseq`). Only the nf-schema-2.x-with-a-1.x-parameter combination — the actual defect — is
+reported. Today `scrnaseq` is the only pipeline in the library that hits it.
+
+### rnaseq `--demo`: `--gtf` with `--gff`, `--transcript_fasta`, and the `first` operator
+**The test dataset, not a misconfiguration.** rnaseq's own `conf/test.config` deliberately sets
+`gtf`, `gff` *and* `transcript_fasta` together (lines 22–24) so the test profile exercises those code
+paths; the pipeline then warns that it will prefer `--gtf` over `--gff`, and Nextflow warns about the
+`first` operator on a single-item channel. These come from the profile's parameters, which nf-claw
+passes through untouched — the same warnings appear in a plain `nextflow run nf-core/rnaseq -profile
+test`. A real run with your own reference does not set both, and does not warn.
 
 ## Upstream pipeline bugs (documented, not patched)
 
