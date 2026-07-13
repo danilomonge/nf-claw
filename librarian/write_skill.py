@@ -7,7 +7,7 @@ from pathlib import Path
 
 from runner import schema as schema_mod
 from runner import submodule as submod
-from runner.schema import InputSchema, ParamSchema, json_scalar
+from runner.schema import InputSchema, Param, ParamSchema, json_scalar
 from runner.submodule import SubmoduleStatus
 
 
@@ -162,6 +162,36 @@ def _summary(upstream: Path) -> str:
     return ""
 
 
+def _resources_section(name: str, ps: ParamSchema, insch: InputSchema | None,
+                       pipeline_version: str | None = None) -> str:
+    """How to run this pipeline on a machine smaller than its defaults assume.
+
+    nf-core sizes every process from a resource label in `conf/base.config`, and those labels are
+    written for a server: the stock `process_high` asks for tens of gigabytes, and Nextflow retries a
+    failed task with *more*. On a workstation the run dies at the first such task — the failure the
+    `test` profile never shows, because it ships its own small `resourceLimits` ceiling. The fix
+    nf-core documents is that same ceiling, applied to a real run."""
+    ext, _, _ = _samplesheet_format(ps)
+    inp = f" --input samplesheet.{ext}" if insch is not None else ""
+    ver = f" --pipeline-version {pipeline_version}" if pipeline_version else ""
+    return (
+        "A real (non-`--demo`) run requests the resources the pipeline's `conf/base.config` asks "
+        "for, which are sized for a server — a single step can request far more memory than a "
+        "workstation has, and Nextflow retries a failed step with more still. If a run fails with "
+        "`Process requirement exceeds available memory` (or CPUs), cap every request, and every "
+        "retry, at what this machine actually has:\n\n"
+        "```bash\n"
+        f"nfclaw run {name}{inp} --outdir results{ver} -profile docker \\\n"
+        "  --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h\n"
+        "```\n\n"
+        "nfclaw turns those into Nextflow's `process.resourceLimits` and passes them as a `-c` "
+        "config — the mechanism nf-core prescribes for exactly this "
+        "([docs](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)). "
+        "Set them to the machine's real capacity. The generated config is kept in "
+        "`<outdir>/provenance/`, so `commands.sh` replays the run under the same ceiling.\n"
+    )
+
+
 def _outputs_section(name: str, st: SubmoduleStatus) -> str:
     mq = " A MultiQC HTML report aggregates QC across steps." if _produces_multiqc(st.path) else ""
     link = ""
@@ -215,12 +245,27 @@ def _inputs_section(insch: InputSchema | None, ps: ParamSchema | None = None) ->
                 f"{_dependent_rules_section(insch)}"
                 "Fill each value per the table above and `reference.md`. Valid headers — pick the "
                 f"group that matches your data (optional columns from the table may be added):\n{headers}")
-    header_line = delimiter.join(c.name for c in named)
+    # The header lists the columns the schema *requires*, not every column it allows. A pipeline can
+    # declare optional columns that only apply to one aligner/mode (scrnaseq's `sample_type` and
+    # `feature_type` are cellranger-arc/multi only), and emitting them all produces a header whose
+    # extra fields an agent then has to fill or blank out. The required set is the one header that
+    # is always valid; the optional columns are named right below it, so nothing is hidden.
+    required_cols = [c.name for c in named if c.required]
+    optional_cols = [c.name for c in named if not c.required]
+    header_cols = required_cols or [c.name for c in named]     # no required column → show them all
+    header_line = delimiter.join(header_cols)
+    optional_note = ""
+    if required_cols and optional_cols:
+        cols = ", ".join(f"`{c}`" for c in optional_cols)
+        optional_note = ("\nAny of the optional columns above may be appended to the header when "
+                         f"your data needs them: {cols}.\n")
+    required_note = " (the columns the schema requires)" if required_cols else ""
     return (f"{head}{rows}\n"
             f"{input_note}"
             f"{_dependent_rules_section(insch)}"
-            f"{tabular_intro}; fill each value per the table above "
-            f"and `reference.md` (no example value is invented here):\n```{ext}\n{header_line}\n```\n")
+            f"{tabular_intro}{required_note}; fill each value per the table above "
+            f"and `reference.md` (no example value is invented here):\n```{ext}\n{header_line}\n```\n"
+            f"{optional_note}")
 
 
 def _input_pattern_note(ps: ParamSchema | None) -> str:
@@ -234,8 +279,8 @@ def _tabular_intro(label: str, ps: ParamSchema | None) -> str:
     input_param = ps.params.get("input") if ps else None
     pattern = input_param.pattern if input_param else ""
     if pattern and "csv" in pattern and "tsv" in pattern:
-        return "For tabular CSV/TSV input, use this exact header"
-    return f"The samplesheet is a {label} with this exact header"
+        return "For tabular CSV/TSV input, use this header"
+    return f"The samplesheet is a {label} with this header"
 
 
 def _dependent_rules_section(insch: InputSchema) -> str:
@@ -261,15 +306,10 @@ def _dependent_rules_section(insch: InputSchema) -> str:
     return "Additional row validation rules from the schema:\n" + "\n".join(lines) + "\n\n"
 
 
-def _required_params(ps: ParamSchema) -> str:
-    """Only the parameters the schema itself marks required — a fact, not a heuristic guess."""
-    required = [p for p in ps.params.values() if p.required]
-    if not required:
-        return ("_The schema marks no parameter required; the pipeline runs with defaults. "
-                "See reference.md to customise._\n")
+def _param_table(params: list[Param]) -> str:
     out = ("| parameter | type | default | allowed values | constraints | description |\n"
            "|---|---|---|---|---|---|\n")
-    for p in required:
+    for p in params:
         allowed = ", ".join(p.enum) if p.enum else ""
         default = "" if p.default is None else json_scalar(p.default)
         out += (f"| `--{p.name.replace('_', '-')}` | {_type_with_fmt(p.type, p.fmt)} | "
@@ -278,17 +318,58 @@ def _required_params(ps: ParamSchema) -> str:
     return out
 
 
+def _required_params(ps: ParamSchema) -> str:
+    """Only the parameters the schema itself marks required — a fact, not a heuristic guess."""
+    required = [p for p in ps.params.values() if p.required]
+    if not required:
+        return ("_The schema marks no parameter required; the pipeline runs with defaults. "
+                "See reference.md to customise._\n")
+    return _param_table(required)
+
+
+def _is_mandatory_group(title: str) -> bool:
+    """Whether a schema group is the authors' own 'these must be set' group.
+
+    nf-core schemas mark required-ness in two independent places, and they do not always agree: the
+    JSON-schema `required` list (what nf-schema enforces) and the group *title*. A parameter that
+    carries a default is never in `required` — nf-schema has a value, so it cannot fail — yet the
+    authors may still group it under "Mandatory arguments" because the pipeline itself rejects the
+    default. nf-core/scrnaseq's `--protocol` is exactly that: it defaults to `auto`, and the
+    workflow aborts on `auto` for every aligner but cellranger. Reading only `required` therefore
+    understates the interface, so the group title is surfaced too."""
+    t = title.strip().lower()
+    return "mandator" in t or t.startswith("required")
+
+
+def _mandatory_params(ps: ParamSchema) -> str:
+    """Parameters the schema groups as mandatory but does not list in `required` (see above)."""
+    params = [p for p in ps.params.values()
+              if _is_mandatory_group(p.group_title) and not p.required]
+    if not params:
+        return ""
+    return (
+        "The schema groups these under **Mandatory arguments** — the pipeline authors' own label. "
+        "They are absent from the `required` list above only because each carries a default, so "
+        "nf-schema will not stop a run that omits them — but the pipeline itself can reject the "
+        "default at runtime. Set them deliberately.\n\n"
+        + _param_table(sorted(params, key=lambda p: p.name))
+    )
+
+
 def _param_groups(ps: ParamSchema) -> str:
-    """The schema's own parameter groups (names + full counts) — a deterministic map, no curation."""
+    """The schema's own parameter groups (titles + full counts) — a deterministic map, no curation."""
     groups = sorted(ps.groups().items())
     if not groups:
         return "_No additional parameters._\n"
-    lines = [f"- `{g or 'general'}` ({len(params)} parameter{'' if len(params) == 1 else 's'})"
-             for g, params in groups]
-    return ("Beyond the required parameters above, every other parameter is optional. "
+    lines = []
+    for g, params in groups:
+        title = next((p.group_title for p in params if p.group_title), "")
+        label = f"**{title}** (`{g or 'general'}`)" if title else f"`{g or 'general'}`"
+        lines.append(f"- {label} — {len(params)} parameter{'' if len(params) == 1 else 's'}")
+    return ("Every parameter not listed above is optional as far as the schema is concerned. "
             "[reference.md](reference.md) documents them all — type, default, allowed values and "
             "constraints — organised into these groups (counts are full group sizes, so they "
-            "include any required parameters already listed above):\n" + "\n".join(lines) + "\n")
+            "include any parameter already listed above):\n" + "\n".join(lines) + "\n")
 
 
 def _run_invocation(name: str, ps: ParamSchema, insch: InputSchema | None,
@@ -349,6 +430,8 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
                         f"releases with `nfclaw versions {name}` and add `--pipeline-version X.Y.Z` to the "
                         f"command above (`nfclaw show {name} --pipeline-version X.Y.Z` prints that release's "
                         "docs).\n\n")
+    mandatory = _mandatory_params(ps)
+    mandatory_block = f"## Mandatory arguments\n{mandatory}\n" if mandatory else ""
     body = (
         f"# {name}\n\n{summary}\n\n"
         "## Run it\n```bash\n"
@@ -359,7 +442,9 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"{version_note}"
         f"## Inputs\n{_inputs_section(insch, ps)}\n"
         f"## Required parameters\n{_required_params(ps)}\n"
+        f"{mandatory_block}"
         f"## Other parameters\n{_param_groups(ps)}\n"
+        f"## Resources\n{_resources_section(name, ps, insch, pipeline_version)}\n"
         f"## Outputs\n{_outputs_section(name, st)}\n"
         f"{tools_block}"
         "## Demo\n```bash\n"

@@ -5,7 +5,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from runner import (discovery, engine_version, execution, nextflow_command,
-                    outputs, parameters, preflight, provenance, samplesheet, versions)
+                    outputs, parameters, preflight, provenance, resources,
+                    samplesheet, versions)
 from runner import schema as schema_mod
 from runner.errors import ErrorCode, NfclawError
 
@@ -27,7 +28,8 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                  nxf_ver: str | None = None,
                  nxf_env: dict[str, str] | None = None,
                  allow_spaces: bool = False,
-                 configs: tuple[str, ...] | list[str] = ()) -> RunResult:
+                 configs: tuple[str, ...] | list[str] = (),
+                 limits: "resources.ResourceLimits | None" = None) -> RunResult:
     pipelines_dir = repo_root / "pipelines"
     discovery.find(name, pipelines_dir)                       # 404 if unknown
     # Extra Nextflow config files passed straight through as `-c` (e.g. a docker host-network or
@@ -82,6 +84,10 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # Coerce CLI strings to their schema scalar type (e.g. `--skip-busco true` → real boolean)
     # before validating and writing the params-file, so nf-schema sees correctly-typed values.
     merged = parameters.coerce_to_schema(merged, param_schema)
+    # Fix the report/timeline/trace/DAG filenames for this run instead of letting the pipeline
+    # re-evaluate `now()` on every launch, so replaying the bundle reproduces the run's outputs
+    # rather than writing a second, differently-named set of reports beside them.
+    merged = parameters.pin_report_suffix(merged, param_schema)
     param_errors = parameters.validate_params(merged, param_schema)
     if not demo:
         param_errors.extend(parameters.missing_required_params(merged, param_schema))
@@ -108,6 +114,14 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     outdir.mkdir(parents=True, exist_ok=True)
     resolved = parameters.resolve_path_params(merged, param_schema)
     params_file_out = parameters.write_params_file(resolved, outdir / "provenance" / "params.json")
+
+    # A resource ceiling (--limit-cpus/--limit-memory/--limit-time) becomes a generated Nextflow
+    # config passed with `-c`, exactly as nf-core's configuration docs prescribe. It goes *first*
+    # so an explicit `--config` the caller passed still wins, and it lives in the provenance bundle
+    # so `commands.sh` — which carries the same absolute `-c` path — replays the same ceiling.
+    if limits is not None and not limits.is_empty():
+        extra_configs.insert(0, resources.write_config(
+            limits, outdir / "provenance" / "resource_limits.config"))
 
     # Pass the work dir explicitly so it stays off the outdir (shared, content-hashed — fine),
     # and any extra `-c` configs. nfclaw launches Nextflow from the outdir (below) so each run

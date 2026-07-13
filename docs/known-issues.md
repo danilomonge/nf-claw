@@ -82,18 +82,33 @@ than a typical workstation or small VM has.
 **Why:** an nf-core `base.config` sizes each process by a resource *label*
 (`process_low/medium/high/high_memory`) tuned for an HPC cluster; one high-memory step can exceed
 a small host's physical RAM, and Nextflow refuses to schedule a task it knows can't fit.
-**Fix:** cap the offending process with a `--config` file (repeatable). Target it by name so the
-rest of the run keeps its normal resources:
+**Fix:** put a ceiling on the whole run with `--limit-cpus` / `--limit-memory` / `--limit-time`,
+sized to the machine:
+```bash
+nfclaw run rnaseq --input ss.csv --outdir results -profile docker \
+  --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h
+```
+nfclaw writes these as Nextflow's [`process.resourceLimits`](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)
+and passes the generated config with `-c` — the mechanism nf-core prescribes, and the same one its
+own `test` profiles use (which is why `--demo` never hits this and a real run does). The ceiling
+applies to **every** process *and every retry*, so one flag covers whatever the pipeline asks for
+next; the generated config is kept in `<outdir>/provenance/resource_limits.config`, so
+`commands.sh` replays the run under the same ceiling.
+
+Do **not** cap by naming processes (`withName: 'STAR_GENOMEGENERATE' { memory = '15.GB' }`) unless
+you mean to re-size that one step: `withName` changes a single process's *initial* request, so you
+must name every step that might exceed the host — miss one and the run dies there instead
+(`STAR_GENOMEGENERATE`, then `BBMAP_BBSPLIT`, then the next). It also does not cap the retry, which
+asks for more. Use `withName` (via `--config`) only to tune one specific step, e.g. giving a tool
+*less* than its label implies:
 ```groovy
-// cap-mem.config
+// tune-one-step.config
 process {
     withName: 'BBMAP_BBDUK' { memory = '12.GB' }
 }
 ```
-`nfclaw run detaxizer --classification_bbduk … --config cap-mem.config`. To put a ceiling on
-*every* process at once, use Nextflow's native limit instead:
-`process { resourceLimits = [ memory: '12.GB', cpus: 4 ] }`. (Size the cap to your host and to what
-the tool actually needs — too low and the step itself fails or is OOM-killed.)
+(Size any cap to the host *and* to what the tool actually needs — too low and the step itself fails
+or is OOM-killed.)
 
 ### Nextflow too new for an older release
 **Symptom:** `Unexpected input: ':'`, `Unexpected token`, `Invalid include source`, or

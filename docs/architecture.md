@@ -19,6 +19,13 @@ Three zones:
   (`--nxf-ver`, `--nxf-env`) and those inherited from the shell (e.g. an exported `NXF_OFFLINE`),
   since Nextflow reads all of them. Values that look like credentials are redacted from the
   manifest and replay script; the script names those variables to supply externally.
+  Replay is *strict*: the nf-core template defaults `trace_report_suffix` to a timestamp evaluated
+  afresh on every launch, and interpolates it into the execution report/timeline/trace/DAG
+  filenames. nfclaw pins it in `params.json` (only where the pinned release declares the parameter,
+  and never over a caller's value), so replaying the bundle reproduces the run's outputs instead of
+  writing a second, differently-named set of reports beside them.
+  A resource ceiling (`--limit-cpus`/`--limit-memory`/`--limit-time`) is likewise materialised into
+  the bundle as `resource_limits.config` and passed with `-c`, so it too replays.
 - **`librarian/`** — maintenance (run via `make`): generates `skill.md`/`reference.md`/`catalog.*`
   from each submodule, and bumps submodules to the latest release.
 

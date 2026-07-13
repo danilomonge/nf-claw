@@ -5,7 +5,7 @@ import re
 import sys
 from pathlib import Path
 
-from runner import discovery, orchestration, versions
+from runner import discovery, orchestration, resources, versions
 from runner.errors import ErrorCode, NfclawError
 
 
@@ -129,6 +129,16 @@ def main(argv: list[str] | None = None) -> int:
                        metavar="KEY=VALUE",
                        help="set an NXF_* env var for this run (repeatable), e.g. "
                             "NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true")
+    # The nf-core-documented way to run on a machine smaller than the pipeline's default requests
+    # (`process_high` is 12 CPUs / 72.GB in the stock nf-core base.config): a `process.resourceLimits`
+    # ceiling. nfclaw generates the config and passes it with `-c`, so no hand-written file is needed.
+    p_run.add_argument("--limit-cpus", dest="limit_cpus", type=_positive_int, metavar="N",
+                       help="cap every process request at N CPUs "
+                            "(Nextflow process.resourceLimits)")
+    p_run.add_argument("--limit-memory", dest="limit_memory", metavar="SIZE",
+                       help="cap every process request at SIZE memory, e.g. 15.GB")
+    p_run.add_argument("--limit-time", dest="limit_time", metavar="DURATION",
+                       help="cap every process request at DURATION, e.g. 1.h")
     p_run.add_argument("-c", "--config", dest="config", action="append", default=[],
                        metavar="PATH",
                        help="extra Nextflow config file passed through as `-c` (repeatable), e.g. "
@@ -202,7 +212,8 @@ def main(argv: list[str] | None = None) -> int:
                 write_provenance=not args.no_provenance, timeout_seconds=args.timeout,
                 pipeline_version=args.pipeline_version,
                 nxf_ver=args.nxf_ver, nxf_env=_parse_nxf_env(args.nxf_env),
-                allow_spaces=args.allow_spaces, configs=args.config)
+                allow_spaces=args.allow_spaces, configs=args.config,
+                limits=resources.parse(args.limit_cpus, args.limit_memory, args.limit_time))
         except NfclawError as exc:
             print(str(exc), file=sys.stderr)
             return 1

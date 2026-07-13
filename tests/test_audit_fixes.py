@@ -139,11 +139,11 @@ def test_param_groups_maps_every_group_with_counts():
         "c": Param("c", "string", "d", None, "z", None, False, "advanced"),
     })
     out = write_skill._param_groups(ps)
-    assert "`input_output` (1 parameter)" in out          # full group size, singular grammar
-    assert "`advanced` (2 parameters)" in out
+    assert "`input_output` — 1 parameter" in out          # full group size, singular grammar
+    assert "`advanced` — 2 parameters" in out
     # The counts are full group sizes; the prose must not claim every counted param is optional.
     assert "All other parameters are optional" not in out
-    assert "include any required parameters already listed above" in out
+    assert "include any parameter already listed above" in out
 
 
 # --- F6: catalog.md escapes pipes in the description cell ---
@@ -217,7 +217,10 @@ def test_inputs_section_shows_enum_and_no_fabricated_values():
     assert "string (file path)" in out                          # file-path columns marked
     assert "data/sample1_" not in out and "sample1" not in out  # no invented values
     csv = out.split("```csv\n")[1].split("```")[0].strip()
-    assert csv == "sample,sex,fastq_1"                           # csv block is the real header only
+    assert csv == "sample"          # the header is the required columns — never a fabricated row
+    assert "\n" not in csv          # header only: no invented data lines
+    # The optional columns are not dropped, just not forced into the header.
+    assert "`sex`" in out and "`fastq_1`" in out
 
 
 def test_samplesheet_docs_follow_schema_input_extension():

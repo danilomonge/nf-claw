@@ -441,3 +441,96 @@ def test_demo_allows_required_input_to_come_from_test_profile(tmp_path, monkeypa
         profile="docker", params_file=None, cli_overrides={}, resume=False,
         demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
     assert res.checked_only and "-profile test,docker" in res.command
+
+
+def _pipeline_with_report_suffix(tmp_path, name="mini"):
+    """`mini`, plus the nf-core template's trace_report_suffix parameter."""
+    import json
+
+    root = _make_pipeline(tmp_path, name)
+    schema_path = root / "pipelines" / name / "upstream" / "nextflow_schema.json"
+    data = json.loads(schema_path.read_text())
+    data["definitions"]["generic_options"] = {
+        "title": "Generic options",
+        "properties": {"trace_report_suffix": {"type": "string", "hidden": True}},
+    }
+    schema_path.write_text(json.dumps(data))
+    return root
+
+
+def test_resource_limits_become_a_config_passed_to_nextflow(tmp_path, monkeypatch):
+    # nf-core's documented ceiling: a process.resourceLimits config handed to Nextflow with -c.
+    from runner import resources
+
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    res = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10,
+        limits=resources.parse(4, "15.GB", "1.h"))
+    cfg = tmp_path / "out" / "provenance" / "resource_limits.config"
+    assert cfg.exists() and "resourceLimits" in cfg.read_text()
+    assert f"-c {cfg}" in res.command                  # and it is actually applied to the run
+
+
+def test_no_config_is_generated_when_no_limit_is_given(tmp_path, monkeypatch):
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    res = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
+    assert not (tmp_path / "out" / "provenance" / "resource_limits.config").exists()
+    assert "-c " not in res.command
+
+
+def test_an_explicit_config_still_overrides_the_generated_ceiling(tmp_path, monkeypatch):
+    # Nextflow lets a later -c win, so the user's own file must come after the generated one.
+    from runner import resources
+
+    root = _make_pipeline(tmp_path, "mini")
+    mine = tmp_path / "mine.config"
+    mine.write_text("process { resourceLimits = [ cpus: 2 ] }\n")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    res = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10,
+        configs=[str(mine)], limits=resources.parse(4, None, None))
+    generated = str(tmp_path / "out" / "provenance" / "resource_limits.config")
+    assert res.command.index(generated) < res.command.index(str(mine))
+
+
+def test_report_suffix_is_pinned_so_the_replay_reproduces_the_run(tmp_path, monkeypatch):
+    # Without this the pipeline re-evaluates `now()` on every launch and the replay writes a second,
+    # differently-named set of reports rather than reproducing the original run's outputs.
+    import json
+
+    root = _pipeline_with_report_suffix(tmp_path)
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: None)
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=False, write_provenance=True, timeout_seconds=10)
+    params = json.loads((tmp_path / "out" / "provenance" / "params.json").read_text())
+    suffix = params["trace_report_suffix"]
+    assert suffix and suffix != ""
+    # commands.sh replays through the same params file, so the replay reuses this exact suffix.
+    replay = (tmp_path / "out" / "provenance" / "commands.sh").read_text()
+    assert str(tmp_path / "out" / "provenance" / "params.json") in replay
+
+
+def test_a_release_without_the_report_suffix_param_is_untouched(tmp_path, monkeypatch):
+    # Older releases predate the parameter — passing it would fail nf-schema validation.
+    import json
+
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
+    params = json.loads((tmp_path / "out" / "provenance" / "params.json").read_text())
+    assert "trace_report_suffix" not in params

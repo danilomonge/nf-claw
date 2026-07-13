@@ -31,7 +31,7 @@ This is the pinned latest release. To run a different one, list the available re
 
 `--input` must match `^\S+\.(csv|tsv)$`.
 
-For tabular CSV/TSV input, use this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
+For tabular CSV/TSV input, use this header; fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
 sample
 ```
@@ -64,32 +64,42 @@ sample
 | `--css-file` | string | ${projectDir}/assets/nf-core_style.css |  |  | CSS to use to style the output, in lieu of the default nf-core styling |
 
 ## Other parameters
-Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):
-- `base_abundance_values` (4 parameters)
-- `base_features_options` (7 parameters)
-- `base_input_output_options` (8 parameters)
-- `base_observations_e_g_samples_options` (3 parameters)
-- `base_paramsheet_options` (2 parameters)
-- `differential_deseq2_specific_options_rna_seq_only` (15 parameters)
-- `differential_differential_analysis` (8 parameters)
-- `differential_dream_specific_options` (12 parameters)
-- `differential_limma_specific_options` (15 parameters)
-- `differential_propd_specific_options` (9 parameters)
-- `exploratory_exploratory_analysis` (10 parameters)
-- `functional_decoupler_specific_options` (3 parameters)
-- `functional_functional_analysis_options` (2 parameters)
-- `functional_gprofiler2` (13 parameters)
-- `functional_grea` (3 parameters)
-- `functional_gsea` (16 parameters)
-- `generic_options` (11 parameters)
-- `institutional_config_options` (6 parameters)
-- `preprocessing_affy_input_options` (9 parameters)
-- `preprocessing_filtering` (6 parameters)
-- `preprocessing_gtf_parsing_options` (3 parameters)
-- `preprocessing_proteus_input_options` (5 parameters)
-- `reference_genome_options` (3 parameters)
-- `report_reporting_options` (11 parameters)
-- `shiny_shiny_app_settings` (4 parameters)
+Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):
+- **[base] Abundance values** (`base_abundance_values`) — 4 parameters
+- **[base] Features options** (`base_features_options`) — 7 parameters
+- **[base] Input/output options** (`base_input_output_options`) — 8 parameters
+- **[base] Observations (e.g. samples) options** (`base_observations_e_g_samples_options`) — 3 parameters
+- **[base] Paramsheet options** (`base_paramsheet_options`) — 2 parameters
+- **[differential] DESeq2 specific options (RNA-seq only)** (`differential_deseq2_specific_options_rna_seq_only`) — 15 parameters
+- **[differential] Differential analysis** (`differential_differential_analysis`) — 8 parameters
+- **[differential] DREAM specific options** (`differential_dream_specific_options`) — 12 parameters
+- **[differential] Limma specific options** (`differential_limma_specific_options`) — 15 parameters
+- **[differential] propd specific options** (`differential_propd_specific_options`) — 9 parameters
+- **[exploratory] Exploratory analysis** (`exploratory_exploratory_analysis`) — 10 parameters
+- **[functional] decoupler** (`functional_decoupler_specific_options`) — 3 parameters
+- **[functional] Functional analysis options** (`functional_functional_analysis_options`) — 2 parameters
+- **[functional] gprofiler2** (`functional_gprofiler2`) — 13 parameters
+- **[functional] grea** (`functional_grea`) — 3 parameters
+- **[functional] GSEA** (`functional_gsea`) — 16 parameters
+- **Generic options** (`generic_options`) — 11 parameters
+- **Institutional config options** (`institutional_config_options`) — 6 parameters
+- **[preprocessing] Affy input options** (`preprocessing_affy_input_options`) — 9 parameters
+- **[preprocessing] Filtering** (`preprocessing_filtering`) — 6 parameters
+- **[preprocessing] GTF parsing options** (`preprocessing_gtf_parsing_options`) — 3 parameters
+- **[preprocessing] Proteus input options** (`preprocessing_proteus_input_options`) — 5 parameters
+- **Reference genome options** (`reference_genome_options`) — 3 parameters
+- **[report] Reporting options** (`report_reporting_options`) — 11 parameters
+- **[shiny] Shiny app settings** (`shiny_shiny_app_settings`) — 4 parameters
+
+## Resources
+A real (non-`--demo`) run requests the resources the pipeline's `conf/base.config` asks for, which are sized for a server — a single step can request far more memory than a workstation has, and Nextflow retries a failed step with more still. If a run fails with `Process requirement exceeds available memory` (or CPUs), cap every request, and every retry, at what this machine actually has:
+
+```bash
+nfclaw run differentialabundance --input samplesheet.csv --outdir results -profile docker \
+  --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h
+```
+
+nfclaw turns those into Nextflow's `process.resourceLimits` and passes them as a `-c` config — the mechanism nf-core prescribes for exactly this ([docs](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)). Set them to the machine's real capacity. The generated config is kept in `<outdir>/provenance/`, so `commands.sh` replays the run under the same ceiling.
 
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.

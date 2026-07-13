@@ -41,10 +41,12 @@ Additional row validation rules from the schema:
 - When `gbk` is set, also provide `protein`.
 - When `gff` is set, also provide `protein`.
 
-The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
+The samplesheet is a CSV with this header (the columns the schema requires); fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
-sample,fasta,protein,gbk,gff,gff_type
+sample,fasta
 ```
+
+Any of the optional columns above may be appended to the header when your data needs them: `protein`, `gbk`, `gff`, `gff_type`.
 
 ## Required parameters
 | parameter | type | default | allowed values | constraints | description |
@@ -53,41 +55,51 @@ sample,fasta,protein,gbk,gff,gff_type
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
-Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):
-- `amp_ampcombi2_cluster` (7 parameters)
-- `amp_ampcombi2_parsetables` (13 parameters)
-- `amp_ampir` (3 parameters)
-- `amp_amplify` (1 parameter)
-- `amp_hmmsearch` (5 parameters)
-- `amp_macrel` (1 parameter)
-- `annotation_bakta` (22 parameters)
-- `annotation_general_options` (2 parameters)
-- `annotation_prodigal` (4 parameters)
-- `annotation_prokka` (12 parameters)
-- `annotation_pyrodigal` (5 parameters)
-- `arg_abricate` (5 parameters)
-- `arg_amrfinderplus` (7 parameters)
-- `arg_argnorm` (1 parameter)
-- `arg_deeparg` (9 parameters)
-- `arg_fargene` (7 parameters)
-- `arg_hamronization` (1 parameter)
-- `arg_rgi` (11 parameters)
-- `bgc_antismash` (16 parameters)
-- `bgc_bigslice` (7 parameters)
-- `bgc_deepbgc` (11 parameters)
-- `bgc_gecco` (9 parameters)
-- `bgc_general_options` (2 parameters)
-- `bgc_hmmsearch` (5 parameters)
-- `cazyme_dbcan` (4 parameters)
-- `database_downloading_options` (1 parameter)
-- `generic_options` (15 parameters)
-- `input_output_options` (4 parameters)
-- `institutional_config_options` (6 parameters)
-- `protein_annotation` (6 parameters)
-- `screening_type_activation` (4 parameters)
-- `taxonomic_classification_general_options` (3 parameters)
-- `taxonomic_classification_mmseqs2_databases` (3 parameters)
-- `taxonomic_classification_mmseqs2_taxonomy` (8 parameters)
+Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):
+- **AMP: ampcombi2 cluster** (`amp_ampcombi2_cluster`) — 7 parameters
+- **AMP: ampcombi2 parsetables** (`amp_ampcombi2_parsetables`) — 13 parameters
+- **AMP: ampir** (`amp_ampir`) — 3 parameters
+- **AMP: AMPlify** (`amp_amplify`) — 1 parameter
+- **AMP: hmmsearch** (`amp_hmmsearch`) — 5 parameters
+- **AMP: Macrel** (`amp_macrel`) — 1 parameter
+- **Annotation: BAKTA** (`annotation_bakta`) — 22 parameters
+- **Annotation: general options** (`annotation_general_options`) — 2 parameters
+- **Annotation: Prodigal** (`annotation_prodigal`) — 4 parameters
+- **Annotation: Prokka** (`annotation_prokka`) — 12 parameters
+- **Annotation: Pyrodigal** (`annotation_pyrodigal`) — 5 parameters
+- **ARG: ABRicate** (`arg_abricate`) — 5 parameters
+- **ARG: AMRFinderPlus** (`arg_amrfinderplus`) — 7 parameters
+- **ARG: argNorm** (`arg_argnorm`) — 1 parameter
+- **ARG: DeepARG** (`arg_deeparg`) — 9 parameters
+- **ARG: fARGene** (`arg_fargene`) — 7 parameters
+- **ARG: hAMRonization** (`arg_hamronization`) — 1 parameter
+- **ARG: RGI** (`arg_rgi`) — 11 parameters
+- **BGC: antiSMASH** (`bgc_antismash`) — 16 parameters
+- **BGC: BiG-SLiCE** (`bgc_bigslice`) — 7 parameters
+- **BGC: DeepBGC** (`bgc_deepbgc`) — 11 parameters
+- **BGC: GECCO** (`bgc_gecco`) — 9 parameters
+- **BGC: general options** (`bgc_general_options`) — 2 parameters
+- **BGC: hmmsearch** (`bgc_hmmsearch`) — 5 parameters
+- **dbCAN** (`cazyme_dbcan`) — 4 parameters
+- **Database downloading options** (`database_downloading_options`) — 1 parameter
+- **Generic options** (`generic_options`) — 15 parameters
+- **Input/output options** (`input_output_options`) — 4 parameters
+- **Institutional config options** (`institutional_config_options`) — 6 parameters
+- **Protein Annotation: INTERPROSCAN** (`protein_annotation`) — 6 parameters
+- **Screening type activation** (`screening_type_activation`) — 4 parameters
+- **Taxonomic classification: general options** (`taxonomic_classification_general_options`) — 3 parameters
+- **Taxonomic classification: MMseqs2 databases** (`taxonomic_classification_mmseqs2_databases`) — 3 parameters
+- **Taxonomic classification: MMseqs2 taxonomy** (`taxonomic_classification_mmseqs2_taxonomy`) — 8 parameters
+
+## Resources
+A real (non-`--demo`) run requests the resources the pipeline's `conf/base.config` asks for, which are sized for a server — a single step can request far more memory than a workstation has, and Nextflow retries a failed step with more still. If a run fails with `Process requirement exceeds available memory` (or CPUs), cap every request, and every retry, at what this machine actually has:
+
+```bash
+nfclaw run funcscan --input samplesheet.csv --outdir results -profile docker \
+  --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h
+```
+
+nfclaw turns those into Nextflow's `process.resourceLimits` and passes them as a `-c` config — the mechanism nf-core prescribes for exactly this ([docs](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)). Set them to the machine's real capacity. The generated config is kept in `<outdir>/provenance/`, so `commands.sh` replays the run under the same ceiling.
 
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.

@@ -38,10 +38,12 @@ This is the pinned latest release. To run a different one, list the available re
 
 `--input` must match `^\S+\.csv$`.
 
-The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
+The samplesheet is a CSV with this header (the columns the schema requires); fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
-sample,fastq_1,fastq_2,fastq_barcode,expected_cells,seq_center,sample_type,feature_type
+sample,fastq_1,fastq_2
 ```
+
+Any of the optional columns above may be appended to the header when your data needs them: `fastq_barcode`, `expected_cells`, `seq_center`, `sample_type`, `feature_type`.
 
 ## Required parameters
 | parameter | type | default | allowed values | constraints | description |
@@ -49,20 +51,39 @@ sample,fastq_1,fastq_2,fastq_barcode,expected_cells,seq_center,sample_type,featu
 | `--input` | string (file path) |  |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
+## Mandatory arguments
+The schema groups these under **Mandatory arguments** — the pipeline authors' own label. They are absent from the `required` list above only because each carries a default, so nf-schema will not stop a run that omits them — but the pipeline itself can reject the default at runtime. Set them deliberately.
+
+| parameter | type | default | allowed values | constraints | description |
+|---|---|---|---|---|---|
+| `--aligner` | string | simpleaf | kallisto, star, simpleaf, cellranger, cellrangerarc, cellrangermulti |  | Name of the tool to use for scRNA (pseudo-) alignment. |
+| `--barcode-whitelist` | string (file path) |  |  |  | If not using the 10X Genomics platform, a custom barcode whitelist can be used with `--barcode_whitelist`. |
+| `--protocol` | string | auto |  |  | The protocol that was used to generate the single cell data, e.g. 10x Genomics v2 Chemistry. Can be 'auto' (cellranger only), '10XV1', '10XV2', '10XV3', '10XV4', or any other protocol string that will get directly passed the respective aligner. |
+
 ## Other parameters
-Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):
-- `cellranger_multi_options` (10 parameters)
-- `cellranger_options` (2 parameters)
-- `cellrangerarc_options` (3 parameters)
-- `generic_options` (15 parameters)
-- `input_output_options` (4 parameters)
-- `institutional_config_options` (6 parameters)
-- `kallisto_bus_options` (4 parameters)
-- `mandatory_arguments` (3 parameters)
-- `reference_genome_options` (9 parameters)
-- `simpleaf_options` (4 parameters)
-- `skip_tools` (5 parameters)
-- `starsolo_options` (4 parameters)
+Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):
+- **Cellranger Multi options** (`cellranger_multi_options`) — 10 parameters
+- **Cellranger Options** (`cellranger_options`) — 2 parameters
+- **Cellranger ARC Options** (`cellrangerarc_options`) — 3 parameters
+- **Generic options** (`generic_options`) — 15 parameters
+- **Input/output options** (`input_output_options`) — 4 parameters
+- **Institutional config options** (`institutional_config_options`) — 6 parameters
+- **Kallisto/BUS Options** (`kallisto_bus_options`) — 4 parameters
+- **Mandatory arguments** (`mandatory_arguments`) — 3 parameters
+- **Reference genome options** (`reference_genome_options`) — 9 parameters
+- **Simpleaf Options** (`simpleaf_options`) — 4 parameters
+- **Skip Tools** (`skip_tools`) — 5 parameters
+- **STARSolo Options** (`starsolo_options`) — 4 parameters
+
+## Resources
+A real (non-`--demo`) run requests the resources the pipeline's `conf/base.config` asks for, which are sized for a server — a single step can request far more memory than a workstation has, and Nextflow retries a failed step with more still. If a run fails with `Process requirement exceeds available memory` (or CPUs), cap every request, and every retry, at what this machine actually has:
+
+```bash
+nfclaw run scrnaseq --input samplesheet.csv --outdir results -profile docker \
+  --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h
+```
+
+nfclaw turns those into Nextflow's `process.resourceLimits` and passes them as a `-c` config — the mechanism nf-core prescribes for exactly this ([docs](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)). Set them to the machine's real capacity. The generated config is kept in `<outdir>/provenance/`, so `commands.sh` replays the run under the same ceiling.
 
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
