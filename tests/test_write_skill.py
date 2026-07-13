@@ -308,3 +308,72 @@ def test_reference_row_is_single_line_and_pipe_safe():
     rows = [ln for ln in out.splitlines() if ln.startswith("| `--weird`")]
     assert len(rows) == 1                                       # newlines didn't split the row
     assert "First sentence. Second with a \\| pipe." in rows[0]  # collapsed + pipe escaped
+
+
+def test_samplesheet_header_carries_only_the_required_columns(tmp_path):
+    # The header must be a samplesheet that is always valid. A pipeline can declare optional columns
+    # that only apply to one aligner/mode, and emitting every column produces a header with fields an
+    # agent then has to fill or blank out. Optional columns are named below it, so nothing is lost.
+    pdir = _seed(tmp_path, "mini")
+    skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
+    text = skill.read_text()
+    header = text.split("```csv\n", 1)[1].split("\n", 1)[0]
+    assert header == "sample,fastq_1"                 # fastq_2 is optional in the mini fixture
+    assert "may be appended to the header" in text and "`fastq_2`" in text
+
+
+def test_mandatory_group_params_are_surfaced_even_though_they_have_defaults(tmp_path):
+    # nf-core marks required-ness in two places that disagree: the JSON-schema `required` list and
+    # the group title. A param with a default is never in `required` (nf-schema cannot fail it), yet
+    # the pipeline may still reject the default at runtime — nf-core/scrnaseq's `--protocol` aborts
+    # the run on its own default for every aligner but cellranger. Reading only `required` hides it.
+    import json
+
+    up = tmp_path / "mand" / "upstream"
+    up.mkdir(parents=True)
+    for f in ("main.nf", "nextflow.config"):
+        (up / f).write_text("x")
+    (up / "nextflow_schema.json").write_text(json.dumps({
+        "title": "nf-core/mand",
+        "definitions": {
+            "input_output_options": {
+                "title": "Input/output options",
+                "properties": {"outdir": {"type": "string", "format": "directory-path"}},
+                "required": ["outdir"],
+            },
+            "mandatory_arguments": {
+                "title": "Mandatory arguments",
+                "properties": {"protocol": {"type": "string", "default": "auto",
+                                            "description": "The protocol used."}},
+            },
+        },
+    }))
+    skill, _ = write_skill.generate("mand", pipelines_dir=tmp_path)
+    text = skill.read_text()
+    assert "## Mandatory arguments" in text
+    assert "`--protocol`" in text                       # the flag itself, with its default
+    assert "the pipeline itself can reject the default at runtime" in text
+
+
+def test_no_mandatory_section_when_the_schema_has_no_such_group(tmp_path):
+    pdir = _seed(tmp_path, "mini")
+    skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
+    assert "## Mandatory arguments" not in skill.read_text()
+
+
+def test_resources_section_documents_the_nf_core_resource_ceiling(tmp_path):
+    # The stock nf-core process labels are sized for a server; on a workstation a real run dies at
+    # the first big step. resourceLimits is the mechanism nf-core documents for capping it.
+    pdir = _seed(tmp_path, "mini")
+    skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
+    text = skill.read_text()
+    assert "## Resources" in text
+    assert "--limit-cpus 4 --limit-memory 15.GB --limit-time 1.h" in text
+    assert "process.resourceLimits" in text
+    assert "nf-co.re/docs/running/configuration/nextflow-for-your-system" in text
+
+
+def test_group_list_uses_the_schemas_own_titles(tmp_path):
+    pdir = _seed(tmp_path, "mini")
+    skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
+    assert "**Input/output options** (`input_output_options`)" in skill.read_text()

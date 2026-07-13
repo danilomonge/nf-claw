@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from runner.errors import ErrorCode, NfclawError
 from runner.schema import Param, ParamSchema, json_scalar
+
+# The nf-core template parameter that suffixes the execution report/timeline/trace/DAG filenames.
+_REPORT_SUFFIX = "trace_report_suffix"
 
 
 def validate_params(cli_overrides: dict[str, Any], schema: ParamSchema) -> list[str]:
@@ -120,6 +124,31 @@ def coerce_to_schema(merged: dict[str, Any], schema: ParamSchema) -> dict[str, A
         if coerced is not _LEAVE:
             out[key] = coerced
     return out
+
+
+def pin_report_suffix(merged: dict[str, Any], schema: ParamSchema,
+                      *, now: datetime | None = None) -> dict[str, Any]:
+    """Pin `trace_report_suffix` so the run's report filenames are fixed, not "whenever this ran".
+
+    The nf-core template defaults this parameter to `new java.util.Date().format('yyyy-MM-dd_HH-mm-ss')`
+    — a *fresh timestamp evaluated on every launch* — and interpolates it into the names of the
+    execution report, timeline, trace and DAG under `pipeline_info/`. Left alone, replaying a run
+    through `provenance/commands.sh` writes a second set of reports under new names instead of
+    reproducing the original run's outputs, so the bundle is not a strict reproduction and
+    `outputs.sha256` can never be checked against it.
+
+    Recording the value the run actually used turns that timestamp from an implicit, unrepeatable
+    default into a recorded input: it lands in `provenance/params.json`, which `commands.sh` passes
+    back with `-params-file`, so a replay names its reports exactly as the original did.
+
+    Only applied when the pinned release declares the parameter (older releases predate it) and
+    never overrides a value the caller supplied. The format matches the pipeline's own, so the
+    filenames look exactly as they would from a plain `nextflow run`.
+    """
+    if _REPORT_SUFFIX not in schema.params or merged.get(_REPORT_SUFFIX):
+        return merged
+    stamp = (now or datetime.now()).strftime("%Y-%m-%d_%H-%M-%S")
+    return {**merged, _REPORT_SUFFIX: stamp}
 
 
 def _load_params_file(path: Path) -> dict:

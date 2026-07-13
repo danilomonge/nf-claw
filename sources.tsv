@@ -52,3 +52,14 @@ nanoseq	https://github.com/nf-core/nanoseq.git	latest-release
 nanostring	https://github.com/nf-core/nanostring.git	latest-release
 nascent	https://github.com/nf-core/nascent.git	latest-release
 oncoanalyser	https://github.com/nf-core/oncoanalyser.git	latest-release
+pacvar	https://github.com/nf-core/pacvar.git	latest-release
+pairgenomealign	https://github.com/nf-core/pairgenomealign.git	latest-release
+pangenome	https://github.com/nf-core/pangenome.git	latest-release
+pathogensurveillance	https://github.com/nf-core/pathogensurveillance.git	latest-release
+phaseimpute	https://github.com/nf-core/phaseimpute.git	latest-release
+phyloplace	https://github.com/nf-core/phyloplace.git	latest-release
+pixelator	https://github.com/nf-core/pixelator.git	latest-release
+proteinannotator	https://github.com/nf-core/proteinannotator.git	latest-release
+proteinfamilies	https://github.com/nf-core/proteinfamilies.git	latest-release
+proteinfold	https://github.com/nf-core/proteinfold.git	latest-release
+rangeland	https://github.com/nf-core/rangeland.git	latest-release

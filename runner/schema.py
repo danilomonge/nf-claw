@@ -16,6 +16,9 @@ class Param:
     fmt: str | None          # "file-path" | "directory-path" | None
     required: bool
     group: str
+    # The group's human title from the schema (e.g. "Mandatory arguments" for the `mandatory_arguments`
+    # group). The authors' own labelling of what a group means — surfaced in the generated docs.
+    group_title: str = ""
     hidden: bool = False      # nf-core marks generic/boilerplate params (email, validation*, …) hidden
     # Value-shape constraints nf-schema enforces at runtime (enum has its own field above).
     pattern: str | None = None
@@ -149,6 +152,7 @@ def load_param_schema(repo: Path) -> ParamSchema:
                 fmt=pobj.get("format"),
                 required=pname in required,
                 group=gname,
+                group_title=str(gobj.get("title") or ""),
                 hidden=bool(pobj.get("hidden", False)),
                 pattern=pobj.get("pattern"),
                 minimum=pobj.get("minimum"),

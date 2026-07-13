@@ -40,6 +40,10 @@ nfclaw run  rnaseq --pipeline-version 3.14.0 --input samplesheet.csv --outdir re
 # pin the Nextflow engine / set NXF_* for one run (both recorded in provenance)
 nfclaw run rnaseq --nxf-ver 25.10.2 --input ss.csv --outdir results -profile docker  # if a newer Nextflow breaks the release
 nfclaw run rnaseq --nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true ...      # IPv6-only host (JVM → GitHub)
+
+# cap what the run may request, for a machine smaller than nf-core's server-sized defaults
+nfclaw run rnaseq --input ss.csv --outdir results -profile docker \
+  --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h   # Nextflow process.resourceLimits
 ```
 
 The editable install is intentional: `nfclaw` reads pinned submodules and generated context from

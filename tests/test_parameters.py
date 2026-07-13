@@ -165,3 +165,33 @@ def test_validate_params_checks_schema_value_constraints():
     assert any("--input" in e and "must match" in e for e in errs)
     assert any("--percent" in e and "<= 100" in e for e in errs)
     assert any("--label" in e and "length >= 2" in e for e in errs)
+
+
+def _schema_with_report_suffix(tmp_path):
+    (tmp_path / "nextflow_schema.json").write_text(json.dumps(
+        {"definitions": {"generic_options": {"properties": {
+            "trace_report_suffix": {"type": "string", "hidden": True}}}}}))
+    return schema.load_param_schema(tmp_path)
+
+
+def test_pin_report_suffix_fixes_the_runs_report_filenames(tmp_path):
+    # nf-core defaults this to a fresh timestamp per launch, which is interpolated into the
+    # execution report/timeline/trace/DAG filenames. Pinning it is what makes a replay reproduce
+    # the original run's outputs instead of writing a second, differently-named set beside them.
+    from datetime import datetime
+
+    ps = _schema_with_report_suffix(tmp_path)
+    out = parameters.pin_report_suffix({}, ps, now=datetime(2026, 7, 13, 9, 5, 1))
+    assert out["trace_report_suffix"] == "2026-07-13_09-05-01"   # the pipeline's own date format
+
+
+def test_pin_report_suffix_never_overrides_a_value_the_caller_set(tmp_path):
+    ps = _schema_with_report_suffix(tmp_path)
+    out = parameters.pin_report_suffix({"trace_report_suffix": "mine"}, ps)
+    assert out["trace_report_suffix"] == "mine"
+
+
+def test_pin_report_suffix_is_a_no_op_when_the_release_lacks_the_param():
+    # Older releases predate the parameter; setting it would be an unknown param and fail validation.
+    ps = schema.load_param_schema(FIX / "mini")
+    assert "trace_report_suffix" not in parameters.pin_report_suffix({}, ps)

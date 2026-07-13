@@ -78,10 +78,14 @@ jobs:
         if: success() && steps.disc.outputs.kept != '0'
         id: cpr
         with:
-          # Least privilege: stage only what discovery generates (new submodules land in
-          # .gitmodules + pipelines/). Without it the action commits every dirty path.
+          # Least privilege: stage only what discovery generates. This list must name EVERY file
+          # the job writes — anything missing is silently dropped from the PR, and the in-job drift
+          # gate above cannot catch that (it runs against the complete working tree, before this
+          # action decides what to commit). Discovery registers each new pipeline in sources.tsv
+          # (`_append_source`) as well as in .gitmodules and pipelines/, so all three belong here.
           add-paths: |
             pipelines
+            sources.tsv
             catalog.json
             catalog.md
             .gitmodules

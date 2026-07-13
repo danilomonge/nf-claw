@@ -40,10 +40,12 @@ This is the pinned latest release. To run a different one, list the available re
 
 `--input` must match `^\S+\.csv$`.
 
-The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
+The samplesheet is a CSV with this header (the columns the schema requires); fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
-sample,library_id,lane,flowcell,fastq_1,fastq_2,fastq_3,fastq_4,read_structure,umi_file
+sample,fastq_1,read_structure
 ```
+
+Any of the optional columns above may be appended to the header when your data needs them: `library_id`, `lane`, `flowcell`, `fastq_2`, `fastq_3`, `fastq_4`, `umi_file`.
 
 ## Required parameters
 | parameter | type | default | allowed values | constraints | description |
@@ -52,16 +54,26 @@ sample,library_id,lane,flowcell,fastq_1,fastq_2,fastq_3,fastq_4,read_structure,u
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
-Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):
-- `consensus_calling` (2 parameters)
-- `consensus_filtering` (3 parameters)
-- `generic_options` (17 parameters)
-- `grouping` (2 parameters)
-- `input_output_options` (4 parameters)
-- `institutional_config_options` (6 parameters)
-- `main_options` (2 parameters)
-- `reference_genome_options` (8 parameters)
-- `umi_correction` (2 parameters)
+Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):
+- **Consensus reads options** (`consensus_calling`) — 2 parameters
+- **Consensus filtering options** (`consensus_filtering`) — 3 parameters
+- **Generic options** (`generic_options`) — 17 parameters
+- **Read grouping options** (`grouping`) — 2 parameters
+- **Input/output options** (`input_output_options`) — 4 parameters
+- **Institutional config options** (`institutional_config_options`) — 6 parameters
+- **Main options** (`main_options`) — 2 parameters
+- **Reference genome options** (`reference_genome_options`) — 8 parameters
+- **UMI correction options** (`umi_correction`) — 2 parameters
+
+## Resources
+A real (non-`--demo`) run requests the resources the pipeline's `conf/base.config` asks for, which are sized for a server — a single step can request far more memory than a workstation has, and Nextflow retries a failed step with more still. If a run fails with `Process requirement exceeds available memory` (or CPUs), cap every request, and every retry, at what this machine actually has:
+
+```bash
+nfclaw run fastquorum --input samplesheet.csv --outdir results -profile docker \
+  --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h
+```
+
+nfclaw turns those into Nextflow's `process.resourceLimits` and passes them as a `-c` config — the mechanism nf-core prescribes for exactly this ([docs](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)). Set them to the machine's real capacity. The generated config is kept in `<outdir>/provenance/`, so `commands.sh` replays the run under the same ceiling.
 
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.

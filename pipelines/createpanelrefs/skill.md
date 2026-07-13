@@ -55,16 +55,26 @@ sample,cram
 | `--tools` | string |  |  | matches ^((cnvkit\|germlinecnvcaller\|gens\|mutect2)?,?)*(?<!,)$ | Tools to use for building Panel of Normals or models. |
 
 ## Other parameters
-Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):
-- `cnvkit_options` (2 parameters)
-- `generic_options` (16 parameters)
-- `gens_options` (6 parameters)
-- `germlinecnvcaller_options` (6 parameters)
-- `input_output_options` (4 parameters)
-- `institutional_config_options` (6 parameters)
-- `main_options` (1 parameter)
-- `mutect2_options` (2 parameters)
-- `reference_genome_options` (15 parameters)
+Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):
+- **CNVkit options** (`cnvkit_options`) — 2 parameters
+- **Generic options** (`generic_options`) — 16 parameters
+- **GENS options** (`gens_options`) — 6 parameters
+- **Germlinecnvcaller options** (`germlinecnvcaller_options`) — 6 parameters
+- **Input/output options** (`input_output_options`) — 4 parameters
+- **Institutional config options** (`institutional_config_options`) — 6 parameters
+- **Main options** (`main_options`) — 1 parameter
+- **Mutect2 options** (`mutect2_options`) — 2 parameters
+- **Reference genome options** (`reference_genome_options`) — 15 parameters
+
+## Resources
+A real (non-`--demo`) run requests the resources the pipeline's `conf/base.config` asks for, which are sized for a server — a single step can request far more memory than a workstation has, and Nextflow retries a failed step with more still. If a run fails with `Process requirement exceeds available memory` (or CPUs), cap every request, and every retry, at what this machine actually has:
+
+```bash
+nfclaw run createpanelrefs --input samplesheet.csv --outdir results -profile docker \
+  --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h
+```
+
+nfclaw turns those into Nextflow's `process.resourceLimits` and passes them as a `-c` config — the mechanism nf-core prescribes for exactly this ([docs](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)). Set them to the machine's real capacity. The generated config is kept in `<outdir>/provenance/`, so `commands.sh` replays the run under the same ceiling.
 
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.

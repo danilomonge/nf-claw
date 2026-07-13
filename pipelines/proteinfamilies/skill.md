@@ -34,10 +34,12 @@ This is the pinned latest release. To run a different one, list the available re
 
 `--input` must match `^\S+\.csv$`.
 
-The samplesheet is a CSV with this exact header; fill each value per the table above and `reference.md` (no example value is invented here):
+The samplesheet is a CSV with this header (the columns the schema requires); fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv
-sample,fasta,existing_hmms_to_update,existing_msas_to_update
+sample,fasta
 ```
+
+Any of the optional columns above may be appended to the header when your data needs them: `existing_hmms_to_update`, `existing_msas_to_update`.
 
 ## Required parameters
 | parameter | type | default | allowed values | constraints | description |
@@ -46,17 +48,27 @@ sample,fasta,existing_hmms_to_update,existing_msas_to_update
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Other parameters
-Beyond the required parameters above, every other parameter is optional. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any required parameters already listed above):
-- `alignment_params` (12 parameters)
-- `clustering_params` (8 parameters)
-- `downstream_params` (2 parameters)
-- `generic_options` (15 parameters)
-- `input_output_options` (4 parameters)
-- `institutional_config_options` (7 parameters)
-- `phylogeny_params` (1 parameter)
-- `quality_check_params` (4 parameters)
-- `redundancy_params` (10 parameters)
-- `update_params` (2 parameters)
+Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):
+- **Alignment parameters** (`alignment_params`) — 12 parameters
+- **Clustering parameters** (`clustering_params`) — 8 parameters
+- **Downstream samplsheet creation parameters** (`downstream_params`) — 2 parameters
+- **Generic options** (`generic_options`) — 15 parameters
+- **Input/output options** (`input_output_options`) — 4 parameters
+- **Institutional config options** (`institutional_config_options`) — 7 parameters
+- **Parameters for phylogenetic inference of full alignment sequences** (`phylogeny_params`) — 1 parameter
+- **Quality check parameters** (`quality_check_params`) — 4 parameters
+- **Redundancy removal parameters** (`redundancy_params`) — 10 parameters
+- **Update mechanism parameters** (`update_params`) — 2 parameters
+
+## Resources
+A real (non-`--demo`) run requests the resources the pipeline's `conf/base.config` asks for, which are sized for a server — a single step can request far more memory than a workstation has, and Nextflow retries a failed step with more still. If a run fails with `Process requirement exceeds available memory` (or CPUs), cap every request, and every retry, at what this machine actually has:
+
+```bash
+nfclaw run proteinfamilies --input samplesheet.csv --outdir results -profile docker \
+  --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h
+```
+
+nfclaw turns those into Nextflow's `process.resourceLimits` and passes them as a `-c` config — the mechanism nf-core prescribes for exactly this ([docs](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)). Set them to the machine's real capacity. The generated config is kept in `<outdir>/provenance/`, so `commands.sh` replays the run under the same ceiling.
 
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.

@@ -51,6 +51,18 @@ engine and its runtime explicit and reproducible (both are recorded in `<outdir>
 - `--config PATH` (or `-c`, repeatable) — pass an extra Nextflow config straight through (`-c`),
   e.g. a docker host-network config (`docker { runOptions = "--network host" }`) or custom resources.
 
+## Running on a machine smaller than the pipeline assumes
+nf-core sizes every process from a label in the pipeline's `conf/base.config`, tuned for a server:
+one step can request far more memory than a workstation has (`Process requirement exceeds available
+memory`), and Nextflow retries a failed step with *more*. `--demo` never shows this because nf-core's
+`test` profile ships its own small ceiling; a real run has none. Set one:
+`nfclaw run <name> ... --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h`
+These become Nextflow's `process.resourceLimits` — the ceiling nf-core documents — applied to every
+process and every retry, so one flag covers whatever the pipeline asks for next. Do not chase this
+with `withName:` overrides: those re-size one named process's initial request, so you must name every
+step that could exceed the host, and they do not cap the retry. The generated config is written to
+`<outdir>/provenance/resource_limits.config` and replayed by `commands.sh`.
+
 Any other environment (proxies, `JAVA_HOME`, …) is inherited from your shell unchanged. Each run
 launches Nextflow from its `--outdir`, so its `.nextflow/` history is isolated and `--resume` resumes
 that run (use a distinct `--outdir` per pipeline).
