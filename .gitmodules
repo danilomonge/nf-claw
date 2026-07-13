@@ -157,3 +157,36 @@
 [submodule "pipelines/oncoanalyser/upstream"]
 	path = pipelines/oncoanalyser/upstream
 	url = https://github.com/nf-core/oncoanalyser.git
+[submodule "pipelines/pacvar/upstream"]
+	path = pipelines/pacvar/upstream
+	url = https://github.com/nf-core/pacvar.git
+[submodule "pipelines/pairgenomealign/upstream"]
+	path = pipelines/pairgenomealign/upstream
+	url = https://github.com/nf-core/pairgenomealign.git
+[submodule "pipelines/pangenome/upstream"]
+	path = pipelines/pangenome/upstream
+	url = https://github.com/nf-core/pangenome.git
+[submodule "pipelines/pathogensurveillance/upstream"]
+	path = pipelines/pathogensurveillance/upstream
+	url = https://github.com/nf-core/pathogensurveillance.git
+[submodule "pipelines/phaseimpute/upstream"]
+	path = pipelines/phaseimpute/upstream
+	url = https://github.com/nf-core/phaseimpute.git
+[submodule "pipelines/phyloplace/upstream"]
+	path = pipelines/phyloplace/upstream
+	url = https://github.com/nf-core/phyloplace.git
+[submodule "pipelines/pixelator/upstream"]
+	path = pipelines/pixelator/upstream
+	url = https://github.com/nf-core/pixelator.git
+[submodule "pipelines/proteinannotator/upstream"]
+	path = pipelines/proteinannotator/upstream
+	url = https://github.com/nf-core/proteinannotator.git
+[submodule "pipelines/proteinfamilies/upstream"]
+	path = pipelines/proteinfamilies/upstream
+	url = https://github.com/nf-core/proteinfamilies.git
+[submodule "pipelines/proteinfold/upstream"]
+	path = pipelines/proteinfold/upstream
+	url = https://github.com/nf-core/proteinfold.git
+[submodule "pipelines/rangeland/upstream"]
+	path = pipelines/rangeland/upstream
+	url = https://github.com/nf-core/rangeland.git

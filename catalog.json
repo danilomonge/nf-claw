@@ -1197,6 +1197,188 @@
     "version": "2.3.0"
   },
   {
+    "description": "A variant caller for PacBio long read sequencing - also can be used for PureTarget panel analysis, and quantification of repeat expansions",
+    "input": "samplesheet (sample, bam, pbi, fail, repeat_id, karyotype)",
+    "name": "pacvar",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/pacvar is a bioinformatics pipeline that processes long-read PacBio data. Specifically, the pipeline provides two workflows: one for processing whole-genome sequencing data, and another for processing reads from the PureTarget expansion panel offered by PacBio. This second workflow characterizes tandem repeats. Because the pipeline is designed for PacBio reads, it uses PacBio\u2019s officially released tools.",
+    "tools": [
+      "FastQC",
+      "MultiQC",
+      "lima",
+      "pbmm2",
+      "SAMtools",
+      "deepvariant",
+      "HaplotypeCaller",
+      "bcftools",
+      "HiPhase",
+      "pbsv",
+      "HiFiCNV",
+      "TRGT",
+      "pb-CpG-tools / alignedbamtocpgscores",
+      "Sawfish",
+      "pbbam / pbmerge",
+      "Ensembl VEP"
+    ],
+    "version": "1.1.0"
+  },
+  {
+    "description": "Pairwise alignment pipeline (genome to genome or reads to genome)",
+    "input": "samplesheet (sample, fasta)",
+    "name": "pairgenomealign",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/pairgenomealign is a reproducible pipeline for pairwise whole\u2011genome alignment built on the LAST toolchain. It aligns one or more _query_ genomes to a _target_ genome using adaptive seeding, trained scoring parameters, and global\u2011score optimisation (chaining).",
+    "tools": [
+      "LAST",
+      "SAMtools",
+      "MultiQC"
+    ],
+    "version": "3.0.1"
+  },
+  {
+    "description": "The pangenome graph construction pipeline renders a collection of sequences into a pangenome graph. Its goal is to build a graph that is locally directed and acyclic while preserving large-scale variation. Maintaining local linearity is important for interpretation, visualization, mapping, comparative genomics, and reuse of pangenome graphs",
+    "input": "parameters (no samplesheet)",
+    "name": "pangenome",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/pangenome is a bioinformatics best-practice analysis pipeline for pangenome graph construction. The pipeline renders a collection of sequences into a pangenome graph. Its goal is to build a graph that is locally directed and acyclic while preserving large-scale variation. Maintaining local linearity is important for interpretation, visualization, mapping, comparative genomics, and reuse of pangenome graphs.",
+    "tools": [
+      "GFAFFIX",
+      "MultiQC",
+      "NET2COMMUNITIES",
+      "ODGI",
+      "PGGB",
+      "SAMTOOLS",
+      "SEQWISH",
+      "SMOOTHXG",
+      "VCFLIB",
+      "VG",
+      "WFMASH"
+    ],
+    "version": "1.1.3"
+  },
+  {
+    "description": "Surveillance of pathogens using high-throughput sequencing",
+    "input": "samplesheet (sample_id, name, description, path, path_2, ncbi_accession, ncbi_query, ncbi_query_max, sequence_type, report_group_ids, color_by, ploidy, enabled, ref_group_ids)",
+    "name": "pathogensurveillance",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/pathogensurveillance is a population genomics pipeline for pathogen identification, variant detection, and biosurveillance. The pipeline accepts paths to raw reads for one or more organisms and creates reports in the form of an interactive HTML document. Significant features include the ability to analyze unidentified eukaryotic and prokaryotic samples, creation of reports for multiple user-defined groupings of samples, automated discovery and downloading of reference assemblies from NCBI RefSeq, and rapid initial identification based on k-mer sketches followed by a more robust multi gene phylogeny and SNP-based phylogeny.",
+    "tools": [
+      "FastQC",
+      "MultiQC"
+    ],
+    "version": "1.1.0"
+  },
+  {
+    "description": "Phasing and imputation pipeline",
+    "input": "samplesheet (sample, tools, file, index)",
+    "name": "phaseimpute",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/phaseimpute is a bioinformatics pipeline to phase and impute genetic data.",
+    "tools": [
+      "bcftools",
+      "GLIMPSE",
+      "GLIMPSE2",
+      "MultiQC",
+      "QUILT",
+      "Shapeit",
+      "STITCH"
+    ],
+    "version": "1.1.0"
+  },
+  {
+    "description": "Performs phylogenetic placement with EPA-NG",
+    "input": "parameters (no samplesheet)",
+    "name": "phyloplace",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/phyloplace is a bioinformatics best-practice analysis pipeline that performs phylogenetic placement with EPA-NG.",
+    "tools": [
+      "HMMER",
+      "Clustal Omega",
+      "MAFFT",
+      "EPA-NG",
+      "Gappa",
+      "MultiQC"
+    ],
+    "version": "2.0.1"
+  },
+  {
+    "description": "Pipeline for analysis of Proximity Network Assay data",
+    "input": "samplesheet (pool, hash_index, sample, sample_alias, condition, design, panel, panel_file, fastq_1, fastq_2)",
+    "name": "pixelator",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
+    "summary": "nf-core/pixelator is a bioinformatics best-practice analysis pipeline for analysis of data from the Proximity Network (PNA) assay. It takes a samplesheet as input and will process your data using pixelator to produce a PXL file containing single-cell protein abundance and protein interactomics data.",
+    "tools": [
+      "pixelator",
+      "cutadapt",
+      "fastp"
+    ],
+    "version": "4.1.2"
+  },
+  {
+    "description": "Generation of sequence-level annotations for amino acid sequences",
+    "input": "samplesheet (id, fasta)",
+    "name": "proteinannotator",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/proteinannotator is a bioinformatics pipeline that computes statistics for protein FASTA inputs and produces protein annotations based on predicted sequence features, including conserved domains, functions, and secondary structure.",
+    "tools": [
+      "SeqFu",
+      "SeqKit",
+      "hmmer",
+      "InterProScan",
+      "s4pred",
+      "MultiQC"
+    ],
+    "version": "1.1.0"
+  },
+  {
+    "description": "Generate protein family level models (Multiple Sequence Alignments (MSAs), Hidden Markov Models (HMMs)) starting from a FASTA amino acid sequence file.",
+    "input": "samplesheet (sample, fasta, existing_hmms_to_update, existing_msas_to_update)",
+    "name": "proteinfamilies",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/proteinfamilies is a bioinformatics pipeline that generates protein families from amino acid sequences and/or updates existing families with new sequences. It takes a protein fasta file as input, clusters the sequences and then generates protein family Hidden Markov Models (HMMs) along with their multiple sequence alignments (MSAs). Optionally, paths to existing family HMMs and MSAs can be given (must have matching base filenames one-to-one) in order to update with new sequences in case of matching hits.",
+    "tools": [
+      "SeqFu",
+      "SeqKit",
+      "MMseqs2",
+      "FAMSA",
+      "mafft",
+      "ClipKIT",
+      "hmmer",
+      "HH-suite3",
+      "Biopython",
+      "CMAPLE",
+      "MultiQC"
+    ],
+    "version": "2.4.0"
+  },
+  {
+    "description": "Protein 3D structure prediction pipeline",
+    "input": "samplesheet (sequence, id, fasta)",
+    "name": "proteinfold",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/proteinfold is a bioinformatics best-practice analysis pipeline for Protein 3D structure prediction.",
+    "tools": [
+      "AlphaFold",
+      "ColabFold",
+      "MMseqs2",
+      "ESMFold",
+      "MultiQC"
+    ],
+    "version": "2.0.0"
+  },
+  {
+    "description": "Long-term vegetation trend analysis pipeline for rangeland systems using satellite imagery.",
+    "input": "samplesheet (sample, fastq_1, fastq_2)",
+    "name": "rangeland",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/rangeland is a geographical best-practice analysis pipeline for remotely sensed imagery. The pipeline processes satellite imagery alongside auxiliary data in multiple steps to arrive at a set of trend files related to land-cover changes. The main pipeline steps are:",
+    "tools": [
+      "FORCE",
+      "MultiQC"
+    ],
+    "version": "1.0.0"
+  },
+  {
     "description": "RNA sequencing analysis pipeline for gene/isoform quantification and extensive quality control.",
     "input": "samplesheet (sample, fastq_1, fastq_2, strandedness, seq_platform, seq_center, genome_bam, transcriptome_bam, percent_mapped)",
     "name": "rnaseq",
