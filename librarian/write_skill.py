@@ -193,6 +193,42 @@ def _resources_section(name: str, ps: ParamSchema, insch: InputSchema | None,
     )
 
 
+def _reference_section(ps: ParamSchema) -> str:
+    """Where the pipeline gets its reference genome when the caller does not say.
+
+    nf-core resolves references through AWS iGenomes: `--genome <id>` is looked up under
+    `igenomes_base`, which defaults to the S3 bucket `s3://ngi-igenomes/igenomes/`. When a release
+    also gives `--genome` a **non-null default** (sarek defaults it to `GATK.GRCh38`), a run that
+    passes no reference of its own silently resolves one over S3 — which fails on any host without
+    access to that bucket, and pulls tens of gigabytes on one that has it. The schema says all of
+    this; the docs did not, so the basic recipe looked runnable when it was not.
+
+    Both facts are read straight from the schema, so this stays correct as releases change."""
+    genome = ps.params.get("genome")
+    base = ps.params.get("igenomes_base")
+    if genome is None and base is None:
+        return ""
+    where = f" at `{base.default}`" if base is not None and base.default else ""
+    ignore = " Set `--igenomes-ignore true` to disable the lookup entirely." \
+        if "igenomes_ignore" in ps.params else ""
+    if genome is not None and genome.default:
+        return (
+            f"**This release resolves a reference genome remotely by default.** `--genome` defaults "
+            f"to `{genome.default}`, which is looked up in AWS iGenomes{where}. A run that passes no "
+            f"reference of its own therefore reads its references over S3 — that fails on a host "
+            f"without access to the bucket, and downloads tens of gigabytes on one that has it. For "
+            f"a self-contained run, pass your own reference instead (the `reference_genome_options` "
+            f"group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`)."
+            f"{ignore}\n"
+        )
+    return (
+        f"No reference genome is set by default: supply your own (the `reference_genome_options` "
+        f"group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing "
+        f"`--genome <id>` instead resolves the references from AWS iGenomes{where}, which needs "
+        f"access to that bucket and downloads them.{ignore}\n"
+    )
+
+
 def _engine_section(name: str, st: SubmoduleStatus) -> str:
     """The Nextflow version this release declares, and how to run exactly that one.
 
@@ -453,6 +489,8 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
                         f"releases with `nfclaw versions {name}` and add `--pipeline-version X.Y.Z` to the "
                         f"command above (`nfclaw show {name} --pipeline-version X.Y.Z` prints that release's "
                         "docs).\n\n")
+    reference = _reference_section(ps)
+    reference_block = f"## Reference genome\n{reference}\n" if reference else ""
     engine = _engine_section(name, st)
     engine_block = f"## Nextflow engine\n{engine}\n" if engine else ""
     mandatory = _mandatory_params(ps)
@@ -468,6 +506,7 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"## Inputs\n{_inputs_section(insch, ps)}\n"
         f"## Required parameters\n{_required_params(ps)}\n"
         f"{mandatory_block}"
+        f"{reference_block}"
         f"## Other parameters\n{_param_groups(ps)}\n"
         f"## Resources\n{_resources_section(name, ps, insch, pipeline_version)}\n"
         f"{engine_block}"

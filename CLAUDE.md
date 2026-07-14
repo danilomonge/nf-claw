@@ -85,6 +85,21 @@ git · python 3.11+ (install nfclaw with `pip install -e .`) · nextflow (Java 1
 singularity. **Use a space-free path on macOS *and* Linux** — many bioinformatics tools and
 Nextflow's work directory mishandle spaces in paths; on macOS also avoid iCloud paths.
 
+## Checking a replay
+`nfclaw verify <replay-outdir> --against <original-outdir>` compares the two runs' `outputs.sha256`
+**by path** and reports `identical` / `changed` / `missing` / `extra`. A *missing* or *extra* file
+means the replay did different work (exit 1); a *changed* file does not — nf-core outputs embed
+timestamps (reports, gzip headers, zip entries, MultiQC HTML), so the same file re-made from the same
+inputs is legitimately not byte-identical. Never diff the two `outputs.sha256` files directly: each
+line is `hash  path`, so one changed file appears as both a missing and an extra one.
+
+## Reference genomes
+Some releases resolve a reference **remotely by default** — sarek defaults `--genome` to
+`GATK.GRCh38`, looked up in AWS iGenomes at `s3://ngi-igenomes/igenomes/` — so a run that passes no
+reference of its own reads from S3 and fails on a host without access to that bucket. Each
+`skill.md` states which case its pipeline is in under "Reference genome". Pass your own reference
+(`--fasta`, …) for a self-contained run, or `--igenomes-ignore true` to disable the lookup.
+
 ## Warnings are not failures
 A run (and its replay, which executes the identical command) can print warnings that are **not**
 faults and are **not** nf-claw's: Nextflow reporting the `validation.*` config scope as unrecognised

@@ -63,6 +63,9 @@ sample
 | `--logo-file` | string | ${projectDir}/docs/images/nf-core-differentialabundance_logo_light.png |  |  | A logo to display in the report instead of the generic pipeline logo. |
 | `--css-file` | string | ${projectDir}/assets/nf-core_style.css |  |  | CSS to use to style the output, in lieu of the default nf-core styling |
 
+## Reference genome
+No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
+
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):
 - **[base] Abundance values** (`base_abundance_values`) — 4 parameters

@@ -395,3 +395,55 @@ def test_no_engine_section_when_the_release_declares_nothing(tmp_path):
     pdir = _seed(tmp_path, "mini")                     # seeded nextflow.config has no manifest
     skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
     assert "## Nextflow engine" not in skill.read_text()
+
+
+def _seed_with_schema(tmp_path, name, schema):
+    import json
+
+    up = tmp_path / name / "upstream"
+    up.mkdir(parents=True)
+    for f in ("main.nf", "nextflow.config"):
+        (up / f).write_text("x")
+    (up / "nextflow_schema.json").write_text(json.dumps(schema))
+    return tmp_path
+
+
+def test_warns_when_the_release_resolves_a_reference_from_s3_by_default(tmp_path):
+    # sarek defaults --genome to GATK.GRCh38, resolved through AWS iGenomes at s3://ngi-igenomes/.
+    # A run passing no reference of its own silently reads from S3 — it fails on a host without
+    # access to that bucket. The basic recipe looked runnable when it was not.
+    pdir = _seed_with_schema(tmp_path, "refs", {
+        "title": "nf-core/refs",
+        "definitions": {"reference_genome_options": {
+            "title": "Reference genome options",
+            "properties": {
+                "genome": {"type": "string", "default": "GATK.GRCh38"},
+                "igenomes_base": {"type": "string", "default": "s3://ngi-igenomes/igenomes/"},
+                "igenomes_ignore": {"type": "boolean"},
+            }}}})
+    text = write_skill.generate("refs", pipelines_dir=pdir)[0].read_text()
+    assert "## Reference genome" in text
+    assert "resolves a reference genome remotely by default" in text
+    assert "GATK.GRCh38" in text and "s3://ngi-igenomes/igenomes/" in text
+    assert "--igenomes-ignore true" in text            # the documented way to switch it off
+
+
+def test_states_that_no_reference_is_set_when_the_default_is_null(tmp_path):
+    # rnaseq/scrnaseq: --genome has no default, so nothing is fetched behind the caller's back.
+    pdir = _seed_with_schema(tmp_path, "norefs", {
+        "title": "nf-core/norefs",
+        "definitions": {"reference_genome_options": {
+            "title": "Reference genome options",
+            "properties": {
+                "genome": {"type": "string"},
+                "igenomes_base": {"type": "string", "default": "s3://ngi-igenomes/igenomes/"},
+            }}}})
+    text = write_skill.generate("norefs", pipelines_dir=pdir)[0].read_text()
+    assert "No reference genome is set by default" in text
+    assert "resolves a reference genome remotely by default" not in text
+
+
+def test_no_reference_section_when_the_pipeline_has_no_genome_params(tmp_path):
+    pdir = _seed(tmp_path, "mini")
+    assert "## Reference genome" not in write_skill.generate(
+        "mini", pipelines_dir=pdir)[0].read_text()
