@@ -87,3 +87,32 @@ def test_a_path_that_is_not_a_run_directory_is_named_clearly(tmp_path):
     orig = _bundle(tmp_path, "orig", {"a.txt": "aaa"})
     with pytest.raises(NfclawError, match="not a run directory"):
         verify.compare(orig, tmp_path / "does-not-exist")
+
+
+def test_the_unpinnable_params_json_does_not_make_every_replay_look_broken(tmp_path):
+    # nf-core writes pipeline_info/params_<timestamp>.json with a `new java.util.Date()` evaluated
+    # inline (utils_nextflow_pipeline/main.nf), so — unlike the execution report, whose suffix nfclaw
+    # pins via trace_report_suffix — there is no parameter to pin and nf-claw wraps releases
+    # unmodified. Compared literally, that one file is missing AND extra in every single replay, so
+    # `nfclaw verify` would always fail. Observed on a real nf-core/demo run and its replay.
+    orig = _bundle(tmp_path, "orig", {
+        "pipeline_info/params_2026-07-14_14-13-15.json": "aaa",
+        "fastqc/x.html": "ccc"})
+    replay = _bundle(tmp_path, "replay", {
+        "pipeline_info/params_2026-07-14_15-14-07.json": "bbb",
+        "fastqc/x.html": "ccc"})
+    cmp = verify.compare(orig, replay)
+    assert cmp.missing == [] and cmp.extra == []
+    assert cmp.changed == ["pipeline_info/params_2026-07-14_14-13-15.json"]   # paired, bytes differ
+    assert cmp.structurally_equal
+
+
+def test_the_timestamp_mask_is_confined_to_pipeline_info(tmp_path):
+    # A real result that happens to carry a date in its name must never be folded together with a
+    # differently-dated one — that would hide a genuinely missing output.
+    orig = _bundle(tmp_path, "orig", {"results/sample_2026-07-14_14-13-15.vcf": "aaa"})
+    replay = _bundle(tmp_path, "replay", {"results/sample_2026-07-14_15-14-07.vcf": "aaa"})
+    cmp = verify.compare(orig, replay)
+    assert cmp.missing == ["results/sample_2026-07-14_14-13-15.vcf"]
+    assert cmp.extra == ["results/sample_2026-07-14_15-14-07.vcf"]
+    assert not cmp.structurally_equal

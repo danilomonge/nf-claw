@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -51,6 +52,31 @@ def _read(outdir: Path) -> dict[str, str]:
     return provenance.output_checksums(outdir)
 
 
+# `yyyy-MM-dd_HH-mm-ss`, the format nf-core stamps into the names of its run-metadata files.
+_TIMESTAMP = re.compile(r"\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}")
+
+
+def _key(path: str) -> str:
+    """The identity of an output file for comparison purposes.
+
+    `pipeline_info/` holds the run's own metadata, and nf-core stamps the moment the run started
+    into some of those *filenames*. `params_<timestamp>.json` is the stubborn one: the nf-core
+    template writes it with a `new java.util.Date()` evaluated inline
+    (`utils_nextflow_pipeline/main.nf`), so unlike the execution report — whose suffix nfclaw pins
+    through `trace_report_suffix` — there is no parameter to pin, and nf-claw wraps releases
+    unmodified. Its name therefore differs in every run, for every pipeline.
+
+    Compared literally, that one file shows up as *missing* from the replay and *extra* in it, so
+    **every** replay would be reported as structurally different and `nfclaw verify` would always
+    fail. Masking the timestamp inside `pipeline_info/` pairs the two up: the file is then compared
+    like any other, and only its bytes are reported as changed. The mask is confined to that
+    directory so a real result that happens to carry a date in its name is never folded together.
+    """
+    if path.startswith("pipeline_info/"):
+        return _TIMESTAMP.sub("<timestamp>", path)
+    return path
+
+
 def compare(original: Path, replay: Path) -> Comparison:
     """Compare a replay's outputs against the run it reproduces, by path.
 
@@ -60,17 +86,19 @@ def compare(original: Path, replay: Path) -> Comparison:
     separates the two questions that matter: did the replay produce the same *files* (structural),
     and did any of them come out different (content).
     """
-    before, after = _read(original), _read(replay)
+    # Key on the comparison identity (see `_key`), but report the paths as they are on disk.
+    before = {_key(p): (p, d) for p, d in _read(original).items()}
+    after = {_key(p): (p, d) for p, d in _read(replay).items()}
     identical, changed = [], []
-    for path, digest in sorted(before.items()):
-        if path not in after:
+    for key, (path, digest) in sorted(before.items()):
+        if key not in after:
             continue
-        (identical if after[path] == digest else changed).append(path)
+        (identical if after[key][1] == digest else changed).append(path)
     return Comparison(
         identical=identical,
         changed=changed,
-        missing=sorted(set(before) - set(after)),
-        extra=sorted(set(after) - set(before)),
+        missing=sorted(path for key, (path, _) in before.items() if key not in after),
+        extra=sorted(path for key, (path, _) in after.items() if key not in before),
     )
 
 
