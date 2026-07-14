@@ -5,7 +5,7 @@ import re
 import sys
 from pathlib import Path
 
-from runner import discovery, orchestration, resources, versions
+from runner import discovery, orchestration, resources, verify, versions
 from runner.errors import ErrorCode, NfclawError
 
 
@@ -111,6 +111,12 @@ def main(argv: list[str] | None = None) -> int:
     p_show.add_argument("--pipeline-version", dest="pipeline_version")
     p_versions = sub.add_parser("versions")
     p_versions.add_argument("name")
+    # Compare a replay against the run it reproduces. Keyed on path, because comparing the raw
+    # `outputs.sha256` lines counts one changed file as both a missing and an extra one.
+    p_verify = sub.add_parser("verify")
+    p_verify.add_argument("replay", help="--outdir of the replayed run")
+    p_verify.add_argument("--against", dest="against", required=True,
+                          help="--outdir of the original run it should reproduce")
     # allow_abbrev=False: `run` forwards every unknown flag to the pipeline (via parse_known_args
     # → _collect_overrides). With abbreviation on, a pipeline flag that is a prefix of a reserved
     # nfclaw flag (e.g. `--res`, `--time`) would be silently swallowed as `--resume`/`--timeout`
@@ -198,6 +204,18 @@ def main(argv: list[str] | None = None) -> int:
         for tag, is_pin in avail:
             print(f"{tag}\tlatest (pinned)" if is_pin else tag)
         return 0
+
+    if args.cmd == "verify":
+        try:
+            cmp = verify.compare(Path(args.against).expanduser().resolve(),
+                                 Path(args.replay).expanduser().resolve())
+        except NfclawError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        print(verify.report(cmp), end="")
+        # A file the replay did not make (or made and the original did not) means it did different
+        # work — that is a failure. Differing bytes in the same file are expected and are not.
+        return 0 if cmp.structurally_equal else 1
 
     if args.cmd == "run":
         try:

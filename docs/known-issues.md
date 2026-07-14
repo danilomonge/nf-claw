@@ -227,6 +227,28 @@ must leave the output directory exactly as it found it. It used to create `--out
 now go to a temp directory instead (the printed command still runs as printed, since it names them
 by absolute path).
 
+### A replay produces the same files, but not the same bytes
+**Expected — and byte-equality is not the property to check.** nf-core outputs embed the moment they
+were made: the execution report and timeline carry durations and dates, gzip headers carry an mtime,
+zip entries (FastQC) carry timestamps, and MultiQC writes the run date into its HTML. Re-running the
+same pipeline on the same inputs therefore produces the same *files* with different *bytes*. No
+setting in nf-claw or Nextflow changes that; it is inside the tools.
+
+The property that **is** achievable, and that matters, is structural: did the replay produce the same
+set of files? Check it with:
+```bash
+nfclaw verify results.replay --against results
+```
+It compares the two bundles' `outputs.sha256` **by path** and reports `identical` / `changed` /
+`missing` / `extra`, exiting non-zero only when a file is missing or extra — that means the replay
+did different work. Differing bytes in a file both runs produced are reported, not failed.
+
+**Do not diff the two `outputs.sha256` files directly.** Each line is `hash  path`, so a file whose
+content merely changed has a different line in each bundle and shows up as *both* "missing" and
+"extra" — one changed report is counted twice, and a run whose reports simply carry a new timestamp
+reads as hundreds of missing and extra files. That is an artefact of the comparison, not a defect in
+the replay; `nfclaw verify` keys on the path precisely to separate the two questions.
+
 ## Warnings a run prints that are not faults
 
 These appear in a **normal run and in its replay alike** — the replay executes the identical

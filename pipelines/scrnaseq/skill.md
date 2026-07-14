@@ -60,6 +60,9 @@ The schema groups these under **Mandatory arguments** — the pipeline authors' 
 | `--barcode-whitelist` | string (file path) |  |  |  | If not using the 10X Genomics platform, a custom barcode whitelist can be used with `--barcode_whitelist`. |
 | `--protocol` | string | auto |  |  | The protocol that was used to generate the single cell data, e.g. 10x Genomics v2 Chemistry. Can be 'auto' (cellranger only), '10XV1', '10XV2', '10XV3', '10XV4', or any other protocol string that will get directly passed the respective aligner. |
 
+## Reference genome
+No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
+
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):
 - **Cellranger Multi options** (`cellranger_multi_options`) — 10 parameters
