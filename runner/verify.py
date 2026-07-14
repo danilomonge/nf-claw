@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from runner import provenance
 from runner.errors import ErrorCode, NfclawError
 
 
@@ -26,20 +27,28 @@ class Comparison:
         return not self.missing and not self.extra
 
 
-def _read(bundle: Path) -> dict[str, str]:
-    """`provenance/outputs.sha256` as {relative path: hash}."""
-    checksums = bundle / "provenance" / "outputs.sha256"
-    if not checksums.is_file():
+def _read(outdir: Path) -> dict[str, str]:
+    """What a run directory produced, as {relative path: hash}.
+
+    Prefers the recorded `provenance/outputs.sha256`, so the original run is compared against what it
+    *actually* produced rather than whatever is in its directory now. Falls back to hashing the
+    directory — which is the normal case for the replay side: `provenance/commands.sh` replays the
+    recorded `nextflow` command directly, so the replayed run has results but no bundle of its own.
+    Requiring one would have made this command unusable for exactly the comparison it exists for.
+    """
+    checksums = outdir / "provenance" / "outputs.sha256"
+    if checksums.is_file():
+        out: dict[str, str] = {}
+        for line in checksums.read_text(encoding="utf-8").splitlines():
+            digest, _, path = line.partition("  ")
+            if digest and path:
+                out[path] = digest
+        return out
+    if not outdir.is_dir():
         raise NfclawError(
-            ErrorCode.ENVIRONMENT,
-            f"no provenance bundle found in {bundle} (expected provenance/outputs.sha256).",
-            fix="Pass an --outdir from a run made with provenance enabled.")
-    out: dict[str, str] = {}
-    for line in checksums.read_text(encoding="utf-8").splitlines():
-        digest, _, path = line.partition("  ")
-        if digest and path:
-            out[path] = digest
-    return out
+            ErrorCode.ENVIRONMENT, f"not a run directory: {outdir}",
+            fix="Pass the --outdir of a run (the replay's target, and the original it reproduces).")
+    return provenance.output_checksums(outdir)
 
 
 def compare(original: Path, replay: Path) -> Comparison:

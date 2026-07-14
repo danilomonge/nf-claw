@@ -55,8 +55,35 @@ def test_report_explains_why_bytes_differ_but_flags_a_structural_difference(tmp_
     assert "did NOT produce the same set of files" in text2
 
 
-def test_a_directory_without_a_bundle_is_named_clearly(tmp_path):
+def test_the_replay_side_needs_no_bundle_of_its_own(tmp_path):
+    # `provenance/commands.sh` replays the recorded nextflow command directly, so the replayed run
+    # has results but NO provenance bundle. Requiring one would make this command unusable for the
+    # one comparison it exists for, so a bundle-less directory is hashed on the spot.
+    orig = _bundle(tmp_path, "orig", {})
+    (orig / "results.txt").write_text("same bytes")
+    (orig / "provenance" / "outputs.sha256").write_text(
+        __import__("hashlib").sha256(b"same bytes").hexdigest() + "  results.txt\n")
+    replay = tmp_path / "replay"                       # a plain results directory
+    replay.mkdir()
+    (replay / "results.txt").write_text("same bytes")
+    cmp = verify.compare(orig, replay)
+    assert cmp.identical == ["results.txt"] and cmp.structurally_equal
+
+
+def test_nextflow_state_is_not_counted_as_an_output(tmp_path):
+    # .nextflow/ and .nextflow.log describe the run; they are not its results, and no replay would
+    # reproduce them. Counting them would report a phantom "extra" file on every comparison.
     orig = _bundle(tmp_path, "orig", {"a.txt": "aaa"})
-    (tmp_path / "empty").mkdir()
-    with pytest.raises(NfclawError, match="no provenance bundle"):
-        verify.compare(orig, tmp_path / "empty")
+    replay = tmp_path / "replay"
+    (replay / ".nextflow").mkdir(parents=True)
+    (replay / ".nextflow" / "history").write_text("h")
+    (replay / ".nextflow.log").write_text("log")
+    (replay / "a.txt").write_text("aaa")
+    cmp = verify.compare(orig, replay)
+    assert cmp.extra == [] and cmp.structurally_equal
+
+
+def test_a_path_that_is_not_a_run_directory_is_named_clearly(tmp_path):
+    orig = _bundle(tmp_path, "orig", {"a.txt": "aaa"})
+    with pytest.raises(NfclawError, match="not a run directory"):
+        verify.compare(orig, tmp_path / "does-not-exist")
