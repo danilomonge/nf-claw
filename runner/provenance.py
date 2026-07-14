@@ -74,6 +74,23 @@ def effective_nxf_env(env_extra: dict[str, str] | None = None) -> dict[str, str]
     return env
 
 
+def output_checksums(outdir: Path) -> dict[str, str]:
+    """The run's result files as {path relative to outdir: sha256}, in sorted order.
+
+    The single definition of "what this run produced": the provenance bundle records it, and
+    `nfclaw verify` measures a directory with it. Nextflow's own state (`.nextflow*`) and nfclaw's
+    provenance bundle are excluded — they describe the run, they are not its results, and a replay
+    would never reproduce them byte-for-byte anyway.
+    """
+    prov = outdir / "provenance"
+    return {
+        rel.as_posix(): _sha256(p)
+        for p in sorted(outdir.rglob("*"))
+        if p.is_file() and prov not in p.parents
+        and not is_nextflow_internal(rel := p.relative_to(outdir))
+    }
+
+
 def write(*, outdir: Path, pipeline: str, command_str: str,
           submodule: SubmoduleStatus, input_paths: list[Path],
           env_extra: dict[str, str] | None = None,
@@ -102,10 +119,7 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
     (prov / "inputs.sha256").write_text("\n".join(in_lines) + ("\n" if in_lines else ""),
                                         encoding="utf-8")
 
-    out_lines = [f"{_sha256(p)}  {rel}"
-                 for p in sorted(outdir.rglob("*"))
-                 if p.is_file() and prov not in p.parents
-                 and not is_nextflow_internal(rel := p.relative_to(outdir))]
+    out_lines = [f"{digest}  {rel}" for rel, digest in output_checksums(outdir).items()]
     (prov / "outputs.sha256").write_text("\n".join(out_lines) + ("\n" if out_lines else ""),
                                          encoding="utf-8")
 
