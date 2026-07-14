@@ -63,3 +63,16 @@ def test_check_silent_when_pinned_version_satisfies(tmp_path, monkeypatch):
     (tmp_path / "nextflow.config").write_text("manifest { nextflowVersion = '!>=25.04.0' }\n")
     monkeypatch.setattr(ev, "_installed_raw", lambda: "version 20.0.0 build 1")    # would warn, but the pin is newer
     assert ev.check(tmp_path, nxf_ver="25.10.2") == []
+
+
+def test_minimum_version_extracts_the_pin_for_nxf_ver():
+    # skill.md tells the agent which engine to pin; the version must come from the manifest, never
+    # be invented. A newer Nextflow major changes the config parser and adds warnings the release
+    # never saw (scrnaseq 4.2.0 on 26.04.6 vs 25.10.4 — see docs/known-issues.md).
+    assert ev.minimum_version("!>=25.10.4") == "25.10.4"
+    assert ev.minimum_version(">=22.10.1") == "22.10.1"
+
+
+def test_minimum_version_is_silent_on_a_spec_it_cannot_model():
+    for spec in (None, "", ">=23.04.0 && <24", "!>=22.10.1, <23"):
+        assert ev.minimum_version(spec) is None

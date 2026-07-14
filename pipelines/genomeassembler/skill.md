@@ -76,6 +76,15 @@ nfclaw run genomeassembler --input samplesheet.csv --outdir results -profile doc
 
 nfclaw turns those into Nextflow's `process.resourceLimits` and passes them as a `-c` config — the mechanism nf-core prescribes for exactly this ([docs](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)). Set them to the machine's real capacity. The generated config is kept in `<outdir>/provenance/`, so `commands.sh` replays the run under the same ceiling.
 
+## Nextflow engine
+This release declares `nextflowVersion = '!>=24.10.5'`.
+
+To run the engine this release targets — worth doing if a newer Nextflow emits config-parser warnings the release never saw:
+```bash
+nfclaw run genomeassembler ... --nxf-ver 24.10.5
+```
+`--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
+
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 

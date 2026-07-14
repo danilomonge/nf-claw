@@ -377,3 +377,21 @@ def test_group_list_uses_the_schemas_own_titles(tmp_path):
     pdir = _seed(tmp_path, "mini")
     skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
     assert "**Input/output options** (`input_output_options`)" in skill.read_text()
+
+
+def test_skill_names_the_engine_the_release_declares(tmp_path):
+    # The engine is not a neutral detail: a newer Nextflow major changes the config parser.
+    pdir = _seed(tmp_path, "mini")
+    (pdir / "mini" / "upstream" / "nextflow.config").write_text(
+        "manifest {\n    nextflowVersion = '!>=25.10.4'\n}\n")
+    skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
+    text = skill.read_text()
+    assert "## Nextflow engine" in text
+    assert "!>=25.10.4" in text
+    assert "--nxf-ver 25.10.4" in text                 # the exact flag to pin it
+
+
+def test_no_engine_section_when_the_release_declares_nothing(tmp_path):
+    pdir = _seed(tmp_path, "mini")                     # seeded nextflow.config has no manifest
+    skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
+    assert "## Nextflow engine" not in skill.read_text()

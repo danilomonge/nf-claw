@@ -235,15 +235,69 @@ and none originates in nf-claw. They are catalogued here with their real cause s
 re-investigated, and not mistaken for a defect in the run.
 
 ### `WARN: Unrecognized config option 'validation.defaultIgnoreParams'` / `'validation.monochromeLogs'`
-**Nextflow's config linter, not the pipeline and not nf-claw. Harmless.** Both options are set by the
-*pipeline's own* `nextflow.config` (e.g. `nf-core/scrnaseq` 4.2.0 lines 361–364) inside the
-`validation` scope, which is contributed by the `nf-schema` plugin that same file declares. Nextflow's
-strict config parser validates config options against the scopes it knows *before* plugins are
-loaded, and nf-schema does not register a `ConfigScope` for `validation` — so the parser reports a
-scope it cannot see as unrecognised. The option is read correctly by the plugin at run time and the
-pipeline behaves normally. Tracked upstream:
-[nextflow-io/nf-schema#117](https://github.com/nextflow-io/nf-schema/issues/117).
-Nothing to do; the warning depends on the engine version, not on how the run was launched.
+**Caused by running a Nextflow *newer* than the release targets. Harmless — and avoidable.**
+
+Reproduced by running the same pinned `nf-core/scrnaseq` 4.2.0 tree twice, changing nothing but the
+engine:
+
+| Nextflow | result |
+|---|---|
+| **25.10.4** (the version the release declares, `!>=25.10.4`) | **no warning at all** |
+| **26.04.6** | `WARN: Unrecognized config option 'validation.defaultIgnoreParams'` + `'validation.monochromeLogs'` |
+
+Both options are set by the *pipeline's own* `nextflow.config` (scrnaseq 4.2.0 lines 361–364) inside
+the `validation` scope, which the `nf-schema` plugin it declares contributes. Nextflow 26's strict
+config parser validates config options against the scopes it knows *before* plugins are loaded, and
+nf-schema registers no `ConfigScope` for `validation` — so the parser reports the plugin's own scope
+as unrecognised. The plugin still reads the options correctly and the run is unaffected. Tracked
+upstream: [nextflow-io/nf-schema#117](https://github.com/nextflow-io/nf-schema/issues/117).
+
+**Fix:** run the engine the release was written against — each pipeline's `skill.md` names it under
+"Nextflow engine":
+```bash
+nfclaw run scrnaseq --input ss.csv --outdir results -profile docker --nxf-ver 25.10.4
+```
+The pin is recorded in `<outdir>/provenance/`, so the replay uses the same engine and stays quiet too.
+
+### `ERROR org.pf4j.AbstractExtensionFinder - Different class loaders`
+**A plugin-cache condition on the host, not a defect in the pipeline or in nf-claw.** pf4j (the
+plugin framework Nextflow uses) raises this when it finds the same extension point loaded by two
+different class loaders — [its own troubleshooting guide](https://pf4j.org/doc/troubleshooting.html)
+describes it as "the same extension point in two different class loaders".
+
+**Not reproducible here**, and it is worth saying exactly what was tried, because the obvious
+explanation is wrong: `nf-core/scrnaseq` 4.2.0 was run on Nextflow **25.10.4** and **26.04.6**, in
+`-preview` and as a real containerised run, against a plugin cache that already held **three**
+nf-schema versions side by side (2.5.1, 2.6.1, 2.7.2 — the library pins eight different ones across
+its pipelines), and then against a cache seeded with a **duplicate** `nf-schema-2.5.1` entry. None of
+those produced the error: Nextflow loads only the version the pipeline requests.
+
+If you hit it, the state is in the host's plugin cache, so:
+- clear it and let Nextflow re-fetch exactly the pinned versions: `rm -rf "${NXF_HOME:-$HOME/.nextflow}/plugins"`;
+- pin the engine the release declares (`--nxf-ver`, see above) — plugin loading changed between
+  Nextflow majors;
+- the run's own `provenance/run_manifest.json` records the engine version and every `NXF_*` variable
+  the run saw (including `NXF_PLUGINS_DIR` / `NXF_PLUGINS_MODE` if they were exported), which is the
+  fastest way to tell which of the two it was.
+
+### `WARN: nf-core pipelines do not accept positional arguments. The positional argument \`nextflow\` has been detected.`
+**Something added a stray `nextflow` token to the command line — and it was not nfclaw.** sarek loads
+the `nf-core-utils` plugin, whose check reports *the actual positional argument it was given*. Verified
+by passing a real one: `nextflow run <sarek> -profile test --outdir X -preview stray_token` warns
+about `` `stray_token` `` — the check names the true token, it does not misread the launcher name. The
+same sarek run with no positional argument (on Nextflow 25.10.4 **and** 26.04.6) prints no such
+warning.
+
+So a message naming `` `nextflow` `` means the Nextflow command line literally contained a bare
+`nextflow` token as a pipeline argument. `nfclaw run` cannot produce one: it builds the command as an
+argv list and hands it to `Popen` **without a shell**, so nothing is word-split or glob-expanded into
+an extra token, and a test pins that invariant (`tests/test_nextflow_command.py`). Only sarek reports
+it because only sarek loads the plugin that checks — the stray token would be just as present, and
+just as silent, in a scrnaseq or rnaseq run.
+
+Look at `provenance/run_manifest.json` → `command`: it records the exact command that ran, so the
+stray token is visible there. Common sources are a shell wrapper or alias around `nextflow`, or an
+unquoted glob in a hand-written command.
 
 ### `WARN: --validationSchemaIgnoreParams: genomes` is not a valid parameter (scrnaseq `--demo`)
 **A real bug — but in the pinned release, not in nf-claw.** `nf-core/scrnaseq` 4.2.0 declares
