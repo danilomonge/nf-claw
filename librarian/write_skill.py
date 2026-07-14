@@ -5,6 +5,7 @@ import argparse
 import re
 from pathlib import Path
 
+from runner import engine_version
 from runner import schema as schema_mod
 from runner import submodule as submod
 from runner.schema import InputSchema, Param, ParamSchema, json_scalar
@@ -190,6 +191,28 @@ def _resources_section(name: str, ps: ParamSchema, insch: InputSchema | None,
         "Set them to the machine's real capacity. The generated config is kept in "
         "`<outdir>/provenance/`, so `commands.sh` replays the run under the same ceiling.\n"
     )
+
+
+def _engine_section(name: str, st: SubmoduleStatus) -> str:
+    """The Nextflow version this release declares, and how to run exactly that one.
+
+    The engine is not a neutral detail: a release is written against the Nextflow line it declares,
+    and a newer *major* changes the config parser. Running nf-core/scrnaseq 4.2.0 (which declares
+    `!>=25.10.4`) on Nextflow 26.04.6 adds `Unrecognized config option 'validation.*'` warnings that
+    the same run on 25.10.4 does not produce — verified by running both. The declared version is a
+    fact in the pinned manifest, so it is surfaced here with the flag that pins it."""
+    spec = engine_version.required_spec(st.path / "nextflow.config")
+    if not spec:
+        return ""
+    pin = engine_version.minimum_version(spec)
+    pin_line = ""
+    if pin:
+        pin_line = (f"\n\nTo run the engine this release targets — worth doing if a newer Nextflow "
+                    f"emits config-parser warnings the release never saw:\n```bash\n"
+                    f"nfclaw run {name} ... --nxf-ver {pin}\n```\n"
+                    "`--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same "
+                    "engine. See [known-issues](../../docs/known-issues.md).")
+    return f"This release declares `nextflowVersion = '{spec}'`.{pin_line}\n"
 
 
 def _outputs_section(name: str, st: SubmoduleStatus) -> str:
@@ -430,6 +453,8 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
                         f"releases with `nfclaw versions {name}` and add `--pipeline-version X.Y.Z` to the "
                         f"command above (`nfclaw show {name} --pipeline-version X.Y.Z` prints that release's "
                         "docs).\n\n")
+    engine = _engine_section(name, st)
+    engine_block = f"## Nextflow engine\n{engine}\n" if engine else ""
     mandatory = _mandatory_params(ps)
     mandatory_block = f"## Mandatory arguments\n{mandatory}\n" if mandatory else ""
     body = (
@@ -445,6 +470,7 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"{mandatory_block}"
         f"## Other parameters\n{_param_groups(ps)}\n"
         f"## Resources\n{_resources_section(name, ps, insch, pipeline_version)}\n"
+        f"{engine_block}"
         f"## Outputs\n{_outputs_section(name, st)}\n"
         f"{tools_block}"
         "## Demo\n```bash\n"

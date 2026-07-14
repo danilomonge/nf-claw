@@ -25,6 +25,17 @@ def required_spec(config_path: Path) -> str | None:
     return m.group(1) if m else None
 
 
+def minimum_version(spec: str | None) -> str | None:
+    """The concrete version a `>=`/`>` spec names — the one to pass to `--nxf-ver`.
+
+    `'!>=25.10.4'` → `'25.10.4'`. None for a spec shape we do not model, so a caller never
+    invents an engine version to pin."""
+    if not spec:
+        return None
+    m = _SPEC_RE.match(spec)
+    return m.group(2) if m else None
+
+
 def _installed_raw() -> str | None:
     try:
         r = subprocess.run(["nextflow", "-version"], capture_output=True,
