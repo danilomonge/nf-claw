@@ -281,6 +281,33 @@ nfclaw run scrnaseq --input ss.csv --outdir results -profile docker --nxf-ver 25
 ```
 The pin is recorded in `<outdir>/provenance/`, so the replay uses the same engine and stays quiet too.
 
+### `WARN: Could not load / include the nf-core institutional config` (a host without network access)
+**Nextflow could not fetch nf-core's *optional* remote config — not a defect in the pipeline or in
+nf-claw, and it does not affect results.** Every nf-core release pulls a shared institutional-config
+file from GitHub at parse time. sarek 3.9.0 does it in its own `nextflow.config` (line 322):
+
+```groovy
+includeConfig params.custom_config_base && (!System.getenv('NXF_OFFLINE') || !params.custom_config_base.startsWith('http'))
+    ? "${params.custom_config_base}/nfcore_custom.config" : "/dev/null"
+```
+
+`custom_config_base` defaults to `https://raw.githubusercontent.com/nf-core/configs/master`, so on a
+host that cannot reach GitHub (offline, IPv6-only, an air-gapped cluster) the remote `includeConfig`
+cannot be resolved and Nextflow warns. The file it holds is *optional* per-institution tuning
+(queue names, container settings); a run that does not need it is unaffected, which is why nf-core
+guards the include rather than failing on it. The warning appears in a normal run and in its replay
+alike, because both run the identical command on the same host.
+
+**Fix (removes the warning entirely):** the include is already written to skip the remote fetch when
+`NXF_OFFLINE` is set — set it, and sarek includes `/dev/null` instead of the URL:
+```bash
+nfclaw run sarek --input ss.csv --outdir results -profile docker --nxf-env NXF_OFFLINE=true
+```
+`nfclaw run` records the variable in `<outdir>/provenance/`, so the replay stays quiet too. This is
+the same `NXF_OFFLINE=true` that `CLAUDE.md` documents under "Tuning the Nextflow engine" for
+skipping remote config fetches; it is the general answer whenever a pinned release reaches out to
+`nf-core/configs` on a network-restricted host, not only for sarek.
+
 ### `ERROR org.pf4j.AbstractExtensionFinder - Different class loaders`
 **A plugin-cache condition on the host, not a defect in the pipeline or in nf-claw.** pf4j (the
 plugin framework Nextflow uses) raises this when it finds the same extension point loaded by two
