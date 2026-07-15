@@ -87,6 +87,27 @@ def test_write_ignore_params_config_adds_the_names_to_validation_ignoreparams(tm
     assert text.lstrip().startswith("//")                      # explains itself for anyone who opens it
 
 
+def test_known_plugin_bug_is_flagged(tmp_path):
+    # nf-core-utils@0.4.0 logs a spurious "positional argument `nextflow`" on every run. A release
+    # that declares it gets an advisory naming the exact version.
+    up = _release(tmp_path, plugin="nf-core-utils@0.4.0", configs={})
+    warnings = plugin_compat.known_plugin_warnings(up)
+    assert len(warnings) == 1
+    assert "nf-core-utils@0.4.0" in warnings[0]
+    assert "positional argument" in warnings[0] and "inert" in warnings[0].lower()
+
+
+def test_known_plugin_bug_silent_for_other_versions(tmp_path):
+    # Self-clearing: a different (e.g. future, fixed) version of the same plugin is not flagged.
+    up = _release(tmp_path, plugin="nf-core-utils@0.5.0", configs={})
+    assert plugin_compat.known_plugin_warnings(up) == []
+
+
+def test_known_plugin_bug_silent_when_no_such_plugin(tmp_path):
+    up = _release(tmp_path, plugin="nf-schema@2.5.1", configs={})
+    assert plugin_compat.known_plugin_warnings(up) == []
+
+
 def test_the_pinned_scrnaseq_release_is_the_known_offender():
     # Anchored to the real library: scrnaseq is the one pinned release that declares nf-schema 2.x
     # while its test profiles still set the 1.x param — the warning seen on every `--demo` run.
@@ -107,3 +128,14 @@ def test_no_other_pinned_release_is_flagged():
         if (d / "upstream" / "nextflow.config").exists() and plugin_compat.check(d / "upstream")
     )
     assert flagged in ([], ["scrnaseq"]), flagged
+
+
+def test_the_pinned_sarek_release_declares_the_buggy_plugin():
+    # Anchored to the real library: sarek 3.9.0 declares nf-core-utils@0.4.0, whose observer logs the
+    # spurious "positional argument `nextflow`" on every run. If a future bump moves off 0.4.0, this
+    # test fails and the known-issues entry (and the _KNOWN_PLUGIN_BUGS entry) can come out.
+    up = REPO / "pipelines" / "sarek" / "upstream"
+    if not (up / "nextflow.config").exists():
+        return                                                # submodule not initialised
+    warnings = plugin_compat.known_plugin_warnings(up)
+    assert warnings and any("nf-core-utils@0.4.0" in w for w in warnings)

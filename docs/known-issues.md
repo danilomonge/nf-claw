@@ -330,23 +330,42 @@ If you hit it, the state is in the host's plugin cache, so:
   fastest way to tell which of the two it was.
 
 ### `WARN: nf-core pipelines do not accept positional arguments. The positional argument \`nextflow\` has been detected.`
-**Something added a stray `nextflow` token to the command line — and it was not nfclaw.** sarek loads
-the `nf-core-utils` plugin, whose check reports *the actual positional argument it was given*. Verified
-by passing a real one: `nextflow run <sarek> -profile test --outdir X -preview stray_token` warns
-about `` `stray_token` `` — the check names the true token, it does not misread the launcher name. The
-same sarek run with no positional argument (on Nextflow 25.10.4 **and** 26.04.6) prints no such
-warning.
+**A bug in the pinned `nf-core-utils@0.4.0` plugin — not nf-claw, not the samplesheet, and not a shell
+alias.** sarek 3.9.0 declares `nf-core-utils@0.4.0` (`nextflow.config`, `plugins {}` block). That
+plugin registers a pipeline observer (`NfcorePipelineObserver`) that runs on every launch and calls
+`NfcoreConfigValidator.checkProfileProvided(session.profile, session.commandLine, …)`.
+`checkProfileProvided` **splits its second argument on whitespace and reports the first token as a
+positional argument** — but it is handed `session.commandLine`, the whole command string, which always
+begins with the launcher word `nextflow`. So the first token is `nextflow`, every time, and the check
+mis-flags it. (The intended input is the pipeline's *positional argument list*, which is normally
+empty.)
 
-So a message naming `` `nextflow` `` means the Nextflow command line literally contained a bare
-`nextflow` token as a pipeline argument. `nfclaw run` cannot produce one: it builds the command as an
-argv list and hands it to `Popen` **without a shell**, so nothing is word-split or glob-expanded into
-an extra token, and a test pins that invariant (`tests/test_nextflow_command.py`). Only sarek reports
-it because only sarek loads the plugin that checks — the stray token would be just as present, and
-just as silent, in a scrnaseq or rnaseq run.
+Reproduced with no sarek, no nf-claw, and no samplesheet — a two-line pipeline is enough:
 
-Look at `provenance/run_manifest.json` → `command`: it records the exact command that ran, so the
-stray token is visible there. Common sources are a shell wrapper or alias around `nextflow`, or an
-unquoted glob in a hand-written command.
+```groovy
+// main.nf
+workflow { }
+// nextflow.config
+plugins { id 'nf-core-utils@0.4.0' }
+```
+```console
+$ nextflow run main.nf -profile standard      # zero positional arguments
+$ grep positional .nextflow.log
+WARN  n.p.nfcore.NfcoreConfigValidator - nf-core pipelines do not accept positional arguments.
+The positional argument `nextflow` has been detected.
+```
+
+It is **inert** (`log.warn`, exit 0 — the run completes normally) and it is logged to `.nextflow.log`,
+not the console, which is why it surfaces only when the log file is read. `nfclaw run` cannot be the
+cause: it builds the command as an argv list handed to `Popen` **without a shell**, so no token is
+word-split or glob-expanded, and `tests/test_nextflow_command.py` pins that. The warning appears just
+the same on a plain `nextflow run nf-core/sarek` and on any other pipeline that loads this plugin
+version.
+
+sarek 3.9.0 is the latest release, so there is no fixed version to pin to; the fix belongs upstream in
+`nf-core-utils` (report it there). Because the misattribution keeps recurring, `nfclaw run` now prints
+an advisory before launching when a pinned release declares this plugin version, so the log warning
+arrives already explained.
 
 ### `WARN: --validationSchemaIgnoreParams: genomes` is not a valid parameter (scrnaseq `--demo`)
 **A real bug — but in the pinned release, not in nf-claw.** `nf-core/scrnaseq` 4.2.0 declares

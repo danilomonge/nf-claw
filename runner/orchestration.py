@@ -114,6 +114,10 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # Same contract: advisory, never blocking. Explains a warning the pinned release will emit for a
     # reason that is invisible in its log, so it is not mistaken for a fault in the run or in nfclaw.
     warnings += plugin_compat.check(st.path)
+    # Also advisory: a pinned plugin version with a known, inert bug (e.g. nf-core-utils@0.4.0's
+    # spurious "positional argument `nextflow`" logged on every sarek run). Surfaced up front so the
+    # log message arrives explained rather than re-investigated as a wrapper or samplesheet fault.
+    warnings += plugin_compat.known_plugin_warnings(st.path)
 
     # Where the files nfclaw generates for the run (params file, resource-limits config) are staged.
     # A real run stages them in its own provenance bundle. `--check` must not: it validates and

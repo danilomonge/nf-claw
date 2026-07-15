@@ -20,6 +20,23 @@ _ASSIGNMENT = re.compile(
 # `plugins { id 'nf-schema@2.5.1' }` — the plugin (and major version) the release actually declares.
 _PLUGIN = re.compile(r"id\s+['\"]nf-(schema|validation)@(\d+)")
 
+# Pinned plugin releases with a known, inert bug that a run reproduces faithfully — nf-claw wraps
+# releases unmodified, so the bug ships as-is. Keyed on the exact `id@version` the release declares,
+# so the advisory clears itself the moment the pin moves to a fixed version. Value: what the run will
+# show and why, written to be read on its own.
+_KNOWN_PLUGIN_BUGS = {
+    "nf-core-utils@0.4.0":
+        "logs `WARN ... nf-core pipelines do not accept positional arguments. The positional "
+        "argument `nextflow` has been detected.` to .nextflow.log on every run. Its "
+        "pipeline observer hands the whole command line — which always begins with the launcher word "
+        "`nextflow` — to a positional-argument check that expects the (normally empty) positional "
+        "argument list, so `nextflow` is mis-flagged as a positional argument. It is inert: a "
+        "`log.warn`, the run completes, and it is not produced by nf-claw. An upstream nf-core-utils "
+        "bug; see docs/known-issues.md.",
+}
+# `id 'nf-core-utils@0.4.0'` → the exact plugin id and full version a release declares.
+_PLUGIN_ID = re.compile(r"id\s+['\"]([A-Za-z0-9_-]+@[0-9]+\.[0-9]+\.[0-9]+)['\"]")
+
 
 def _declares_nf_schema_v2(config: Path) -> bool:
     """True when the release declares nf-schema 2.x (where the 1.x params below no longer exist)."""
@@ -110,3 +127,20 @@ def check(upstream: Path) -> list[str]:
         f"generated `-c` config, leaving the pinned release untouched. See docs/known-issues.md."
         for name, files in _detect(upstream).items()
     ]
+
+
+def known_plugin_warnings(upstream: Path) -> list[str]:
+    """Advisory: the pinned release declares a plugin version with a known, inert bug.
+
+    Unlike the nf-schema param above, these warnings cannot be neutralised from nf-claw — they are
+    emitted by the plugin's own observer, with no config lever — so the honest fix is to surface them
+    up front, explained, rather than let the run print an alarming message with no visible cause.
+    Deterministic and self-clearing: keyed on the exact `id@version` the release declares (see
+    `_KNOWN_PLUGIN_BUGS`), so a pin bump to a fixed version silences the advisory automatically.
+    """
+    try:
+        text = (upstream / "nextflow.config").read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    return [f"the pinned release declares `{pid}`, which {_KNOWN_PLUGIN_BUGS[pid]}"
+            for pid in dict.fromkeys(_PLUGIN_ID.findall(text)) if pid in _KNOWN_PLUGIN_BUGS]
