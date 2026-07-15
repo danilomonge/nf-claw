@@ -105,7 +105,8 @@ A run (and its replay, which executes the identical command) can print warnings 
 faults and are **not** nf-claw's: Nextflow reporting the `validation.*` config scope as unrecognised
 (its linter does not see plugin-contributed scopes — upstream nf-schema issue), a pinned release
 setting a parameter its own plugin removed (scrnaseq's `validationSchemaIgnoreParams` — `nfclaw run`
-prints an advisory explaining it before launching), or a `test` profile that deliberately sets
+neutralises this one at the config layer via nf-schema's `validation.ignoreParams` and prints an
+advisory recording that it did, leaving the pinned tree untouched), or a `test` profile that deliberately sets
 conflicting references (rnaseq's `--gtf` with `--gff`). They are catalogued with their real cause in
 [`docs/known-issues.md`](docs/known-issues.md) under "Warnings a run prints that are not faults".
 Check there before reporting one: nf-claw wraps releases **unmodified**, so an upstream warning is

@@ -358,18 +358,35 @@ config option, which the same file already sets — see the
 own `nextflow_schema.json` does not declare it either, so nf-schema reports the parameter as invalid.
 The option is **inert**: it does nothing and results are unaffected.
 
-nf-claw wraps releases **unmodified**, so this cannot be fixed here — but `nfclaw run` now *detects*
-it from the pinned tree and prints an advisory before launching, so the warning arrives explained:
+nf-claw wraps releases **unmodified**, so the release itself is not edited. Instead `nfclaw run`
+neutralises the warning at the config layer: when it detects a removed nf-validation 1.x parameter in
+a pinned nf-schema-2.x release, it writes a small generated config and passes it with `-c` —
+
+```groovy
+// <outdir>/provenance/nf_schema_compat.config
+validation { ignoreParams = ['validationSchemaIgnoreParams'] }
+```
+
+`validation.ignoreParams` is nf-schema's officially documented list of parameter names validation
+should skip ([configuration docs](https://nextflow-io.github.io/nf-schema/latest/configuration/)); it
+*adds* to the pipeline's own `validation.defaultIgnoreParams` rather than replacing it. The obsolete
+name is then ignored, so the warning does not appear — while the pinned release tree stays
+byte-identical (drift-check green) and results are unaffected (the option only changes what
+validation *warns about*). The generated config lives in the provenance bundle, so `commands.sh`
+replays the same run. `nfclaw run` also prints an advisory before launching, so the neutralisation is
+recorded and not mistaken for nf-claw hiding an upstream fault:
 
 ```
-warning: conf/test.config sets `validationSchemaIgnoreParams`, an nf-validation 1.x parameter
-removed in nf-schema 2.x ... the option is inert and does not affect results.
+warning: the pinned release sets `validationSchemaIgnoreParams` in conf/test.config ... nf-claw
+neutralises the warning by adding `validationSchemaIgnoreParams` to nf-schema's
+`validation.ignoreParams` via a generated `-c` config, leaving the pinned release untouched.
 ```
 
-The check is deliberately narrow: a release that declares **nf-validation 1.x** is using that
-parameter *correctly* and is never flagged (nine pinned releases do, including `fetchngs` and
-`chipseq`). Only the nf-schema-2.x-with-a-1.x-parameter combination — the actual defect — is
-reported. Today `scrnaseq` is the only pipeline in the library that hits it.
+The mechanism is deliberately narrow: a release that declares **nf-validation 1.x** is using that
+parameter *correctly* and is never touched (nine pinned releases do, including `fetchngs` and
+`chipseq`). Only the nf-schema-2.x-with-a-1.x-parameter combination — the actual defect — triggers
+it, and injecting the ignore for a parameter a real run never sets (the option lives only in the test
+profiles) is a harmless no-op. Today `scrnaseq` is the only pipeline in the library that hits it.
 
 ### rnaseq `--demo`: `--gtf` with `--gff`, `--transcript_fasta`, and the `first` operator
 **The test dataset, not a misconfiguration.** rnaseq's own `conf/test.config` deliberately sets

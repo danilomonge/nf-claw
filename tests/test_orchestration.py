@@ -228,6 +228,38 @@ def test_configs_passed_to_build_as_extra_configs(tmp_path, monkeypatch):
     assert seen["extra_configs"] == (cfg.resolve(),)              # resolved to absolute, passed as -c
 
 
+def test_obsolete_validation_param_injects_ignoreparams_config(tmp_path, monkeypatch):
+    # A pinned release that declares nf-schema 2.x but still sets an nf-validation 1.x param gets a
+    # generated `-c` config that neutralises the inert "not a valid parameter" warning — without
+    # editing the release tree. The staged file lists the param under validation.ignoreParams.
+    root = _make_pipeline(tmp_path, "mini")
+    up = root / "pipelines" / "mini" / "upstream"
+    (up / "nextflow.config").write_text("plugins { id 'nf-schema@2.5.1' }\n")
+    (up / "conf").mkdir()
+    (up / "conf" / "test.config").write_text(
+        "params {\n    validationSchemaIgnoreParams = 'genomes'\n}\n")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    res = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
+    m = re.search(r"-c (\S+nf_schema_compat\.config)", res.command)
+    assert m, res.command
+    assert "validationSchemaIgnoreParams" in Path(m.group(1)).read_text()
+
+
+def test_clean_release_injects_no_compat_config(tmp_path, monkeypatch):
+    # The default fixture declares no such plugin/param, so no compat `-c` is added — the injection
+    # is confined to the actual nf-schema-2.x-plus-1.x-param defect.
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    res = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
+    assert "nf_schema_compat.config" not in res.command
+
+
 def test_missing_config_fails_fast(tmp_path, monkeypatch):
     import pytest
     from runner.errors import ErrorCode, NfclawError
