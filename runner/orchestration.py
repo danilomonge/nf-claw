@@ -138,6 +138,18 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
         extra_configs.insert(0, resources.write_config(
             limits, staging / "resource_limits.config"))
 
+    # If the pinned release still sets an nf-validation 1.x param that nf-schema 2.x removed (the
+    # `plugin_compat` advisory above), add those names to nf-schema's `validation.ignoreParams` via a
+    # generated `-c` config, so its inert "not a valid parameter" warning does not clutter the run.
+    # The release tree stays byte-identical (drift-check green) and results are unaffected. Inserted
+    # before any user `--config` so the caller can still override, and staged like the ceiling above
+    # so `commands.sh` replays it. Harmless when the param is absent (e.g. a real run that loads no
+    # test profile): ignoring a name that is never set is a no-op.
+    compat_params = plugin_compat.removed_params_in_use(st.path)
+    if compat_params:
+        extra_configs.insert(0, plugin_compat.write_ignore_params_config(
+            compat_params, staging / "nf_schema_compat.config"))
+
     # Pass the work dir explicitly so it stays off the outdir (shared, content-hashed — fine),
     # and any extra `-c` configs. nfclaw launches Nextflow from the outdir (below) so each run
     # gets its own .nextflow/ state, but the work dir must not move into the results.

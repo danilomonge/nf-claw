@@ -57,6 +57,36 @@ def test_silent_when_no_plugin_is_declared(tmp_path):
     assert plugin_compat.check(up) == []
 
 
+def test_advisory_states_nfclaw_neutralises_the_warning(tmp_path):
+    # The advisory must say nf-claw suppresses the warning (via validation.ignoreParams), so the
+    # behaviour is not mistaken for nf-claw silently hiding an upstream fault.
+    up = _release(tmp_path, plugin="nf-schema@2.5.1",
+                  configs={"test.config": "params {\n    validationSchemaIgnoreParams = 'genomes'\n}\n"})
+    issue = plugin_compat.check(up)[0]
+    assert "validation.ignoreParams" in issue and "untouched" in issue
+
+
+def test_removed_params_in_use_lists_the_names(tmp_path):
+    up = _release(tmp_path, plugin="nf-schema@2.5.1",
+                  configs={"test.config": "params {\n    validationSchemaIgnoreParams = 'genomes'\n}\n"})
+    assert plugin_compat.removed_params_in_use(up) == ["validationSchemaIgnoreParams"]
+
+
+def test_removed_params_in_use_empty_for_a_clean_or_1x_release(tmp_path):
+    # Same param, but declared under nf-validation 1.x where it is correct — nothing to neutralise.
+    up = _release(tmp_path, plugin="nf-validation@1.1.3",
+                  configs={"test.config": "params {\n    validationSchemaIgnoreParams = 'genomes'\n}\n"})
+    assert plugin_compat.removed_params_in_use(up) == []
+
+
+def test_write_ignore_params_config_adds_the_names_to_validation_ignoreparams(tmp_path):
+    out = plugin_compat.write_ignore_params_config(
+        ["validationSchemaIgnoreParams", "validationMonochromeLogs"], tmp_path / "compat.config")
+    text = out.read_text()
+    assert "validation { ignoreParams = ['validationSchemaIgnoreParams', 'validationMonochromeLogs'] }" in text
+    assert text.lstrip().startswith("//")                      # explains itself for anyone who opens it
+
+
 def test_the_pinned_scrnaseq_release_is_the_known_offender():
     # Anchored to the real library: scrnaseq is the one pinned release that declares nf-schema 2.x
     # while its test profiles still set the 1.x param — the warning seen on every `--demo` run.
