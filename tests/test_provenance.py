@@ -43,6 +43,37 @@ def test_excludes_nextflow_internals(tmp_path):
     assert "result.txt" in sha and ".nextflow" not in sha          # internals not checksummed
 
 
+def test_copies_legacy_software_versions_yaml(tmp_path):
+    out = tmp_path / "out"
+    (out / "pipeline_info").mkdir(parents=True)
+    (out / "pipeline_info" / "software_versions.yml").write_text("FASTQC: 0.12.1\n")
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="x",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    assert (prov / "software_versions.yml").read_text() == "FASTQC: 0.12.1\n"
+
+
+def test_copies_modern_mqc_software_versions_yaml(tmp_path):
+    # The newer nf-core template names it `nf_core_<pipeline>_software_mqc_versions.yml` (rnaseq,
+    # chipseq, fetchngs, …). The hardcoded `software_versions.yml` never matched it, so versions were
+    # silently missing from the bundle for every such pipeline. The file's own name is preserved.
+    out = tmp_path / "out"
+    (out / "pipeline_info").mkdir(parents=True)
+    name = "nf_core_rnaseq_software_mqc_versions.yml"
+    (out / "pipeline_info" / name).write_text("STAR: 2.7.11\n")
+    prov = provenance.write(outdir=out, pipeline="rnaseq", command_str="x",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    assert (prov / name).read_text() == "STAR: 2.7.11\n"
+
+
+def test_no_versions_yaml_is_fine(tmp_path):
+    # No pipeline_info/ (or no versions file) must not raise — a run can fail before producing one.
+    out = tmp_path / "out"
+    out.mkdir()
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="x",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    assert not list(prov.glob("*software*version*.yml"))
+
+
 def test_replay_reproduces_into_a_fresh_outdir_not_the_original(tmp_path):
     # An nf-core pipeline publishes into --outdir and cannot re-publish over a previous run's files:
     # Nextflow will not overwrite pipeline_info/execution_trace_*.txt, and sarek's BCO manifest
