@@ -123,9 +123,18 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
     (prov / "outputs.sha256").write_text("\n".join(out_lines) + ("\n" if out_lines else ""),
                                          encoding="utf-8")
 
-    sv = outdir / "pipeline_info" / "software_versions.yml"
-    if sv.exists():
-        shutil.copy2(sv, prov / "software_versions.yml")
+    # Copy the run's collated software-versions YAML into the bundle. nf-core publishes it under two
+    # names across template generations: the older `software_versions.yml` and the newer
+    # `nf_core_<pipeline>_software_mqc_versions.yml` (used by rnaseq, chipseq, fetchngs, crisprseq,
+    # nascent, callingcards, metaboigniter, …). Match whatever the run actually wrote into
+    # pipeline_info — both forms contain "software" then "version" — instead of assuming one name, and
+    # keep each file's own name so the bundle records exactly what was produced. A hardcoded
+    # `software_versions.yml` silently copied nothing for every pipeline on the newer template.
+    pinfo = outdir / "pipeline_info"
+    if pinfo.is_dir():
+        for sv in sorted(pinfo.glob("*software*version*.yml")):
+            if sv.is_file():
+                shutil.copy2(sv, prov / sv.name)
 
     # A faithful, self-contained replay:
     #  - reproduce into a FRESH output directory, never the original. An nf-core pipeline publishes
