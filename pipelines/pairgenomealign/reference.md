@@ -1,7 +1,7 @@
 ---
 name: pairgenomealign
-version: 3.0.1
-commit: 593625405c0c67ace47950eea440aef61ef3758b
+version: 3.0.2
+commit: 14442773e8a48c145b23821f7072461a77a50511
 ---
 
 # pairgenomealign — full parameter reference
@@ -37,7 +37,7 @@ nf-core/pairgenomealign pipeline parameters. Every parameter from the pinned `ne
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--export-aln-to` | string |  |  |  | matches ^((no_export\|axt\|bam\|bcf\|bed\|blast\|blasttab\|blasttab+\|chain\|cram\|gff\|html\|psl\|sam\|tab)?,?)*(?<!,)$ | no_export | Convert the final _one-to-one_ alignment to a different format than MAF. |
+| `--export-aln-to` | string |  |  |  | matches ^((no_export\|axt\|bam\|bcf\|bed\|blast\|blasttab\|blasttab\+\|chain\|cram\|gff\|html\|psl\|sam\|tab)?,?)*(?<!,)$ | no_export | Convert the final _one-to-one_ alignment to a different format than MAF. |
 | `--multi-cram` | boolean |  |  |  |  |  | Produce a multi-query CRAM file combining all the alignments. |
 
 ## generic_options
@@ -102,4 +102,4 @@ nf-core/pairgenomealign pipeline parameters. Every parameter from the pinned `ne
 | `--igenomes-base` | string |  | yes |  |  | s3://ngi-igenomes/igenomes/ | The base path to the igenomes reference files |
 | `--igenomes-ignore` | boolean |  | yes |  |  |  | Do not load the iGenomes reference config. |
 
-<!-- Generated from nf-core/pairgenomealign@593625405c0c67ace47950eea440aef61ef3758b. Do not edit by hand. -->
+<!-- Generated from nf-core/pairgenomealign@14442773e8a48c145b23821f7072461a77a50511. Do not edit by hand. -->

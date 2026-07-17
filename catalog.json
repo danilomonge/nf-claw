@@ -1233,7 +1233,7 @@
       "SAMtools",
       "MultiQC"
     ],
-    "version": "3.0.1"
+    "version": "3.0.2"
   },
   {
     "description": "The pangenome graph construction pipeline renders a collection of sequences into a pangenome graph. Its goal is to build a graph that is locally directed and acyclic while preserving large-scale variation. Maintaining local linearity is important for interpretation, visualization, mapping, comparative genomics, and reuse of pangenome graphs",
@@ -1312,7 +1312,7 @@
       "cutadapt",
       "fastp"
     ],
-    "version": "4.1.2"
+    "version": "5.0.0"
   },
   {
     "description": "Generation of sequence-level annotations for amino acid sequences",

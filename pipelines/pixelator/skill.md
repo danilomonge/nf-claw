@@ -1,8 +1,8 @@
 ---
 name: pixelator
 pipeline: nf-core/pixelator
-version: 4.1.2
-commit: 054a1c9927e07445e25fc2f05c33b723dcd61656
+version: 5.0.0
+commit: 5a75705049870f539b085d13abe8390d90908a78
 description: Pipeline for analysis of Proximity Network Assay data
 summary: nf-core/pixelator is a bioinformatics best-practice analysis pipeline for analysis of data from the Proximity Network (PNA) assay. It takes a samplesheet as input and will process your data using pixelator to produce a PXL file containing single-cell protein abundance and protein interactomics data.
 has_samplesheet: true
@@ -66,7 +66,7 @@ Every parameter not listed above is optional as far as the schema is concerned. 
 - **Collapse options** (`pna_collapse_options`) — 3 parameters
 - **Demux options** (`pna_demux_options`) — 7 parameters
 - **Denoise options** (`pna_denoise_options`) — 9 parameters
-- **Graph options** (`pna_graph_options`) — 12 parameters
+- **Graph options** (`pna_graph_options`) — 13 parameters
 - **Layout options** (`pna_layout_options`) — 5 parameters
 - **Sample calling options** (`pna_sample_calling_options`) — 4 parameters
 
@@ -92,12 +92,12 @@ nfclaw run pixelator ... --nxf-ver 25.10.4
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/pixelator/blob/4.1.2/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/pixelator/blob/5.0.0/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: pixelator, cutadapt, fastp.
 
-Full list with references: https://github.com/nf-core/pixelator/blob/4.1.2/CITATIONS.md
+Full list with references: https://github.com/nf-core/pixelator/blob/5.0.0/CITATIONS.md
 
 ## Demo
 ```bash
@@ -105,6 +105,6 @@ nfclaw run pixelator --demo --outdir results   # adds the upstream test profile 
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/pixelator/blob/4.1.2/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/pixelator/blob/5.0.0/docs/usage.md
 
-<!-- Generated from nf-core/pixelator@054a1c9927e07445e25fc2f05c33b723dcd61656. Do not edit by hand. -->
+<!-- Generated from nf-core/pixelator@5a75705049870f539b085d13abe8390d90908a78. Do not edit by hand. -->
