@@ -1,8 +1,8 @@
 ---
 name: pairgenomealign
 pipeline: nf-core/pairgenomealign
-version: 3.0.1
-commit: 593625405c0c67ace47950eea440aef61ef3758b
+version: 3.0.2
+commit: 14442773e8a48c145b23821f7072461a77a50511
 description: Pairwise alignment pipeline (genome to genome or reads to genome)
 summary: nf-core/pairgenomealign is a reproducible pipeline for pairwise whole‑genome alignment built on the LAST toolchain. It aligns one or more _query_ genomes to a _target_ genome using adaptive seeding, trained scoring parameters, and global‑score optimisation (chaining).
 has_samplesheet: true
@@ -79,12 +79,12 @@ nfclaw run pairgenomealign ... --nxf-ver 26.04.0
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/pairgenomealign/blob/3.0.1/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/pairgenomealign/blob/3.0.2/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: LAST, SAMtools, MultiQC.
 
-Full list with references: https://github.com/nf-core/pairgenomealign/blob/3.0.1/CITATIONS.md
+Full list with references: https://github.com/nf-core/pairgenomealign/blob/3.0.2/CITATIONS.md
 
 ## Demo
 ```bash
@@ -92,6 +92,6 @@ nfclaw run pairgenomealign --demo --outdir results   # adds the upstream test pr
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/pairgenomealign/blob/3.0.1/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/pairgenomealign/blob/3.0.2/docs/usage.md
 
-<!-- Generated from nf-core/pairgenomealign@593625405c0c67ace47950eea440aef61ef3758b. Do not edit by hand. -->
+<!-- Generated from nf-core/pairgenomealign@14442773e8a48c145b23821f7072461a77a50511. Do not edit by hand. -->

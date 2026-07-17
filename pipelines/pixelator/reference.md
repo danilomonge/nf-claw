@@ -1,7 +1,7 @@
 ---
 name: pixelator
-version: 4.1.2
-commit: 054a1c9927e07445e25fc2f05c33b723dcd61656
+version: 5.0.0
+commit: 5a75705049870f539b085d13abe8390d90908a78
 ---
 
 # pixelator — full parameter reference
@@ -23,7 +23,7 @@ nf-core/pixelator pipeline parameters. Every parameter from the pinned `nextflow
 | `--help-full` | boolean |  |  |  |  |  | Display the full detailed help message. |
 | `--modules-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/ | Base path / URL for data used in the modules |
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
-| `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/pixelator/ | Base URL or local path to location of pipeline test dataset files |
+| `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/e8950f260973a6778e2ff24988e12fd4474d60e1/ | Base URL or local path to location of pipeline test dataset files. |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
 | `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
@@ -125,6 +125,7 @@ nf-core/pixelator pipeline parameters. Every parameter from the pinned `nextflow
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
+| `--pna-graph-component-size-max-threshold` | integer |  |  |  | ≥ 1 | 500000 | Components with more nodes than this will be filtered from the output data. Set to null to enable automatic size filtering based on the data. |
 | `--pna-graph-component-size-min-threshold` | integer |  |  |  | ≥ 1 | 8000 | Components with fewer nodes than this will be filtered from the output data. Set to null to enable automatic size filtering based on the data. |
 | `--pna-graph-edge-cycle-verification` | boolean |  |  |  |  | true | Activate edge cycle verification to remove edges from well connected regions that are not part of cycles in the graph. |
 | `--pna-graph-initial-stage-leiden-resolution` | number |  |  |  | ≥ 0 | 1.0 | The resolution parameter for the leiden algorithm at the initial stage. |
@@ -133,8 +134,8 @@ nf-core/pixelator pipeline parameters. Every parameter from the pinned `nextflow
 | `--pna-graph-max-refinement-recursion-depth` | integer |  |  |  | ≥ 1; ≤ 100 | 3 | The maximum recursion depth for the refinement algorithm. Set to 1 to disable refinement. |
 | `--pna-graph-min-count` | number |  |  |  | ≥ 0; ≤ 50 | 1.0 | Discard edges with a read count below given value. Set to 1 to disable filtering. |
 | `--pna-graph-multiplet-recovery` | boolean |  |  |  |  | true | Activate the multiplet recovery using leiden community detection |
-| `--pna-graph-refinement-stage-leiden-resolution` | number |  |  |  | ≥ 0 | 0.01 | The resolution parameter for the leiden algorithm at the refinement stage. |
-| `--pna-graph-refinement-stage-max-edges-to-remove` | integer |  |  |  | ≥ 1 | 10 | The maximum number of edges to remove between components during the refinement stage (iteration > 0) of multiplet recovery. |
+| `--pna-graph-refinement-stage-leiden-resolution` | number |  |  |  | ≥ 0 | 0.5 | The resolution parameter for the leiden algorithm at the refinement stage. |
+| `--pna-graph-refinement-stage-max-edges-to-remove` | integer |  |  |  | ≥ 1 | 20 | The maximum number of edges to remove between components during the refinement stage (iteration > 0) of multiplet recovery. |
 | `--pna-graph-refinement-stage-max-edges-to-remove-relative` | number |  |  |  | ≥ 0 |  | The maximum number of edges to remove between two components relative to the number of nodes in the smaller of the two when during the refinement stage (iteration > 0) of multiplet recovery. |
 | `--save-pna-graph-pixelfile` | boolean |  |  |  |  |  | Save the PXL dataset after the graph stage. |
 
@@ -142,7 +143,7 @@ nf-core/pixelator pipeline parameters. Every parameter from the pinned `nextflow
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--pna-layout-layout-algorithm` | string |  |  | pmds_3d, wpmds_3d |  | wpmds_3d | Select a layout algorithm to use. This can be specified as a comma separated list to compute multiple layouts. Possible values are: pmds, pmds_3d, wpmds, wpmds_3d. |
+| `--pna-layout-layout-algorithm` | string |  |  | pmds_3d, wpmds_3d, coarsened_pmds_3d |  | coarsened_pmds_3d | Select a layout algorithm to use. This can be specified as a comma separated list to compute multiple layouts. Possible values are: pmds, pmds_3d, wpmds, wpmds_3d, coarsened_pmds_3d. |
 | `--pna-layout-no-node-marker-counts` | boolean |  |  |  |  |  | Skip adding marker counts to the layout. |
 | `--pna-layout-pmds-pivots` | integer |  |  |  | ≥ 50 | 50 | Number of pivots to use for the PMDS layout algorithm. Default: 50. More gives better results, but increases computation time. |
 | `--pna-layout-wpmds-k` | integer |  |  |  | ≥ 1; ≤ 10 | 5 | The window size used when computing probability weights for the wpmds layout method. Only used when layout algorithm is set to wpmds. |
@@ -152,9 +153,9 @@ nf-core/pixelator pipeline parameters. Every parameter from the pinned `nextflow
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--pna-sample-calling-confidence-threshold` | number |  |  |  | ≥ 0.0; ≤ 1.0 | 0.9 | Confidence threshold for sample calling. |
+| `--pna-sample-calling-enrichment-threshold` | number |  |  |  | ≥ 1.0 | 10.0 | Enrichment threshold for sample calling. |
 | `--pna-sample-calling-remove-incompatible` | boolean |  |  |  |  | true | Remove antibodies that are incompatible with their component's called sample. |
 | `--pna-sample-calling-save-undetermined` | boolean |  |  |  |  |  | Save components that could not be confidently assigned to any sample to a separate pxl file. |
 | `--save-pna-sample-calling-pixelfile` | boolean |  |  |  |  |  | Save the PXL dataset after the sample calling stage. |
 
-<!-- Generated from nf-core/pixelator@054a1c9927e07445e25fc2f05c33b723dcd61656. Do not edit by hand. -->
+<!-- Generated from nf-core/pixelator@5a75705049870f539b085d13abe8390d90908a78. Do not edit by hand. -->
