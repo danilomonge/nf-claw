@@ -190,3 +190,36 @@
 [submodule "pipelines/rangeland/upstream"]
 	path = pipelines/rangeland/upstream
 	url = https://github.com/nf-core/rangeland.git
+[submodule "pipelines/raredisease/upstream"]
+	path = pipelines/raredisease/upstream
+	url = https://github.com/nf-core/raredisease.git
+[submodule "pipelines/readsimulator/upstream"]
+	path = pipelines/readsimulator/upstream
+	url = https://github.com/nf-core/readsimulator.git
+[submodule "pipelines/reportho/upstream"]
+	path = pipelines/reportho/upstream
+	url = https://github.com/nf-core/reportho.git
+[submodule "pipelines/ribomsqc/upstream"]
+	path = pipelines/ribomsqc/upstream
+	url = https://github.com/nf-core/ribomsqc.git
+[submodule "pipelines/riboseq/upstream"]
+	path = pipelines/riboseq/upstream
+	url = https://github.com/nf-core/riboseq.git
+[submodule "pipelines/rnadnavar/upstream"]
+	path = pipelines/rnadnavar/upstream
+	url = https://github.com/nf-core/rnadnavar.git
+[submodule "pipelines/rnafusion/upstream"]
+	path = pipelines/rnafusion/upstream
+	url = https://github.com/nf-core/rnafusion.git
+[submodule "pipelines/rnasplice/upstream"]
+	path = pipelines/rnasplice/upstream
+	url = https://github.com/nf-core/rnasplice.git
+[submodule "pipelines/rnavar/upstream"]
+	path = pipelines/rnavar/upstream
+	url = https://github.com/nf-core/rnavar.git
+[submodule "pipelines/scnanoseq/upstream"]
+	path = pipelines/scnanoseq/upstream
+	url = https://github.com/nf-core/scnanoseq.git
+[submodule "pipelines/seqinspector/upstream"]
+	path = pipelines/seqinspector/upstream
+	url = https://github.com/nf-core/seqinspector.git

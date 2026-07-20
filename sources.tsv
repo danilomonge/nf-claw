@@ -63,3 +63,14 @@ proteinannotator	https://github.com/nf-core/proteinannotator.git	latest-release
 proteinfamilies	https://github.com/nf-core/proteinfamilies.git	latest-release
 proteinfold	https://github.com/nf-core/proteinfold.git	latest-release
 rangeland	https://github.com/nf-core/rangeland.git	latest-release
+raredisease	https://github.com/nf-core/raredisease.git	latest-release
+readsimulator	https://github.com/nf-core/readsimulator.git	latest-release
+reportho	https://github.com/nf-core/reportho.git	latest-release
+ribomsqc	https://github.com/nf-core/ribomsqc.git	latest-release
+riboseq	https://github.com/nf-core/riboseq.git	latest-release
+rnadnavar	https://github.com/nf-core/rnadnavar.git	latest-release
+rnafusion	https://github.com/nf-core/rnafusion.git	latest-release
+rnasplice	https://github.com/nf-core/rnasplice.git	latest-release
+rnavar	https://github.com/nf-core/rnavar.git	latest-release
+scnanoseq	https://github.com/nf-core/scnanoseq.git	latest-release
+seqinspector	https://github.com/nf-core/seqinspector.git	latest-release
