@@ -1,7 +1,7 @@
 ---
 name: ribomsqc
-version: 1.0.0
-commit: 79916e8dea42d7d60b139607ca8eacfaf68e0e19
+version: v1.0.0
+commit: 3654357ea417c0a52ede22721f584885271fc0e7
 ---
 
 # ribomsqc — full parameter reference
@@ -59,4 +59,4 @@ nf-core/ribomsqc pipeline parameters. Every parameter from the pinned `nextflow_
 | `--rt-tolerance` | integer | yes |  |  |  | 150 | Time window (in seconds) around the theoretical retention time in which peaks will be searched. The window is defined as RT ± tolerance. |
 | `--test-mode` | boolean |  | yes |  |  | false | Enable test mode - pipeline continues even if analytes are not found in the data. Useful for CI testing with minimal datasets. |
 
-<!-- Generated from nf-core/ribomsqc@79916e8dea42d7d60b139607ca8eacfaf68e0e19. Do not edit by hand. -->
+<!-- Generated from nf-core/ribomsqc@3654357ea417c0a52ede22721f584885271fc0e7. Do not edit by hand. -->
