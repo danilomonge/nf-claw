@@ -1,8 +1,8 @@
 ---
 name: ribomsqc
 pipeline: nf-core/ribomsqc
-version: 1.0.0
-commit: 79916e8dea42d7d60b139607ca8eacfaf68e0e19
+version: v1.0.0
+commit: 3654357ea417c0a52ede22721f584885271fc0e7
 description: QC pipeline that monitors mass spectrometer performance in ribonucleoside analysis
 summary: QC pipeline that monitors mass spectrometer performance in ribonucleoside analysis
 has_samplesheet: true
@@ -77,12 +77,12 @@ nfclaw run ribomsqc ... --nxf-ver 25.04.0
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/ribomsqc/blob/1.0.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/ribomsqc/blob/v1.0.0/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: ThermoRawFileParser, MSnbase - Bioconductor package, MultiQC.
 
-Full list with references: https://github.com/nf-core/ribomsqc/blob/1.0.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/ribomsqc/blob/v1.0.0/CITATIONS.md
 
 ## Demo
 ```bash
@@ -90,6 +90,6 @@ nfclaw run ribomsqc --demo --outdir results   # adds the upstream test profile (
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/ribomsqc/blob/1.0.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/ribomsqc/blob/v1.0.0/docs/usage.md
 
-<!-- Generated from nf-core/ribomsqc@79916e8dea42d7d60b139607ca8eacfaf68e0e19. Do not edit by hand. -->
+<!-- Generated from nf-core/ribomsqc@3654357ea417c0a52ede22721f584885271fc0e7. Do not edit by hand. -->

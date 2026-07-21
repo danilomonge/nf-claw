@@ -1515,7 +1515,7 @@
       "MSnbase - Bioconductor package",
       "MultiQC"
     ],
-    "version": "1.0.0"
+    "version": "v1.0.0"
   },
   {
     "description": "Analysis of ribosome profiling, or Ribo-seq (also named ribosome footprinting)",
