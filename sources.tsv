@@ -74,3 +74,12 @@ rnasplice	https://github.com/nf-core/rnasplice.git	latest-release
 rnavar	https://github.com/nf-core/rnavar.git	latest-release
 scnanoseq	https://github.com/nf-core/scnanoseq.git	latest-release
 seqinspector	https://github.com/nf-core/seqinspector.git	latest-release
+smrnaseq	https://github.com/nf-core/smrnaseq.git	latest-release
+sopa	https://github.com/nf-core/sopa.git	latest-release
+spatialaxe	https://github.com/nf-core/spatialaxe.git	latest-release
+taxprofiler	https://github.com/nf-core/taxprofiler.git	latest-release
+variantbenchmarking	https://github.com/nf-core/variantbenchmarking.git	latest-release
+variantprioritization	https://github.com/nf-core/variantprioritization.git	latest-release
+viralintegration	https://github.com/nf-core/viralintegration.git	latest-release
+viralmetagenome	https://github.com/nf-core/viralmetagenome.git	latest-release
+viralrecon	https://github.com/nf-core/viralrecon.git	latest-release

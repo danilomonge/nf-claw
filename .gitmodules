@@ -223,3 +223,30 @@
 [submodule "pipelines/seqinspector/upstream"]
 	path = pipelines/seqinspector/upstream
 	url = https://github.com/nf-core/seqinspector.git
+[submodule "pipelines/smrnaseq/upstream"]
+	path = pipelines/smrnaseq/upstream
+	url = https://github.com/nf-core/smrnaseq.git
+[submodule "pipelines/sopa/upstream"]
+	path = pipelines/sopa/upstream
+	url = https://github.com/nf-core/sopa.git
+[submodule "pipelines/spatialaxe/upstream"]
+	path = pipelines/spatialaxe/upstream
+	url = https://github.com/nf-core/spatialaxe.git
+[submodule "pipelines/taxprofiler/upstream"]
+	path = pipelines/taxprofiler/upstream
+	url = https://github.com/nf-core/taxprofiler.git
+[submodule "pipelines/variantbenchmarking/upstream"]
+	path = pipelines/variantbenchmarking/upstream
+	url = https://github.com/nf-core/variantbenchmarking.git
+[submodule "pipelines/variantprioritization/upstream"]
+	path = pipelines/variantprioritization/upstream
+	url = https://github.com/nf-core/variantprioritization.git
+[submodule "pipelines/viralintegration/upstream"]
+	path = pipelines/viralintegration/upstream
+	url = https://github.com/nf-core/viralintegration.git
+[submodule "pipelines/viralmetagenome/upstream"]
+	path = pipelines/viralmetagenome/upstream
+	url = https://github.com/nf-core/viralmetagenome.git
+[submodule "pipelines/viralrecon/upstream"]
+	path = pipelines/viralrecon/upstream
+	url = https://github.com/nf-core/viralrecon.git
