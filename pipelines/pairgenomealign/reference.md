@@ -1,7 +1,7 @@
 ---
 name: pairgenomealign
-version: 3.0.2
-commit: 14442773e8a48c145b23821f7072461a77a50511
+version: 3.0.3
+commit: b64a8e657da2e4b1e2e99950b7355dd99d1d45d4
 ---
 
 # pairgenomealign — full parameter reference
@@ -102,4 +102,4 @@ nf-core/pairgenomealign pipeline parameters. Every parameter from the pinned `ne
 | `--igenomes-base` | string |  | yes |  |  | s3://ngi-igenomes/igenomes/ | The base path to the igenomes reference files |
 | `--igenomes-ignore` | boolean |  | yes |  |  |  | Do not load the iGenomes reference config. |
 
-<!-- Generated from nf-core/pairgenomealign@14442773e8a48c145b23821f7072461a77a50511. Do not edit by hand. -->
+<!-- Generated from nf-core/pairgenomealign@b64a8e657da2e4b1e2e99950b7355dd99d1d45d4. Do not edit by hand. -->
