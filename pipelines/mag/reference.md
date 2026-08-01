@@ -1,7 +1,7 @@
 ---
 name: mag
-version: 5.4.2
-commit: 5dabb0159ac0104885e09f301db22126e8fcb394
+version: 5.5.0
+commit: 56abab5b023ce953c9c43fe21090d156ad0e18af
 ---
 
 # mag — full parameter reference
@@ -26,8 +26,10 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
+| `--ale-per-base-output` | boolean |  |  |  |  |  | Enable ALE per-base output. This output can be very large (tens of GB). |
 | `--coassemble-group` | boolean |  |  |  |  |  | Co-assemble samples within one group, instead of assembling each sample separately. |
 | `--megahit-options` | string |  |  |  |  |  | Additional custom options for MEGAHIT. |
+| `--run-pypolca` | boolean |  |  |  |  |  | Run PyPOLCA polishing on long-read assemblies before binning. |
 | `--skip-ale` | boolean |  |  |  |  |  | Skip ALE |
 | `--skip-flye` | boolean |  |  |  |  |  | Skip Flye assembly. |
 | `--skip-megahit` | boolean |  |  |  |  |  | Skip MEGAHIT assembly. |
@@ -57,7 +59,7 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | `--refine-bins-dastool` | boolean |  |  |  |  |  | Turn on bin refinement using DAS Tool. |
 | `--refine-bins-dastool-savecontig2bin` | boolean |  |  |  |  |  | Specify to save contig to bin maps used for bin refinement |
 | `--refine-bins-dastool-threshold` | number |  |  |  |  | 0.5 | Specify single-copy gene score threshold for bin refinement. |
-| `--run-busco` | boolean |  |  |  |  |  | Enable running BUSCO during bin QC. |
+| `--run-busco` | boolean |  |  |  |  | true | Enable running BUSCO during bin QC. |
 | `--run-checkm` | boolean |  |  |  |  |  | Enable running CheckM during bin QC. |
 | `--run-checkm2` | boolean |  |  |  |  |  | Enable running CheckM2 during bin QC. |
 | `--run-gunc` | boolean |  |  |  |  |  | Turn on GUNC genome chimerism checks |
@@ -78,6 +80,7 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | `--bin-max-size` | integer |  |  |  |  |  | Specify the longest length a bin should be to retain for downstream processing (in base pairs). By default no limit. |
 | `--bin-metabinner-scale` | string |  |  | small, large, huge |  | large | Dataset scale for MetaBinner |
 | `--bin-min-size` | integer |  |  |  | ≥ 0 | 0 | Specify the shortest length a bin should be to retain for downstream processing (in base pairs) |
+| `--bin-seqkit-stats-max-forks` | integer |  |  |  | ≥ 1 |  | Limit the number of concurrent SEQKIT_STATS jobs used for bin size calculation. |
 | `--binning-map-mode` | string |  |  | all, group, own |  | group | Defines mapping strategy to compute co-abundances for binning, i.e. which samples will be mapped against the assembly. |
 | `--bowtie2-mode` | string |  |  |  | matches ^[-\w]*$ |  | Specify alternative Bowtie2 settings for aligning reads back against the assembly. |
 | `--exclude-unbins-from-postbinning` | boolean |  |  |  |  |  | Exclude unbinned contigs in the post-binning steps (bin QC, taxonomic classification, and annotation steps). |
@@ -108,7 +111,7 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | `--prokka-fast-mode` | boolean |  |  |  |  |  | Specify to skip CDS/product searching in Prokka runs |
 | `--prokka-with-compliance` | boolean |  |  |  |  |  | Turn on Prokka complicance mode for truncating contig names for NCBI/ENA compatibility. |
 | `--save-mmseqs-db` | boolean |  |  |  |  |  | Save the downloaded mmseqs2 database specified in `--metaeuk_mmseqs_db`. |
-| `--skip-metaeuk` | boolean |  |  |  |  |  | Skip MetaEuk gene prediction and annotation |
+| `--skip-metaeuk` | boolean |  |  |  |  |  | [DEPRECATED] This parameter no longer has any effect and will be removed in a future release. MetaEuk only runs when `--metaeuk_db` or `--metaeuk_mmseqs_db` is supplied. |
 | `--skip-prodigal` | boolean |  |  |  |  |  | Skip Prodigal gene prediction |
 | `--skip-prokka` | boolean |  |  |  |  |  | Skip Prokka genome annotation. |
 
@@ -119,9 +122,8 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | `--email-on-fail` | string |  | yes |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary, only when pipeline fails. |
 | `--help` | boolean or string |  |  |  |  |  | Display the help message. |
 | `--help-full` | boolean |  |  |  |  |  | Display the full detailed help message. |
-| `--hook-url` | string |  | yes |  |  |  | Incoming hook URL for messaging service |
 | `--max-multiqc-email-size` | string |  | yes |  | matches ^\d+(\.\d+)?\.?\s*(K\|M\|G\|T)?B$ | 25.MB | File size limit when attaching MultiQC reports to summary emails. |
-| `--monochrome-logs` | boolean |  | yes |  |  |  | Use monochrome_logs |
+| `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--multiqc-config` | string (file path) |  | yes |  |  |  | Custom config file to supply to MultiQC. |
 | `--multiqc-logo` | string (file path) |  | yes |  |  |  | Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file |
 | `--multiqc-methods-description` | string (file path) |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
@@ -137,7 +139,7 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--assembly-input` | string (file path) |  |  |  | matches ^\S+\.csv$ |  | Additional input CSV samplesheet containing information about pre-computed assemblies. When set, both read pre-processing and assembly are skipped and the pipeline begins at the binning stage. |
+| `--assembly-input` | string (file path) |  |  |  | matches ^\S+\.csv$ |  | Additional input CSV samplesheet containing information about pre-computed assemblies. When set, assembly is skipped and the supplied assemblies are used for downstream analysis. |
 | `--email` | string |  |  |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary. |
 | `--input` | string (file path) | yes |  |  | matches ^\S+\.csv$ |  | CSV samplesheet file containing information about the samples in the experiment. |
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
@@ -159,12 +161,13 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
+| `--filtlong-filtering-by-shortreads` | boolean |  |  |  |  |  | Filter long reads against short reads when using filtlong. |
 | `--keep-lambda` | boolean |  |  |  |  |  | Keep reads similar to the ONT internal standard Escherichia virus Lambda genome. |
 | `--lambda-reference` | string (file path) |  |  |  |  |  | Genome reference used to remove ONT Lambda contaminant reads. |
 | `--longread-adaptertrimming-tool` | string |  |  | porechop, porechop_abi |  | porechop_abi | Specify which long read adapter trimming tool to use. |
-| `--longread-filtering-tool` | string |  |  | filtlong, nanoq, chopper |  | filtlong | Specify which long read filtering tool to use. |
-| `--longreads-keep-percent` | integer |  |  |  |  | 90 | Keep this percent of bases. |
-| `--longreads-length-weight` | integer |  |  |  |  | 10 | The higher the more important is read length when choosing the best reads. |
+| `--longread-filtering-tool` | string |  |  | chopper, filtlong, nanoq |  | chopper | Specify which long read filtering tool to use. |
+| `--longreads-keep-percent` | integer |  |  |  |  | 90 | Keep this percent of bases. Only used by filtlong. |
+| `--longreads-length-weight` | integer |  |  |  |  | 10 | The higher the more important is read length when choosing the best reads. Only used by filtlong. |
 | `--longreads-min-length` | integer |  |  |  |  | 1000 | Discard any read which is shorter than this value. |
 | `--longreads-min-quality` | integer |  |  |  |  |  | Discard any read which has a mean quality score lower than this value. |
 | `--save-filtered-longreads` | boolean |  |  |  |  |  | Specify to save the resulting length filtered long read FASTQ files to --outdir. |
@@ -203,13 +206,14 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | `--save-hostremoved-reads` | boolean |  |  |  |  |  | Specify to save input FASTQ files with host reads removed to --outdir. |
 | `--save-phixremoved-reads` | boolean |  |  |  |  |  | Specify to save input FASTQ files with phiX reads removed to --outdir. |
 | `--skip-clipping` | boolean |  |  |  |  |  | Skip read preprocessing using fastp or adapterremoval. |
+| `--skip-fastqc` | boolean |  |  |  |  |  | Skip running FastQC on short reads both before and after QC. |
 | `--skip-shortread-qc` | boolean |  |  |  |  |  | Skip all default QC steps for short reads (adapter trimming, phiX removal). |
 
 ## reference_genome_options
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--igenomes-base` | string (directory path) |  | yes |  |  | s3://ngi-igenomes/igenomes/ | The base path to the igenomes reference files |
+| `--igenomes-base` | string |  | yes |  |  | s3://ngi-igenomes/igenomes/ | The base path to the igenomes reference files |
 | `--igenomes-ignore` | boolean |  | yes |  |  |  | Do not load the iGenomes reference config. |
 
 ## reproducibility_options
@@ -230,14 +234,16 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | `--cat-db` | string |  |  |  |  |  | Database for taxonomic classification of metagenome assembled genomes. Can be either a zipped file or a directory containing the extracted output of such. |
 | `--cat-db-generate` | boolean |  |  |  |  |  | Generate CAT database. |
 | `--cat-no-suggestive-asterisks` | boolean |  |  |  |  |  | Specify to turn off CAT marking in output files most probable hits (when multiple) with an asterix. |
-| `--gtdb-db` | string |  |  |  |  | https://data.gtdb.aau.ecogenomic.org/releases/release226/226.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r226_data.tar.gz | Specify the location of a GTDBTK database. Can be either an uncompressed directory or a `.tar.gz` archive. If not specified will be downloaded for you when GTDBTK or binning QC is not skipped. |
-| `--gtdbtk-max-contamination` | number |  |  |  | ≥ 0; ≤ 100 | 10 | Max. bin contamination (in %) allowed to apply GTDB-tk classification. |
+| `--gtdb-db` | string |  |  |  |  | https://data.gtdb.aau.ecogenomic.org/releases/release232/232.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r232_data.tar.gz | Specify the location of a GTDBTK database. Can be either an uncompressed directory or a `.tar.gz` archive. If not specified will be downloaded for you when GTDBTK or binning QC is not skipped. |
+| `--gtdbtk-max-contamination` | number |  |  |  | ≥ 0; ≤ 100 | 10.0 | Max. bin contamination (in %) allowed to apply GTDB-tk classification. |
 | `--gtdbtk-min-af` | number |  |  |  | ≥ 0; ≤ 1 | 0.65 | Min. alignment fraction to consider closest genome. |
-| `--gtdbtk-min-completeness` | number |  |  |  | ≥ 0.01; ≤ 100 | 50 | Min. bin completeness (in %) required to apply GTDB-tk classification. |
-| `--gtdbtk-min-perc-aa` | number |  |  |  | ≥ 0; ≤ 100 | 10 | Min. fraction of AA (in %) in the MSA for bins to be kept. |
+| `--gtdbtk-min-completeness` | number |  |  |  | ≥ 0.01; ≤ 100 | 50.0 | Min. bin completeness (in %) required to apply GTDB-tk classification. |
+| `--gtdbtk-min-perc-aa` | number |  |  |  | ≥ 0; ≤ 100 | 10.0 | Min. fraction of AA (in %) in the MSA for bins to be kept. |
+| `--gtdbtk-place-species` | boolean |  |  |  |  |  | Specify to disable fast classification of genomes by ANI using skani in GTDB-Tk. |
 | `--gtdbtk-pplacer-cpus` | integer |  |  |  |  | 1 | Number of CPUs used for the by GTDB-Tk run tool pplacer. |
 | `--gtdbtk-pplacer-useram` | boolean |  |  |  |  |  | Speed up pplacer step of GTDB-Tk by loading to memory. |
-| `--gtdbtk-skip-aniscreen` | boolean |  |  |  |  |  | Specify to disable fast classification of genomes by ANI using skani in GTDB-Tk. |
+| `--gtdbtk-single-job` | boolean |  |  |  |  |  | Run GTDB-Tk classification for all bins in a single job, rather than one job per sample/assembler/binner group. |
+| `--gtdbtk-skip-aniscreen` | boolean |  | yes |  |  |  | [DEPRECATED] Use `--gtdbtk_place_species` instead. Specify to disable fast classification of genomes by ANI using skani in GTDB-Tk. |
 | `--gtdbtk-use-full-tree` | boolean |  |  |  |  |  | Specify to have GTDBTk to use the full bacterial tree rather than the split tree (requires more memory!) |
 | `--save-cat-db` | boolean |  |  |  |  |  | Save the CAT database generated when specified by `--cat_db_generate`. |
 | `--skip-gtdbtk` | boolean |  |  |  |  |  | Skip the running of GTDB, as well as the automatic download of the database |
@@ -251,4 +257,4 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | `--genomad-splits` | integer |  |  |  |  | 1 | Number of groups that geNomad's MMSeqs2 databse should be split into (reduced memory requirements) |
 | `--run-virus-identification` | boolean |  |  |  |  |  | Run virus identification. |
 
-<!-- Generated from nf-core/mag@5dabb0159ac0104885e09f301db22126e8fcb394. Do not edit by hand. -->
+<!-- Generated from nf-core/mag@56abab5b023ce953c9c43fe21090d156ad0e18af. Do not edit by hand. -->
