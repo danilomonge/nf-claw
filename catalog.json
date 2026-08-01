@@ -833,13 +833,14 @@
       "Prodigal",
       "Prokka",
       "PyDamage",
+      "pypolca",
       "SAMtools",
       "Seqtk",
       "SPAdes",
       "Tiara",
       "Trimmomatic"
     ],
-    "version": "5.4.2"
+    "version": "5.5.0"
   },
   {
     "description": "nf-core/magmap is a bioinformatics best-practice analysis pipeline for mapping reads to a (large) collections of genomes.",
