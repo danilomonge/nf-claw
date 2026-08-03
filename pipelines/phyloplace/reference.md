@@ -1,7 +1,7 @@
 ---
 name: phyloplace
-version: 2.0.1
-commit: 3e37f9d7aa8d9fcca04a4d9661b8cffdb25027fa
+version: 2.1.0
+commit: 441e351e2703329c04ddb494cefcdd017a48b9f1
 ---
 
 # phyloplace — full parameter reference
@@ -58,4 +58,4 @@ nf-core/phyloplace pipeline parameters. Every parameter from the pinned `nextflo
 | `--custom-config-base` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/configs/master | Base directory for Institutional configs. |
 | `--custom-config-version` | string |  | yes |  |  | master | Git commit id for Institutional configs. |
 
-<!-- Generated from nf-core/phyloplace@3e37f9d7aa8d9fcca04a4d9661b8cffdb25027fa. Do not edit by hand. -->
+<!-- Generated from nf-core/phyloplace@441e351e2703329c04ddb494cefcdd017a48b9f1. Do not edit by hand. -->
