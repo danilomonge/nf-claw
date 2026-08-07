@@ -1,7 +1,7 @@
 ---
 name: spatialaxe
-version: 1.0.0
-commit: 494cf02857bd24b2d065f938f7e96e523b5b7def
+version: 1.0.1
+commit: 748d310ac01943c97a15bdbc27ec2525a3ee0a96
 ---
 
 # spatialaxe — full parameter reference
@@ -131,4 +131,4 @@ nf-core/spatialaxe pipeline parameters. Every parameter from the pinned `nextflo
 | `--use-gpu` | boolean |  |  |  |  | false | Enable GPU acceleration (set automatically by the gpu profile). |
 | `--xeniumranger-only` | boolean |  |  |  |  |  | Whether to run vanilla xeniumranger workflow. |
 
-<!-- Generated from nf-core/spatialaxe@494cf02857bd24b2d065f938f7e96e523b5b7def. Do not edit by hand. -->
+<!-- Generated from nf-core/spatialaxe@748d310ac01943c97a15bdbc27ec2525a3ee0a96. Do not edit by hand. -->

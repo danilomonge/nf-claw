@@ -1,8 +1,8 @@
 ---
 name: spatialaxe
 pipeline: nf-core/spatialaxe
-version: 1.0.0
-commit: 494cf02857bd24b2d065f938f7e96e523b5b7def
+version: 1.0.1
+commit: 748d310ac01943c97a15bdbc27ec2525a3ee0a96
 description: A pipeline to process spatialomics data from 10x Xenium In Situ or 10x Atera.
 summary: nf-core/spatialaxe is a bioinformatics best-practice processing and quality control pipeline for Xenium (and soon Atera) data. The current plan for the pipeline implementation is shown in the metromap below. The pipeline is under active developement and changes might occure frequently.
 has_samplesheet: true
@@ -76,12 +76,12 @@ nfclaw run spatialaxe ... --nxf-ver 25.04.0
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/spatialaxe/blob/1.0.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/spatialaxe/blob/1.0.1/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: MultiQC.
 
-Full list with references: https://github.com/nf-core/spatialaxe/blob/1.0.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/spatialaxe/blob/1.0.1/CITATIONS.md
 
 ## Demo
 ```bash
@@ -89,6 +89,6 @@ nfclaw run spatialaxe --demo --outdir results   # adds the upstream test profile
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/spatialaxe/blob/1.0.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/spatialaxe/blob/1.0.1/docs/usage.md
 
-<!-- Generated from nf-core/spatialaxe@494cf02857bd24b2d065f938f7e96e523b5b7def. Do not edit by hand. -->
+<!-- Generated from nf-core/spatialaxe@748d310ac01943c97a15bdbc27ec2525a3ee0a96. Do not edit by hand. -->
