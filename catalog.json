@@ -1895,7 +1895,7 @@
     "tools": [
       "MultiQC"
     ],
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "description": "Taxonomic classification and profiling of shotgun short- and long-read metagenomic data",
