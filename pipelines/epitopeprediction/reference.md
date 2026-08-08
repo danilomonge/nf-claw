@@ -1,7 +1,7 @@
 ---
 name: epitopeprediction
-version: 3.1.0
-commit: 4c13c15b46ec69e959faf2cf338e9ceb795a19d5
+version: 3.1.1
+commit: 48f2eaaeb9b2226489d60a69ce1796c2db4642f2
 ---
 
 # epitopeprediction — full parameter reference
@@ -91,4 +91,4 @@ nf-core/epitopeprediction pipeline parameters. Every parameter from the pinned `
 | `--split-by-variants-distance` | integer |  | yes |  |  | 110000 | Number of nucleotides between previous and current variant across split. |
 | `--split-by-variants-size` | integer |  | yes |  |  | 0 | Number of variants that should be written into one file. Default: number of variants divided by ten |
 
-<!-- Generated from nf-core/epitopeprediction@4c13c15b46ec69e959faf2cf338e9ceb795a19d5. Do not edit by hand. -->
+<!-- Generated from nf-core/epitopeprediction@48f2eaaeb9b2226489d60a69ce1796c2db4642f2. Do not edit by hand. -->

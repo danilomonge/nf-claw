@@ -551,7 +551,7 @@
       "NetMHCII-2.3",
       "NetMHCIIpan-4.0"
     ],
-    "version": "3.1.0"
+    "version": "3.1.1"
   },
   {
     "description": "A pipeline that can be used to recover corrupted FASTQ.gz files, drop or fix uncompliant reads, remove unpaired reads, and settle reads that became disordered",
