@@ -250,3 +250,6 @@
 [submodule "pipelines/viralrecon/upstream"]
 	path = pipelines/viralrecon/upstream
 	url = https://github.com/nf-core/viralrecon.git
+[submodule "pipelines/seqsubmit/upstream"]
+	path = pipelines/seqsubmit/upstream
+	url = https://github.com/nf-core/seqsubmit.git

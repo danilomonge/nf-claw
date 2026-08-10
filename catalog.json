@@ -1854,6 +1854,25 @@
     "version": "1.1.0"
   },
   {
+    "description": "Submit sequences, assemblies, MAGs, etc., to public archives",
+    "input": "parameters (no samplesheet)",
+    "name": "seqsubmit",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/seqsubmit is a Nextflow pipeline for submitting sequence data to ENA. The pipeline currently supports the following submission modes, each routed to a dedicated workflow:",
+    "tools": [
+      "MultiQC",
+      "CoverM",
+      "CheckM2",
+      "CAT and BAT",
+      "tRNAscan-SE 2.0",
+      "barrnap",
+      "ENA Webin-CLI",
+      "assembly_uploader",
+      "genome_uploader"
+    ],
+    "version": "1.0.0"
+  },
+  {
     "description": "Small RNA-Seq Best Practice Analysis Pipeline.",
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "smrnaseq",

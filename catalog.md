@@ -1,6 +1,6 @@
 # Pipeline catalog
 
-84 nf-core pipelines. Grep this file (or `catalog.json`) for a keyword, then read `pipelines/<name>/skill.md`. `input` is derived from each pipeline's samplesheet schema; `output` is the guaranteed output contract (per-release detail is in the pipeline's upstream `docs/output.md`, linked from its skill). `catalog.json` and each `skill.md` also carry a `summary` (the authors' own one-paragraph description from the pipeline README, a richer signal for matching a request than the terse `description` below) and the `tools` it runs (from the pipeline's own `CITATIONS.md`).
+85 nf-core pipelines. Grep this file (or `catalog.json`) for a keyword, then read `pipelines/<name>/skill.md`. `input` is derived from each pipeline's samplesheet schema; `output` is the guaranteed output contract (per-release detail is in the pipeline's upstream `docs/output.md`, linked from its skill). `catalog.json` and each `skill.md` also carry a `summary` (the authors' own one-paragraph description from the pipeline README, a richer signal for matching a request than the terse `description` below) and the `tools` it runs (from the pipeline's own `CITATIONS.md`).
 
 | pipeline | version | input | output | description |
 |---|---|---|---|---|
@@ -79,6 +79,7 @@
 | `scnanoseq` | 1.3.0 | samplesheet (sample, fastq, cell_count) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Single-cell/nuclei pipeline for data derived from Oxford Nanopore |
 | `scrnaseq` | 4.2.0 | samplesheet (sample, fastq_1, fastq_2, fastq_barcode, expected_cells, seq_center, sample_type, feature_type) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Pipeline for processing 10x Genomics single cell rnaseq data |
 | `seqinspector` | 1.1.0 | samplesheet (sample, fastq_1, fastq_2, rundir, tags) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Pipeline to QC your sequences |
+| `seqsubmit` | 1.0.0 | parameters (no samplesheet) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Submit sequences, assemblies, MAGs, etc., to public archives |
 | `smrnaseq` | 2.4.1 | samplesheet (sample, fastq_1, fastq_2) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Small RNA-Seq Best Practice Analysis Pipeline. |
 | `sopa` | 1.0.0 | samplesheet (sample, id, data_path, fastq_dir, cytaimage, colorizedimage, darkimage, image, slide, area, manual_alignment, slidefile) | --outdir/ (per-module results); pipeline_info/ (reports, versions) | Technology-invariant pipeline for spatial omics analysis that scales to millions of cells |
 | `spatialaxe` | 1.0.1 | samplesheet (sample, bundle, image) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | A pipeline to process spatialomics data from 10x Xenium In Situ or 10x Atera. |
