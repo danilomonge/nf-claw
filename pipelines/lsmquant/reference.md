@@ -1,7 +1,7 @@
 ---
 name: lsmquant
-version: 1.0.2
-commit: 6854d63d22ea0d04d4146a8639a726c9648a46ee
+version: 1.0.3
+commit: b39ec6e1fb267ab3d2d3b16d05b921aaa679cd1f
 ---
 
 # lsmquant — full parameter reference
@@ -52,4 +52,4 @@ nf-core/lsmquant pipeline parameters. Every parameter from the pinned `nextflow_
 | `--custom-config-base` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/configs/master | Base directory for Institutional configs. |
 | `--custom-config-version` | string |  | yes |  |  | master | Git commit id for Institutional configs. |
 
-<!-- Generated from nf-core/lsmquant@6854d63d22ea0d04d4146a8639a726c9648a46ee. Do not edit by hand. -->
+<!-- Generated from nf-core/lsmquant@b39ec6e1fb267ab3d2d3b16d05b921aaa679cd1f. Do not edit by hand. -->

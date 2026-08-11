@@ -1,8 +1,8 @@
 ---
 name: lsmquant
 pipeline: nf-core/lsmquant
-version: 1.0.2
-commit: 6854d63d22ea0d04d4146a8639a726c9648a46ee
+version: 1.0.3
+commit: b39ec6e1fb267ab3d2d3b16d05b921aaa679cd1f
 description: A pipeline for preprocessing and analysis of large-scale light-sheet microscopy images based on the NuMorph toolbox
 summary: nf-core/lsmquant is a bioinformatics pipeline that performs preprocessing and analysis of light-sheet microscopy images of tissue cleared samples. The pipeline takes raw images from a directory or a zip archive as input. The images need to be in a 2D single-channel 16-bit tifformat.
 has_samplesheet: true
@@ -70,12 +70,12 @@ nfclaw run lsmquant ... --nxf-ver 25.10.4
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/lsmquant/blob/1.0.2/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/lsmquant/blob/1.0.3/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: BaSiC, elastix, MultiQC, NuMorph, 3DUnetCNN.
 
-Full list with references: https://github.com/nf-core/lsmquant/blob/1.0.2/CITATIONS.md
+Full list with references: https://github.com/nf-core/lsmquant/blob/1.0.3/CITATIONS.md
 
 ## Demo
 ```bash
@@ -83,6 +83,6 @@ nfclaw run lsmquant --demo --outdir results   # adds the upstream test profile (
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/lsmquant/blob/1.0.2/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/lsmquant/blob/1.0.3/docs/usage.md
 
-<!-- Generated from nf-core/lsmquant@6854d63d22ea0d04d4146a8639a726c9648a46ee. Do not edit by hand. -->
+<!-- Generated from nf-core/lsmquant@b39ec6e1fb267ab3d2d3b16d05b921aaa679cd1f. Do not edit by hand. -->
