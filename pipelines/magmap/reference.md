@@ -1,7 +1,7 @@
 ---
 name: magmap
-version: 1.1.0
-commit: 5cb04769826f54752613b36c6d75d00eae126146
+version: 1.2.0
+commit: 20c6dda92b52ad9788dfcc7eebc6330ac48f2fcd
 ---
 
 # magmap — full parameter reference
@@ -39,6 +39,9 @@ nf-core/magmap pipeline parameters. Every parameter from the pinned `nextflow_sc
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
+| `--annotator` | string |  |  | prokka, bakta_supported_only, bakta_all |  | prokka | Which tool to annotate genomes lacking a GFF with: 'prokka', 'bakta_supported_only' (Bacteria to Bakta, everything else -- Archaea and unclassified genomes -- to Prokka) or 'bakta_all' (everything to Bakta, including domains Bakta wasn't designed for). |
+| `--bakta-db` | string (directory path) |  |  |  |  | magmap_bakta_db | Path to a directory holding the Bakta database, used only when --annotator is bakta_supported_only or bakta_all. |
+| `--bakta-store-dir` | string (directory path) |  |  |  |  | magmap_bakta | Path to a directory where Bakta annotation output is stored. |
 | `--checkm-metadata` | string |  |  |  |  |  | Comma-separated list of path to tab-separated files containing the output from CheckM. For column description, see [usage docs](https://nf-co.re/magmap/usage#checkmcheckm2-metadata). |
 | `--email` | string |  |  |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary. |
 | `--genome-store-dir` | string (directory path) |  |  |  |  | magmap_genomes | Path to a directory where downloaded genome files is stored. |
@@ -51,6 +54,7 @@ nf-core/magmap pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 | `--prokka-store-dir` | string (directory path) |  |  |  |  | magmap_prokka | Path to a directory where prokka output is stored. |
 | `--remote-genome-sources` | string |  |  |  |  | https://ftp.ncbi.nlm.nih.gov/genomes/ASSEMBLY_REPORTS/assembly_summary_refseq.txt,https://ftp.ncbi.nlm.nih.gov/genomes/ASSEMBLY_REPORTS/assembly_summary_genbank.txt | Comma-separated list of paths to tsv files with information about genomes in NCBI 'assembly_summary' format. The default are GenBank and RefSeq summary files. |
+| `--save-parquet` | boolean |  |  |  |  |  | Also write the summary tables in Parquet format, alongside the default gzipped TSV. |
 
 ## institutional_config_options
 
@@ -89,6 +93,7 @@ nf-core/magmap pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--skip-sourmash` | boolean |  |  |  |  | true | Skip Sourmash filtering for user-provided genomes |
 | `--sourmash-ksize` | integer |  |  |  |  | 21 | K-mer size used by Sourmash |
 | `--sourmash-save-sourmash` | boolean |  |  |  |  |  | Save Sourmash output |
+| `--species-preference` | string |  |  | all, local, completeness, gtdb |  | all | Select genomes from the same species: 'all', 'local' (prefer local genomes), 'completeness' (prefer the most complete) or 'gtdb' (use GTDB's criterion of completeness and contamination) |
 
 ## trimming_options
 
@@ -102,4 +107,4 @@ nf-core/magmap pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--three-prime-clip-r2` | string |  |  |  |  |  | Instructs Trim Galore to remove bp from the 3' end of read 2 AFTER adapter/quality trimming has been performed. |
 | `--trim-reads` | string |  |  |  |  |  | Instructs Trim Galore to apply the --nextseq=X option, to trim based on quality after removing poly-G tails. |
 
-<!-- Generated from nf-core/magmap@5cb04769826f54752613b36c6d75d00eae126146. Do not edit by hand. -->
+<!-- Generated from nf-core/magmap@20c6dda92b52ad9788dfcc7eebc6330ac48f2fcd. Do not edit by hand. -->

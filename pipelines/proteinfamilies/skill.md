@@ -1,8 +1,8 @@
 ---
 name: proteinfamilies
 pipeline: nf-core/proteinfamilies
-version: 2.4.0
-commit: ec55856845ba2396a9d32d23b1617e6c1b992e87
+version: 2.5.0
+commit: f8c0b183e59df3d87c38d0f7c4acc6918593f4f5
 description: Generate protein family level models (Multiple Sequence Alignments (MSAs), Hidden Markov Models (HMMs)) starting from a FASTA amino acid sequence file.
 summary: nf-core/proteinfamilies is a bioinformatics pipeline that generates protein families from amino acid sequences and/or updates existing families with new sequences. It takes a protein fasta file as input, clusters the sequences and then generates protein family Hidden Markov Models (HMMs) along with their multiple sequence alignments (MSAs). Optionally, paths to existing family HMMs and MSAs can be given (must have matching base filenames one-to-one) in order to update with new sequences in case of matching hits.
 has_samplesheet: true
@@ -27,7 +27,7 @@ This is the pinned latest release. To run a different one, list the available re
 ## Inputs
 | column | type | required | allowed values | constraints |
 |---|---|---|---|---|
-| `sample` | string | yes |  | matches ^\S+$ |
+| `sample` | string | yes |  | matches ^[a-zA-Z0-9._-]+$ |
 | `fasta` | string (file path) | yes |  | matches ^([\S\s]*\/)?[^\s\/]+\.(fa\|fasta\|faa\|fas)(\.gz)?$ |
 | `existing_hmms_to_update` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.tar\.gz$ |
 | `existing_msas_to_update` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.tar\.gz$ |
@@ -52,6 +52,7 @@ Every parameter not listed above is optional as far as the schema is concerned. 
 - **Alignment parameters** (`alignment_params`) — 12 parameters
 - **Clustering parameters** (`clustering_params`) — 8 parameters
 - **Downstream samplsheet creation parameters** (`downstream_params`) — 2 parameters
+- **Family generation parameters** (`family_generation_params`) — 3 parameters
 - **Generic options** (`generic_options`) — 15 parameters
 - **Input/output options** (`input_output_options`) — 4 parameters
 - **Institutional config options** (`institutional_config_options`) — 7 parameters
@@ -71,23 +72,23 @@ nfclaw run proteinfamilies --input samplesheet.csv --outdir results -profile doc
 nfclaw turns those into Nextflow's `process.resourceLimits` and passes them as a `-c` config — the mechanism nf-core prescribes for exactly this ([docs](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)). Set them to the machine's real capacity. The generated config is kept in `<outdir>/provenance/`, so `commands.sh` replays the run under the same ceiling.
 
 ## Nextflow engine
-This release declares `nextflowVersion = '!>=25.10.4'`.
+This release declares `nextflowVersion = '!>=26.04.0'`.
 
 To run the engine this release targets — worth doing if a newer Nextflow emits config-parser warnings the release never saw:
 ```bash
-nfclaw run proteinfamilies ... --nxf-ver 25.10.4
+nfclaw run proteinfamilies ... --nxf-ver 26.04.0
 ```
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/proteinfamilies/blob/2.4.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/proteinfamilies/blob/2.5.0/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: SeqFu, SeqKit, MMseqs2, FAMSA, mafft, ClipKIT, hmmer, HH-suite3, Biopython, CMAPLE, MultiQC.
 
-Full list with references: https://github.com/nf-core/proteinfamilies/blob/2.4.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/proteinfamilies/blob/2.5.0/CITATIONS.md
 
 ## Demo
 ```bash
@@ -95,6 +96,6 @@ nfclaw run proteinfamilies --demo --outdir results   # adds the upstream test pr
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/proteinfamilies/blob/2.4.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/proteinfamilies/blob/2.5.0/docs/usage.md
 
-<!-- Generated from nf-core/proteinfamilies@ec55856845ba2396a9d32d23b1617e6c1b992e87. Do not edit by hand. -->
+<!-- Generated from nf-core/proteinfamilies@f8c0b183e59df3d87c38d0f7c4acc6918593f4f5. Do not edit by hand. -->
