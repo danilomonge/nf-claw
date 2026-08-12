@@ -853,6 +853,7 @@
       "Trim Galore!",
       "sourmash",
       "Prokka",
+      "Bakta",
       "BBmap",
       "samtools",
       "gtdbtk",
@@ -861,9 +862,10 @@
       "R",
       "Tidyverse",
       "data.table",
+      "DuckDB",
       "MultiQC"
     ],
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   {
     "description": "MARS-seq v2 preprocessing pipeline",
@@ -1350,7 +1352,7 @@
       "CMAPLE",
       "MultiQC"
     ],
-    "version": "2.4.0"
+    "version": "2.5.0"
   },
   {
     "description": "Protein 3D structure prediction pipeline",

@@ -1,7 +1,7 @@
 ---
 name: proteinfamilies
-version: 2.4.0
-commit: ec55856845ba2396a9d32d23b1617e6c1b992e87
+version: 2.5.0
+commit: f8c0b183e59df3d87c38d0f7c4acc6918593f4f5
 ---
 
 # proteinfamilies — full parameter reference
@@ -44,6 +44,14 @@ nf-core/proteinfamilies pipeline parameters. Every parameter from the pinned `ne
 |---|---|---|---|---|---|---|---|
 | `--skip-proteinannotator-samplesheet` | boolean |  | yes |  |  | true | Skip the generation of the proteinannotator samplesheet. |
 | `--skip-proteinfold-samplesheet` | boolean |  | yes |  |  | true | Skip the generation of the proteinfold samplesheet. |
+
+## family_generation_params
+
+| parameter | type | required | hidden | allowed values | constraints | default | description |
+|---|---|---|---|---|---|---|---|
+| `--clusters-per-chunk` | integer |  |  |  |  | 1000 | Number of clusters handed to each family generation task by the 'iterative' algorithm. |
+| `--family-generation-algorithm` | string |  |  | standard, iterative |  | standard | Choose the algorithm that turns clusters into family models. Either 'standard', aligning each cluster and building one HMM per task, or 'iterative', letting mgnifam loop HMM building, recruitment and realignment per cluster. |
+| `--save-iterative-family-metadata` | boolean |  |  |  |  |  | Save the family rosters and diagnostics reported by the 'iterative' algorithm |
 
 ## generic_options
 
@@ -123,4 +131,4 @@ nf-core/proteinfamilies pipeline parameters. Every parameter from the pinned `ne
 | `--save-update-families-clipped-fasta` | boolean |  |  |  |  | true | Save FASTA files derived from updated family MSAs (after re-alignment and clipping) |
 | `--save-update-families-pre-clipped-fasta` | boolean |  |  |  |  | false | Save intermediate FASTA files before clipping gappy ends (non-redundant --if `skip_sequence_redundancy_removal` is false-- or all --if `skip_sequence_redundancy_removal` is true--) in the update_families subworkflow |
 
-<!-- Generated from nf-core/proteinfamilies@ec55856845ba2396a9d32d23b1617e6c1b992e87. Do not edit by hand. -->
+<!-- Generated from nf-core/proteinfamilies@f8c0b183e59df3d87c38d0f7c4acc6918593f4f5. Do not edit by hand. -->
