@@ -1,7 +1,7 @@
 ---
 name: sarek
-version: 3.9.0
-commit: b97952e5bac68d5deb93d4a3349a45f146be9830
+version: 3.10.0
+commit: 8ccac7ad37b05dd792447763bf9671b719824587
 ---
 
 # sarek — full parameter reference
@@ -44,7 +44,7 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--vep-phenotypes` | boolean |  |  |  |  |  | Enable the use of the VEP Phenotypes plugin. |
 | `--vep-spliceai` | boolean |  |  |  |  |  | Enable the use of the VEP SpliceAI plugin. |
 | `--vep-spliceregion` | boolean |  |  |  |  |  | Enable the use of the VEP SpliceRegion plugin. |
-| `--vep-version` | string |  |  |  |  | 115.2-1 | Should reflect the VEP version used in the container. |
+| `--vep-version` | string |  |  |  |  | 116.0-0 | Should reflect the VEP version used in the container. |
 
 ## fastq_preprocessing
 
@@ -66,7 +66,7 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 |---|---|---|---|---|---|---|---|
 | `--build-only-index` | boolean |  |  |  |  |  | Only built references. |
 | `--download-cache` | boolean |  |  |  |  |  | Download annotation cache. |
-| `--igenomes-base` | string (directory path) |  |  |  |  | s3://ngi-igenomes/igenomes/ | The base path to the igenomes reference files |
+| `--igenomes-base` | string |  |  |  |  | s3://ngi-igenomes/igenomes/ | The base path to the igenomes reference files |
 | `--igenomes-ignore` | boolean |  |  |  |  |  | Do not load the iGenomes reference config. |
 | `--save-reference` | boolean |  |  |  |  |  | Save built references. |
 
@@ -125,7 +125,7 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--nucleotides-per-second` | integer |  |  |  | ≥ 1 | 200000 | Estimate interval size. |
 | `--skip-tools` | string |  |  |  | matches ^((baserecalibrator\|baserecalibrator_report\|bcftools\|dnascope_filter\|documentation\|fastqc\|haplotypecaller_filter\|haplotyper_filter\|markduplicates\|markduplicates_report\|mosdepth\|multiqc\|samtools\|vcftools\|versions)?,?)*(?<!,)$ |  | Disable specified tools. |
 | `--split-fastq` | integer |  |  |  |  | 50000000 | Specify how many reads each split of a FastQ file contains. Set 0 to turn off splitting at all. |
-| `--tools` | string |  |  |  | matches ^((ascat\|bbsplit\|bcfann\|cnvkit\|controlfreec\|deepvariant\|freebayes\|haplotypecaller\|indexcov\|lofreq\|manta\|merge\|mpileup\|msisensor2\|msisensorpro\|muse\|mutect2\|ngscheckmate\|sentieon_dedup\|sentieon_dnascope\|sentieon_haplotyper\|sentieon_tnscope\|snpeff\|snpsift\|strelka\|tiddit\|vep\|varlociraptor)?,?)*(?<!,)$ |  | Tools to use for contamination removal, duplicate marking, variant calling and/or for annotation. |
+| `--tools` | string |  |  |  | matches ^((ascat\|bbsplit\|bcfann\|cnvkit\|controlfreec\|deepvariant\|freebayes\|haplotypecaller\|indexcov\|lofreq\|manta\|merge\|mpileup\|msisensor2\|msisensorpro\|muse\|mutect2\|ngscheckmate\|parabricks_haplotypecaller\|sentieon_dedup\|sentieon_dnascope\|sentieon_haplotyper\|sentieon_tnscope\|snpeff\|snpsift\|strelka\|tiddit\|vep\|varlociraptor)?,?)*(?<!,)$ |  | Tools to use for contamination removal, duplicate marking, variant calling and/or for annotation. |
 | `--wes` | boolean |  |  |  |  |  | Enable when exome or panel data is provided. |
 
 ## post_variant_calling
@@ -139,6 +139,10 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--normalize-vcfs` | boolean |  |  |  |  |  | Option for normalization of vcf-files. |
 | `--snv-consensus-calling` | boolean |  |  |  |  |  | Enable consensus calling of multiple VCF files from one sample |
 | `--varlociraptor-chunk-size` | integer |  | yes |  | ≥ 1 | 15 | Number of chunks to split the vcf-files for varlociraptor. Minimum 1, indicates no splitting |
+| `--varlociraptor-events-germline` | string |  |  |  |  | germline | Events to consider for FDR filtering for germline samples, must match events described in scenario file. |
+| `--varlociraptor-events-somatic` | string |  |  |  |  | somatic_tumor_high somatic_tumor_low | Events to consider for FDR filtering for somatic samples, must match events described in scenario file. |
+| `--varlociraptor-events-tumor-only` | string |  |  |  |  | somatic_tumor_high somatic_tumor_low | Events to consider for FDR filtering for tumor only samples, must match events described in scenario file. |
+| `--varlociraptor-fdr` | number |  |  |  |  | 0.05 | The probability to be a false discovery may not exceed the given threshold. |
 | `--varlociraptor-scenario-germline` | string |  |  |  |  |  | Yte compatible scenario file for germline samples. Defaults to assets/varlociraptor_germline.yte.yaml |
 | `--varlociraptor-scenario-somatic` | string |  |  |  |  |  | Yte compatible scenario file for somatic samples. Defaults to assets/varlociraptor_somatic.yte.yaml |
 | `--varlociraptor-scenario-tumor-only` | string |  |  |  |  |  | Yte compatible scenario file for tumor only samples. Defaults to assets/varlociraptor_tumor_only.yte.yaml |
@@ -187,9 +191,9 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--msisensorpro-scan` | string |  |  |  |  |  | Path to scan file used with MSIsensorPro. |
 | `--ngscheckmate-bed` | string (file path) |  |  |  | matches ^\S+\.bed$ |  | Path to SNP bed file for sample checking with NGSCheckMate |
 | `--sentieon-dnascope-model` | string (file path) |  |  |  | matches ^\S+\.model$ |  | Machine learning model for Sentieon Dnascope. |
-| `--snpeff-cache` | string (directory path) |  |  |  |  | s3://annotation-cache/snpeff_cache/ | Path to snpEff cache. |
+| `--snpeff-cache` | string |  |  |  |  | s3://annotation-cache/snpeff_cache/ | Path to snpEff cache. |
 | `--snpeff-db` | string |  |  |  |  |  | snpEff DB version. |
-| `--vep-cache` | string (directory path) |  |  |  |  | s3://annotation-cache/vep_cache/ | Path to VEP cache. |
+| `--vep-cache` | string |  |  |  |  | s3://annotation-cache/vep_cache/ | Path to VEP cache. |
 | `--vep-cache-preflight-check` | boolean |  |  |  |  |  | Force preflight check for local VEP cache download |
 | `--vep-cache-version` | string |  |  |  |  |  | VEP cache version. |
 | `--vep-genome` | string |  |  |  |  |  | VEP genome. |
@@ -240,4 +244,4 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--sentieon-dnascope-pcr-indel-model` | string |  |  |  | matches ^(NONE\|HOSTILE\|AGGRESSIVE\|CONSERVATIVE)(?<!,)$ | CONSERVATIVE | Option for selecting the PCR indel model used by Sentieon Dnascope. |
 | `--sentieon-haplotyper-emit-mode` | string |  |  |  | matches ^(all\|confident\|gvcf\|variant\|gvcf,all\|gvcf,confident\|gvcf,variant\|all,gvcf\|confident,gvcf\|variant,gvcf)(?<!,)$ | variant | Option for selecting output and emit-mode of Sentieon's Haplotyper. |
 
-<!-- Generated from nf-core/sarek@b97952e5bac68d5deb93d4a3349a45f146be9830. Do not edit by hand. -->
+<!-- Generated from nf-core/sarek@8ccac7ad37b05dd792447763bf9671b719824587. Do not edit by hand. -->
