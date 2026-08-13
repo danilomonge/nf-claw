@@ -1,8 +1,8 @@
 ---
 name: sarek
 pipeline: nf-core/sarek
-version: 3.9.0
-commit: b97952e5bac68d5deb93d4a3349a45f146be9830
+version: 3.10.0
+commit: 8ccac7ad37b05dd792447763bf9671b719824587
 description: An open-source analysis pipeline to detect germline or somatic variants from whole genome or targeted sequencing
 summary: nf-core/sarek is a workflow designed to detect variants on whole genome or targeted sequencing data. Initially designed for Human, and Mouse, it can work on any species with a reference genome. Sarek can also handle tumour / normal pairs and could include additional relapses.
 has_samplesheet: true
@@ -77,7 +77,7 @@ Every parameter not listed above is optional as far as the schema is concerned. 
 - **Input/output options** (`input_output_options`) — 4 parameters
 - **Institutional config options** (`institutional_config_options`) — 10 parameters
 - **Main options** (`main_options`) — 7 parameters
-- **Post variant calling** (`post_variant_calling`) — 10 parameters
+- **Post variant calling** (`post_variant_calling`) — 14 parameters
 - **Preprocessing** (`preprocessing`) — 6 parameters
 - **Reference genome options** (`reference_genome_options`) — 36 parameters
 - **Unique Molecular Identifiers** (`umi_processing`) — 10 parameters
@@ -94,23 +94,23 @@ nfclaw run sarek --input samplesheet.csv --outdir results -profile docker \
 nfclaw turns those into Nextflow's `process.resourceLimits` and passes them as a `-c` config — the mechanism nf-core prescribes for exactly this ([docs](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)). Set them to the machine's real capacity. The generated config is kept in `<outdir>/provenance/`, so `commands.sh` replays the run under the same ceiling.
 
 ## Nextflow engine
-This release declares `nextflowVersion = '!>=25.10.2'`.
+This release declares `nextflowVersion = '!>=25.10.4'`.
 
 To run the engine this release targets — worth doing if a newer Nextflow emits config-parser warnings the release never saw:
 ```bash
-nfclaw run sarek ... --nxf-ver 25.10.2
+nfclaw run sarek ... --nxf-ver 25.10.4
 ```
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/sarek/blob/3.9.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/sarek/blob/3.10.0/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: ASCAT, alleleCount, BCFTools, BGZip, BWA-MEM, BWA-MEM2, CNVKIT, Condel, Control-FREEC, dbNSFP, DeepVariant, DragMap, EnsemblVEP, FastP, FastQC, FGBio, FreeBayes, GATK, GNU sed, goleft indexcov, HaplotypeCaller Joint Germline, LOFTEE, Manta, Mastermind, Mosdepth, MSIsensor2, MSISensorPro, MultiQC, NGSCheckMate, NVIDIA Clara Parabricks, Phenotypes, PIGZ, P7Zip, SAMtools, snpEff, SpliceAI, SpliceRegion, SPRING, Strelka2, SVDB, Tabix, TIDDIT, Varlociraptor, VCFTools, vcflib, Lofreq, MuSE, R, RColorBrewer.
 
-Full list with references: https://github.com/nf-core/sarek/blob/3.9.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/sarek/blob/3.10.0/CITATIONS.md
 
 ## Demo
 ```bash
@@ -118,6 +118,6 @@ nfclaw run sarek --demo --outdir results   # adds the upstream test profile (-pr
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/sarek/blob/3.9.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/sarek/blob/3.10.0/docs/usage.md
 
-<!-- Generated from nf-core/sarek@b97952e5bac68d5deb93d4a3349a45f146be9830. Do not edit by hand. -->
+<!-- Generated from nf-core/sarek@8ccac7ad37b05dd792447763bf9671b719824587. Do not edit by hand. -->

@@ -1,14 +1,14 @@
 ---
 name: seqinspector
 pipeline: nf-core/seqinspector
-version: 1.1.0
-commit: 9d2c6933af916df5dba430e5600ae733804bf1fe
+version: 1.1.1
+commit: 2b2c69f37f46dc3d1c3ef211aeb14da13295a913
 description: Pipeline to QC your sequences
 summary: nf-core/seqinspector is a bioinformatics pipeline that processes raw sequence data (FASTQ) to provide comprehensive quality control. It can perform subsampling, quality assessment, duplication level analysis, and complexity evaluation on a per-sample basis, while also detecting adapter content, technical artifacts, and common biological contaminants. The pipeline generates detailed MultiQC reports with flexible output options, ranging from individual sample reports to project-wide summaries, making it particularly useful for sequencing core facilities and research groups with access to sequencing instruments. If provided, nf-core/seqinspector can also parse statistics from an Illumina run folder directory into the final MultiQC reports.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, rundir, tags)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: BBMap, BWAMEM2, checkQC, FastQC, Kraken2, Krona, Fastp, FastQ Screen, FASTQE, FQ, MultiQC, MultiQC SAV, Riker, Picard Tools, Rundirparser, SAMTOOLS, SeqFu, Seqkit, Seqtk, Sequali, ToulligQC, pigz, Python, PyYAML, GNU tar
+tools: BBMap, BWAMEM2, checkQC, Chelae, FastQC, Kraken2, Krona, Fastp, FastQ Screen, FASTQE, FQ, MultiQC, MultiQC SAV, Riker, Picard Tools, Rundirparser, SAMTOOLS, SeqFu, Seqkit, Seqtk, Sequali, ToulligQC, pigz, Python, PyYAML, GNU tar
 ---
 # seqinspector
 
@@ -87,12 +87,12 @@ nfclaw run seqinspector ... --nxf-ver 25.10.4
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/seqinspector/blob/1.1.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/seqinspector/blob/1.1.1/docs/output.md
 
 ## Tools this pipeline runs
-The tools/methods this pipeline runs, per the authors' own list: BBMap, BWAMEM2, checkQC, FastQC, Kraken2, Krona, Fastp, FastQ Screen, FASTQE, FQ, MultiQC, MultiQC SAV, Riker, Picard Tools, Rundirparser, SAMTOOLS, SeqFu, Seqkit, Seqtk, Sequali, ToulligQC, pigz, Python, PyYAML, GNU tar.
+The tools/methods this pipeline runs, per the authors' own list: BBMap, BWAMEM2, checkQC, Chelae, FastQC, Kraken2, Krona, Fastp, FastQ Screen, FASTQE, FQ, MultiQC, MultiQC SAV, Riker, Picard Tools, Rundirparser, SAMTOOLS, SeqFu, Seqkit, Seqtk, Sequali, ToulligQC, pigz, Python, PyYAML, GNU tar.
 
-Full list with references: https://github.com/nf-core/seqinspector/blob/1.1.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/seqinspector/blob/1.1.1/CITATIONS.md
 
 ## Demo
 ```bash
@@ -100,6 +100,6 @@ nfclaw run seqinspector --demo --outdir results   # adds the upstream test profi
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/seqinspector/blob/1.1.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/seqinspector/blob/1.1.1/docs/usage.md
 
-<!-- Generated from nf-core/seqinspector@9d2c6933af916df5dba430e5600ae733804bf1fe. Do not edit by hand. -->
+<!-- Generated from nf-core/seqinspector@2b2c69f37f46dc3d1c3ef211aeb14da13295a913. Do not edit by hand. -->

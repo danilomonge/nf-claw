@@ -1,7 +1,7 @@
 ---
 name: seqinspector
-version: 1.1.0
-commit: 9d2c6933af916df5dba430e5600ae733804bf1fe
+version: 1.1.1
+commit: 2b2c69f37f46dc3d1c3ef211aeb14da13295a913
 ---
 
 # seqinspector — full parameter reference
@@ -42,12 +42,12 @@ nf-core/seqinspector pipeline parameters. Every parameter from the pinned `nextf
 |---|---|---|---|---|---|---|---|
 | `--email` | string |  |  |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary. |
 | `--input` | string (file path) | yes |  |  | matches ^\S+\.csv$ |  | Path to comma-separated file containing information about the samples in the experiment. |
-| `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
+| `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header. |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 | `--sample-size` | number |  |  |  | ≥ 0 | 0 | Take a subset of reads for analysis. |
-| `--skip-tools` | string |  |  |  | matches ^((bbmap_clumpify\|checkqc\|fastp\|fastqc\|fastqe\|fastqscreen\|fq_lint\|kraken2\|multiqcsav\|picard_collecthsmetrics\|picard_collectmultiplemetrics\|riker\|rundirparser\|seqkit_stats\|seqfu_stats\|sequali\|toulligqc)?,?)*(?<!,)$ |  | Comma-separated string of tools to skip - overrides any other means of tools selection |
-| `--subsample-tools` | string |  |  |  | matches ^((all\|null\|bbmap_clumpify\|fastp\|fastqc\|fastqe\|fastqscreen\|fq_lint\|kraken2\|picard_collecthsmetrics\|picard_collectmultiplemetrics\|riker\|seqkit_stats\|seqfu_stats\|sequali\|toulligqc)?,?)*(?<!,)$ | fastqscreen,kraken2,picard_collecthsmetrics,picard_collectmultiplemetrics | Comma-separated string of tools to run on subsampled data. Tools not in this list run on original data. |
-| `--tools` | string |  |  |  | matches ^((bbmap_clumpify\|checkqc\|fastp\|fastqc\|fastqe\|fastqscreen\|fq_lint\|kraken2\|multiqcsav\|picard_collecthsmetrics\|picard_collectmultiplemetrics\|riker\|rundirparser\|seqkit_stats\|seqfu_stats\|sequali\|toulligqc)?,?)*(?<!,)$ |  | Comma-separated string of tools to run |
+| `--skip-tools` | string |  |  |  | matches ^((bbmap_clumpify\|checkqc\|chelae\|fastp\|fastqc\|fastqe\|fastqscreen\|fq_lint\|kraken2\|multiqcsav\|picard_collecthsmetrics\|picard_collectmultiplemetrics\|riker\|rundirparser\|seqkit_stats\|seqfu_stats\|sequali\|toulligqc)?,?)*(?<!,)$ |  | Comma-separated string of tools to skip - overrides any other means of tools selection |
+| `--subsample-tools` | string |  |  |  | matches ^((all\|null\|bbmap_clumpify\|chelae\|fastp\|fastqc\|fastqe\|fastqscreen\|fq_lint\|kraken2\|picard_collecthsmetrics\|picard_collectmultiplemetrics\|riker\|seqkit_stats\|seqfu_stats\|sequali\|toulligqc)?,?)*(?<!,)$ | fastqscreen,kraken2,picard_collecthsmetrics,picard_collectmultiplemetrics | Comma-separated string of tools to run on subsampled data. Tools not in this list run on original data. |
+| `--tools` | string |  |  |  | matches ^((bbmap_clumpify\|checkqc\|chelae\|fastp\|fastqc\|fastqe\|fastqscreen\|fq_lint\|kraken2\|multiqcsav\|picard_collecthsmetrics\|picard_collectmultiplemetrics\|riker\|rundirparser\|seqkit_stats\|seqfu_stats\|sequali\|toulligqc)?,?)*(?<!,)$ |  | Comma-separated string of tools to run |
 | `--tools-bundle` | string |  |  |  | matches ^((all\|bam\|fastq\|default\|illumina\|minimal\|ont\|null)?,?)*(?<!,)$ | default | Select some default setup for the tools to be run, tools can still be used to add tools |
 
 ## institutional_config_options
@@ -99,4 +99,4 @@ nf-core/seqinspector pipeline parameters. Every parameter from the pinned `nextf
 | `--continue-with-lint-fail` | boolean |  |  |  |  | true | Whether to continue with the pipeline if linting fails for a single sample. |
 | `--fq-lint-args` | string |  |  |  |  |  | Arguments to pass to FQ lint |
 
-<!-- Generated from nf-core/seqinspector@9d2c6933af916df5dba430e5600ae733804bf1fe. Do not edit by hand. -->
+<!-- Generated from nf-core/seqinspector@2b2c69f37f46dc3d1c3ef211aeb14da13295a913. Do not edit by hand. -->

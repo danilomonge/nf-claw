@@ -1767,7 +1767,7 @@
       "R",
       "RColorBrewer"
     ],
-    "version": "3.9.0"
+    "version": "3.10.0"
   },
   {
     "description": "Single-cell/nuclei pipeline for data derived from Oxford Nanopore",
@@ -1830,6 +1830,7 @@
       "BBMap",
       "BWAMEM2",
       "checkQC",
+      "Chelae",
       "FastQC",
       "Kraken2",
       "Krona",
@@ -1853,7 +1854,7 @@
       "PyYAML",
       "GNU tar"
     ],
-    "version": "1.1.0"
+    "version": "1.1.1"
   },
   {
     "description": "Submit sequences, assemblies, MAGs, etc., to public archives",
