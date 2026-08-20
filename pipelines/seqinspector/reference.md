@@ -1,7 +1,7 @@
 ---
 name: seqinspector
-version: 1.1.1
-commit: 2b2c69f37f46dc3d1c3ef211aeb14da13295a913
+version: 1.1.2
+commit: 6aa08aabb00cdbb0f5b62adf2749b472e794ba04
 ---
 
 # seqinspector — full parameter reference
@@ -99,4 +99,4 @@ nf-core/seqinspector pipeline parameters. Every parameter from the pinned `nextf
 | `--continue-with-lint-fail` | boolean |  |  |  |  | true | Whether to continue with the pipeline if linting fails for a single sample. |
 | `--fq-lint-args` | string |  |  |  |  |  | Arguments to pass to FQ lint |
 
-<!-- Generated from nf-core/seqinspector@2b2c69f37f46dc3d1c3ef211aeb14da13295a913. Do not edit by hand. -->
+<!-- Generated from nf-core/seqinspector@6aa08aabb00cdbb0f5b62adf2749b472e794ba04. Do not edit by hand. -->
