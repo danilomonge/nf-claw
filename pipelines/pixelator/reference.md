@@ -1,7 +1,7 @@
 ---
 name: pixelator
-version: 5.0.0
-commit: 5a75705049870f539b085d13abe8390d90908a78
+version: 5.0.1
+commit: eb3757a96a5c53b3eaaeb3a3e0692d82944dadc2
 ---
 
 # pixelator — full parameter reference
@@ -125,7 +125,7 @@ nf-core/pixelator pipeline parameters. Every parameter from the pinned `nextflow
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--pna-graph-component-size-max-threshold` | integer |  |  |  | ≥ 1 | 500000 | Components with more nodes than this will be filtered from the output data. Set to null to enable automatic size filtering based on the data. |
+| `--pna-graph-component-size-max-threshold` | integer |  |  |  | ≥ 1 | 1000000 | Components with more nodes than this will be filtered from the output data. Set to null to enable automatic size filtering based on the data. |
 | `--pna-graph-component-size-min-threshold` | integer |  |  |  | ≥ 1 | 8000 | Components with fewer nodes than this will be filtered from the output data. Set to null to enable automatic size filtering based on the data. |
 | `--pna-graph-edge-cycle-verification` | boolean |  |  |  |  | true | Activate edge cycle verification to remove edges from well connected regions that are not part of cycles in the graph. |
 | `--pna-graph-initial-stage-leiden-resolution` | number |  |  |  | ≥ 0 | 1.0 | The resolution parameter for the leiden algorithm at the initial stage. |
@@ -158,4 +158,4 @@ nf-core/pixelator pipeline parameters. Every parameter from the pinned `nextflow
 | `--pna-sample-calling-save-undetermined` | boolean |  |  |  |  |  | Save components that could not be confidently assigned to any sample to a separate pxl file. |
 | `--save-pna-sample-calling-pixelfile` | boolean |  |  |  |  |  | Save the PXL dataset after the sample calling stage. |
 
-<!-- Generated from nf-core/pixelator@5a75705049870f539b085d13abe8390d90908a78. Do not edit by hand. -->
+<!-- Generated from nf-core/pixelator@eb3757a96a5c53b3eaaeb3a3e0692d82944dadc2. Do not edit by hand. -->
