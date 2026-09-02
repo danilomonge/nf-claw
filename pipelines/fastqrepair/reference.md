@@ -1,7 +1,7 @@
 ---
 name: fastqrepair
-version: 1.0.0
-commit: 5f102cae4cfaa1d9281b9702ccc3738d9974e388
+version: 1.1.1
+commit: 70a38209407b9367a9ff7ab8b26d84cb1983ea18
 ---
 
 # fastqrepair — full parameter reference
@@ -14,7 +14,8 @@ nf-core/fastqrepair pipeline parameters. Every parameter from the pinned `nextfl
 |---|---|---|---|---|---|---|---|
 | `--email` | string |  |  |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary. |
 | `--email-on-fail` | string |  | yes |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary, only when pipeline fails. |
-| `--hook-url` | string |  | yes |  |  |  | Incoming hook URL for messaging service |
+| `--help` | boolean or string |  |  |  |  |  | Display the help message. |
+| `--help-full` | boolean |  |  |  |  |  | Display the full detailed help message. |
 | `--max-multiqc-email-size` | string |  | yes |  | matches ^\d+(\.\d+)?\.?\s*(K\|M\|G\|T)?B$ | 25.MB | File size limit when attaching MultiQC reports to summary emails. |
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--multiqc-config` | string (file path) |  | yes |  |  |  | Custom config file to supply to MultiQC. |
@@ -26,6 +27,7 @@ nf-core/fastqrepair pipeline parameters. Every parameter from the pinned `nextfl
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
 | `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--version` | boolean |  | yes |  |  |  | Display version and exit. |
@@ -36,11 +38,11 @@ nf-core/fastqrepair pipeline parameters. Every parameter from the pinned `nextfl
 |---|---|---|---|---|---|---|---|
 | `--alphabet` | string |  |  |  | matches ^[^0-9]+$ | ACGTN | Allowed character in the SEQ line for Wipertools. |
 | `--input` | string (file path) | yes |  |  | matches ^\S+\.csv$ |  | Path to comma-separated file containing information about the samples in the experiment. |
-| `--num-splits` | integer |  |  |  | matches ^[1-9]\d*$ | 2 | FASTQ chunk numbers for parallel processing. |
+| `--num-splits` | integer |  |  |  | ≥ 1 | 2 | FASTQ chunk numbers for parallel processing. |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. |
 | `--publish-all-tools` | boolean |  |  |  |  | false | Publish intermediate results. |
 | `--qin` | integer |  |  | 33, 64 |  | 33 | the ASCII offset for BBMap (33=Sanger, 64=old Solexa). |
-| `--skip-bbmap-repair` | boolean |  |  |  |  | false | Skip the BBMap re-pair step. |
+| `--skip-bbmap-repair` | boolean |  |  |  |  | false | This option tells the pipeline to skip the BBMap re-pair step. |
 
 ## institutional_config_options
 
@@ -53,4 +55,4 @@ nf-core/fastqrepair pipeline parameters. Every parameter from the pinned `nextfl
 | `--custom-config-base` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/configs/master | Base directory for Institutional configs. |
 | `--custom-config-version` | string |  | yes |  |  | master | Git commit id for Institutional configs. |
 
-<!-- Generated from nf-core/fastqrepair@5f102cae4cfaa1d9281b9702ccc3738d9974e388. Do not edit by hand. -->
+<!-- Generated from nf-core/fastqrepair@70a38209407b9367a9ff7ab8b26d84cb1983ea18. Do not edit by hand. -->

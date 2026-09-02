@@ -1,8 +1,8 @@
 ---
 name: airrflow
 pipeline: nf-core/airrflow
-version: 5.1.0
-commit: e69d49e3f23f11a3391755b5fb7aa4283c0a2471
+version: 5.1.1
+commit: 8bc3e567d0bb3a4c47ead15a8f42e764580f76dc
 description: B and T cell repertoire analysis pipeline with the Immcantation framework.
 summary: nf-core/airrflow is a bioinformatics best-practice pipeline to analyze B-cell receptor (BCR) or T-cell receptor (TCR) repertoire sequencing data. It allows the processing of targeted bulk and single-cell adaptive immune receptor sequencing data (AIRR-seq), as well as the extraction of TCR and BCR sequences from untargeted bulk and single-cell RNA-seq data. The pipeline enables an end-to-end analysis, departing from raw reads or assembled sequences, and performs sequence assembly, V(D)J assignment, novel allele identification, genotype inference, clonal inference, repertoire analysis, lineage reconstruction and BCR/TCR sequence embedding using the Immcantation framework, as well as other immune repertoire analysis tools.
 has_samplesheet: true
@@ -101,12 +101,12 @@ nfclaw run airrflow ... --nxf-ver 26.04.1
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/airrflow/blob/5.1.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/airrflow/blob/5.1.1/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: FastQC, Fastp, pRESTO, SHazaM, Change-O, IgBLAST, Alakazam, SCOPer, Dowser, IgPhyML, RAxML, MultiQC.
 
-Full list with references: https://github.com/nf-core/airrflow/blob/5.1.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/airrflow/blob/5.1.1/CITATIONS.md
 
 ## Demo
 ```bash
@@ -114,6 +114,6 @@ nfclaw run airrflow --demo --outdir results   # adds the upstream test profile (
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/airrflow/blob/5.1.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/airrflow/blob/5.1.1/docs/usage.md
 
-<!-- Generated from nf-core/airrflow@e69d49e3f23f11a3391755b5fb7aa4283c0a2471. Do not edit by hand. -->
+<!-- Generated from nf-core/airrflow@8bc3e567d0bb3a4c47ead15a8f42e764580f76dc. Do not edit by hand. -->
