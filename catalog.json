@@ -19,7 +19,7 @@
       "RAxML",
       "MultiQC"
     ],
-    "version": "5.1.0"
+    "version": "5.1.1"
   },
   {
     "description": "Amplicon sequencing analysis workflow using DADA2 and QIIME2",
@@ -566,7 +566,7 @@
       "BBMap",
       "MultiQC"
     ],
-    "version": "1.0.0"
+    "version": "1.1.1"
   },
   {
     "description": "fgbio Best Practices FASTQ to Consensus Pipeline",
@@ -1179,7 +1179,7 @@
     "description": "A comprehensive cancer DNA/RNA analysis and reporting pipeline",
     "input": "samplesheet (group_id, subject_id, sample_id, sample_type, sequence_type, info, filetype, filepath)",
     "name": "oncoanalyser",
-    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "summary": "nf-core/oncoanalyser is a Nextflow pipeline for the comprehensive analysis of cancer DNA and RNA sequencing data using the WiGiTS toolkit from the Hartwig Medical Foundation. The pipeline supports a wide range of experimental setups:",
     "tools": [
       "BCFtools",
@@ -1197,7 +1197,7 @@
       "STAR",
       "VIRUSBreakend"
     ],
-    "version": "2.3.0"
+    "version": "3.0.0"
   },
   {
     "description": "A variant caller for PacBio long read sequencing - also can be used for PureTarget panel analysis, and quantification of repeat expansions",
@@ -1236,7 +1236,7 @@
       "SAMtools",
       "MultiQC"
     ],
-    "version": "3.0.3"
+    "version": "3.0.4"
   },
   {
     "description": "The pangenome graph construction pipeline renders a collection of sequences into a pangenome graph. Its goal is to build a graph that is locally directed and acyclic while preserving large-scale variation. Maintaining local linearity is important for interpretation, visualization, mapping, comparative genomics, and reuse of pangenome graphs",
@@ -1906,7 +1906,7 @@
       "Space Ranger",
       "SpatialData"
     ],
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "description": "A pipeline to process spatialomics data from 10x Xenium In Situ or 10x Atera.",

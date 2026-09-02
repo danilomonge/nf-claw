@@ -1,8 +1,8 @@
 ---
 name: sopa
 pipeline: nf-core/sopa
-version: 1.0.0
-commit: f42485ead97376c4f7cb70e11916f13b35e092f1
+version: 1.0.1
+commit: 0b959963a3984ff78725209113d9ecdb78cef0b6
 description: Technology-invariant pipeline for spatial omics analysis that scales to millions of cells
 summary: nf-core/sopa is the Nextflow version of Sopa. Built on top of SpatialData, Sopa enables processing and analyses of spatial omics data with single-cell resolution (spatial transcriptomics or multiplex imaging data) using a standard data structure and output. We currently support the following technologies: Xenium, Visium HD, MERSCOPE, CosMX, PhenoCycler, MACSima, Molecural Cartography, and others. It outputs a .zarr directory containing a processed SpatialData object, and a .explorer directory for visualization.
 has_samplesheet: true
@@ -63,11 +63,11 @@ Every parameter not listed above is optional as far as the schema is concerned. 
 - **Explorer** (`explorer`) — 3 parameters
 - **Cell filtering** (`filtering`) — 4 parameters
 - **Fluorescence annotation** (`fluorescence_annotation`) — 3 parameters
-- **Generic options** (`generic_options`) — 12 parameters
+- **Generic options** (`generic_options`) — 11 parameters
 - **Image preprocessing** (`image_preprocessing`) — 3 parameters
 - **Input/output options** (`input_output_options`) — 3 parameters
 - **Institutional config options** (`institutional_config_options`) — 6 parameters
-- **Patches** (`patches`) — 6 parameters
+- **Patches** (`patches`) — 7 parameters
 - **Proseg** (`proseg`) — 4 parameters
 - **Reader** (`reader`) — 2 parameters
 - **Scanpy preprocessing** (`scanpy_preprocessing`) — 4 parameters
@@ -86,23 +86,23 @@ nfclaw run sopa --input samplesheet.csv --outdir results -profile docker \
 nfclaw turns those into Nextflow's `process.resourceLimits` and passes them as a `-c` config — the mechanism nf-core prescribes for exactly this ([docs](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)). Set them to the machine's real capacity. The generated config is kept in `<outdir>/provenance/`, so `commands.sh` replays the run under the same ceiling.
 
 ## Nextflow engine
-This release declares `nextflowVersion = '!>=25.04.0'`.
+This release declares `nextflowVersion = '!>=25.10.4'`.
 
 To run the engine this release targets — worth doing if a newer Nextflow emits config-parser warnings the release never saw:
 ```bash
-nfclaw run sopa ... --nxf-ver 25.04.0
+nfclaw run sopa ... --nxf-ver 25.10.4
 ```
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/sopa/blob/1.0.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/sopa/blob/1.0.1/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: AnnData, Scanpy, Space Ranger, SpatialData.
 
-Full list with references: https://github.com/nf-core/sopa/blob/1.0.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/sopa/blob/1.0.1/CITATIONS.md
 
 ## Demo
 ```bash
@@ -110,6 +110,6 @@ nfclaw run sopa --demo --outdir results   # adds the upstream test profile (-pro
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/sopa/blob/1.0.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/sopa/blob/1.0.1/docs/usage.md
 
-<!-- Generated from nf-core/sopa@f42485ead97376c4f7cb70e11916f13b35e092f1. Do not edit by hand. -->
+<!-- Generated from nf-core/sopa@0b959963a3984ff78725209113d9ecdb78cef0b6. Do not edit by hand. -->

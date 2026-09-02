@@ -1,8 +1,8 @@
 ---
 name: fastqrepair
 pipeline: nf-core/fastqrepair
-version: 1.0.0
-commit: 5f102cae4cfaa1d9281b9702ccc3738d9974e388
+version: 1.1.1
+commit: 70a38209407b9367a9ff7ab8b26d84cb1983ea18
 description: A pipeline that can be used to recover corrupted FASTQ.gz files, drop or fix uncompliant reads, remove unpaired reads, and settle reads that became disordered
 summary: nf-core/fastqrepair is a bioinformatics pipeline that can be used to recover corrupted FASTQ.gz files, drop or fix uncompliant reads, remove unpaired reads, and settles reads that became disordered. It takes a samplesheet with FASTQ/FASTQ.gz files as input (both single-end and paired-end) and produces clean FASTQ files and QC reports.
 has_samplesheet: true
@@ -28,8 +28,8 @@ This is the pinned latest release. To run a different one, list the available re
 | column | type | required | allowed values | constraints |
 |---|---|---|---|---|
 | `sample` | string | yes |  | matches ^\S+$ |
-| `fastq_1` | string (file path) | yes |  | matches ^\S+\.f(ast)?q(\.gz)?$ |
-| `fastq_2` | string (file path) | no |  | matches ^\S+\.f(ast)?q(\.gz)?$ |
+| `fastq_1` | string (file path) | yes |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q(\.gz)?$ |
+| `fastq_2` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q(\.gz)?$ |
 
 `--input` must match `^\S+\.csv$`.
 
@@ -48,7 +48,7 @@ Any of the optional columns above may be appended to the header when your data n
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):
-- **Generic options** (`generic_options`) — 17 parameters
+- **Generic options** (`generic_options`) — 19 parameters
 - **Input/output options** (`input_output_options`) — 7 parameters
 - **Institutional config options** (`institutional_config_options`) — 6 parameters
 
@@ -63,23 +63,23 @@ nfclaw run fastqrepair --input samplesheet.csv --outdir results -profile docker 
 nfclaw turns those into Nextflow's `process.resourceLimits` and passes them as a `-c` config — the mechanism nf-core prescribes for exactly this ([docs](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)). Set them to the machine's real capacity. The generated config is kept in `<outdir>/provenance/`, so `commands.sh` replays the run under the same ceiling.
 
 ## Nextflow engine
-This release declares `nextflowVersion = '!>=24.04.2'`.
+This release declares `nextflowVersion = '!>=25.10.4'`.
 
 To run the engine this release targets — worth doing if a newer Nextflow emits config-parser warnings the release never saw:
 ```bash
-nfclaw run fastqrepair ... --nxf-ver 24.04.2
+nfclaw run fastqrepair ... --nxf-ver 25.10.4
 ```
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/fastqrepair/blob/1.0.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/fastqrepair/blob/1.1.1/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: FastQC, gzrt, Wipertools, BBMap, MultiQC.
 
-Full list with references: https://github.com/nf-core/fastqrepair/blob/1.0.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/fastqrepair/blob/1.1.1/CITATIONS.md
 
 ## Demo
 ```bash
@@ -87,6 +87,6 @@ nfclaw run fastqrepair --demo --outdir results   # adds the upstream test profil
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/fastqrepair/blob/1.0.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/fastqrepair/blob/1.1.1/docs/usage.md
 
-<!-- Generated from nf-core/fastqrepair@5f102cae4cfaa1d9281b9702ccc3738d9974e388. Do not edit by hand. -->
+<!-- Generated from nf-core/fastqrepair@70a38209407b9367a9ff7ab8b26d84cb1983ea18. Do not edit by hand. -->

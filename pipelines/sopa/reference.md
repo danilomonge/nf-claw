@@ -1,7 +1,7 @@
 ---
 name: sopa
-version: 1.0.0
-commit: f42485ead97376c4f7cb70e11916f13b35e092f1
+version: 1.0.1
+commit: 0b959963a3984ff78725209113d9ecdb78cef0b6
 ---
 
 # sopa — full parameter reference
@@ -88,7 +88,6 @@ nf-core/sopa pipeline parameters. Every parameter from the pinned `nextflow_sche
 | `--email-on-fail` | string |  | yes |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary, only when pipeline fails. |
 | `--help` | boolean or string |  |  |  |  |  | Display the help message. |
 | `--help-full` | boolean |  |  |  |  |  | Display the full detailed help message. |
-| `--hook-url` | string |  | yes |  |  |  | Incoming hook URL for messaging service |
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
@@ -129,6 +128,7 @@ nf-core/sopa pipeline parameters. Every parameter from the pinned `nextflow_sche
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
+| `--image-scale` | string |  |  |  |  |  | The scale to be used for the image patches (e.g., `"scale1"`). By default, uses the highest resolution scale. |
 | `--patch-overlap-microns` | number |  |  |  |  |  | Number of overlapping microns between the patches. We advise to choose approximately twice the diameter of a cell |
 | `--patch-overlap-pixel` | number |  |  |  |  |  | Number of overlapping pixels between the patches. We advise to choose approximately twice the diameter of a cell |
 | `--patch-width-microns` | number |  |  |  |  |  | Width (and height) of each patch in microns |
@@ -188,4 +188,4 @@ nf-core/sopa pipeline parameters. Every parameter from the pinned `nextflow_sche
 | `--tissue-segmentation-kwargs` | string |  |  |  |  |  | Additional tissue segmentation parameters as a python dict string |
 | `--use-tissue-segmentation` | boolean |  |  |  |  |  | Whether to run tissue segmentation |
 
-<!-- Generated from nf-core/sopa@f42485ead97376c4f7cb70e11916f13b35e092f1. Do not edit by hand. -->
+<!-- Generated from nf-core/sopa@0b959963a3984ff78725209113d9ecdb78cef0b6. Do not edit by hand. -->
