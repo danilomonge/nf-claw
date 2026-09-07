@@ -84,3 +84,4 @@ viralintegration	https://github.com/nf-core/viralintegration.git	latest-release
 viralmetagenome	https://github.com/nf-core/viralmetagenome.git	latest-release
 viralrecon	https://github.com/nf-core/viralrecon.git	latest-release
 seqsubmit	https://github.com/nf-core/seqsubmit.git	latest-release
+genomeqc	https://github.com/nf-core/genomeqc.git	latest-release

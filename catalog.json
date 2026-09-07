@@ -663,6 +663,37 @@
     "version": "1.1.0"
   },
   {
+    "description": "A pipeline to compare multiple genomes and annotations",
+    "input": "samplesheet (assembly, ncbi, fasta, gff, fastq, taxid)",
+    "name": "genomeqc",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/genomeqc is a bioinformatics pipeline that compares the quality of multiple genomes, along with their annotations.",
+    "tools": [
+      "AGAT",
+      "ape",
+      "BUSCO",
+      "FastQC",
+      "FCS-GX / FCS-adaptor",
+      "GenomicRanges",
+      "GffRead",
+      "ggplot2",
+      "ggtree",
+      "Merqury",
+      "MultiQC",
+      "ncbi-genome-download",
+      "OrthoFinder",
+      "pandas",
+      "QUAST",
+      "RIdeogram",
+      "SeqKit",
+      "Shiny",
+      "tidk",
+      "tidyverse",
+      "Tiara"
+    ],
+    "version": "1.0.0"
+  },
+  {
     "description": "A pipeline to investigate horizontal gene transfer from NGS data",
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "hgtseq",
