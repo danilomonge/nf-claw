@@ -1,6 +1,6 @@
 # Pipeline catalog
 
-85 nf-core pipelines. Grep this file (or `catalog.json`) for a keyword, then read `pipelines/<name>/skill.md`. `input` is derived from each pipeline's samplesheet schema; `output` is the guaranteed output contract (per-release detail is in the pipeline's upstream `docs/output.md`, linked from its skill). `catalog.json` and each `skill.md` also carry a `summary` (the authors' own one-paragraph description from the pipeline README, a richer signal for matching a request than the terse `description` below) and the `tools` it runs (from the pipeline's own `CITATIONS.md`).
+86 nf-core pipelines. Grep this file (or `catalog.json`) for a keyword, then read `pipelines/<name>/skill.md`. `input` is derived from each pipeline's samplesheet schema; `output` is the guaranteed output contract (per-release detail is in the pipeline's upstream `docs/output.md`, linked from its skill). `catalog.json` and each `skill.md` also carry a `summary` (the authors' own one-paragraph description from the pipeline README, a richer signal for matching a request than the terse `description` below) and the `tools` it runs (from the pipeline's own `CITATIONS.md`).
 
 | pipeline | version | input | output | description |
 |---|---|---|---|---|
@@ -31,6 +31,7 @@
 | `fetchngs` | 1.12.0 | id list (one value per line) | --outdir/ (per-module results); pipeline_info/ (reports, versions) | Pipeline to fetch metadata and raw FastQ files from public databases |
 | `funcscan` | 4.0.0 | samplesheet (sample, fasta, protein, gbk, gff, gff_type) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Pipeline for screening for functional components of assembled contigs |
 | `genomeassembler` | 1.1.0 | samplesheet (sample, ontreads, hifireads, ref_fasta, ref_gff, shortread_F, shortread_R, paired) | --outdir/ (per-module results); pipeline_info/ (reports, versions) | Assemble genomes from long ONT or pacbio HiFi reads |
+| `genomeqc` | 1.0.0 | samplesheet (assembly, ncbi, fasta, gff, fastq, taxid) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | A pipeline to compare multiple genomes and annotations |
 | `hgtseq` | 1.1.0 | samplesheet (sample, fastq_1, fastq_2) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | A pipeline to investigate horizontal gene transfer from NGS data |
 | `hic` | 2.1.0 | samplesheet (sample, fastq_1, fastq_2) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Analysis of Chromosome Conformation Capture data (Hi-C) |
 | `hicar` | 1.0.0 | samplesheet (group, replicate, fastq_1, fastq_2, md5_1, md5_2) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | This pipeline analyses data for HiCAR data, a robust and sensitive multi-omic co-assay for simultaneous measurement of transcriptome, chromatin accessibility and cis-regulatory chromatin contacts. |
