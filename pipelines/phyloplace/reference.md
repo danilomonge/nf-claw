@@ -1,7 +1,7 @@
 ---
 name: phyloplace
-version: 2.1.0
-commit: 441e351e2703329c04ddb494cefcdd017a48b9f1
+version: 2.2.0
+commit: 11ed4bb075b953387dbee11f89f5e6f3e7692565
 ---
 
 # phyloplace — full parameter reference
@@ -16,6 +16,7 @@ nf-core/phyloplace pipeline parameters. Every parameter from the pinned `nextflo
 | `--help` | boolean or string |  |  |  |  |  | Display the help message. |
 | `--help-full` | boolean |  |  |  |  |  | Display the full detailed help message. |
 | `--max-multiqc-email-size` | string |  | yes |  | matches ^\d+(\.\d+)?\.?\s*(K\|M\|G\|T)?B$ | 25.MB | File size limit when attaching MultiQC reports to summary emails. |
+| `--modules-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/ | Base URL or local path to location of shared module test dataset files |
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--multiqc-config` | string (file path) |  | yes |  |  |  | Custom config file to supply to MultiQC. |
 | `--multiqc-logo` | string |  | yes |  |  |  | Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file |
@@ -32,7 +33,7 @@ nf-core/phyloplace pipeline parameters. Every parameter from the pinned `nextflo
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--alignmethod` | string |  |  | hmmer, clustalo, mafft |  | hmmer | Method used to align query sequences with. |
+| `--alignmethod` | string |  |  | hmmer, clustalo, mafft |  | clustalo | Method used to align query sequences with. |
 | `--email` | string |  |  |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary. |
 | `--hmmfile` | string (file path) |  |  |  |  |  | HMM file. If provided, will be used to align both the reference and query sequences. |
 | `--id` | string |  |  |  |  | placement | Name of analysis |
@@ -44,6 +45,7 @@ nf-core/phyloplace pipeline parameters. Every parameter from the pinned `nextflo
 | `--queryseqfile` | string (file path) |  |  |  |  |  | Fasta file with query sequences |
 | `--refphylogeny` | string (file path) |  |  |  |  |  | Newick file with aligned reference sequences. |
 | `--refseqfile` | string (file path) |  |  |  |  |  | File with reference sequences. Any format supported by HMMER tools. |
+| `--save-domtblout` | boolean |  |  |  |  |  | Save the per-domain hit table (`--domtblout`) from hmmsearch. |
 | `--search-fasta` | string (file path) |  |  |  |  |  | Fasta file with sequences to be searched with HMM profiles. |
 | `--taxonomy` | string (file path) |  |  |  | matches ^\S+\.tsv$ |  | Tab-separated file with taxonomy assignments of reference sequences. |
 
@@ -58,4 +60,4 @@ nf-core/phyloplace pipeline parameters. Every parameter from the pinned `nextflo
 | `--custom-config-base` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/configs/master | Base directory for Institutional configs. |
 | `--custom-config-version` | string |  | yes |  |  | master | Git commit id for Institutional configs. |
 
-<!-- Generated from nf-core/phyloplace@441e351e2703329c04ddb494cefcdd017a48b9f1. Do not edit by hand. -->
+<!-- Generated from nf-core/phyloplace@11ed4bb075b953387dbee11f89f5e6f3e7692565. Do not edit by hand. -->
