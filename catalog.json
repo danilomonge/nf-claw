@@ -1327,13 +1327,14 @@
     "summary": "nf-core/phyloplace is a bioinformatics best-practice analysis pipeline that performs phylogenetic placement with EPA-NG.",
     "tools": [
       "HMMER",
+      "Biopython",
       "Clustal Omega",
       "MAFFT",
       "EPA-NG",
       "Gappa",
       "MultiQC"
     ],
-    "version": "2.1.0"
+    "version": "2.2.0"
   },
   {
     "description": "Pipeline for analysis of Proximity Network Assay data",
