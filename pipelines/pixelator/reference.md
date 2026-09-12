@@ -1,7 +1,7 @@
 ---
 name: pixelator
-version: 5.0.1
-commit: eb3757a96a5c53b3eaaeb3a3e0692d82944dadc2
+version: 5.0.2
+commit: 751307268d51ef1cb5cf559562b2ca0437fc4726
 ---
 
 # pixelator — full parameter reference
@@ -158,4 +158,4 @@ nf-core/pixelator pipeline parameters. Every parameter from the pinned `nextflow
 | `--pna-sample-calling-save-undetermined` | boolean |  |  |  |  |  | Save components that could not be confidently assigned to any sample to a separate pxl file. |
 | `--save-pna-sample-calling-pixelfile` | boolean |  |  |  |  |  | Save the PXL dataset after the sample calling stage. |
 
-<!-- Generated from nf-core/pixelator@eb3757a96a5c53b3eaaeb3a3e0692d82944dadc2. Do not edit by hand. -->
+<!-- Generated from nf-core/pixelator@751307268d51ef1cb5cf559562b2ca0437fc4726. Do not edit by hand. -->
