@@ -1347,7 +1347,7 @@
       "cutadapt",
       "fastp"
     ],
-    "version": "5.0.1"
+    "version": "5.0.2"
   },
   {
     "description": "Generation of sequence-level annotations for amino acid sequences",
