@@ -1711,6 +1711,31 @@
     "version": "1.0.4"
   },
   {
+    "description": "This pipeline analyses chemical-based high-throughput RNA structure probing data",
+    "input": "samplesheet (sample, sample_id, fastq_1, fastq_2, method, principle, chemical, RT_enzyme, organism, pH, adapter_3p, adapter_5p, umi_pattern, condition, sample_group, replicate, group)",
+    "name": "rnastructurome",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/rnastructurome is a bioinformatics pipeline for analysing chemical high-throughput RNA structure-probing data. It takes a samplesheet and FASTQ files from SHAPE or DMS experiments (read out by either the RT-stop or mutational profiling (MaP) principle) then performs quality control, trimming and alignment, quantifies per-base reactivity, and predicts RNA secondary structures. Outputs include normalised reactivity, Shannon entropy and base-pair arc tracks, 2D structure diagrams, RMDB-compatible RDAT files, and an aggregated QC report. References can be supplied locally or fetched automatically from Ensembl or NCBI, so the pipeline works across a wide range of organisms, including viruses and bacteria.",
+    "tools": [
+      "FastQC",
+      "UMI-tools",
+      "Cutadapt",
+      "GffRead",
+      "STAR",
+      "Bowtie",
+      "Bowtie2",
+      "SAMtools",
+      "BEDOPS",
+      "RSeQC",
+      "RNAFramework",
+      "UCSC wigToBigWig",
+      "R2DT",
+      "ViennaRNA",
+      "MultiQC"
+    ],
+    "version": "1.0.0"
+  },
+  {
     "description": "GATK4 RNA variant calling pipeline",
     "input": "samplesheet (sample, fastq_1, fastq_2, bam, bai, cram, crai, vcf, tbi, seq_platform, seq_center)",
     "name": "rnavar",
