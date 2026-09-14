@@ -256,3 +256,6 @@
 [submodule "pipelines/genomeqc/upstream"]
 	path = pipelines/genomeqc/upstream
 	url = https://github.com/nf-core/genomeqc.git
+[submodule "pipelines/rnastructurome/upstream"]
+	path = pipelines/rnastructurome/upstream
+	url = https://github.com/nf-core/rnastructurome.git
