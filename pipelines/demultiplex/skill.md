@@ -1,8 +1,8 @@
 ---
 name: demultiplex
 pipeline: nf-core/demultiplex
-version: 1.7.1
-commit: fbec8e442f0599f8b74876e62263af05b9a41d33
+version: 1.8.0
+commit: daade37c4a75a4c1709ccf12434deb3424141319
 description: Demultiplexing pipeline for Illumina sequencing data
 summary: nf-core/demultiplex is a bioinformatics pipeline used to demultiplex the raw data produced by next generation sequencing machines. The following platforms are supported:
 has_samplesheet: true
@@ -53,10 +53,10 @@ Every parameter not listed above is optional as far as the schema is concerned. 
 - **CheckQC options** (`checkqc_options`) — 1 parameter
 - **Demultiplexing options** (`demultiplex_options`) — 1 parameter
 - **Downstream CSV options** (`downstream_csv_options`) — 1 parameter
-- **Generic options** (`generic_options`) — 17 parameters
+- **Generic options** (`generic_options`) — 16 parameters
 - **Input/output options** (`input_output_options`) — 10 parameters
 - **Institutional config options** (`institutional_config_options`) — 6 parameters
-- **Workflow options** (`workflow_options`) — 8 parameters
+- **Workflow options** (`workflow_options`) — 9 parameters
 
 ## Resources
 A real (non-`--demo`) run requests the resources the pipeline's `conf/base.config` asks for, which are sized for a server — a single step can request far more memory than a workstation has, and Nextflow retries a failed step with more still. If a run fails with `Process requirement exceeds available memory` (or CPUs), cap every request, and every retry, at what this machine actually has:
@@ -69,23 +69,23 @@ nfclaw run demultiplex --input samplesheet.csv --outdir results -profile docker 
 nfclaw turns those into Nextflow's `process.resourceLimits` and passes them as a `-c` config — the mechanism nf-core prescribes for exactly this ([docs](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)). Set them to the machine's real capacity. The generated config is kept in `<outdir>/provenance/`, so `commands.sh` replays the run under the same ceiling.
 
 ## Nextflow engine
-This release declares `nextflowVersion = '!>=25.10.2'`.
+This release declares `nextflowVersion = '!>=25.10.4'`.
 
 To run the engine this release targets — worth doing if a newer Nextflow emits config-parser warnings the release never saw:
 ```bash
-nfclaw run demultiplex ... --nxf-ver 25.10.2
+nfclaw run demultiplex ... --nxf-ver 25.10.4
 ```
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/demultiplex/blob/1.7.1/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/demultiplex/blob/1.8.0/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: fastp, Falco, MultiQC, CheckQC, samshee.
 
-Full list with references: https://github.com/nf-core/demultiplex/blob/1.7.1/CITATIONS.md
+Full list with references: https://github.com/nf-core/demultiplex/blob/1.8.0/CITATIONS.md
 
 ## Demo
 ```bash
@@ -93,6 +93,6 @@ nfclaw run demultiplex --demo --outdir results   # adds the upstream test profil
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/demultiplex/blob/1.7.1/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/demultiplex/blob/1.8.0/docs/usage.md
 
-<!-- Generated from nf-core/demultiplex@fbec8e442f0599f8b74876e62263af05b9a41d33. Do not edit by hand. -->
+<!-- Generated from nf-core/demultiplex@daade37c4a75a4c1709ccf12434deb3424141319. Do not edit by hand. -->

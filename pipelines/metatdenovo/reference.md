@@ -1,7 +1,7 @@
 ---
 name: metatdenovo
-version: 1.4.0
-commit: 4d0307aa7d34575aa7891a7b4996ffe19e774cd9
+version: 1.4.1
+commit: 113adb3c3e5dc04ac0df9041a4cb001c838dd830
 ---
 
 # metatdenovo — full parameter reference
@@ -136,4 +136,4 @@ nf-core/metatdenovo pipeline parameters. Every parameter from the pinned `nextfl
 | `--three-prime-clip-r2` | string |  |  |  |  |  | Instructs Trim Galore to remove bp from the 3' end of read 2 AFTER adapter/quality trimming has been performed. |
 | `--trim-nextseq` | string |  |  |  |  |  | Instructs Trim Galore to apply the --nextseq=X option, to trim based on quality after removing poly-G tails. |
 
-<!-- Generated from nf-core/metatdenovo@4d0307aa7d34575aa7891a7b4996ffe19e774cd9. Do not edit by hand. -->
+<!-- Generated from nf-core/metatdenovo@113adb3c3e5dc04ac0df9041a4cb001c838dd830. Do not edit by hand. -->
