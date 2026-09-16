@@ -1,8 +1,8 @@
 ---
 name: metatdenovo
 pipeline: nf-core/metatdenovo
-version: 1.4.0
-commit: 4d0307aa7d34575aa7891a7b4996ffe19e774cd9
+version: 1.4.1
+commit: 113adb3c3e5dc04ac0df9041a4cb001c838dd830
 description: Assembly and annotation of metatranscriptomic data, both prokaryotic and eukaryotic
 summary: nf-core/metatdenovo is a bioinformatics best-practice analysis pipeline for assembly and annotation of metatranscriptomic and metagenomic data from prokaryotes, eukaryotes or viruses.
 has_samplesheet: true
@@ -83,12 +83,12 @@ nfclaw run metatdenovo ... --nxf-ver 25.10.4
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/metatdenovo/blob/1.4.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/metatdenovo/blob/1.4.1/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: FastQC, MultiQC, Trim Galore!, khmer, Seqtk, RNAspade, Megahit, TransDecoder, Prokka, Prodigal, BBmap, FeatureCounts, Eggnog, Kofamscan, HMMsearch, EUKulele, Diamond, TaxonKit, CAT, transrate.
 
-Full list with references: https://github.com/nf-core/metatdenovo/blob/1.4.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/metatdenovo/blob/1.4.1/CITATIONS.md
 
 ## Demo
 ```bash
@@ -96,6 +96,6 @@ nfclaw run metatdenovo --demo --outdir results   # adds the upstream test profil
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/metatdenovo/blob/1.4.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/metatdenovo/blob/1.4.1/docs/usage.md
 
-<!-- Generated from nf-core/metatdenovo@4d0307aa7d34575aa7891a7b4996ffe19e774cd9. Do not edit by hand. -->
+<!-- Generated from nf-core/metatdenovo@113adb3c3e5dc04ac0df9041a4cb001c838dd830. Do not edit by hand. -->

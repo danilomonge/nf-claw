@@ -1,7 +1,7 @@
 ---
 name: demultiplex
-version: 1.7.1
-commit: fbec8e442f0599f8b74876e62263af05b9a41d33
+version: 1.8.0
+commit: daade37c4a75a4c1709ccf12434deb3424141319
 ---
 
 # demultiplex — full parameter reference
@@ -33,7 +33,6 @@ nf-core/demultiplex pipeline parameters. Every parameter from the pinned `nextfl
 | `--email-on-fail` | string |  | yes |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary, only when pipeline fails. |
 | `--help` | boolean or string |  |  |  |  |  | Display the help message. |
 | `--help-full` | boolean |  |  |  |  |  | Display the full detailed help message. |
-| `--hook-url` | string |  | yes |  |  |  | Incoming hook URL for messaging service |
 | `--max-multiqc-email-size` | string |  | yes |  | matches ^\d+(\.\d+)?\.?\s*(K\|M\|G\|T)?B$ | 25.MB | File size limit when attaching MultiQC reports to summary emails. |
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--multiqc-config` | string (file path) |  | yes |  |  |  | Custom config file to supply to MultiQC. |
@@ -82,9 +81,10 @@ nf-core/demultiplex pipeline parameters. Every parameter from the pinned `nextfl
 | `--json-schema-validator` | string |  |  |  |  |  | String in JSON format to be passed to samshee module for samplesheet validation |
 | `--kraken-db` | string |  |  |  |  |  | Path to Kraken2 DB to use for screening |
 | `--name-schema-validator` | string |  |  |  |  |  | Schema name to be passed to samshee module for samplesheet validation |
+| `--publish-raw-fastq` | boolean |  |  |  |  | false | Whether or not to publish raw (untrimmed) FASTQ files alongside trimmed FASTQs. When false, only trimmed FASTQs are published. |
 | `--sample-size` | integer |  |  |  |  | 100000 | Number of reads to subsample for contamination detection. |
 | `--skip-tools` | string |  |  |  | matches ^((fastp\|fastqc\|kraken\|multiqc\|checkqc\|falco\|md5sum\|samshee)?,?)*(?<!,)$ |  | Comma-separated list of tools to skip (fastp,fastqc,kraken,multiqc,checkqc,falco,md5sum,samshee) |
 | `--trim-fastq` | boolean |  |  |  |  | true | Whether or not to skip trimming |
 | `--v1-schema` | boolean |  |  |  |  |  | Whether or not illumina samplesheet is v1 |
 
-<!-- Generated from nf-core/demultiplex@fbec8e442f0599f8b74876e62263af05b9a41d33. Do not edit by hand. -->
+<!-- Generated from nf-core/demultiplex@daade37c4a75a4c1709ccf12434deb3424141319. Do not edit by hand. -->

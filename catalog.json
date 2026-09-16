@@ -389,7 +389,7 @@
       "CheckQC",
       "samshee"
     ],
-    "version": "1.7.1"
+    "version": "1.8.0"
   },
   {
     "description": "A pipeline for de novo transcriptome assembly of short reads from bulk RNA-seq",
@@ -1005,7 +1005,7 @@
       "CAT",
       "transrate"
     ],
-    "version": "1.4.0"
+    "version": "1.4.1"
   },
   {
     "description": "Extract methylation calls from long reads",
@@ -1555,26 +1555,46 @@
   },
   {
     "description": "Analysis of ribosome profiling, or Ribo-seq (also named ribosome footprinting)",
-    "input": "samplesheet (sample, fastq_1, fastq_2, strandedness, type)",
+    "input": "samplesheet (sample, fastq_1, fastq_2, strandedness, type, with_umi, trim_length, pair)",
     "name": "riboseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "summary": "nf-core/riboseq is a bioinformatics pipeline for analysis of Ribo-seq data. It borrows heavily from nf-core/rnaseq in the preprocessing stages:",
     "tools": [
+      "AGAT",
       "anota2seq",
       "BBMap",
       "BEDTools",
+      "Bowtie2",
+      "DESeq2",
+      "DOTSeq",
       "fastp",
       "FastQC",
+      "gffread / GffCompare",
+      "kallisto",
       "MultiQC",
+      "plastid",
+      "PRICE / Gedi",
       "Ribo-TISH",
+      "RiboCode",
+      "RiboDetector",
       "Ribotricer",
       "riboWaltz",
+      "Rp-Bp",
+      "Salmon",
+      "SAMtools",
+      "seqkit",
+      "MMseqs2",
       "SortMeRNA",
       "STAR",
+      "StringTie",
+      "SummarizedExperiment",
       "Trim Galore!",
-      "UMI-tools"
+      "tximport",
+      "UCSC bedGraphToBigWig",
+      "UMI-tools",
+      "UMICollapse"
     ],
-    "version": "1.2.0"
+    "version": "2.0.0"
   },
   {
     "description": "Pipeline for RNA and DNA integrated analysis for somatic mutation detection",
