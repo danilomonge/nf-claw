@@ -1,7 +1,7 @@
 ---
 name: genomeqc
-version: 1.0.0
-commit: e1aa8943b4752b9e540b2370aa2454ca9ba04742
+version: 1.0.1
+commit: bce44e5b558e21b38d4dd2b6521302246b4dae6d
 ---
 
 # genomeqc — full parameter reference
@@ -140,4 +140,4 @@ nf-core/genomeqc pipeline parameters. Every parameter from the pinned `nextflow_
 | `--tree-scale` | integer |  |  |  |  |  | Modifies scale of the tree plot in the tree summary, default value is '0.0005'. Useful if tree tips overlap with the concatenated plots. Very sensitive, increase/decrease by two-fold. |
 | `--tree-style` | string |  |  | roundrect, ellipse, rectangular, circular |  | roundrect | Tree layout style for the tree summary plot. |
 
-<!-- Generated from nf-core/genomeqc@e1aa8943b4752b9e540b2370aa2454ca9ba04742. Do not edit by hand. -->
+<!-- Generated from nf-core/genomeqc@bce44e5b558e21b38d4dd2b6521302246b4dae6d. Do not edit by hand. -->

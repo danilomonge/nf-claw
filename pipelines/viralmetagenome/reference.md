@@ -1,7 +1,7 @@
 ---
 name: viralmetagenome
-version: 1.1.3
-commit: 3d36a809a9b6f9617d686eb799feb49a598467e6
+version: 1.2.0
+commit: 74064a43f4b00c163c22bcfc9cf1d84a2a69e988
 ---
 
 # viralmetagenome — full parameter reference
@@ -12,6 +12,7 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
+| `--arguments-bbnorm` | string |  |  |  |  |  | Extra arguments passed to BBNorm |
 | `--arguments-megahit` | string |  | yes |  |  |  | Arguments for MEGAHIT tool |
 | `--arguments-prinseq-contig` | string |  |  |  |  | -out_format 1 -lc_dust .20 | Arguments for Prinseq tool for contigs |
 | `--arguments-quast` | string |  | yes |  |  | --min-contig 0 | Arguments for QUAST tool |
@@ -19,6 +20,7 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--arguments-sspace-basic` | string |  | yes |  |  | -x 1 -o 15 -r 0.75 | Arguments for SSPACE Basic tool |
 | `--arguments-trinity` | string |  | yes |  |  | --max_reads_per_graph 100000 | Arguments for Trinity tool |
 | `--assemblers` | string |  |  |  | matches ^(trinity\|spades\|megahit)(?:,(trinity\|spades\|megahit)){0,2}$ | spades,megahit | The specified tools for de novo assembly, multiple options are possible |
+| `--normalise-reads` | boolean |  |  |  |  |  | Digitally normalise reads with BBNorm before de novo assembly |
 | `--read-distance` | integer |  |  |  | ≥ 1 | 350 | Specify the mean distance between the paired reads |
 | `--read-distance-sd` | number |  |  |  | ≥ 0.01; ≤ 1 | 0.75 | Specify the deviation of the mean distance that is allowed. |
 | `--read-orientation` | string |  | yes |  |  | FR | Specify the read orientation. |
@@ -57,6 +59,7 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--annotation-db` | string |  |  |  |  | ftp://ftp.expasy.org/databases/viralzone/2020_4/virosaurus90_vertebrate-20200330.fas.gz | Database used for annotation of the consensus constructs |
+| `--annotation-metadata` | string (file path) |  |  |  | matches ^\S+\.(csv\|tsv\|txt)(\.gz)?$ |  | Metadata table describing the sequences of the annotation database |
 | `--arguments-blastn-qc` | string |  | yes |  |  | -max_target_seqs 5 | Arguments for BLASTN QC |
 | `--arguments-checkv` | string |  | yes |  |  | --remove_tmp | Arguments for CheckV tool |
 | `--arguments-mafft-iterations` | string |  | yes |  |  | --auto --adjustdirection | Arguments for MAFFT iterations |
@@ -84,7 +87,7 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--metadata` | string |  |  |  | matches ^\S+\.[tc]sv$ |  | Sample metadata that is included in the multiqc report |
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--transpose-overview-tables` | boolean |  |  |  |  | false | Transpose the samples overview table so samples become columns and result fields become rows. |
+| `--transpose-overview-tables` | boolean |  |  |  |  |  | Transpose the samples overview table so samples become columns and result fields become rows. |
 
 ## institutional_config_options
 
@@ -183,7 +186,7 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--arguments-kraken2-host` | string |  |  |  |  |  | Arguments for Kraken2 tool for host removal |
 | `--arguments-prinseq-reads` | string |  | yes |  |  |  | Arguments for Prinseq tool for reads |
 | `--arguments-trimmomatic` | string |  | yes |  |  | ILLUMINACLIP:null:2:30:10 | Arguments for Trimmomatic tool |
-| `--arguments-umitools-extract` | string |  | yes |  |  | --umi-separator ": | Arguments for UMI-tools extract |
+| `--arguments-umitools-extract` | string |  | yes |  |  | --umi-separator ":" | Arguments for UMI-tools extract |
 | `--contaminants` | string |  |  |  |  |  | Reference files containing adapter and/or contaminant sequences for sequence kmer matching (used by bbduk) |
 | `--decomplexifier` | string |  |  | bbduk, prinseq |  | prinseq | Specify the decomplexifier to use, bbduk or prinseq |
 | `--host-k2-db` | string |  |  |  |  | s3://ngi-igenomes/test-data/viralrecon/kraken2_human.tar.gz | Kraken2 database used to remove host and contamination |
@@ -203,6 +206,7 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--trim-tool` | string |  |  | fastp, trimmomatic |  | fastp | The used trimming tool |
 | `--umi-deduplicate` | string |  |  | read, mapping, both |  | read | Specify at what level UMI deduplication should occur. |
 | `--umi-discard-read` | integer |  |  |  |  | 0 | Discard R1 / R2 if required 0, meaning not to discard |
+| `--use-host-filtered-reads` | boolean |  |  |  |  |  | Prefer host-filtered reads for downstream mapping & polishing steps once host removal has completed successfully |
 | `--with-umi` | boolean |  |  |  |  |  | With or without UMI detection |
 
 ## variant_analysis
@@ -213,7 +217,7 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--arguments-bcftools-consensus` | string |  | yes |  |  |  | Arguments for BCFtools consensus |
 | `--arguments-bcftools-mpileup1` | string |  | yes |  |  | --ignore-overlaps --count-orphans --max-depth 800000 --min-BQ 20 --annotate FORMAT/AD,FORMAT/ADF,FORMAT/ADR,FORMAT/DP,FORMAT/SP,INFO/AD,INFO/ADF,INFO/ADR | Arguments for BCFtools mpileup step 1 |
 | `--arguments-bcftools-mpileup2` | string |  | yes |  |  | --ploidy 2 --keep-alts --keep-masked-ref --multiallelic-caller --variants-only | Arguments for BCFtools mpileup step 2 |
-| `--arguments-bcftools-mpileup3` | string |  | yes |  |  | --include \'INFO/DP>=5\ | Arguments for BCFtools mpileup step 3 |
+| `--arguments-bcftools-mpileup3` | string |  | yes |  |  | --include 'INFO/DP>=5' | Arguments for BCFtools mpileup step 3 |
 | `--arguments-bcftools-norm` | string |  | yes |  |  | --do-not-normalize --output-type z --multiallelics -any --write-index=tbi | Arguments for BCFtools norm, `--write-index=tbi` is required for downstream steps |
 | `--arguments-bcftools-stats` | string |  | yes |  |  |  | Arguments for BCFtools stats |
 | `--arguments-bedtools-maskfasta` | string |  | yes |  |  |  | Arguments for Bedtools maskfasta |
@@ -234,12 +238,13 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--arguments-samtools-idxstats` | string |  | yes |  |  |  | Arguments for Samtools idxstats command |
 | `--arguments-samtools-stats` | string |  | yes |  |  |  | Arguments for Samtools stats command |
 | `--arguments-snpeff` | string |  | yes |  |  |  | Arguments for SnpEff tool for variant annotation |
-| `--arguments-snpsift-extractfields` | string |  |  |  |  | -s "," -e ". | Arguments for SnpSift ExtractFields tool |
+| `--arguments-snpsift-extractfields` | string |  |  |  |  | -s "," -e "." | Arguments for SnpSift ExtractFields tool |
 | `--arguments-tabix` | string |  | yes |  |  | -p vcf -f | Arguments for Tabix tool |
-| `--arguments-umitools-dedup` | string |  | yes |  |  | --umi-separator=\':\' --method cluster --unmapped-reads use | Arguments for UMI-tools deduplication |
+| `--arguments-umitools-dedup` | string |  | yes |  |  | --umi-separator=':' --method cluster --unmapped-reads use | Arguments for UMI-tools deduplication |
 | `--consensus-caller` | string |  |  | ivar, bcftools |  | ivar | Consensus tool used for calling new consensus in final iteration |
 | `--deduplicate` | boolean |  |  |  |  | true | Deduplicate the reads |
 | `--ivar-header` | string |  | yes |  |  |  |  |
+| `--keep-unmapped` | boolean |  |  |  |  |  | Keep unmapped reads in the alignments used for contig coverage, polishing and consensus refinement |
 | `--mapper` | string |  |  | bwamem2, bowtie2 |  | bwamem2 | Define which mapping tool needs to be used when mapping reads to reference |
 | `--mapping-constraints` | string |  |  |  |  |  | Sequence(s) to use as a reference for mapping instead of the de novo contigs or scaffolds |
 | `--mapping-stats` | boolean |  |  |  |  | true | Calculate summary statistics in final iteration |
@@ -249,4 +254,4 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--skip-vcf-annotation` | boolean |  |  |  |  |  | Skip the annotation of the VCF file |
 | `--variant-caller` | string |  |  | ivar, bcftools |  | ivar | Define the variant caller to use: 'ivar' or 'bcftools' |
 
-<!-- Generated from nf-core/viralmetagenome@3d36a809a9b6f9617d686eb799feb49a598467e6. Do not edit by hand. -->
+<!-- Generated from nf-core/viralmetagenome@74064a43f4b00c163c22bcfc9cf1d84a2a69e988. Do not edit by hand. -->
