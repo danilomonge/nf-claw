@@ -1,8 +1,8 @@
 ---
 name: genomeqc
 pipeline: nf-core/genomeqc
-version: 1.0.0
-commit: e1aa8943b4752b9e540b2370aa2454ca9ba04742
+version: 1.0.1
+commit: bce44e5b558e21b38d4dd2b6521302246b4dae6d
 description: A pipeline to compare multiple genomes and annotations
 summary: nf-core/genomeqc is a bioinformatics pipeline that compares the quality of multiple genomes, along with their annotations.
 has_samplesheet: true
@@ -86,12 +86,12 @@ nfclaw run genomeqc ... --nxf-ver 25.10.4
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/genomeqc/blob/1.0.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/genomeqc/blob/1.0.1/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: AGAT, ape, BUSCO, FastQC, FCS-GX / FCS-adaptor, GenomicRanges, GffRead, ggplot2, ggtree, Merqury, MultiQC, ncbi-genome-download, OrthoFinder, pandas, QUAST, RIdeogram, SeqKit, Shiny, tidk, tidyverse, Tiara.
 
-Full list with references: https://github.com/nf-core/genomeqc/blob/1.0.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/genomeqc/blob/1.0.1/CITATIONS.md
 
 ## Demo
 ```bash
@@ -99,6 +99,6 @@ nfclaw run genomeqc --demo --outdir results   # adds the upstream test profile (
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/genomeqc/blob/1.0.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/genomeqc/blob/1.0.1/docs/usage.md
 
-<!-- Generated from nf-core/genomeqc@e1aa8943b4752b9e540b2370aa2454ca9ba04742. Do not edit by hand. -->
+<!-- Generated from nf-core/genomeqc@bce44e5b558e21b38d4dd2b6521302246b4dae6d. Do not edit by hand. -->
