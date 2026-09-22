@@ -775,7 +775,7 @@
   },
   {
     "description": "Genes and transcripts annotation with Isoseq using uLTRA and TAMA",
-    "input": "samplesheet (sample, bam, pbi, reads)",
+    "input": "samplesheet (sample, seq_data, pbi, start_from)",
     "name": "isoseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
     "summary": "nf-core/isoseq is a bioinformatics best-practice analysis pipeline for Isoseq gene annotation with uLTRA and TAMA. Starting from raw isoseq subreads, the pipeline:",
@@ -790,7 +790,7 @@
       "TAMA",
       "MultiQC"
     ],
-    "version": "2.0.0"
+    "version": "3.0.0"
   },
   {
     "description": "A Nextflow pipeline for rare disease diagnostics from Oxford Nanopore long-read sequencing data. Includes SV, SNV, CNV, and methylation profiling.",
