@@ -1,14 +1,14 @@
 ---
 name: phyloplace
 pipeline: nf-core/phyloplace
-version: 2.2.0
-commit: 11ed4bb075b953387dbee11f89f5e6f3e7692565
+version: 2.3.0
+commit: 68db179c0f034bd0a6133b62a8a9fa37f8a3c517
 description: Performs phylogenetic placement with EPA-NG
 summary: nf-core/phyloplace is a bioinformatics best-practice analysis pipeline that performs phylogenetic placement with EPA-NG.
 has_samplesheet: false
 input: parameters (no samplesheet)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: HMMER, Biopython, Clustal Omega, MAFFT, EPA-NG, Gappa, MultiQC
+tools: HMMER, Biopython, Clustal Omega, MAFFT, EPA-NG, Gappa, DuckDB, seqtk, MultiQC
 ---
 # phyloplace
 
@@ -60,12 +60,12 @@ nfclaw run phyloplace ... --nxf-ver 26.04.0
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/phyloplace/blob/2.2.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/phyloplace/blob/2.3.0/docs/output.md
 
 ## Tools this pipeline runs
-The tools/methods this pipeline runs, per the authors' own list: HMMER, Biopython, Clustal Omega, MAFFT, EPA-NG, Gappa, MultiQC.
+The tools/methods this pipeline runs, per the authors' own list: HMMER, Biopython, Clustal Omega, MAFFT, EPA-NG, Gappa, DuckDB, seqtk, MultiQC.
 
-Full list with references: https://github.com/nf-core/phyloplace/blob/2.2.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/phyloplace/blob/2.3.0/CITATIONS.md
 
 ## Demo
 ```bash
@@ -73,6 +73,6 @@ nfclaw run phyloplace --demo --outdir results   # adds the upstream test profile
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/phyloplace/blob/2.2.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/phyloplace/blob/2.3.0/docs/usage.md
 
-<!-- Generated from nf-core/phyloplace@11ed4bb075b953387dbee11f89f5e6f3e7692565. Do not edit by hand. -->
+<!-- Generated from nf-core/phyloplace@68db179c0f034bd0a6133b62a8a9fa37f8a3c517. Do not edit by hand. -->
