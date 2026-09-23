@@ -1334,9 +1334,11 @@
       "MAFFT",
       "EPA-NG",
       "Gappa",
+      "DuckDB",
+      "seqtk",
       "MultiQC"
     ],
-    "version": "2.2.0"
+    "version": "2.3.0"
   },
   {
     "description": "Pipeline for analysis of Proximity Network Assay data",
