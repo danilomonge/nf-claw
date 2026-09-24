@@ -1,7 +1,7 @@
 ---
 name: rnaseq
-version: 3.26.0
-commit: e7ca46272c8f9d5ceee3f71759f4ba551d3217a4
+version: 3.27.0
+commit: a1fcdddd3b826fe46eb46f0479f2ff8a7815af05
 ---
 
 # rnaseq — full parameter reference
@@ -15,12 +15,14 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--aligner` | string |  |  | star_salmon, star_rsem, hisat2, bowtie2_salmon |  | star_salmon | Specifies the alignment algorithm to use - available options are 'star_salmon', 'star_rsem', 'hisat2', and 'bowtie2_salmon'. |
 | `--bam-csi-index` | boolean |  |  |  |  |  | Create a CSI index for BAM files instead of the traditional BAI index. This will be required for genomes with larger chromosome sizes. |
 | `--extra-bowtie2-align-args` | string |  |  |  | length ≥ 1 |  | Extra arguments to pass to Bowtie2 alignment command in addition to defaults defined by the pipeline. Only available when using --aligner bowtie2_salmon. |
+| `--extra-hisat2-align-args` | string |  |  |  | length ≥ 1 |  | Extra arguments to pass to HISAT2 alignment command in addition to defaults defined by the pipeline. Only available when using --aligner hisat2. |
 | `--extra-kallisto-quant-args` | string |  |  |  | length ≥ 1 |  | Extra arguments to pass to Kallisto quant command in addition to defaults defined by the pipeline. |
+| `--extra-salmon-index-args` | string |  |  |  | length ≥ 1 |  | Extra arguments to pass to the Salmon index command in addition to defaults defined by the pipeline. |
 | `--extra-salmon-quant-args` | string |  |  |  | length ≥ 1 |  | Extra arguments to pass to Salmon quant command in addition to defaults defined by the pipeline. |
 | `--extra-star-align-args` | string |  |  |  | length ≥ 1 |  | Extra arguments to pass to STAR alignment command in addition to defaults defined by the pipeline. Only available for the STAR-Salmon route. |
 | `--gpu-container-options` | string |  | yes |  |  |  | Override container GPU flags for GPU tasks. Auto-detects if not set (--gpus all for Docker, --nv for Singularity/Apptainer). |
-| `--kallisto-quant-fraglen` | integer |  |  |  |  | 200 | In single-end mode Kallisto requires an estimated fragment length. Specify a default value for that here. TODO: use existing RSeQC results to do this dynamically. |
-| `--kallisto-quant-fraglen-sd` | integer |  |  |  |  | 200 | In single-end mode, Kallisto requires an estimated standard error for fragment length. Specify a default value for that here. TODO: use existing RSeQC results to do this dynamically. |
+| `--kallisto-quant-fraglen` | integer |  |  |  |  | 200 | In single-end mode Kallisto requires an estimated fragment length (in base pairs). Specify a default value for that here. |
+| `--kallisto-quant-fraglen-sd` | integer |  |  |  |  | 200 | In single-end mode, Kallisto requires an estimated standard error for fragment length (in base pairs). Specify a default value for that here. |
 | `--min-mapped-reads` | number |  |  |  |  | 5 | Minimum percentage of uniquely mapped reads below which samples are removed from further processing. |
 | `--pseudo-aligner` | string |  |  | salmon, kallisto |  |  | Specifies the pseudo aligner to use - available options are 'salmon'. Runs in addition to '--aligner'. |
 | `--pseudo-aligner-kmer-size` | integer |  |  |  |  | 31 | Kmer length passed to indexing step of pseudoaligners |
@@ -96,9 +98,9 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--skip-alignment` | boolean |  |  |  |  |  | Skip all of the alignment-based processes within the pipeline. |
 | `--skip-bbsplit` | boolean |  |  |  |  | true | Skip BBSplit for removal of non-reference genome reads. |
 | `--skip-bigwig` | boolean |  |  |  |  |  | Skip bigWig file creation. |
-| `--skip-biotype-qc` | boolean |  |  |  |  |  | Skip additional featureCounts process for biotype QC. |
-| `--skip-deseq2-qc` | boolean |  |  |  |  |  | Skip DESeq2 PCA and heatmap plotting. |
-| `--skip-dupradar` | boolean |  |  |  |  |  | Skip dupRadar. |
+| `--skip-biotype-qc` | boolean |  |  |  |  | false | Skip additional featureCounts process for biotype QC. Has no effect under `--use_rustqc` (experimental). |
+| `--skip-deseq2-qc` | boolean |  |  |  |  | false | Skip DESeq2 PCA and heatmap plotting. |
+| `--skip-dupradar` | boolean |  |  |  |  | false | Skip dupRadar. Has no effect under `--use_rustqc` (experimental). |
 | `--skip-fastqc` | boolean |  |  |  |  |  | Skip FastQC. |
 | `--skip-gtf-filter` | boolean |  |  |  |  |  | Skip filtering of GTF for valid scaffolds and/ or transcript IDs. |
 | `--skip-gtf-transcript-filter` | boolean |  |  |  |  |  | Skip the 'transcript_id' checking component of the GTF filtering script used in the pipeline. Ensure the GTF file is valid. |
@@ -108,9 +110,9 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--skip-preseq` | boolean |  |  |  |  | true | Skip Preseq. |
 | `--skip-pseudo-alignment` | boolean |  |  |  |  |  | Skip all of the pseudoalignment-based processes within the pipeline. |
 | `--skip-qc` | boolean |  |  |  |  |  | Skip all QC steps except for MultiQC. |
-| `--skip-qualimap` | boolean |  |  |  |  |  | Skip Qualimap. |
+| `--skip-qualimap` | boolean |  |  |  |  | false | Skip Qualimap. Has no effect under `--use_rustqc` (experimental). |
 | `--skip-quantification-merge` | boolean |  |  |  |  |  | Skip cross-sample count merging. Runs tximport per-sample instead of merged, producing individual gene/transcript-level TSVs per sample. Skips SummarizedExperiment and RSEM merge counts. Useful for very large cohorts. |
-| `--skip-rseqc` | boolean |  |  |  |  |  | Skip RSeQC. |
+| `--skip-rseqc` | boolean |  |  |  |  | false | Skip RSeQC. Has no effect under `--use_rustqc` (experimental). |
 | `--skip-stringtie` | boolean |  |  |  |  |  | Skip StringTie. |
 | `--skip-trimming` | boolean |  |  |  |  |  | Skip the adapter trimming step. |
 | `--skip-umi-extract` | boolean |  |  |  |  |  | Skip the UMI extraction from the read in case the UMIs have been moved to the headers in advance of the pipeline run. |
@@ -122,7 +124,7 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 |---|---|---|---|---|---|---|---|
 | `--bracken-precision` | string |  |  | D, P, C, O, F, G, S |  | S | Taxonomic level for Bracken abundance estimations. |
 | `--contaminant-screening` | string |  |  | kraken2, kraken2_bracken, sylph |  |  | Tool to use for detecting contaminants in the selected screening reads - available options are 'sylph', 'kraken2', or 'kraken2_bracken' |
-| `--contaminant-screening-input` | string |  |  | trimmed, unmapped |  | unmapped | Read set to screen for contaminants: aligner-unmapped reads (default) or trimmed/filter-passed reads before alignment. |
+| `--contaminant-screening-input` | string |  |  | trimmed, unmapped, trim_only, raw |  | unmapped | Read set to screen for contaminants: aligner-unmapped reads (default), trimmed reads (post-BBSplit/rRNA), post-trim pre-BBSplit reads, or raw reads. |
 | `--deseq2-vst` | boolean |  |  |  |  | true | Use vst transformation instead of rlog with DESeq2. |
 | `--extra-fqlint-args` | string |  |  |  | length ≥ 1 | --disable-validator P001 | Extra arguments to pass to the fq lint command. |
 | `--kraken-db` | string |  |  |  |  |  | Database when using Kraken2/Bracken for contaminant screening. |
@@ -136,8 +138,9 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 |---|---|---|---|---|---|---|---|
 | `--bbsplit-fasta-list` | string (file path) |  |  |  |  |  | Path to comma-separated file containing a list of reference genomes to filter reads against with BBSplit. You have to also explicitly set `--skip_bbsplit false` if you want to use BBSplit. |
 | `--bbsplit-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built BBSplit index. |
+| `--bowtie2-rrna-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built Bowtie2 index for rRNA removal. |
 | `--remove-ribo-rna` | boolean |  |  |  |  |  | Enable the removal of reads derived from ribosomal RNA. |
-| `--ribo-database-manifest` | string (file path) |  |  |  |  | ${projectDir}/workflows/rnaseq/assets/rrna-db-defaults.txt | Text file containing paths to fasta files (one per line) that will be used to create the database for SortMeRNA. |
+| `--ribo-database-manifest` | string (file path) |  |  |  |  | ${projectDir}/assets/rrna-db-defaults.txt | Text file containing paths to fasta files (one per line) that will be used to create the database for SortMeRNA. |
 | `--ribo-removal-tool` | string |  |  | sortmerna, ribodetector, bowtie2 |  | sortmerna | Tool to use for rRNA removal. |
 | `--sortmerna-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built sortmerna index. |
 | `--use-gpu-ribodetector` | boolean |  |  |  |  |  | Enable GPU acceleration for ribodetector. |
@@ -196,4 +199,4 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--umitools-umi-separator` | string |  |  |  | matches ^\S+$; length ≥ 1; length ≤ 1 |  | The character that separates the UMI in the read name. Most likely a colon if you skipped the extraction with UMI-tools and used other software. |
 | `--with-umi` | boolean |  |  |  |  |  | Enable UMI-based read deduplication. |
 
-<!-- Generated from nf-core/rnaseq@e7ca46272c8f9d5ceee3f71759f4ba551d3217a4. Do not edit by hand. -->
+<!-- Generated from nf-core/rnaseq@a1fcdddd3b826fe46eb46f0479f2ff8a7815af05. Do not edit by hand. -->

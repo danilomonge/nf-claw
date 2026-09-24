@@ -1,7 +1,7 @@
 ---
 name: isoseq
-version: 3.0.0
-commit: 076e8549ed6e7ad4ffc48067f766d1aecd5db56a
+version: 3.0.1
+commit: 6c944831289d4d6e33497026f6b18e8c671705bd
 ---
 
 # isoseq — full parameter reference
@@ -88,4 +88,4 @@ nf-core/isoseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--tama-merge-all` | boolean |  |  |  |  | false | TAMA merge: merge the sample-wise annotations into a single annotation? |
 | `--three-prime` | integer |  |  |  |  | 100 | TAMA collapse: 3 prime wobble threshold |
 
-<!-- Generated from nf-core/isoseq@076e8549ed6e7ad4ffc48067f766d1aecd5db56a. Do not edit by hand. -->
+<!-- Generated from nf-core/isoseq@6c944831289d4d6e33497026f6b18e8c671705bd. Do not edit by hand. -->
