@@ -790,7 +790,7 @@
       "TAMA",
       "MultiQC"
     ],
-    "version": "3.0.0"
+    "version": "3.0.1"
   },
   {
     "description": "A Nextflow pipeline for rare disease diagnostics from Oxford Nanopore long-read sequencing data. Includes SV, SNV, CNV, and methylation profiling.",
@@ -1701,7 +1701,7 @@
       "SummarizedExperiment",
       "Tximeta"
     ],
-    "version": "3.26.0"
+    "version": "3.27.0"
   },
   {
     "description": "Alternative splicing analysis using RNA-seq.",
