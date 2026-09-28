@@ -259,3 +259,6 @@
 [submodule "pipelines/rnastructurome/upstream"]
 	path = pipelines/rnastructurome/upstream
 	url = https://github.com/nf-core/rnastructurome.git
+[submodule "pipelines/funcprofiler/upstream"]
+	path = pipelines/funcprofiler/upstream
+	url = https://github.com/nf-core/funcprofiler.git

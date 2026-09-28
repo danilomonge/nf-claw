@@ -599,6 +599,26 @@
     "version": "1.13.0"
   },
   {
+    "description": "Read-based functional profiling of microbiome sequencing data",
+    "input": "samplesheet (sample, run_accession, instrument_platform, fastq_1, fastq_2, fasta)",
+    "name": "funcprofiler",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/funcprofiler is a bioinformatics pipeline for read-based functional profiling of microbiome sequencing data. It accepts already preprocessed short-read FASTQ files and runs one or more functional profilers against user-supplied databases, producing gene family abundances, pathway abundances, pathway coverages, and antimicrobial resistance profiles. Long-read platforms are not supported in this release.",
+    "tools": [
+      "DIAMOND",
+      "eggNOG-mapper",
+      "fmh-funprofiler",
+      "HUMAnN",
+      "mi-faser",
+      "MetaPhlAn3",
+      "MetaPhlAn4",
+      "MultiQC",
+      "RGI/CARD",
+      "seqkit"
+    ],
+    "version": "1.0.0"
+  },
+  {
     "description": "Pipeline for screening for functional components of assembled contigs",
     "input": "samplesheet (sample, fasta, protein, gbk, gff, gff_type)",
     "name": "funcscan",
