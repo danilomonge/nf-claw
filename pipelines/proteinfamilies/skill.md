@@ -1,8 +1,8 @@
 ---
 name: proteinfamilies
 pipeline: nf-core/proteinfamilies
-version: 2.5.0
-commit: f8c0b183e59df3d87c38d0f7c4acc6918593f4f5
+version: 2.6.0
+commit: 318acd54eb9c679553338b2db46313bb469d03d1
 description: Generate protein family level models (Multiple Sequence Alignments (MSAs), Hidden Markov Models (HMMs)) starting from a FASTA amino acid sequence file.
 summary: nf-core/proteinfamilies is a bioinformatics pipeline that generates protein families from amino acid sequences and/or updates existing families with new sequences. It takes a protein fasta file as input, clusters the sequences and then generates protein family Hidden Markov Models (HMMs) along with their multiple sequence alignments (MSAs). Optionally, paths to existing family HMMs and MSAs can be given (must have matching base filenames one-to-one) in order to update with new sequences in case of matching hits.
 has_samplesheet: true
@@ -83,12 +83,12 @@ nfclaw run proteinfamilies ... --nxf-ver 26.04.0
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/proteinfamilies/blob/2.5.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/proteinfamilies/blob/2.6.0/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: SeqFu, SeqKit, MMseqs2, FAMSA, mafft, ClipKIT, hmmer, HH-suite3, Biopython, CMAPLE, MultiQC.
 
-Full list with references: https://github.com/nf-core/proteinfamilies/blob/2.5.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/proteinfamilies/blob/2.6.0/CITATIONS.md
 
 ## Demo
 ```bash
@@ -96,6 +96,6 @@ nfclaw run proteinfamilies --demo --outdir results   # adds the upstream test pr
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/proteinfamilies/blob/2.5.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/proteinfamilies/blob/2.6.0/docs/usage.md
 
-<!-- Generated from nf-core/proteinfamilies@f8c0b183e59df3d87c38d0f7c4acc6918593f4f5. Do not edit by hand. -->
+<!-- Generated from nf-core/proteinfamilies@318acd54eb9c679553338b2db46313bb469d03d1. Do not edit by hand. -->

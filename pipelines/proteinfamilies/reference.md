@@ -1,7 +1,7 @@
 ---
 name: proteinfamilies
-version: 2.5.0
-commit: f8c0b183e59df3d87c38d0f7c4acc6918593f4f5
+version: 2.6.0
+commit: 318acd54eb9c679553338b2db46313bb469d03d1
 ---
 
 # proteinfamilies — full parameter reference
@@ -12,17 +12,17 @@ nf-core/proteinfamilies pipeline parameters. Every parameter from the pinned `ne
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--alignment-tool` | string |  |  | famsa, mafft |  |  | Choose alignment tool. FAMSA is recommended as best time-memory-accuracy combination option. |
+| `--alignment-tool` | string |  |  | famsa, mafft |  | famsa | Choose alignment tool. FAMSA is recommended as best time-memory-accuracy combination option. |
 | `--clipkit-out-format` | string |  |  |  |  | clipkit | Choose the output format of the clipped alignment. |
 | `--gap-threshold` | number |  |  |  | ≥ 0.0; ≤ 1.0 | 0.5 | Multiple Sequence Alignment (MSA) positions with gappiness greater than this threshold will be trimmed |
 | `--hmmsearch-evalue-cutoff` | number |  |  |  |  | 0.001 | hmmsearch e-value cutoff threshold for reported results |
 | `--hmmsearch-query-length-threshold` | number |  |  |  | ≥ 0.0; ≤ 1.0 | 0.9 | hmmsearch minimum length percentage filter of hit env vs query length |
 | `--hmmsearch-write-domain` | boolean |  | yes |  |  | true | Boolean whether to generate domain results file of hmmsearch |
-| `--hmmsearch-write-target` | boolean |  | yes |  |  | false | Boolean whether to generate target results file of hmmsearch |
+| `--hmmsearch-write-target` | boolean |  | yes |  |  |  | Boolean whether to generate target results file of hmmsearch |
 | `--save-hmmsearch-filtered-fasta` | boolean |  |  |  |  |  | Save family fasta files after recruiting sequences with hmmsearch |
 | `--save-hmmsearch-results` | boolean |  |  |  |  |  | Save the output of hmmsearch (.domtbl.gz and .tbl.gz) |
-| `--skip-additional-sequence-recruiting` | boolean |  | yes |  |  | false | Skip recruitment of additional sequences from the input FASTA file using the family Hidden Markov Models (HMMs) into the full alignment |
-| `--skip-msa-trimming` | boolean |  | yes |  |  | false | Boolean whether to skip the trimming process of gappy positions from Multiple Sequence Alignments (MSAs) |
+| `--skip-additional-sequence-recruiting` | boolean |  | yes |  |  |  | Skip recruitment of additional sequences from the input FASTA file using the family Hidden Markov Models (HMMs) into the full alignment |
+| `--skip-msa-trimming` | boolean |  | yes |  |  |  | Boolean whether to skip the trimming process of gappy positions from Multiple Sequence Alignments (MSAs) |
 | `--trim-ends-only` | boolean |  |  |  |  | true | Choose if ClipKIT should only clip gaps at the ends of the MSAs. |
 
 ## clustering_params
@@ -119,16 +119,16 @@ nf-core/proteinfamilies pipeline parameters. Every parameter from the pinned `ne
 | `--hmmsearch-family-redundancy-length-threshold` | number |  |  |  | ≥ 0.0; ≤ 1.0 | 1.0 | hmmsearch minimum length percentage filter of hit env vs query length, for redundant family removal |
 | `--hmmsearch-family-similarity-length-threshold` | number |  |  |  | ≥ 0.0; ≤ 1.0 | 0.9 | hmmsearch minimum length percentage of hit env vs query length, to flag and report similar families (and to optionally merge) |
 | `--save-non-redundant-fams-fasta` | boolean |  |  |  |  |  | Save only the fasta files of non-redundant families (might still contain redundant sequences) |
-| `--save-non-redundant-seqs-fasta` | boolean |  |  |  |  |  | Save the final family fasta files with sequence redundancy removed |
-| `--skip-family-merging` | boolean |  | yes |  |  | false | Flag to skip merging of similar families. |
-| `--skip-family-redundancy-removal` | boolean |  | yes |  |  | false | Skip removal of between-family redundancy via hmmsearch sequence to family model matching. |
-| `--skip-sequence-redundancy-removal` | boolean |  | yes |  |  | false | Skip removal of inside-family redundancy of sequences via mmseqs clustering. |
+| `--save-non-redundant-seqs-fasta` | boolean |  |  |  |  | true | Save the final family fasta files with sequence redundancy removed |
+| `--skip-family-merging` | boolean |  | yes |  |  |  | Flag to skip merging of similar families. |
+| `--skip-family-redundancy-removal` | boolean |  | yes |  |  |  | Skip removal of between-family redundancy via hmmsearch sequence to family model matching. |
+| `--skip-sequence-redundancy-removal` | boolean |  | yes |  |  |  | Skip removal of inside-family redundancy of sequences via mmseqs clustering. |
 
 ## update_params
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--save-update-families-clipped-fasta` | boolean |  |  |  |  | true | Save FASTA files derived from updated family MSAs (after re-alignment and clipping) |
-| `--save-update-families-pre-clipped-fasta` | boolean |  |  |  |  | false | Save intermediate FASTA files before clipping gappy ends (non-redundant --if `skip_sequence_redundancy_removal` is false-- or all --if `skip_sequence_redundancy_removal` is true--) in the update_families subworkflow |
+| `--save-update-families-pre-clipped-fasta` | boolean |  |  |  |  |  | Save intermediate FASTA files before clipping gappy ends (non-redundant --if `skip_sequence_redundancy_removal` is false-- or all --if `skip_sequence_redundancy_removal` is true--) in the update_families subworkflow |
 
-<!-- Generated from nf-core/proteinfamilies@f8c0b183e59df3d87c38d0f7c4acc6918593f4f5. Do not edit by hand. -->
+<!-- Generated from nf-core/proteinfamilies@318acd54eb9c679553338b2db46313bb469d03d1. Do not edit by hand. -->
