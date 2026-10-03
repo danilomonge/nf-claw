@@ -1,7 +1,7 @@
 ---
 name: mhcquant
-version: 3.2.0
-commit: 6ec12c97f7889a3e1f09ab89930723045c6bac68
+version: 3.3.0
+commit: a4b6d51803af0fbde5acd8e9802df76280ba8306
 ---
 
 # mhcquant — full parameter reference
@@ -31,7 +31,6 @@ nf-core/mhcquant pipeline parameters. Every parameter from the pinned `nextflow_
 | `--email-on-fail` | string |  | yes |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary, only when pipeline fails. |
 | `--help` | boolean or string |  |  |  |  |  | Display the help message. |
 | `--help-full` | boolean |  |  |  |  |  | Display the full detailed help message. |
-| `--hook-url` | string |  | yes |  |  |  | Incoming hook URL for messaging service |
 | `--max-multiqc-email-size` | string |  | yes |  | matches ^\d+(\.\d+)?\.?\s*(K\|M\|G\|T)?B$ | 25.MB | File size limit when attaching MultiQC reports to summary emails. |
 | `--monochrome-logs` | boolean |  | yes |  |  | false | Do not use coloured log outputs. |
 | `--multiqc-config` | string (file path) |  | yes |  |  |  | Custom config file to supply to MultiQC. |
@@ -137,4 +136,4 @@ nf-core/mhcquant pipeline parameters. Every parameter from the pinned `nextflow_
 | `--use-z-ions` | boolean |  |  |  |  | false | Include z ions into the peptide spectrum matching |
 | `--variable-mods` | string |  |  |  |  | Oxidation (M) | Specify which variable modifications should be applied to the database search |
 
-<!-- Generated from nf-core/mhcquant@6ec12c97f7889a3e1f09ab89930723045c6bac68. Do not edit by hand. -->
+<!-- Generated from nf-core/mhcquant@a4b6d51803af0fbde5acd8e9802df76280ba8306. Do not edit by hand. -->
