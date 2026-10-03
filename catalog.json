@@ -1086,16 +1086,24 @@
     "summary": "nfcore/mhcquant is a best-practice bioinformatics pipeline to process data-dependent acquisition (DDA) immunopeptidomics data. This involves mass spectrometry-based identification and quantification of immunopeptides presented on major histocompatibility complex (MHC) molecules which mediate T cell immunosurveillance. Immunopeptidomics has central implications for clinical research, in the context of T cell-centric immunotherapies.",
     "tools": [
       "OpenMS",
+      "ThermoRawFileParser",
+      "tdf2mzml",
       "Comet",
       "DeepLC",
       "MS\u00b2PIP",
       "Ionmob",
+      "IM2Deep",
       "MS\u00b2Rescore",
+      "TIMS\u00b2Rescore",
       "Percolator",
       "Mokapot",
+      "EasyPQP",
+      "Epicore",
+      "pridepy",
+      "sdrf-pipelines",
       "MultiQC"
     ],
-    "version": "3.2.0"
+    "version": "3.3.0"
   },
   {
     "description": "An analysis pipeline for processing Molecular Cartography data.",

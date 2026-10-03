@@ -1,14 +1,14 @@
 ---
 name: mhcquant
 pipeline: nf-core/mhcquant
-version: 3.2.0
-commit: 6ec12c97f7889a3e1f09ab89930723045c6bac68
+version: 3.3.0
+commit: a4b6d51803af0fbde5acd8e9802df76280ba8306
 description: Identify and quantify peptides from mass spectrometry raw data
 summary: nfcore/mhcquant is a best-practice bioinformatics pipeline to process data-dependent acquisition (DDA) immunopeptidomics data. This involves mass spectrometry-based identification and quantification of immunopeptides presented on major histocompatibility complex (MHC) molecules which mediate T cell immunosurveillance. Immunopeptidomics has central implications for clinical research, in the context of T cell-centric immunotherapies.
 has_samplesheet: true
 input: samplesheet (ID, Sample, Condition, ReplicateFileName, Fasta, SearchPreset)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: OpenMS, Comet, DeepLC, MS²PIP, Ionmob, MS²Rescore, Percolator, Mokapot, MultiQC
+tools: OpenMS, ThermoRawFileParser, tdf2mzml, Comet, DeepLC, MS²PIP, Ionmob, IM2Deep, MS²Rescore, TIMS²Rescore, Percolator, Mokapot, EasyPQP, Epicore, pridepy, sdrf-pipelines, MultiQC
 ---
 # mhcquant
 
@@ -53,7 +53,7 @@ Any of the optional columns above may be appended to the header when your data n
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):
 - **Database Options** (`database_options`) — 2 parameters
 - **Epicore Options** (`epicore_options`) — 4 parameters
-- **Generic options** (`generic_options`) — 16 parameters
+- **Generic options** (`generic_options`) — 15 parameters
 - **Input/output options** (`input_output_options`) — 4 parameters
 - **Institutional config options** (`institutional_config_options`) — 6 parameters
 - **Post Processing** (`post_processing`) — 4 parameters
@@ -73,23 +73,23 @@ nfclaw run mhcquant --input samplesheet.tsv --outdir results -profile docker \
 nfclaw turns those into Nextflow's `process.resourceLimits` and passes them as a `-c` config — the mechanism nf-core prescribes for exactly this ([docs](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)). Set them to the machine's real capacity. The generated config is kept in `<outdir>/provenance/`, so `commands.sh` replays the run under the same ceiling.
 
 ## Nextflow engine
-This release declares `nextflowVersion = '!>=25.04.0'`.
+This release declares `nextflowVersion = '!>=25.10.4'`.
 
 To run the engine this release targets — worth doing if a newer Nextflow emits config-parser warnings the release never saw:
 ```bash
-nfclaw run mhcquant ... --nxf-ver 25.04.0
+nfclaw run mhcquant ... --nxf-ver 25.10.4
 ```
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/mhcquant/blob/3.2.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/mhcquant/blob/3.3.0/docs/output.md
 
 ## Tools this pipeline runs
-The tools/methods this pipeline runs, per the authors' own list: OpenMS, Comet, DeepLC, MS²PIP, Ionmob, MS²Rescore, Percolator, Mokapot, MultiQC.
+The tools/methods this pipeline runs, per the authors' own list: OpenMS, ThermoRawFileParser, tdf2mzml, Comet, DeepLC, MS²PIP, Ionmob, IM2Deep, MS²Rescore, TIMS²Rescore, Percolator, Mokapot, EasyPQP, Epicore, pridepy, sdrf-pipelines, MultiQC.
 
-Full list with references: https://github.com/nf-core/mhcquant/blob/3.2.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/mhcquant/blob/3.3.0/CITATIONS.md
 
 ## Demo
 ```bash
@@ -97,6 +97,6 @@ nfclaw run mhcquant --demo --outdir results   # adds the upstream test profile (
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/mhcquant/blob/3.2.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/mhcquant/blob/3.3.0/docs/usage.md
 
-<!-- Generated from nf-core/mhcquant@6ec12c97f7889a3e1f09ab89930723045c6bac68. Do not edit by hand. -->
+<!-- Generated from nf-core/mhcquant@a4b6d51803af0fbde5acd8e9802df76280ba8306. Do not edit by hand. -->
