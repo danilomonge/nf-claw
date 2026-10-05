@@ -30,7 +30,7 @@ RUN_LOG_NAME = "run.log"
 _TAIL_BYTES = 256 * 1024
 _MAX_EXCERPT_LINES = 50
 _CONTEXT_LINES = 6           # non-blank lines quoted from just above the `ERROR ~` line
-_TAIL_LINES = 15             # quoted when Nextflow printed no `ERROR ~` line at all
+_TAIL_LINES = 15             # the last paragraph, quoted when Nextflow printed no `ERROR ~` line
 _STDERR_LINES = 25
 # The launcher's only routine stderr line; every real run's stderr holds nothing else (even `WARN:`
 # lines go to stdout), so on a failure whatever else is on stderr is part of the error.
@@ -123,8 +123,8 @@ def error_excerpt(console: str, *, tail_if_no_report: bool = True) -> list[str]:
     nf-core template follows the real one with a generic "ERROR ~ Pipeline failed" — preceded by the
     paragraph printed just above the last rendering of the first: the failed step's progress lines,
     or a config/script syntax error described above `ERROR ~ Config parsing failed`. Without an
-    `ERROR ~` line (an `error "…"` raised in a workflow prints only its message) it is the last lines
-    of the console, unless `tail_if_no_report` is off. A long excerpt keeps its head and its tail."""
+    `ERROR ~` line (an `error "…"` raised by a pipeline prints only its message) it is the console's
+    last paragraph, unless `tail_if_no_report` is off. A long excerpt keeps its head and its tail."""
     lines = _clean(console)
     distinct: dict[tuple[str, ...], int] = {}             # report → start of its last rendering
     for at, report in _reports(lines):
@@ -134,7 +134,13 @@ def error_excerpt(console: str, *, tail_if_no_report: bool = True) -> list[str]:
         for report in distinct:
             block += ([""] if block else []) + list(report)
     elif tail_if_no_report:
-        block = [line for line in lines if line][-_TAIL_LINES:]
+        end = len(lines)
+        while end > 0 and not lines[end - 1]:
+            end -= 1
+        block = _last_paragraph(lines, end)
+        if len(block) == 1 and _REPORT_END.match(block[0]):
+            # A message closed by Nextflow's "-- Check script …" line: the message is just above.
+            block = _squeeze(_last_paragraph(lines, end - 1) + [""] + block)
     else:
         block = []
     return _cap(block)
@@ -149,6 +155,18 @@ def _paragraph_above(lines: list[str], at: int) -> list[str]:
     start = end
     while start > 0 and lines[start - 1] and end - start < _CONTEXT_LINES \
             and not _CONTEXT_STOP.search(lines[start - 1]):
+        start -= 1
+    return lines[start:end]
+
+
+def _last_paragraph(lines: list[str], at: int) -> list[str]:
+    """The run of non-blank lines ending just above line `at` (blank lines skipped), at most
+    `_TAIL_LINES` of it."""
+    end = at
+    while end > 0 and not lines[end - 1]:
+        end -= 1
+    start = end
+    while start > 0 and lines[start - 1] and end - start < _TAIL_LINES:
         start -= 1
     return lines[start:end]
 

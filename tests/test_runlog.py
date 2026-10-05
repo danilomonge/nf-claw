@@ -219,3 +219,24 @@ def test_without_a_report_the_console_tail_is_optional():
     console = _console("workflow_error.txt")
     assert runlog.error_excerpt(console, tail_if_no_report=False) == []
     assert runlog.error_excerpt(console)[-1] == "pipeline-level failure: missing --fasta"
+
+
+def test_without_a_report_the_quote_is_the_last_paragraph_not_the_parameter_summary():
+    # Real nf-core/sarek 3.10.0: the pipeline's own `error(...)` prints its message — no `ERROR ~`
+    # prefix — right after nf-core's parameter summary and citations, which are not the error.
+    excerpt = runlog.error_excerpt(_console("sarek_workflow_error.stdout.txt"))
+    assert excerpt == [
+        "Base quality score recalibration requires at least one resource file. Please provide at "
+        "least one of `--dbsnp` or `--known_indels`",
+        "You can skip this step in the workflow by adding `--skip_tools baserecalibrator` to the "
+        "command.",
+    ]
+
+
+def test_last_paragraph_fallback_reaches_above_a_trailing_check_line():
+    console = (" N E X T F L O W   ~  version 26.04.3\n\nparams summary\n\n"
+               "* --genome (GRCh99): not a known genome\n\n"
+               " -- Check script 'main.nf' at line: 68 or see '.nextflow.log' file for more details\n")
+    excerpt = runlog.error_excerpt(console)
+    assert excerpt[0] == "* --genome (GRCh99): not a known genome"
+    assert excerpt[-1].startswith(" -- Check script 'main.nf'")
