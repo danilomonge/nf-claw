@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sys
 from pathlib import Path
@@ -90,7 +91,28 @@ def _collect_overrides(extras: list[str]) -> dict:
     return out
 
 
+# What a shell reports for a command killed by SIGPIPE (128 + 13).
+_EXIT_BROKEN_PIPE = 141
+
+
 def main(argv: list[str] | None = None) -> int:
+    """Run one nfclaw command. Output piped into a reader that stops early (`nfclaw versions X |
+    head -1`, `nfclaw list | grep -m1 rna`) ends the command quietly, as it would a Unix tool, rather
+    than with a BrokenPipeError traceback. SIGPIPE itself stays ignored (Python's default): a run
+    whose terminal goes away must keep tearing down Nextflow and writing its provenance, not die."""
+    try:
+        code = _main(argv)
+        sys.stdout.flush()                    # surface a closed pipe here, not at interpreter exit
+        return code
+    except BrokenPipeError:
+        # Point stdout at /dev/null so the interpreter's own final flush cannot raise again.
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
+        os.close(devnull)
+        return _EXIT_BROKEN_PIPE
+
+
+def _main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     parser = argparse.ArgumentParser(prog="nfclaw")
     sub = parser.add_subparsers(dest="cmd", required=True)

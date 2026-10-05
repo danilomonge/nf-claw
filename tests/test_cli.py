@@ -422,3 +422,27 @@ def test_run_says_warnings_before_launch_and_only_once(tmp_path, monkeypatch, ca
     assert cli.main(["run", "fetchngs", "--outdir", str(tmp_path / "out")]) == 0
     err = capsys.readouterr().err
     assert err.count("warning: said early") == 1 and "warning: only in result" in err
+
+
+def test_output_into_a_closed_pipe_ends_quietly(tmp_path):
+    # `nfclaw versions X | head -1` (or `list | grep -m1`) closes the pipe early; the next write used
+    # to end the command with a BrokenPipeError traceback on stderr.
+    import subprocess
+    import sys
+    script = (
+        "import sys\n"
+        "from runner import cli\n"
+        "def big(argv):\n"
+        "    for i in range(200000):\n"
+        "        print(f'line {i}')\n"
+        "    return 0\n"
+        "cli._main = big\n"
+        "sys.exit(cli.main([]))\n"
+    )
+    proc = subprocess.Popen([sys.executable, "-c", script], stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, cwd=Path(__file__).resolve().parent.parent)
+    assert proc.stdout.readline() == b"line 0\n"
+    proc.stdout.close()                                    # the reader goes away, like `head -1`
+    stderr = proc.stderr.read().decode()
+    assert proc.wait(timeout=60) == cli._EXIT_BROKEN_PIPE
+    assert "Traceback" not in stderr and "BrokenPipeError" not in stderr, stderr
