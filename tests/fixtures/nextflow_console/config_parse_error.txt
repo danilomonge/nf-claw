@@ -1,0 +1,12 @@
+
+ N E X T F L O W   ~  version 26.04.3
+
+
+Error bad.config:3:1: Unexpected input: '}'
+│   3 | }
+╰     | ^
+
+
+ERROR ~ Config parsing failed
+
+ -- Check '.nextflow.log' file for details

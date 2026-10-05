@@ -38,11 +38,111 @@ def test_env_extra_preserves_inherited_environment(tmp_path, monkeypatch):
     assert (tmp_path / "logs" / "stdout.txt").read_text().strip() == "yes"
 
 
-def test_failure_points_to_log_and_known_issues(tmp_path):
+def test_failure_quotes_nextflow_error_and_points_at_the_real_logs(tmp_path):
+    # Nextflow prints its error report on *stdout*; stderr only carries launcher chatter (the
+    # "Nextflow X is available" notice). Pointing at stderr.txt sent every reader to an empty file.
+    nf_log = tmp_path / ".nextflow.log"
+    nf_log.write_text("engine detail")
+    child = ("import sys; print('Nextflow 99 is available', file=sys.stderr); "
+             "print('ERROR ~ Error executing process > BOOM'); "
+             "print(); print('Caused by:'); print('  the real cause'); sys.exit(1)")
+    with pytest.raises(NfclawError) as exc:
+        execution.run([PY, "-c", child], cwd=tmp_path, logs_dir=tmp_path / "logs",
+                      timeout_seconds=30, nextflow_log=nf_log)
+    text = str(exc.value)
+    assert "ERROR ~ Error executing process > BOOM" in text and "the real cause" in text
+    assert exc.value.details["run_log"] == str(tmp_path / "logs" / "run.log")
+    assert exc.value.details["nextflow_log"] == str(nf_log)
+    assert exc.value.details["exit_code"] == 1
+    assert "known-issues.md" in exc.value.fix
+    assert "stderr.txt" not in text
+
+
+def test_failure_does_not_point_at_a_nextflow_log_that_was_never_written(tmp_path):
+    # Nextflow can fail before it creates its log (e.g. the launcher cannot fetch NXF_VER).
     with pytest.raises(NfclawError) as exc:
         execution.run([PY, "-c", "import sys; sys.exit(1)"], cwd=tmp_path,
+                      logs_dir=tmp_path / "logs", timeout_seconds=30,
+                      nextflow_log=tmp_path / ".nextflow.log")
+    assert "nextflow_log" not in exc.value.details
+    assert exc.value.details["run_log"] == str(tmp_path / "logs" / "run.log")
+
+
+def test_failure_points_at_the_failing_task_files(tmp_path):
+    task = tmp_path / "work" / "ca" / "546a82"
+    task.mkdir(parents=True)
+    (task / ".command.err").write_text("samtools: could not open input.bam")
+    child = (f"import sys; print('ERROR ~ Error executing process > BOOM'); print('Work dir:'); "
+             f"print('  {task}'); sys.exit(1)")
+    with pytest.raises(NfclawError) as exc:
+        execution.run([PY, "-c", child], cwd=tmp_path, logs_dir=tmp_path / "logs",
+                      timeout_seconds=30)
+    assert exc.value.details["failing_task"] == str(task / ".command.err")
+
+
+def test_run_log_records_the_whole_launch_in_order(tmp_path):
+    # One file holds everything a launch printed — nfclaw's header, Nextflow's stdout and stderr
+    # interleaved as produced — and ends with the outcome, so a background run needs no redirect.
+    child = ("import sys, time; print('OUT1', flush=True); time.sleep(0.2); "
+             "print('ERR1', file=sys.stderr, flush=True); time.sleep(0.2); print('OUT2')")
+    execution.run([PY, "-c", child], cwd=tmp_path, logs_dir=tmp_path / "logs",
+                  timeout_seconds=30, notes=["engine older than required"])
+    log = (tmp_path / "logs" / "run.log").read_text()
+    assert log.index("==> nfclaw run started") < log.index("OUT1") < log.index("ERR1") \
+        < log.index("OUT2")
+    assert "warning: engine older than required" in log
+    assert f"launch dir: {tmp_path}" in log
+    assert log.rstrip().splitlines()[-1].startswith("==> nfclaw run finished")
+    assert log.rstrip().endswith(": success")
+
+
+def test_failed_run_log_ends_with_the_outcome_after_the_error(tmp_path):
+    with pytest.raises(NfclawError) as exc:
+        execution.run([PY, "-c", "import sys; print('ERROR ~ boom'); sys.exit(4)"], cwd=tmp_path,
                       logs_dir=tmp_path / "logs", timeout_seconds=30)
-    assert "stderr.txt" in exc.value.fix and "known-issues.md" in exc.value.fix
+    log = (tmp_path / "logs" / "run.log").read_text()
+    assert str(exc.value) in log                         # the exact error the terminal showed
+    assert log.rstrip().splitlines()[-1].endswith(": failed (exit status 4)")
+
+
+def test_timed_out_run_is_logged(tmp_path):
+    with pytest.raises(NfclawError) as exc:
+        execution.run([PY, "-c", "import time; print('started', flush=True); time.sleep(10)"],
+                      cwd=tmp_path, logs_dir=tmp_path / "logs", timeout_seconds=1)
+    assert exc.value.details["run_log"] == str(tmp_path / "logs" / "run.log")
+    log = (tmp_path / "logs" / "run.log").read_text()
+    assert "started" in log
+    assert log.rstrip().splitlines()[-1].endswith(": timed out after 1 s")
+
+
+def test_a_relaunch_appends_to_the_logs_instead_of_overwriting_them(tmp_path):
+    # `--resume` relaunches into the same --outdir; the failed attempt's log is the evidence of what
+    # went wrong and must survive the retry.
+    with pytest.raises(NfclawError):
+        execution.run([PY, "-c", "import sys; print('ATTEMPT1'); sys.exit(1)"], cwd=tmp_path,
+                      logs_dir=tmp_path / "logs", timeout_seconds=30)
+    execution.run([PY, "-c", "print('ATTEMPT2')"], cwd=tmp_path, logs_dir=tmp_path / "logs",
+                  timeout_seconds=30)
+    log = (tmp_path / "logs" / "run.log").read_text()
+    assert log.count("==> nfclaw run started") == 2
+    assert log.index("ATTEMPT1") < log.index("ATTEMPT2")
+    out = (tmp_path / "logs" / "stdout.txt").read_text()
+    assert "ATTEMPT1" in out and "ATTEMPT2" in out
+
+
+def test_launch_announces_where_the_run_is_logged(tmp_path, capfd):
+    execution.run([PY, "-c", "print('x')"], cwd=tmp_path, logs_dir=tmp_path / "logs",
+                  timeout_seconds=30)
+    assert f"nfclaw: logging this run to {tmp_path / 'logs' / 'run.log'}" in capfd.readouterr().err
+
+
+def test_launch_failure_is_logged(tmp_path):
+    with pytest.raises(NfclawError) as exc:
+        execution.run([str(tmp_path / "no-such-binary")], cwd=tmp_path,
+                      logs_dir=tmp_path / "logs", timeout_seconds=30)
+    assert exc.value.details["run_log"] == str(tmp_path / "logs" / "run.log")
+    log = (tmp_path / "logs" / "run.log").read_text()
+    assert log.rstrip().splitlines()[-1].endswith(": could not launch")
 
 
 def test_output_is_streamed_live_to_the_terminal_and_the_logs(tmp_path, capfd):
@@ -83,6 +183,8 @@ def test_keyboard_interrupt_tears_down_the_child_and_its_children(tmp_path):
                           logs_dir=tmp_path / "logs", timeout_seconds=60)
     finally:
         timer.cancel()
+    log = (tmp_path / "logs" / "run.log").read_text()
+    assert log.rstrip().splitlines()[-1].endswith(": interrupted")   # the log says how it ended
 
     child_pid, grand_pid = (int(x) for x in pids.read_text().split())
     deadline = time.time() + 5

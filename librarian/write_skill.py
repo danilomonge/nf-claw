@@ -276,9 +276,10 @@ def _outputs_section(name: str, st: SubmoduleStatus) -> str:
         "Results land in `--outdir`, organised into one sub-directory per pipeline step/module; "
         "standardized run metadata in `<outdir>/pipeline_info/` (execution report, software "
         f"versions).{mq} `nfclaw run` also writes `<outdir>/provenance/` with the exact params "
-        "file and run logs; unless `--no-provenance` it adds a run manifest (pinned version, "
-        "commit and exact command), input/output SHA-256 checksums, and a replayable "
-        f"`commands.sh`.{link}\n"
+        "file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last "
+        "line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless "
+        "`--no-provenance` it adds a run manifest (pinned version, commit and exact command), "
+        f"input/output SHA-256 checksums, and a replayable `commands.sh`.{link}\n"
     )
 
 

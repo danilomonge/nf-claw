@@ -560,3 +560,12 @@ def test_cli_requires_a_pipeline_name_or_all():
     with pytest.raises(SystemExit) as exc:
         write_skill.main([])                          # crashed with a TypeError
     assert exc.value.code == 2
+
+
+def test_outputs_section_says_where_the_run_is_logged(tmp_path):
+    # The skill is what an agent reads right before running; it must not have to ask where the log is.
+    pdir = _seed(tmp_path, "mini")
+    skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
+    text = skill.read_text()
+    assert "`<outdir>/provenance/logs/run.log`" in text
+    assert "`<outdir>/.nextflow.log`" in text

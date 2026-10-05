@@ -348,6 +348,36 @@ def test_runs_from_outdir_with_shared_work_dir(tmp_path, monkeypatch):
     assert bseen["work_dir"] == root / "work"                    # work stays shared, off the outdir
 
 
+def test_run_is_logged_in_the_bundle_with_nextflow_log_and_advisories(tmp_path, monkeypatch):
+    # The run log lives at a fixed place — <outdir>/provenance/logs/run.log — so nobody has to be told
+    # where it is; Nextflow's own log is resolved against the outdir it is launched from.
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.setattr(orchestration.engine_version, "check", lambda *a, **k: ["engine too old"])
+    monkeypatch.delenv("NXF_LOG_FILE", raising=False)
+    eseen = {}
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: eseen.update(k))
+    out = tmp_path / "out"
+    res = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=out,
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=False, write_provenance=False, timeout_seconds=10)
+    assert eseen["logs_dir"] == out / "provenance" / "logs"
+    assert eseen["nextflow_log"] == out / ".nextflow.log"
+    assert "engine too old" in eseen["notes"]
+    assert res.log_path == out / "provenance" / "logs" / "run.log"
+
+
+def test_check_only_names_no_run_log(tmp_path, monkeypatch):
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    res = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10)
+    assert res.log_path is None                                   # --check launches nothing
+
+
 def test_pipeline_version_routed_through_versions_ensure(tmp_path, monkeypatch):
     # A requested version is resolved/materialized via versions.ensure; everything downstream
     # (schema, validation, command) then targets whatever tree it returns.

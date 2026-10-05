@@ -1,0 +1,72 @@
+
+ N E X T F L O W   ~  version 26.04.3
+
+Launching `../fail_task.nf` [jolly_lalande] revision: 95a80341e5
+
+[-        ] BOOM -
+
+executor >  local (1)
+[ca/546a82] BOOM | 0 of 1
+
+executor >  local (1)
+[ca/546a82] BOOM | 0 of 1
+ERROR ~ Error executing process > 'BOOM'
+
+Caused by:
+  Process `BOOM` terminated with an error exit status (3)
+
+
+Command executed:
+
+  echo "task stdout line"
+  echo "the real task error: samtools could not open input.bam" >&2
+  exit 3
+
+Command exit status:
+  3
+
+Command output:
+  task stdout line
+
+Command error:
+  task stdout line
+  the real task error: samtools could not open input.bam
+
+Work dir:
+  /mnt/volume/drafts/draft-7/probe/l1/work/ca/546a82c2be33e7d21e7983b988f1e9
+
+Tip: when you have fixed the problem you can continue the execution adding the option `-resume` to the run command line
+
+ -- Check '.nextflow.log' file for details
+
+executor >  local (1)
+[ca/546a82] BOOM | 0 of 1 ✘
+ERROR ~ Error executing process > 'BOOM'
+
+Caused by:
+  Process `BOOM` terminated with an error exit status (3)
+
+
+Command executed:
+
+  echo "task stdout line"
+  echo "the real task error: samtools could not open input.bam" >&2
+  exit 3
+
+Command exit status:
+  3
+
+Command output:
+  task stdout line
+
+Command error:
+  task stdout line
+  the real task error: samtools could not open input.bam
+
+Work dir:
+  /mnt/volume/drafts/draft-7/probe/l1/work/ca/546a82c2be33e7d21e7983b988f1e9
+
+Tip: when you have fixed the problem you can continue the execution adding the option `-resume` to the run command line
+
+ -- Check '.nextflow.log' file for details
+

@@ -86,7 +86,7 @@ def test_replay_reproduces_into_a_fresh_outdir_not_the_original(tmp_path):
     script = (prov / "commands.sh").read_text()
     assert f"default_target='{out}.replay'" in script or f"default_target={out}.replay" in script
     assert 'cd -- "$target"' in script                  # engine state lands beside the new results
-    assert script.rstrip().endswith('--outdir "$target"')
+    assert 'nextflow run x --outdir "$target"' in script
     assert f"cd {out}\n" not in script                  # never the original directory
 
 
@@ -274,3 +274,50 @@ def test_commands_sh_is_executable(tmp_path):
     prov = provenance.write(outdir=out, pipeline="mini", command_str="nextflow run x",
                             submodule=_st(tmp_path / "up"), input_paths=[])
     assert (prov / "commands.sh").stat().st_mode & 0o111        # user/group/other execute bit set
+
+
+def test_replay_logs_itself_into_the_target_bundle(tmp_path):
+    # A replay is a run too: it logs to <target>/provenance/logs/run.log exactly like the original,
+    # so it needs no `> replay.log 2>&1` of its own — and the log ends with the outcome.
+    import subprocess
+
+    out = tmp_path / "out"
+    out.mkdir()
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="echo REPLAYED",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    target = tmp_path / "fresh"
+    r = subprocess.run([str(prov / "commands.sh"), str(target)], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    assert "REPLAYED" in r.stdout                                  # still on the terminal
+    log = (target / "provenance" / "logs" / "run.log").read_text()
+    assert "==> nfclaw replay started" in log and "REPLAYED" in log
+    assert log.rstrip().splitlines()[-1].endswith(": success")
+    assert f"logging this replay to {target / 'provenance' / 'logs' / 'run.log'}" in r.stderr
+
+
+def test_replay_failure_keeps_its_exit_status_and_is_logged(tmp_path):
+    import subprocess
+
+    out = tmp_path / "out"
+    out.mkdir()
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="sh -c 'echo NOPE; exit 7'",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    target = tmp_path / "fresh"
+    r = subprocess.run([str(prov / "commands.sh"), str(target)], capture_output=True, text=True)
+    assert r.returncode == 7
+    log = (target / "provenance" / "logs" / "run.log").read_text()
+    assert "NOPE" in log
+    assert log.rstrip().splitlines()[-1].endswith(": failed (exit status 7)")
+
+
+def test_replay_log_is_not_counted_as_a_replayed_output(tmp_path):
+    # `nfclaw verify` hashes the replay directory; its log must not show up as an "extra" result.
+    import subprocess
+
+    out = tmp_path / "out"
+    out.mkdir()
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="echo",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    target = tmp_path / "fresh"
+    subprocess.run([str(prov / "commands.sh"), str(target)], capture_output=True, check=True)
+    assert provenance.output_checksums(target) == {}

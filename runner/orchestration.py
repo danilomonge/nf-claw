@@ -7,7 +7,7 @@ from pathlib import Path
 
 from runner import (discovery, engine_version, execution, inputs, nextflow_command,
                     outputs, parameters, plugin_compat, preflight, provenance,
-                    resources, samplesheet, versions)
+                    resources, runlog, samplesheet, versions)
 from runner import schema as schema_mod
 from runner.errors import ErrorCode, NfclawError
 
@@ -19,6 +19,7 @@ class RunResult:
     checked_only: bool
     outputs_report: "outputs.OutputsReport | None"
     warnings: list[str] = field(default_factory=list)
+    log_path: Path | None = None            # the run log; None for --check, which launches nothing
 
 
 def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
@@ -186,10 +187,15 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
 
     # Launch from the outdir so each run owns its `.nextflow/` history and cache: `-resume` then
     # resumes THIS run, never another pipeline's session. Paths in the command are absolute, so
-    # the cwd only decides where the engine state lands.
+    # the cwd only decides where the engine state lands — including Nextflow's own log.
+    # The run is recorded at a fixed place, `<outdir>/provenance/logs/run.log` (see runner.runlog):
+    # nobody launching it, in the foreground or the background, has to redirect it or be told where.
+    logs_dir = outdir / "provenance" / "logs"
     try:
-        execution.run(cmd, cwd=outdir, logs_dir=outdir / "provenance" / "logs",
-                      timeout_seconds=timeout_seconds, env_extra=nxf_overlay)
+        execution.run(cmd, cwd=outdir, logs_dir=logs_dir,
+                      timeout_seconds=timeout_seconds, env_extra=nxf_overlay,
+                      nextflow_log=runlog.nextflow_log_path(outdir, nxf_overlay),
+                      notes=warnings)
     except BaseException:
         # A failed run is exactly when the bundle is needed most: `commands.sh` is what replays the
         # run once the cause is fixed, and the checksums record what it did manage to produce. Write
@@ -204,4 +210,5 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     if write_provenance:
         record("success")
     return RunResult(command=cmd_str, outdir=outdir, checked_only=False,
-                     outputs_report=report, warnings=warnings)
+                     outputs_report=report, warnings=warnings,
+                     log_path=logs_dir / runlog.RUN_LOG_NAME)

@@ -28,6 +28,25 @@ not always a samplesheet: the pipeline's schema decides — a directory or tarba
 file or PRIDE accession (mhcquant), or `--input false` where a pipeline documents running without
 one (sarek — nfclaw then leaves `input` unset). The `Inputs` section of `skill.md` says which.
 
+## Where a run is logged
+Every `nfclaw run` records itself at a fixed place — there is no need to redirect its output, and
+nothing to look up:
+- `<outdir>/provenance/logs/run.log` — the whole launch in order: nfclaw's header (command, launch
+  directory, Nextflow log path, advisories), everything Nextflow printed, and on failure nfclaw's
+  error. Once the run ends, its **last line** is `==> nfclaw run finished <time>: <outcome>`
+  (`success`, `failed (exit status N)`, `timed out after N s`, `interrupted`), so a run started in
+  the background (`nohup nfclaw run ... &`) is checked with
+  `tail -n 1 <outdir>/provenance/logs/run.log`. `--resume` appends: a failed attempt is never
+  overwritten by the retry.
+- `<outdir>/.nextflow.log` — Nextflow's own detailed log. Nextflow runs from `--outdir`, so its
+  console hint "Check '.nextflow.log'" means this file, not one in your working directory.
+- `stdout.txt` / `stderr.txt` beside `run.log` — Nextflow's two streams kept apart. Nextflow prints
+  its error report on stdout; stderr holds only launcher notices.
+
+When a run fails, nfclaw's error quotes Nextflow's own error report and names these files by absolute
+path — plus the failing task's `.command.err` (its `.command.log` and `.command.sh` sit beside it).
+`--check` launches nothing and writes no log.
+
 ## Replaying a run
 `<outdir>/provenance/commands.sh` re-runs the recorded command. It reproduces the run into a **fresh**
 directory (default `<outdir>.replay`, or pass one: `./commands.sh /path/to/fresh-dir`) and refuses a
@@ -35,7 +54,8 @@ target that already holds files. That is deliberate: an nf-core pipeline publish
 and cannot re-publish over a previous run's files, so replaying in place fails immediately on
 `pipeline_info/execution_trace_*.txt` (and on sarek's `manifest_*.bco.json`). A replay re-executes
 the pipeline — it is a reproduction, not a `--resume` — and the result can be compared against the
-original bundle's `outputs.sha256`.
+original bundle's `outputs.sha256`. It logs itself the same way, to
+`<target>/provenance/logs/run.log`, ending with its outcome.
 
 Trust `skill.md` / `reference.md` over your own memory — they are generated from the pinned commit.
 To set any parameter beyond the essentials, look it up in `pipelines/<name>/reference.md` (the complete
@@ -124,5 +144,6 @@ Spaces in a path break many tools, so `nfclaw run` checks the repo path, the Nex
 directory and `--outdir` **before** launching and **fails fast** naming the offending path (pass
 `--allow-spaces` to override) — a deterministic check, not a guess. For other failures (IPv6 host,
 no-network database downloads, a too-new Nextflow config parser, known upstream-pipeline bugs) the
-error points at the Nextflow log; the symptom→fix map is in
+error quotes Nextflow's own report and names the run log, `.nextflow.log` and the failing task's
+files by absolute path (see "Where a run is logged"); the symptom→fix map is in
 [`docs/known-issues.md`](docs/known-issues.md).
