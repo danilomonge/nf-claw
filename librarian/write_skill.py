@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 from pathlib import Path
 
-from runner import engine_version
+from runner import engine_version, inputs
 from runner import schema as schema_mod
 from runner import submodule as submod
 from runner.schema import InputSchema, Param, ParamSchema, json_scalar
@@ -15,6 +16,12 @@ from runner.submodule import SubmoduleStatus
 def _cell(text: object) -> str:
     """Collapse all whitespace (incl. newlines/tabs) and escape pipes so free text is safe inside a markdown table cell."""
     return " ".join(str(text).split()).replace("|", "\\|")
+
+
+def _allowed(values: tuple[str, ...] | None) -> str:
+    """An allowed-values cell: each value its own code span, so a value that itself contains a comma
+    (ampliseq's `bac,arc,mito,euk`) cannot be mistaken for several."""
+    return _cell(", ".join(f"`{v}`" for v in values)) if values else ""
 
 
 def _type_with_fmt(type_: str, fmt: str | None) -> str:
@@ -44,10 +51,12 @@ def _constraints(obj) -> str:
     return _cell("; ".join(parts))
 
 
-def _input_summary(insch: InputSchema | None) -> str:
+def _input_summary(insch: InputSchema | None, ps: ParamSchema | None = None) -> str:
     """One-line, schema-derived description of what the pipeline consumes (for the catalog).
-    Robust: comes straight from assets/schema_input.json, never guessed."""
+    Robust: comes straight from the samplesheet schema `--input` uses, never guessed."""
     if insch is None:
+        if ps is not None and "input" in ps.params:
+            return "--input (no samplesheet schema)"     # a directory, a FASTA, an unschema'd sheet
         return "parameters (no samplesheet)"
     named = [c for c in insch.columns if c.name]
     if not named:
@@ -99,7 +108,9 @@ def _is_tool_section(header: str) -> bool:
         return False
     if "packaging" in t or "containeri" in t:        # packaging/containerisation (incl. /testing) — infra
         return False
-    if t == "data" or "resource" in t:               # test data / external archives — not software
+    if re.search(r"\bdata(bases?|sets?)?\b", t) or "resource" in t:
+        return False                                 # test data, reference databases, archives
+    if "nextflow" in t or "nf-core" in t:            # the framework itself, cited as plain bullets
         return False
     return True
 
@@ -172,8 +183,7 @@ def _resources_section(name: str, ps: ParamSchema, insch: InputSchema | None,
     failed task with *more*. On a workstation the run dies at the first such task — the failure the
     `test` profile never shows, because it ships its own small `resourceLimits` ceiling. The fix
     nf-core documents is that same ceiling, applied to a real run."""
-    ext, _, _ = _samplesheet_format(ps)
-    inp = f" --input samplesheet.{ext}" if insch is not None else ""
+    inp = _input_arg(ps, insch)
     ver = f" --pipeline-version {pipeline_version}" if pipeline_version else ""
     return (
         "A real (non-`--demo`) run requests the resources the pipeline's `conf/base.config` asks "
@@ -205,25 +215,30 @@ def _reference_section(ps: ParamSchema) -> str:
 
     Both facts are read straight from the schema, so this stays correct as releases change."""
     genome = ps.params.get("genome")
-    base = ps.params.get("igenomes_base")
-    if genome is None and base is None:
+    if genome is None:              # no --genome: nothing is resolved through iGenomes by name
         return ""
+    base = ps.params.get("igenomes_base")
     where = f" at `{base.default}`" if base is not None and base.default else ""
     ignore = " Set `--igenomes-ignore true` to disable the lookup entirely." \
         if "igenomes_ignore" in ps.params else ""
-    if genome is not None and genome.default:
+    # Name only flags and groups this schema has: the reference options live in different groups
+    # across releases (reference_genome_options, reference_data_options, reference_file_options, …),
+    # and not every release takes a --fasta.
+    fasta = ps.params.get("fasta")
+    group = f"`{(fasta or genome).group or 'general'}`"
+    own = (f"e.g. `--fasta`; the {group} group in [reference.md](reference.md) lists every "
+           "reference option" if fasta else
+           f"the {group} group in [reference.md](reference.md) lists the reference options")
+    if genome.default:
         return (
             f"**This release resolves a reference genome remotely by default.** `--genome` defaults "
             f"to `{genome.default}`, which is looked up in AWS iGenomes{where}. A run that passes no "
             f"reference of its own therefore reads its references over S3 — that fails on a host "
             f"without access to the bucket, and downloads tens of gigabytes on one that has it. For "
-            f"a self-contained run, pass your own reference instead (the `reference_genome_options` "
-            f"group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`)."
-            f"{ignore}\n"
+            f"a self-contained run, pass your own reference instead ({own}).{ignore}\n"
         )
     return (
-        f"No reference genome is set by default: supply your own (the `reference_genome_options` "
-        f"group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing "
+        f"No reference genome is set by default: supply your own ({own}). Passing "
         f"`--genome <id>` instead resolves the references from AWS iGenomes{where}, which needs "
         f"access to that bucket and downloads them.{ignore}\n"
     )
@@ -269,7 +284,15 @@ def _outputs_section(name: str, st: SubmoduleStatus) -> str:
 
 def _inputs_section(insch: InputSchema | None, ps: ParamSchema | None = None) -> str:
     if insch is None:
-        return "This pipeline does not use a samplesheet; configure inputs via parameters.\n"
+        inp = ps.params.get("input") if ps else None
+        if inp is None or not inp.description.strip():
+            return "This pipeline does not use a samplesheet; configure inputs via parameters.\n"
+        # State only what the release publishes: rangeland's --input is a directory or tarball, but
+        # bactmap's and seqsubmit's are samplesheets that simply ship without a schema.
+        desc = _cell(inp.description).rstrip(".")
+        return (f"This release publishes no samplesheet schema for `--input`, so nfclaw does not "
+                f"pre-check its contents. The parameter reads: {desc}. Configure the other inputs "
+                "via parameters (see [reference.md](reference.md)).\n")
     named = [c for c in insch.columns if c.name]
     if not named:
         # A single unnamed column (e.g. nf-core/fetchngs id list): one value per line, no header.
@@ -280,9 +303,8 @@ def _inputs_section(insch: InputSchema | None, ps: ParamSchema | None = None) ->
     rows = ""
     for c in named:
         typ = _type_with_fmt(c.type, c.fmt)
-        allowed = ", ".join(c.enum) if c.enum else ""
         rows += (f"| `{c.name}` | {typ} | {'yes' if c.required else 'no'} | "
-                 f"{_cell(allowed)} | {_constraints(c)} |\n")
+                 f"{_allowed(c.enum)} | {_constraints(c)} |\n")
     ext, label, delimiter = _samplesheet_format(ps)
     input_note = _input_pattern_note(ps)
     tabular_intro = _tabular_intro(label, ps)
@@ -369,10 +391,9 @@ def _param_table(params: list[Param]) -> str:
     out = ("| parameter | type | default | allowed values | constraints | description |\n"
            "|---|---|---|---|---|---|\n")
     for p in params:
-        allowed = ", ".join(p.enum) if p.enum else ""
         default = "" if p.default is None else json_scalar(p.default)
         out += (f"| `--{p.name.replace('_', '-')}` | {_type_with_fmt(p.type, p.fmt)} | "
-                f"{_cell(default)} | {_cell(allowed)} | {_constraints(p)} | "
+                f"{_cell(default)} | {_allowed(p.enum)} | {_constraints(p)} | "
                 f"{_cell(p.description)} |\n")
     return out
 
@@ -431,15 +452,25 @@ def _param_groups(ps: ParamSchema) -> str:
             "include any parameter already listed above):\n" + "\n".join(lines) + "\n")
 
 
+def _input_arg(ps: ParamSchema, insch: InputSchema | None) -> str:
+    """The example commands' `--input`: a samplesheet file when the pipeline takes one, else a
+    placeholder when the schema requires `--input` with no default (e.g. rangeland's imagery
+    directory), else nothing."""
+    if insch is not None:
+        ext, _, _ = _samplesheet_format(ps)
+        return f" --input samplesheet.{ext}"
+    inp = ps.params.get("input")
+    return " --input <input>" if inp is not None and inp.required and inp.default is None else ""
+
+
 def _run_invocation(name: str, ps: ParamSchema, insch: InputSchema | None,
                     pipeline_version: str | None = None) -> tuple[str, str]:
-    """The (nfclaw, raw nextflow) example commands. `--input` appears only when the pipeline
-    has a samplesheet, and every schema-required param beyond input/outdir that has NO default
+    """The (nfclaw, raw nextflow) example commands. `--input` comes from `_input_arg`, and every
+    schema-required param beyond input/outdir that has NO default
     is shown as an explicit `<placeholder>` (those carrying a default are filled by nf-schema, so
     the one-liner stays runnable as printed). When rendering a non-pinned version, the nfclaw
     command carries `--pipeline-version <tag>` and the raw command targets that version's tree."""
-    ext, _, _ = _samplesheet_format(ps)
-    inp = f" --input samplesheet.{ext}" if insch is not None else ""
+    inp = _input_arg(ps, insch)
     extra = "".join(f" --{p.name.replace('_', '-')} <{p.name}>"
                     for p in ps.params.values()
                     if p.required and p.name not in ("input", "outdir") and p.default is None)
@@ -465,9 +496,9 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"description: {desc}\n"
         f"summary: {summary}\n"
         f"has_samplesheet: {str(insch is not None).lower()}\n"
-        f"input: {_input_summary(insch)}\n"
+        f"input: {_input_summary(insch, ps)}\n"
         f"output: {_output_summary(st.path)}\n"
-        f"tools: {', '.join(tools)}\n"
+        f"tools: {json.dumps(tools, ensure_ascii=False)}\n"
         "---\n"
     )
     tools_md = _tools_section(name, st, tools)
@@ -539,11 +570,10 @@ def _render_reference(name: str, st: SubmoduleStatus, ps: ParamSchema,
                 "default | description |\n|---|---|---|---|---|---|---|---|\n")
         for p in sorted(params, key=lambda x: x.name):
             default = "" if p.default is None else json_scalar(p.default)
-            allowed = ", ".join(p.enum) if p.enum else ""
             req = "yes" if p.required else ""
             hid = "yes" if p.hidden else ""
             out += (f"| `--{p.name.replace('_', '-')}` | {_type_with_fmt(p.type, p.fmt)} | "
-                    f"{req} | {hid} | {_cell(allowed)} | {_constraints(p)} | "
+                    f"{req} | {hid} | {_allowed(p.enum)} | {_constraints(p)} | "
                     f"{_cell(default)} | {_cell(p.description)} |\n")
         out += "\n"
     out += f"<!-- Generated from nf-core/{name}@{st.commit}. Do not edit by hand. -->\n"
@@ -556,12 +586,12 @@ def render_status(st: SubmoduleStatus, *, pipeline_version: str | None = None) -
     `pipeline_version` makes the skill's run commands target that specific release; leave it
     None for the pinned default so the committed docs stay byte-stable."""
     ps = schema_mod.load_param_schema(st.path)
-    insch = schema_mod.load_input_schema(st.path)
-    # nf-core convention: a samplesheet is consumed via the `--input` parameter. A pipeline can
-    # ship assets/schema_input.json without declaring an `input` param (it is parameter-driven —
-    # e.g. drugresponseeval). There the file is not a `--input` samplesheet, so the skill must not
-    # tell the agent to pass `--input` (the runner rejects unknown flags and would fail fast).
-    samplesheet = insch if (insch is not None and "input" in ps.params) else None
+    # The samplesheet `--input` is actually validated against — the same rule the runner applies
+    # (runner/inputs.py). A release can ship assets/schema_input.json without using it: with no
+    # `input` parameter at all (drugresponseeval), or with an `--input` that is a directory or
+    # tarball (rangeland). Documenting that template as the input sent agents the wrong way.
+    ref = inputs.samplesheet_schema(st.path)
+    samplesheet = schema_mod.load_input_schema(st.path, ref) if ref else None
     return (_render_skill(st.name, st, ps, samplesheet, pipeline_version),
             _render_reference(st.name, st, ps, samplesheet))
 
@@ -587,6 +617,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--all", action="store_true")
     parser.add_argument("--pipelines-dir", default="pipelines")
     args = parser.parse_args(argv)
+    if not args.all and not args.name:
+        parser.error("pass a pipeline name or --all")
     pdir = Path(args.pipelines_dir)
     names = ([d.name for d in sorted(pdir.iterdir()) if d.is_dir()]
              if args.all else [args.name])

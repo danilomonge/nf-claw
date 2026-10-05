@@ -45,7 +45,12 @@ jobs:
             echo "| pipeline | result |"
             echo "|---|---|"
           } >> "$GITHUB_STEP_SUMMARY"
-          for name in $(nfclaw list | cut -f1); do
+          names=$(nfclaw list | cut -f1)
+          if [ -z "$names" ]; then
+            echo "::error::nfclaw list returned no pipelines — nothing would be checked"
+            exit 1
+          fi
+          for name in $names; do
             out="$RUNNER_TEMP/smoke-$name"
             if nfclaw run "$name" --outdir "$out" --check --demo -profile docker > "$RUNNER_TEMP/$name.log" 2>&1; then
               echo "::group::✓ $name"; cat "$RUNNER_TEMP/$name.log"; echo "::endgroup::"

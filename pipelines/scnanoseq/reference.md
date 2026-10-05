@@ -19,8 +19,8 @@ nf-core/scnanoseq pipeline parameters. Every parameter from the pinned `nextflow
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--barcode-format` | string | yes |  | 10X_3v3, 10X_3v4, 10X_5v2, 10X_5v3 |  |  | Specify the format for the barcode+umi. This parameter also defines a default barcode whitelist for the pipeline to use for barcode calling, this can be overridden with the 'whitelist' parameter. |
-| `--dedup-tool` | string | yes |  | umitools, picard |  | umitools | Specify which tool to be used for deduplication (Options: picard, umitools) |
+| `--barcode-format` | string | yes |  | `10X_3v3`, `10X_3v4`, `10X_5v2`, `10X_5v3` |  |  | Specify the format for the barcode+umi. This parameter also defines a default barcode whitelist for the pipeline to use for barcode calling, this can be overridden with the 'whitelist' parameter. |
+| `--dedup-tool` | string | yes |  | `umitools`, `picard` |  | umitools | Specify which tool to be used for deduplication (Options: picard, umitools) |
 | `--skip-blaze-demux` | boolean |  |  |  |  | true | Do not perform the demultiplexing step in BLAZE (conserves time and disk space). |
 | `--whitelist` | string (file path) |  |  |  |  |  | User-provided file containing a list of cellular barcodes. Using this parameter will override the default whitelists provided by the pipeline and use the user-provided one instead. |
 
@@ -45,7 +45,7 @@ nf-core/scnanoseq pipeline parameters. Every parameter from the pinned `nextflow
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -78,7 +78,7 @@ nf-core/scnanoseq pipeline parameters. Every parameter from the pinned `nextflow
 | `--kmer-size` | integer |  |  |  |  | 14 | Minimizer k-mer length. |
 | `--save-genome-secondary-alignment` | boolean |  |  |  |  |  | Save the secondary alignments when aligning to the genome |
 | `--save-transcript-secondary-alignment` | boolean |  |  |  |  | true | Save the secondary alignments when aligning to the transcriptome |
-| `--stranded` | string |  |  | None, reverse, forward |  |  | Library strandness option. |
+| `--stranded` | string |  |  | `None`, `reverse`, `forward` |  |  | Library strandness option. |
 
 ## process_skipping_options
 

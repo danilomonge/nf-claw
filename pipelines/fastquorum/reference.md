@@ -39,7 +39,7 @@ nf-core/fastquorum pipeline parameters. Every parameter from the pinned `nextflo
 | `--multiqc-sample-names` | string (file path) |  | yes |  |  |  | TSV file with headers passed to MultiQC. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -77,7 +77,7 @@ nf-core/fastquorum pipeline parameters. Every parameter from the pinned `nextflo
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--duplex-seq` | boolean |  |  |  |  | true | Enable when the input is duplex sequenecing. |
-| `--mode` | string |  |  | rd, ht |  | rd | The pipeline mode to use, either 'rd' for R&D or 'ht' for High-Throughput |
+| `--mode` | string |  |  | `rd`, `ht` |  | rd | The pipeline mode to use, either 'rd' for R&D or 'ht' for High-Throughput |
 
 ## reference_genome_options
 

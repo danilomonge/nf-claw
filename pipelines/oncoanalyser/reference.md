@@ -22,7 +22,7 @@ nf-core/oncoanalyser pipeline parameters. Every parameter from the pinned `nextf
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/oncoanalyser | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -63,7 +63,7 @@ nf-core/oncoanalyser pipeline parameters. Every parameter from the pinned `nextf
 | `--force-genome` | boolean |  |  |  |  | false | Skip check for restricted genome. |
 | `--force-panel` | boolean |  |  |  |  | false | Skip check for known panels. |
 | `--gridss-config` | string |  |  |  |  |  | Path to GRIDSS configuration file. |
-| `--hmftools-log-level` | string |  |  | ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL |  | DEBUG | Log level filter for WiGiTS modules |
+| `--hmftools-log-level` | string |  |  | `ALL`, `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL` |  | DEBUG | Log level filter for WiGiTS modules |
 | `--isofox-counts` | string |  |  |  |  |  | User defined Isofox expected counts files (read length dependent). |
 | `--isofox-functions` | string |  |  |  |  | TRANSCRIPT_COUNTS;ALT_SPLICE_JUNCTIONS;FUSIONS;RETAINED_INTRONS | Semicolon-separated list of Isofox functions to run |
 | `--isofox-gc-ratios` | string |  |  |  |  |  | User defined Isofox expected GC ratios file. |
@@ -81,17 +81,17 @@ nf-core/oncoanalyser pipeline parameters. Every parameter from the pinned `nextf
 | `--redux-umi-duplex-delim` | string |  |  |  |  |  | UMI duplex delimiter as used by REDUX. |
 | `--redux-umi-enabled` | boolean |  |  |  |  |  | Enable REDUX UMI processing. |
 | `--ref-data-types` | string |  |  |  |  |  | Which reference data types to download and extract. To be used with --mode prepare_reference. |
-| `--sequencing-platform` | string |  |  | illumina, sbx, ultima |  |  | Type of sequencing technology. |
+| `--sequencing-platform` | string |  |  | `illumina`, `sbx`, `ultima` |  |  | Type of sequencing technology. |
 | `--target-regions-bed` | string |  |  |  |  |  | User defined target regions BED used in panel resource creation. |
-| `--umi-type` | string |  |  | kapa, msk, tso500, twist |  |  | UMI type. Sets default '*_umi_* settings' |
+| `--umi-type` | string |  |  | `kapa`, `msk`, `tso500`, `twist` |  |  | UMI type. Sets default '*_umi_* settings' |
 
 ## reference_data_options
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--genome` | string |  |  |  |  |  | Name of genome reference. |
-| `--genome-type` | string |  | yes | alt, no_alt |  |  | Type of reference genome. |
-| `--genome-version` | string |  | yes | 37, 38 |  |  | Version of reference genome. |
+| `--genome-type` | string |  | yes | `alt`, `no_alt` |  |  | Type of reference genome. |
+| `--genome-version` | string |  | yes | `37`, `38` |  |  | Version of reference genome. |
 | `--igenomes-base` | string |  | yes |  |  | s3://ngi-igenomes/igenomes/ | The base path to the igenomes reference files |
 | `--igenomes-ignore` | boolean |  | yes |  |  | true | Do not load the iGenomes reference config. |
 | `--prepare-reference-only` | boolean |  | yes |  |  | false | Set the pipeline to only prepare reference data. |

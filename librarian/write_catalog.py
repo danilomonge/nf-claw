@@ -8,6 +8,20 @@ from pathlib import Path
 from runner import discovery
 
 
+def _tools(raw: object) -> list[str]:
+    """The `tools` frontmatter value: a JSON list (names may contain commas, e.g. "SHazaM, Change-O").
+    A comma-separated string — the older form — is still read."""
+    text = str(raw or "").strip()
+    if text.startswith("["):
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError:
+            data = None
+        if isinstance(data, list):
+            return [str(t).strip() for t in data if str(t).strip()]
+    return [t.strip() for t in text.split(",") if t.strip()]
+
+
 def generate(*, pipelines_dir: Path, out_md: Path, out_json: Path) -> None:
     rows = [{"name": p.name,
              "version": p.frontmatter.get("version", ""),
@@ -15,8 +29,7 @@ def generate(*, pipelines_dir: Path, out_md: Path, out_json: Path) -> None:
              "summary": p.frontmatter.get("summary", ""),
              "input": p.frontmatter.get("input", ""),
              "output": p.frontmatter.get("output", ""),
-             "tools": [t.strip() for t in (p.frontmatter.get("tools") or "").split(",")
-                       if t.strip()]}
+             "tools": _tools(p.frontmatter.get("tools"))}
             for p in discovery.discover(pipelines_dir)]
     out_json.write_text(json.dumps(rows, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 

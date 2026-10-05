@@ -8,7 +8,7 @@ summary: nf-core/riboseq is a bioinformatics pipeline for analysis of Ribo-seq d
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, strandedness, type, with_umi, trim_length, pair)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: AGAT, anota2seq, BBMap, BEDTools, Bowtie2, DESeq2, DOTSeq, fastp, FastQC, gffread / GffCompare, kallisto, MultiQC, plastid, PRICE / Gedi, Ribo-TISH, RiboCode, RiboDetector, Ribotricer, riboWaltz, Rp-Bp, Salmon, SAMtools, seqkit, MMseqs2, SortMeRNA, STAR, StringTie, SummarizedExperiment, Trim Galore!, tximport, UCSC bedGraphToBigWig, UMI-tools, UMICollapse
+tools: ["AGAT", "anota2seq", "BBMap", "BEDTools", "Bowtie2", "DESeq2", "DOTSeq", "fastp", "FastQC", "gffread / GffCompare", "kallisto", "MultiQC", "plastid", "PRICE / Gedi", "Ribo-TISH", "RiboCode", "RiboDetector", "Ribotricer", "riboWaltz", "Rp-Bp", "Salmon", "SAMtools", "seqkit", "MMseqs2", "SortMeRNA", "STAR", "StringTie", "SummarizedExperiment", "Trim Galore!", "tximport", "UCSC bedGraphToBigWig", "UMI-tools", "UMICollapse"]
 ---
 # riboseq
 
@@ -30,8 +30,8 @@ This is the pinned latest release. To run a different one, list the available re
 | `sample` | string | yes |  | matches ^\S+$ |
 | `fastq_1` | string (file path) | yes |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
 | `fastq_2` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
-| `strandedness` | string | yes | forward, reverse, unstranded, auto |  |
-| `type` | string | yes | riboseq, rnaseq, tiseq |  |
+| `strandedness` | string | yes | `forward`, `reverse`, `unstranded`, `auto` |  |
+| `type` | string | yes | `riboseq`, `rnaseq`, `tiseq` |  |
 | `with_umi` | boolean | no |  |  |
 | `trim_length` | integer or string | no |  |  |
 | `pair` | string or integer | no |  |  |
@@ -52,7 +52,7 @@ Any of the optional columns above may be appended to the header when your data n
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Reference genome
-No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
+No reference genome is set by default: supply your own (e.g. `--fasta`; the `reference_genome_options` group in [reference.md](reference.md) lists every reference option). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

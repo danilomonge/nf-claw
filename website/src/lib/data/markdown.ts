@@ -120,9 +120,15 @@ export function proseUnder(md: string, heading: string): string {
     .trim();
 }
 
-/** Split a comma-separated "allowed values" cell into a clean list. */
+/**
+ * Split an "allowed values" cell into a clean list. The librarian writes each value as its own code
+ * span (`bac,arc`, `vst`) so a value containing a comma stays whole; a plain comma-separated cell
+ * (older generated docs) is still read.
+ */
 export function splitAllowed(cell: string): string[] {
   if (!cell || !cell.trim()) return [];
+  const spans = [...cell.matchAll(/`([^`]*)`/g)].map((m) => m[1].trim()).filter(Boolean);
+  if (spans.length) return spans;
   return cell
     .split(",")
     .map((s) => s.trim())

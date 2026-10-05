@@ -26,13 +26,49 @@ def test_show_prints_skill(tmp_path, monkeypatch, capsys):
     assert "# sarek" in capsys.readouterr().out
 
 
-def test_input_value_resolves_local_but_passes_url_through():
-    from pathlib import Path
-    assert cli._input_value(None) is None
-    url = "https://raw.githubusercontent.com/nf-core/x/ss.csv"
-    assert cli._input_value(url) == url                       # URL forwarded unchanged, not resolved
-    local = cli._input_value("rel/ss.csv")
-    assert isinstance(local, Path) and local.is_absolute()    # local made absolute
+def test_run_hands_the_raw_input_to_the_pipeline_schema(tmp_path, monkeypatch):
+    # What `--input` is — a samplesheet, a directory, an accession, `false` — depends on the pipeline's
+    # schema, so the CLI must not pre-judge it as a local path (PXD009752 became <cwd>/PXD009752).
+    from runner import orchestration
+    captured = {}
+    monkeypatch.setattr(orchestration, "run_pipeline",
+                        lambda *a, **k: captured.update(k) or orchestration.RunResult(
+                            "CMD", Path("/o"), True, None))
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    for raw in ("PXD009752", "false", "rel/ss.csv", "https://example.test/ss.csv"):
+        assert cli.main(["run", "x", "--outdir", str(tmp_path / "out"), "--input", raw]) == 0
+        assert captured["input_path"] == raw
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 0
+    assert captured["input_path"] is None
+
+
+def test_unknown_options_are_rejected_outside_run(tmp_path, monkeypatch, capsys):
+    # Only `run` forwards unknown flags (to the pipeline). Elsewhere a typo was silently ignored:
+    # `show rnaseq --pipeline-versoin 3.0.0` printed the *latest* docs and exited 0.
+    import pytest
+    root = _seed(tmp_path)
+    monkeypatch.setattr(cli, "_repo_root", lambda: root)
+    for argv in (["show", "sarek", "--pipeline-versoin", "3.0.0"], ["list", "--bogus"],
+                 ["versions", "sarek", "--bogus"], ["verify", "a", "--against", "b", "--x"]):
+        with pytest.raises(SystemExit) as exc:
+            cli.main(argv)
+        assert exc.value.code == 2
+        assert "unrecognized arguments" in capsys.readouterr().err
+
+
+def test_run_has_no_wall_clock_limit_unless_asked(tmp_path, monkeypatch):
+    # A real sarek WGS or a large rnaseq run routinely exceeds 12 h; an undocumented default that
+    # killed the whole run at that point must not exist. --timeout stays available on request.
+    from runner import orchestration
+    captured = {}
+    monkeypatch.setattr(orchestration, "run_pipeline",
+                        lambda *a, **k: captured.update(k) or orchestration.RunResult(
+                            "CMD", Path("/o"), True, None))
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 0
+    assert captured["timeout_seconds"] is None
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out"), "--timeout", "3600"]) == 0
+    assert captured["timeout_seconds"] == 3600
 
 
 def test_collect_overrides_parses_flags():
@@ -207,7 +243,7 @@ def test_run_passes_through_pipeline_flag_that_prefixes_a_reserved_flag(tmp_path
     assert rc == 0
     assert captured["cli_overrides"] == {"res": "5", "time": "30"}   # forwarded, not misparsed
     assert captured["resume"] is False                               # reserved --resume untouched
-    assert captured["timeout_seconds"] == 60 * 60 * 12               # reserved --timeout untouched
+    assert captured["timeout_seconds"] is None                       # reserved --timeout untouched
 
 
 def test_run_threads_allow_spaces(tmp_path, monkeypatch):

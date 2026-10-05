@@ -48,9 +48,9 @@ nf-core/proteinfold pipeline parameters. Every parameter from the pinned `nextfl
 |---|---|---|---|---|---|---|---|
 | `--alphafold2-full-dbs` | boolean |  |  |  |  |  | If true uses the full version of the BFD database otherwise, otherwise it uses its reduced version, small bfd |
 | `--alphafold2-max-template-date` | string |  |  |  | matches ^\d{4}-\d{2}-\d{2}$ | 2038-01-19 | Maximum date of the PDB templates used by 'AlphaFold2' mode |
-| `--alphafold2-mode` | string |  |  | standard, split_msa_prediction |  | split_msa_prediction | Specifies the mode in which AlphaFold2 will be run |
-| `--alphafold2-model-preset` | string |  |  | monomer, monomer_casp14, monomer_ptm, multimer |  | monomer_ptm | Model preset for 'AlphaFold2' mode |
-| `--alphafold2-params-prefix` | string |  |  | alphafold_params_2022-12-06, alphafold_params_2022-03-02, alphafold_params_2022-01-19, alphafold_params_2021-07-14 |  | alphafold_params_2022-12-06 | Alphafold2 parameters version |
+| `--alphafold2-mode` | string |  |  | `standard`, `split_msa_prediction` |  | split_msa_prediction | Specifies the mode in which AlphaFold2 will be run |
+| `--alphafold2-model-preset` | string |  |  | `monomer`, `monomer_casp14`, `monomer_ptm`, `multimer` |  | monomer_ptm | Model preset for 'AlphaFold2' mode |
+| `--alphafold2-params-prefix` | string |  |  | `alphafold_params_2022-12-06`, `alphafold_params_2022-03-02`, `alphafold_params_2022-01-19`, `alphafold_params_2021-07-14` |  | alphafold_params_2022-12-06 | Alphafold2 parameters version |
 | `--alphafold2-random-seed` | integer |  |  |  |  |  | Random seed to control stochastic alphafold inference. |
 
 ## alphafold3_dbs_and_parameters_link_options
@@ -135,8 +135,8 @@ nf-core/proteinfold pipeline parameters. Every parameter from the pinned `nextfl
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--colabfold-create-index` | boolean |  |  |  |  |  | Create databases indexes when running colabfold_local mode |
-| `--colabfold-db-load-mode` | integer |  |  | 0, 1, 2, 3 |  |  | Specify the way that MMSeqs2 will load the required databases in memory |
-| `--colabfold-model-preset` | string |  |  | alphafold2_ptm, alphafold2_multimer_v1, alphafold2_multimer_v2, alphafold2_multimer_v3 |  | alphafold2_ptm | Model preset for 'colabfold' mode |
+| `--colabfold-db-load-mode` | integer |  |  | `0`, `1`, `2`, `3` |  |  | Specify the way that MMSeqs2 will load the required databases in memory |
+| `--colabfold-model-preset` | string |  |  | `alphafold2_ptm`, `alphafold2_multimer_v1`, `alphafold2_multimer_v2`, `alphafold2_multimer_v3` |  | alphafold2_ptm | Model preset for 'colabfold' mode |
 | `--colabfold-num-recycles` | integer |  |  |  | ≥ 1; ≤ 20 | 3 | Number of recycles for ColabFold |
 | `--colabfold-use-amber` | boolean |  |  |  |  | true | Use Amber minimization to refine the predicted structures |
 | `--colabfold-use-gpu-relax` | boolean |  |  |  |  | false | Use GPU for Amber relaxation in ColabFold |
@@ -146,7 +146,7 @@ nf-core/proteinfold pipeline parameters. Every parameter from the pinned `nextfl
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--esmfold-model-preset` | string |  |  | monomer, multimer |  | monomer | Specifies whether is a 'monomer' or 'multimer' prediction |
+| `--esmfold-model-preset` | string |  |  | `monomer`, `multimer` |  | monomer | Specifies whether is a 'monomer' or 'multimer' prediction |
 | `--esmfold-num-recycles` | integer |  |  |  | ≥ 1; ≤ 20 | 4 | Specifies the number of recycles used by ESMFold |
 
 ## esmfold_parameters_link_options
@@ -188,7 +188,7 @@ nf-core/proteinfold pipeline parameters. Every parameter from the pinned `nextfl
 | `--multiqc-methods-description` | string (file path) |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -238,7 +238,7 @@ nf-core/proteinfold pipeline parameters. Every parameter from the pinned `nextfl
 |---|---|---|---|---|---|---|---|
 | `--helixfold3-infer-times` | integer |  |  |  | ≥ 1 | 4 | Number of independent predictions made with the HelixFold3 model |
 | `--helixfold3-max-template-date` | string |  |  |  |  | 2038-01-19 | No PDB template released after this date will be used to guide predictions. |
-| `--helixfold3-precision` | string |  |  | bf16, fp32 |  | bf16 | The numerical precision used by the HelixFold3 model. |
+| `--helixfold3-precision` | string |  |  | `bf16`, `fp32` |  | bf16 | The numerical precision used by the HelixFold3 model. |
 
 ## input_output_options
 
@@ -254,7 +254,7 @@ nf-core/proteinfold pipeline parameters. Every parameter from the pinned `nextfl
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 | `--save-intermediates` | boolean |  |  |  |  |  | Keep raw intermediate files |
 | `--split-fasta` | boolean |  |  |  |  |  | Split input multi-fasta file in separated fasta files each of them containing one sequence to be folded |
-| `--uniref30-prefix` | string |  |  | UniRef30_2023_02, UniRef30_2022_02, UniRef30_2021_03 |  | UniRef30_2023_02 | UniRef major release |
+| `--uniref30-prefix` | string |  |  | `UniRef30_2023_02`, `UniRef30_2022_02`, `UniRef30_2021_03` |  | UniRef30_2023_02 | UniRef major release |
 | `--use-gpu` | boolean |  |  |  |  |  | Run on CPUs (default) or GPUs |
 | `--use-msa-server` | boolean |  |  |  |  |  | Use the cloud MSA server |
 

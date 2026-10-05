@@ -8,7 +8,7 @@ summary: nf-core/pathogensurveillance is a population genomics pipeline for path
 has_samplesheet: true
 input: samplesheet (sample_id, name, description, path, path_2, ncbi_accession, ncbi_query, ncbi_query_max, sequence_type, report_group_ids, color_by, ploidy, enabled, ref_group_ids)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FastQC, MultiQC
+tools: ["FastQC", "MultiQC"]
 ---
 # pathogensurveillance
 

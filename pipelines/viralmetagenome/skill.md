@@ -8,7 +8,7 @@ summary: nf-core/viralmetagenome is a bioinformatics best-practice analysis pipe
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: Bbduk, BBNorm, BCFtools, BEDTools, blast, Bowtie2, Bracken, BWA-MEM2, cdhit, checkv, Clusty, FastQC, fastp, HUMID, iVar, Kaiju, Kraken2, leiden-algorithm, MAFFT, Mash, Megahit, Minimap2, MMseqs2, Mosdepth, MultiQC, picard-tools, prinseq++, prokka, QUAST, SAMtools, SNPeff, SPAdes, SSPACE Basic, Trimmomatic, Trinity, UMI-tools, vRhyme, VSEARCH
+tools: ["Bbduk", "BBNorm", "BCFtools", "BEDTools", "blast", "Bowtie2", "Bracken", "BWA-MEM2", "cdhit", "checkv", "Clusty", "FastQC", "fastp", "HUMID", "iVar", "Kaiju", "Kraken2", "leiden-algorithm", "MAFFT", "Mash", "Megahit", "Minimap2", "MMseqs2", "Mosdepth", "MultiQC", "picard-tools", "prinseq++", "prokka", "QUAST", "SAMtools", "SNPeff", "SPAdes", "SSPACE Basic", "Trimmomatic", "Trinity", "UMI-tools", "vRhyme", "VSEARCH"]
 ---
 # viralmetagenome
 

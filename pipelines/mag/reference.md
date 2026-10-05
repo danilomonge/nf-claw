@@ -37,7 +37,7 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | `--skip-quast` | boolean |  |  |  |  |  | Skip metaQUAST. |
 | `--skip-spades` | boolean |  |  |  |  |  | Skip Illumina-only SPAdes assembly. |
 | `--skip-spadeshybrid` | boolean |  |  |  |  |  | Skip SPAdes hybrid assembly. |
-| `--spades-downstreaminput` | string |  |  | scaffolds, contigs |  | scaffolds | Specify whether to use contigs or scaffolds assembled by SPAdes |
+| `--spades-downstreaminput` | string |  |  | `scaffolds`, `contigs` |  | scaffolds | Specify whether to use contigs or scaffolds assembled by SPAdes |
 | `--spades-options` | string |  |  |  |  |  | Additional custom options for SPAdes and SPAdesHybrid. Do not specify `--meta` as this will be added for you! |
 
 ## bin_quality_check_options
@@ -52,10 +52,10 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | `--checkm-db` | string (directory path) |  |  |  |  |  | Path to local folder containing already downloaded and uncompressed CheckM database. |
 | `--checkm-download-url` | string (file path) |  | yes |  |  | https://zenodo.org/records/7401545/files/checkm_data_2015_01_16.tar.gz | URL pointing to checkM database for auto download, if local path not supplied. |
 | `--generate-bigmag-file` | boolean |  |  |  |  |  | Make a BIgMAG input file including GUNC results. |
-| `--gunc-database-type` | string |  |  | progenomes, gtdb, test_data |  | progenomes | Specify which database to auto-download if not supplying own |
+| `--gunc-database-type` | string |  |  | `progenomes`, `gtdb`, `test_data` |  | progenomes | Specify which database to auto-download if not supplying own |
 | `--gunc-db` | string (file path) |  |  |  |  |  | Specify a path to a pre-downloaded GUNC dmnd database file |
 | `--gunc-save-db` | boolean |  |  |  |  |  | Save the used GUNC reference files downloaded when not using --gunc_db parameter. |
-| `--postbinning-input` | string |  |  | raw_bins_only, refined_bins_only, both |  | raw_bins_only | Specify which binning output is sent for downstream annotation, taxonomic classification, bin quality control etc. |
+| `--postbinning-input` | string |  |  | `raw_bins_only`, `refined_bins_only`, `both` |  | raw_bins_only | Specify which binning output is sent for downstream annotation, taxonomic classification, bin quality control etc. |
 | `--refine-bins-dastool` | boolean |  |  |  |  |  | Turn on bin refinement using DAS Tool. |
 | `--refine-bins-dastool-savecontig2bin` | boolean |  |  |  |  |  | Specify to save contig to bin maps used for bin refinement |
 | `--refine-bins-dastool-threshold` | number |  |  |  |  | 0.5 | Specify single-copy gene score threshold for bin refinement. |
@@ -78,10 +78,10 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | `--bin-domain-classification` | boolean |  |  |  |  |  | Enable domain-level (prokaryote or eukaryote) classification of bins using Tiara. Processes which are domain-specific will then only receive bins matching the domain requirement. |
 | `--bin-domain-classification-tool` | string |  | yes |  |  | tiara | Specify which tool to use for domain classification of bins. Currently only 'tiara' is implemented. |
 | `--bin-max-size` | integer |  |  |  |  |  | Specify the longest length a bin should be to retain for downstream processing (in base pairs). By default no limit. |
-| `--bin-metabinner-scale` | string |  |  | small, large, huge |  | large | Dataset scale for MetaBinner |
+| `--bin-metabinner-scale` | string |  |  | `small`, `large`, `huge` |  | large | Dataset scale for MetaBinner |
 | `--bin-min-size` | integer |  |  |  | ≥ 0 | 0 | Specify the shortest length a bin should be to retain for downstream processing (in base pairs) |
 | `--bin-seqkit-stats-max-forks` | integer |  |  |  | ≥ 1 |  | Limit the number of concurrent SEQKIT_STATS jobs used for bin size calculation. |
-| `--binning-map-mode` | string |  |  | all, group, own |  | group | Defines mapping strategy to compute co-abundances for binning, i.e. which samples will be mapped against the assembly. |
+| `--binning-map-mode` | string |  |  | `all`, `group`, `own` |  | group | Defines mapping strategy to compute co-abundances for binning, i.e. which samples will be mapped against the assembly. |
 | `--bowtie2-mode` | string |  |  |  | matches ^[-\w]*$ |  | Specify alternative Bowtie2 settings for aligning reads back against the assembly. |
 | `--exclude-unbins-from-postbinning` | boolean |  |  |  |  |  | Exclude unbinned contigs in the post-binning steps (bin QC, taxonomic classification, and annotation steps). |
 | `--longread-percentidentity` | number |  |  |  |  |  | Specify a minimum percent identity filter for long reads mapping back to assembled contigs. |
@@ -89,7 +89,7 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | `--min-contig-size` | integer |  |  |  |  | 1500 | Minimum contig size to be considered for binning and for bin quality check. |
 | `--min-length-unbinned-contigs` | integer |  |  |  |  | 1000000 | Minimal length of contigs that are not part of any bin but treated as individual genome. |
 | `--save-assembly-mapped-reads` | boolean |  |  |  |  |  | Save the output of mapping raw reads back to assembled contigs |
-| `--semibin-environment` | string |  |  | human_gut, dog_gut, ocean, soil, cat_gut, human_oral, mouse_gut, pig_gut, built_environment, wastewater, chicken_caecum, global |  | global | Pre-trained model for SemiBin2 for single sample assemblies |
+| `--semibin-environment` | string |  |  | `human_gut`, `dog_gut`, `ocean`, `soil`, `cat_gut`, `human_oral`, `mouse_gut`, `pig_gut`, `built_environment`, `wastewater`, `chicken_caecum`, `global` |  | global | Pre-trained model for SemiBin2 for single sample assemblies |
 | `--semibin-rng-seed` | integer |  |  |  |  | 1 | RNG seed for SemiBin2. |
 | `--shortread-percentidentity` | number |  |  |  |  |  | Specify a minimum percent identity filter for short reads mapping back to assembled contigs. |
 | `--skip-binning` | boolean |  |  |  |  |  | Skip metagenome binning entirely |
@@ -106,7 +106,7 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--metaeuk-db` | string |  |  |  |  |  | Path to either a local fasta file of protein sequences, or to a directory containing an MMseqs2-formatted database, for annotation of eukaryotic genomes. |
-| `--metaeuk-mmseqs-db` | string |  |  | UniRef100, UniRef90, UniRef50, UniProtKB, UniProtKB/TrEMBL, UniProtKB/Swiss-Prot, NR, NT, GTDB, PDB, PDB70, Pfam-A.full, Pfam-A.seed, Pfam-B, CDD, eggNOG, VOGDB, dbCAN2, SILVA, Resfinder, Kalamari |  |  | A string containing the name of one of the databases listed in the [mmseqs2 documentation](https://github.com/soedinglab/MMseqs2/wiki#downloading-databases). This database will be downloaded and formatted for eukaryotic genome annotation. Incompatible with --metaeuk_db. |
+| `--metaeuk-mmseqs-db` | string |  |  | `UniRef100`, `UniRef90`, `UniRef50`, `UniProtKB`, `UniProtKB/TrEMBL`, `UniProtKB/Swiss-Prot`, `NR`, `NT`, `GTDB`, `PDB`, `PDB70`, `Pfam-A.full`, `Pfam-A.seed`, `Pfam-B`, `CDD`, `eggNOG`, `VOGDB`, `dbCAN2`, `SILVA`, `Resfinder`, `Kalamari` |  |  | A string containing the name of one of the databases listed in the [mmseqs2 documentation](https://github.com/soedinglab/MMseqs2/wiki#downloading-databases). This database will be downloaded and formatted for eukaryotic genome annotation. Incompatible with --metaeuk_db. |
 | `--prokka-compliance-centre` | string |  |  |  |  |  | Specify sequencing centre name required for Prokka's compliance mode. |
 | `--prokka-fast-mode` | boolean |  |  |  |  |  | Specify to skip CDS/product searching in Prokka runs |
 | `--prokka-with-compliance` | boolean |  |  |  |  |  | Turn on Prokka complicance mode for truncating contig names for NCBI/ENA compatibility. |
@@ -129,7 +129,7 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | `--multiqc-methods-description` | string (file path) |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string (directory path) |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -164,8 +164,8 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | `--filtlong-filtering-by-shortreads` | boolean |  |  |  |  |  | Filter long reads against short reads when using filtlong. |
 | `--keep-lambda` | boolean |  |  |  |  |  | Keep reads similar to the ONT internal standard Escherichia virus Lambda genome. |
 | `--lambda-reference` | string (file path) |  |  |  |  |  | Genome reference used to remove ONT Lambda contaminant reads. |
-| `--longread-adaptertrimming-tool` | string |  |  | porechop, porechop_abi |  | porechop_abi | Specify which long read adapter trimming tool to use. |
-| `--longread-filtering-tool` | string |  |  | chopper, filtlong, nanoq |  | chopper | Specify which long read filtering tool to use. |
+| `--longread-adaptertrimming-tool` | string |  |  | `porechop`, `porechop_abi` |  | porechop_abi | Specify which long read adapter trimming tool to use. |
+| `--longread-filtering-tool` | string |  |  | `chopper`, `filtlong`, `nanoq` |  | chopper | Specify which long read filtering tool to use. |
 | `--longreads-keep-percent` | integer |  |  |  |  | 90 | Keep this percent of bases. Only used by filtlong. |
 | `--longreads-length-weight` | integer |  |  |  |  | 10 | The higher the more important is read length when choosing the best reads. Only used by filtlong. |
 | `--longreads-min-length` | integer |  |  |  |  | 1000 | Discard any read which is shorter than this value. |
@@ -188,7 +188,7 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | `--bbnorm` | boolean |  |  |  |  |  | Run BBnorm to normalize sequence depth. |
 | `--bbnorm-min` | integer |  |  |  |  | 5 | Set BBnorm minimum depth to this number. |
 | `--bbnorm-target` | integer |  |  |  |  | 100 | Set BBnorm target maximum depth to this number. |
-| `--clip-tool` | string |  |  | fastp, adapterremoval, trimmomatic |  | fastp | Specify which adapter clipping tool to use. |
+| `--clip-tool` | string |  |  | `fastp`, `adapterremoval`, `trimmomatic` |  | fastp | Specify which adapter clipping tool to use. |
 | `--fastp-cut-mean-quality` | integer |  |  |  |  | 15 | The mean quality requirement used for per read sliding window cutting by fastp. |
 | `--fastp-qualified-quality` | integer |  |  |  |  | 15 | Minimum phred quality value of a base to be qualified in fastp. |
 | `--fastp-save-trimmed-fail` | boolean |  |  |  |  |  | Save reads that fail fastp filtering in a separate file. Not used downstream. |

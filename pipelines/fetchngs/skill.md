@@ -8,7 +8,7 @@ summary: nf-core/fetchngs is a bioinformatics pipeline to fetch metadata and raw
 has_samplesheet: true
 input: id list (one value per line)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
-tools: Aspera CLI, fastq-dl, Python, Requests, sra-tools
+tools: ["Aspera CLI", "fastq-dl", "Python", "Requests", "sra-tools"]
 ---
 # fetchngs
 

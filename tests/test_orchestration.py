@@ -283,7 +283,8 @@ def test_url_input_skips_local_validation_and_is_forwarded(tmp_path, monkeypatch
     monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
     # Force a non-None input schema so the ONLY thing that skips the pre-check is the URL (str) type.
     monkeypatch.setattr(orchestration.schema_mod, "load_input_schema",
-                        lambda repo: InputSchema(columns=(Column("sample", "string", True, None, None),)))
+                        lambda repo, rel="assets/schema_input.json":
+                        InputSchema(columns=(Column("sample", "string", True, None, None),)))
     called = {}
     monkeypatch.setattr(orchestration.samplesheet, "validate",
                         lambda *a, **k: called.setdefault("validated", True) or [])
@@ -619,3 +620,106 @@ def test_a_real_run_after_a_check_is_not_blocked_as_non_empty(tmp_path, monkeypa
         profile="docker", output_dir=out, submodule=st, repo_root=tmp_path / "repo",
         resume=False, check_only=False, allow_spaces=True)
     assert not any("not empty" in i for i in issues), issues
+
+
+def _make_pipeline_with_input(tmp_path, input_param, name="inp"):
+    """A pipeline whose `--input` is declared by `input_param`, shipping the conventional
+    assets/schema_input.json (a FASTQ samplesheet) whether or not `--input` actually uses it."""
+    import json
+    up = tmp_path / "pipelines" / name / "upstream"
+    (up / "assets").mkdir(parents=True)
+    for f in ("main.nf", "nextflow.config"):
+        (up / f).write_text("x")
+    (up / "nextflow_schema.json").write_text(json.dumps({"$defs": {"io": {"properties": {
+        "input": input_param,
+        "outdir": {"type": "string", "format": "directory-path"}}}}}))
+    (up / "assets" / "schema_input.json").write_text(json.dumps({"items": {
+        "properties": {"sample": {"type": "string"},
+                       "fastq_1": {"type": "string", "format": "file-path"}},
+        "required": ["sample", "fastq_1"]}}))
+    (tmp_path / "pipelines" / name / "skill.md").write_text(f"---\nname: {name}\n---\n")
+    return tmp_path
+
+
+def _check(root, tmp_path, input_value, name="inp"):
+    return orchestration.run_pipeline(
+        name, repo_root=root, input_path=input_value, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=False, check_only=True, write_provenance=False, timeout_seconds=None)
+
+
+def test_input_false_leaves_input_unset(tmp_path, monkeypatch):
+    # sarek documents `--input false` for runs without a samplesheet (e.g. --build_only_index). It
+    # became <cwd>/false. A boolean false is no better: nf-schema 2.7.2 (sarek 3.8) rejects it for a
+    # string `input` ("Value is [boolean] but should be [string]", verified), while leaving `input`
+    # unset passes every nf-schema version — and sarek only tests the value's truthiness.
+    root = _make_pipeline_with_input(tmp_path, {
+        "type": "string", "format": "file-path", "exists": True,
+        "schema": "assets/schema_input.json"})
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.chdir(tmp_path)
+    assert "input" not in _staged_params(_check(root, tmp_path, "false"))
+
+
+def test_accession_input_is_forwarded_unchanged(tmp_path, monkeypatch):
+    # mhcquant takes a PRIDE accession as --input; it must not become <cwd>/PXD009752.
+    root = _make_pipeline_with_input(tmp_path, {
+        "type": "string", "pattern": r"^(PXD\d{6,}|\S+\.sdrf\.tsv|\S+\.tsv)$",
+        "if": {"pattern": r"\.tsv$", "not": {"pattern": r"\.sdrf\.tsv$"}},
+        "then": {"format": "file-path", "exists": True, "schema": "assets/schema_input.json"}})
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.chdir(tmp_path)
+    assert _staged_params(_check(root, tmp_path, "PXD009752"))["input"] == "PXD009752"
+
+
+def test_directory_input_is_not_prechecked_as_a_samplesheet(tmp_path, monkeypatch):
+    # rangeland's --input is a directory of imagery; its leftover template schema_input.json
+    # (sample, fastq_1) must not be applied to it.
+    root = _make_pipeline_with_input(tmp_path, {"type": "string", "format": "path", "exists": True})
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "imagery").mkdir()
+    params = _staged_params(_check(root, tmp_path, "imagery"))
+    assert params["input"] == str(tmp_path / "imagery")
+
+
+def test_missing_directory_input_fails_fast(tmp_path, monkeypatch):
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    root = _make_pipeline_with_input(tmp_path, {"type": "string", "format": "path", "exists": True})
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(NfclawError) as exc:
+        _check(root, tmp_path, "imagery")
+    assert exc.value.code == ErrorCode.PARAMS_INVALID
+    assert "--input not found" in str(exc.value)
+
+
+def test_samplesheet_input_is_still_prechecked(tmp_path, monkeypatch):
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    root = _make_pipeline_with_input(tmp_path, {
+        "type": "string", "format": "file-path", "schema": "assets/schema_input.json"})
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "ss.csv").write_text("sample\nA\n")          # missing the required fastq_1 column
+    with pytest.raises(NfclawError) as exc:
+        _check(root, tmp_path, "ss.csv")
+    assert exc.value.code == ErrorCode.SAMPLESHEET_INVALID
+
+
+def test_local_input_without_a_path_format_is_still_hashed_into_provenance(tmp_path, monkeypatch):
+    # mhcquant's --input has no top-level `format`, so the reference-path scan alone would skip it.
+    root = _make_pipeline_with_input(tmp_path, {
+        "type": "string", "pattern": r"^(PXD\d{6,}|\S+\.sdrf\.tsv|\S+\.tsv)$"})
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: None)
+    monkeypatch.setattr(orchestration.provenance, "_nextflow_version", lambda *a, **k: "")
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "study.sdrf.tsv").write_text("source name\n")
+    orchestration.run_pipeline(
+        "inp", repo_root=root, input_path="study.sdrf.tsv", outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=False, check_only=False, write_provenance=True, timeout_seconds=None)
+    hashed = (tmp_path / "out" / "provenance" / "inputs.sha256").read_text()
+    assert str(tmp_path / "study.sdrf.tsv") in hashed

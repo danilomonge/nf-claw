@@ -18,8 +18,8 @@ nf-core/ampliseq pipeline parameters. Every parameter from the pinned `nextflow_
 | `--mergepairs-consensus-minoverlap` | integer |  |  |  |  | 12 | The minimum number of overlapping base pairs required to merge forward and reverse reads. |
 | `--mergepairs-consensus-mismatch` | integer |  |  |  |  | -2 | The penalty score assigned for each mismatched base pair during sequence alignment. |
 | `--mergepairs-consensus-percentile-cutoff` | number |  |  |  |  | 0.001 | The percentile used to determine a stringent cutoff which will correspond to the minimum observed overlap in the dataset. This ensures that only read pairs with high overlap are merged into consensus sequences. Those with insufficient overlap are concatenated. |
-| `--mergepairs-strategy` | string |  |  | merge, concatenate, consensus |  | merge | Strategy to merge paired end reads. When paired end reads are not sufficiently overlapping for merging, you can use "concatenate" (not recommended). When you have a mix of overlapping and non overlapping reads use "consensus" |
-| `--sample-inference` | string |  |  | independent, pooled, pseudo |  | independent | Mode of sample inference: "independent", "pooled" or "pseudo" |
+| `--mergepairs-strategy` | string |  |  | `merge`, `concatenate`, `consensus` |  | merge | Strategy to merge paired end reads. When paired end reads are not sufficiently overlapping for merging, you can use "concatenate" (not recommended). When you have a mix of overlapping and non overlapping reads use "consensus" |
+| `--sample-inference` | string |  |  | `independent`, `pooled`, `pseudo` |  | independent | Mode of sample inference: "independent", "pooled" or "pseudo" |
 
 ## asv_filtering
 
@@ -33,12 +33,12 @@ nf-core/ampliseq pipeline parameters. Every parameter from the pinned `nextflow_
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--decontam` | string |  |  | none, decontaminate, notcontaminant |  | none | Choose whether decontamination with `decontam` is applied to features. |
-| `--decontam-decontaminate-method` | string |  |  | auto, frequency, prevalence, combined, minimum, either, both |  | auto | Choose the decontamination method for `--decontam decontaminate`. |
+| `--decontam` | string |  |  | `none`, `decontaminate`, `notcontaminant` |  | none | Choose whether decontamination with `decontam` is applied to features. |
+| `--decontam-decontaminate-method` | string |  |  | `auto`, `frequency`, `prevalence`, `combined`, `minimum`, `either`, `both` |  | auto | Choose the decontamination method for `--decontam decontaminate`. |
 | `--decontam-decontaminate-threshold` | number |  |  |  | ≥ 0; ≤ 1 | 0.1 | Choose the contamination likelihood threshold for `--decontam decontaminate`. |
 | `--decontam-notcontaminant-threshold` | number |  |  |  | ≥ 0; ≤ 1 | 0.5 | Choose the non-contaminant likelihood threshold for `--decontam notcontaminant`. |
 | `--filter-codons` | boolean |  |  |  |  |  | Filter ASVs based on codon usage |
-| `--filter-ssu` | string |  |  | bac,arc,mito,euk, bac, arc, mito, euk, bac,arc, bac,mito, bac,euk, arc,mito, arc,euk, mito,euk, bac,arc,mito, bac,mito,euk, arc,mito,euk |  |  | Enable SSU filtering. Comma separated list of kingdoms (domains) in Barrnap, a combination (or one) of "bac", "arc", "mito", and "euk". ASVs that have their lowest evalue in that kingdoms are kept. |
+| `--filter-ssu` | string |  |  | `bac,arc,mito,euk`, `bac`, `arc`, `mito`, `euk`, `bac,arc`, `bac,mito`, `bac,euk`, `arc,mito`, `arc,euk`, `mito,euk`, `bac,arc,mito`, `bac,mito,euk`, `arc,mito,euk` |  |  | Enable SSU filtering. Comma separated list of kingdoms (domains) in Barrnap, a combination (or one) of "bac", "arc", "mito", and "euk". ASVs that have their lowest evalue in that kingdoms are kept. |
 | `--max-len-asv` | integer |  |  |  |  |  | Maximum ASV length |
 | `--min-len-asv` | integer |  |  |  |  |  | Minimal ASV length |
 | `--orf-end` | integer |  |  |  |  |  | Ending position of codon tripletts |
@@ -90,7 +90,7 @@ nf-core/ampliseq pipeline parameters. Every parameter from the pinned `nextflow_
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--seed` | integer |  |  |  |  | 100 | Specifies the random seed. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
@@ -134,7 +134,7 @@ nf-core/ampliseq pipeline parameters. Every parameter from the pinned `nextflow_
 | `--sidle-ref-degenerates` | integer |  |  |  |  | 5 | Exclude reference sequences with more than this much degenerates |
 | `--sidle-ref-seq-custom` | string |  |  |  | matches ^.*\.(fasta\|fas\|fna\|fa\|ffn)$ |  | Path to reference taxonomy sequences in fasta format |
 | `--sidle-ref-tax-custom` | string |  |  |  | matches ^.*\.txt$ |  | Path to reference taxonomy strings (headerless, *.txt) |
-| `--sidle-ref-taxonomy` | string |  |  | silva, silva=128, greengenes, greengenes=13_8, greengenes88 |  |  | Name of supported database, and optionally also version number |
+| `--sidle-ref-taxonomy` | string |  |  | `silva`, `silva=128`, `greengenes`, `greengenes=13_8`, `greengenes88` |  |  | Name of supported database, and optionally also version number |
 | `--sidle-ref-tree-custom` | string |  |  |  | matches ^.*\.qza$ |  | Path to SIDLE reference taxonomy tree (*.qza) |
 
 ## pipeline_report
@@ -190,7 +190,7 @@ nf-core/ampliseq pipeline parameters. Every parameter from the pinned `nextflow_
 | `--min-read-counts` | integer |  |  |  |  | 1 | Set read count threshold for failed samples. |
 | `--multiple-sequencing-runs` | boolean |  |  |  |  |  | If using `--input_folder`: samples were sequenced in multiple sequencing runs |
 | `--pacbio` | boolean |  |  |  |  |  | If data is single-ended PacBio reads instead of Illumina |
-| `--quality-type` | string |  |  | Auto, FastqQuality, SFastqQuality |  | Auto | Type of quality scores in raw read data |
+| `--quality-type` | string |  |  | `Auto`, `FastqQuality`, `SFastqQuality` |  | Auto | Type of quality scores in raw read data |
 | `--single-end` | boolean |  |  |  |  |  | If data is single-ended Illumina reads instead of paired-end |
 
 ## skipping_specific_steps
@@ -222,33 +222,33 @@ nf-core/ampliseq pipeline parameters. Every parameter from the pinned `nextflow_
 | `--addsh` | boolean |  |  |  |  |  | If ASVs should be assigned to UNITE species hypotheses (SHs). Only relevant for ITS data. |
 | `--classifier` | string |  |  |  |  |  | Path to QIIME2 trained classifier file (typically *-classifier.qza) |
 | `--cut-dada-ref-taxonomy` | boolean |  |  |  |  |  | If the expected amplified sequences are extracted from the DADA2 reference taxonomy database |
-| `--cut-its` | string |  |  | none, full, its1, its2 |  | none | Part of ITS region to use for taxonomy assignment: "full", "its1", or "its2" |
+| `--cut-its` | string |  |  | `none`, `full`, `its1`, `its2` |  | none | Part of ITS region to use for taxonomy assignment: "full", "its1", or "its2" |
 | `--dada-addspecies-allowmultiple` | boolean |  |  |  |  |  | If multiple exact matches against different species are returned |
 | `--dada-assign-chunksize` | integer |  |  |  |  | 10000 | ASV fasta will be subset into chunks of this size for classification |
 | `--dada-assign-taxlevels` | string |  |  |  |  |  | Comma separated list of taxonomic levels used in DADA2's assignTaxonomy function |
 | `--dada-min-boot` | integer |  |  |  | ≥ 0; ≤ 100 | 50 | The minimum bootstrap confidence (out of 100 trials) for assigning a taxonomic level with DADA2. Matches `minBoot` in DADA2's assignTaxonomy method. |
 | `--dada-ref-tax-custom` | string |  |  |  |  |  | Path to a custom DADA2 reference taxonomy database |
 | `--dada-ref-tax-custom-sp` | string |  |  |  |  |  | Path to a custom DADA2 reference taxonomy database for species assignment |
-| `--dada-ref-taxonomy` | string |  |  | coidb, coidb=221216, greengenes2, greengenes2=2024.09, gtdb, gtdb=R05-RS95, gtdb=R06-RS202, gtdb=R07-RS207, gtdb=R08-RS214, gtdb=R09-RS220, gtdb=R10-RS226, gtdb=R11-RS232, midori2-co1, midori2-co1=gb250, pr2, pr2=4.13.0, pr2=4.14.0, pr2=5.0.0, pr2=5.1.0, rdp, rdp=18, sbdi-gtdb, sbdi-gtdb=R11-RS232-1, sbdi-gtdb=R10-RS226-2, sbdi-gtdb=R09-RS220-2, sbdi-gtdb=R09-RS220-1, sbdi-gtdb=R08-RS214-1, sbdi-gtdb=R07-RS207-1, sbdi-gtdb=R06-RS202-3, sbdi-gtdb=R06-RS202-1, silva, silva=138.2, silva=138, silva=132, unite-alleuk, unite-alleuk=10.0, unite-alleuk=9.0, unite-alleuk=8.3, unite-alleuk=8.2, unite-fungi, unite-fungi=10.0, unite-fungi=9.0, unite-fungi=8.3, unite-fungi=8.2, zehr-nifh, zehr-nifh=2.5.0 |  | sbdi-gtdb=R11-RS232-1 | Name of supported database, and optionally also version number |
+| `--dada-ref-taxonomy` | string |  |  | `coidb`, `coidb=221216`, `greengenes2`, `greengenes2=2024.09`, `gtdb`, `gtdb=R05-RS95`, `gtdb=R06-RS202`, `gtdb=R07-RS207`, `gtdb=R08-RS214`, `gtdb=R09-RS220`, `gtdb=R10-RS226`, `gtdb=R11-RS232`, `midori2-co1`, `midori2-co1=gb250`, `pr2`, `pr2=4.13.0`, `pr2=4.14.0`, `pr2=5.0.0`, `pr2=5.1.0`, `rdp`, `rdp=18`, `sbdi-gtdb`, `sbdi-gtdb=R11-RS232-1`, `sbdi-gtdb=R10-RS226-2`, `sbdi-gtdb=R09-RS220-2`, `sbdi-gtdb=R09-RS220-1`, `sbdi-gtdb=R08-RS214-1`, `sbdi-gtdb=R07-RS207-1`, `sbdi-gtdb=R06-RS202-3`, `sbdi-gtdb=R06-RS202-1`, `silva`, `silva=138.2`, `silva=138`, `silva=132`, `unite-alleuk`, `unite-alleuk=10.0`, `unite-alleuk=9.0`, `unite-alleuk=8.3`, `unite-alleuk=8.2`, `unite-fungi`, `unite-fungi=10.0`, `unite-fungi=9.0`, `unite-fungi=8.3`, `unite-fungi=8.2`, `zehr-nifh`, `zehr-nifh=2.5.0` |  | sbdi-gtdb=R11-RS232-1 | Name of supported database, and optionally also version number |
 | `--dada-taxonomy-rc` | boolean |  |  |  |  |  | If reverse-complement of each sequences will be also tested for classification |
-| `--its-extractor` | string |  |  | itsx, itsxrust |  | itsx | Tool for ITS region extraction: "itsx" or "itsxrust". |
+| `--its-extractor` | string |  |  | `itsx`, `itsxrust` |  | itsx | Tool for ITS region extraction: "itsx" or "itsxrust". |
 | `--its-partial` | integer |  |  |  |  | 0 | Cutoff for partial ITS sequences. Only full sequences by default. |
 | `--kraken2-assign-taxlevels` | string |  |  |  |  |  | Comma separated list of taxonomic levels used in Kraken2. Will overwrite default values. |
 | `--kraken2-confidence` | number |  |  |  | ≥ 0; ≤ 1 | 0.0 | Confidence score threshold for taxonomic classification. |
 | `--kraken2-ref-tax-custom` | string |  |  |  |  |  | Path to a custom Kraken2 reference taxonomy database (*.tar.gz\|*.tgz archive or folder) |
-| `--kraken2-ref-taxonomy` | string |  |  | silva, silva=138, silva=132, rdp, rdp=18, greengenes, greengenes=13.5, standard, standard=20240904, standard=20230605 |  |  | Name of supported database, and optionally also version number |
+| `--kraken2-ref-taxonomy` | string |  |  | `silva`, `silva=138`, `silva=132`, `rdp`, `rdp=18`, `greengenes`, `greengenes=13.5`, `standard`, `standard=20240904`, `standard=20230605` |  |  | Name of supported database, and optionally also version number |
 | `--pplace-aln` | string |  |  |  |  |  | File with reference sequences. Requires also `--pplace_tree` and `--pplace_model`. |
-| `--pplace-alnmethod` | string |  |  | clustalo, hmmer, mafft |  | clustalo | Method used for alignment, "clustalo", "hmmer" or "mafft" |
+| `--pplace-alnmethod` | string |  |  | `clustalo`, `hmmer`, `mafft` |  | clustalo | Method used for alignment, "clustalo", "hmmer" or "mafft" |
 | `--pplace-model` | string |  |  |  |  |  | Phylogenetic model to use in placement, e.g. 'LG+F' or 'GTR+I+F'. Requires also `--pplace_tree` and `--pplace_aln`. |
 | `--pplace-name` | string |  | yes |  |  |  | A name for the run |
 | `--pplace-sheet` | string (file path) |  |  |  | matches ^\S+\.(tsv\|csv\|yml\|yaml\|txt)$ |  | Spreadsheet with phylogenetic placement information. Possible columns: target, alignmethod, hmm, extract_hmm, align_hmm, align_extract_hmm, refseqfile, refphylogeny, model, taxonomy. |
 | `--pplace-taxonomy` | string |  |  |  |  |  | Tab-separated file with taxonomy assignments of reference sequences. |
 | `--pplace-tree` | string |  |  |  |  |  | Newick file with reference phylogenetic tree. Requires also `--pplace_aln` and `--pplace_model`. |
 | `--qiime-ref-tax-custom` | string |  |  |  |  |  | Path to files of a custom QIIME2 reference taxonomy database (tarball, or two comma-separated files) |
-| `--qiime-ref-taxonomy` | string |  |  | silva=138, silva, greengenes85, greengenes2, greengenes2=2024.09, greengenes2=2022.10 |  |  | Name of supported database, and optionally also version number |
+| `--qiime-ref-taxonomy` | string |  |  | `silva=138`, `silva`, `greengenes85`, `greengenes2`, `greengenes2=2024.09`, `greengenes2=2022.10` |  |  | Name of supported database, and optionally also version number |
 | `--sintax-assign-taxlevels` | string |  |  |  |  |  | Comma separated list of taxonomic levels used in SINTAX with a custom reference database |
 | `--sintax-ref-tax-custom` | string |  |  |  |  |  | Path to a custom SINTAX reference database (fasta) |
-| `--sintax-ref-taxonomy` | string |  |  | coidb, coidb=221216, unite-fungi, unite-fungi=10.0, unite-fungi=9.0, unite-fungi=8.3, unite-fungi=8.2, unite-alleuk, unite-alleuk=10.0, unite-alleuk=9.0, unite-alleuk=8.3, unite-alleuk=8.2 |  |  | Name of supported database, and optionally also version number |
+| `--sintax-ref-taxonomy` | string |  |  | `coidb`, `coidb=221216`, `unite-fungi`, `unite-fungi=10.0`, `unite-fungi=9.0`, `unite-fungi=8.3`, `unite-fungi=8.2`, `unite-alleuk`, `unite-alleuk=10.0`, `unite-alleuk=9.0`, `unite-alleuk=8.3`, `unite-alleuk=8.2` |  |  | Name of supported database, and optionally also version number |
 | `--vsearch-lca-assign-taxlevels` | string |  |  |  |  |  | Comma separated list of taxonomic levels for VSEARCH LCA with a custom reference database |
 | `--vsearch-lca-id` | number |  |  |  | ≥ 0; ≤ 1 | 0.9 | VSEARCH usearch_global identity cutoff (`--id`) used for VSEARCH LCA. |
 | `--vsearch-lca-lca-cutoff` | number |  |  |  | ≥ 0.5; ≤ 1 | 0.9 | LCA support threshold for VSEARCH LCA (`--lca_cutoff`). |
@@ -256,6 +256,6 @@ nf-core/ampliseq pipeline parameters. Every parameter from the pinned `nextflow_
 | `--vsearch-lca-maxrejects` | integer |  |  |  | ≥ 0 | 0 | Maximum number of non-matching target sequences to reject per query for VSEARCH LCA (`--maxrejects`). |
 | `--vsearch-lca-query-cov` | number |  |  |  | ≥ 0; ≤ 1 | 1.0 | Minimum fraction of the query that must align to a target for VSEARCH LCA (`--query_cov`). |
 | `--vsearch-lca-ref-tax-custom` | string |  |  |  |  |  | Path to a custom VSEARCH LCA reference database (SINTAX-compatible FASTA) |
-| `--vsearch-lca-ref-taxonomy` | string |  |  | coidb, coidb=221216, midori2-co1, midori2-co1=gb270, unite-fungi, unite-fungi=10.0, unite-fungi=9.0, unite-fungi=8.3, unite-fungi=8.2, unite-alleuk, unite-alleuk=10.0, unite-alleuk=9.0, unite-alleuk=8.3, unite-alleuk=8.2 |  |  | Name of built-in VSEARCH LCA reference database, and optionally also version number |
+| `--vsearch-lca-ref-taxonomy` | string |  |  | `coidb`, `coidb=221216`, `midori2-co1`, `midori2-co1=gb270`, `unite-fungi`, `unite-fungi=10.0`, `unite-fungi=9.0`, `unite-fungi=8.3`, `unite-fungi=8.2`, `unite-alleuk`, `unite-alleuk=10.0`, `unite-alleuk=9.0`, `unite-alleuk=8.3`, `unite-alleuk=8.2` |  |  | Name of built-in VSEARCH LCA reference database, and optionally also version number |
 
 <!-- Generated from nf-core/ampliseq@2723d4c298d48321594920d0324697e14d73ee94. Do not edit by hand. -->

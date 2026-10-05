@@ -8,7 +8,7 @@ summary: nf-core/metaboigniter is a bioinformatics pipeline that ingests raw mas
 has_samplesheet: true
 input: samplesheet (sample, type, level, msfile)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: OpenMS, SIRIUS, MS2Query
+tools: ["OpenMS", "SIRIUS", "MS2Query"]
 ---
 # metaboigniter
 
@@ -29,7 +29,7 @@ This is the pinned latest release. To run a different one, list the available re
 |---|---|---|---|---|
 | `sample` | string | yes |  | matches ^\S+$ |
 | `type` | string | yes |  | matches ^\S+$ |
-| `level` | string | yes | MS1, MS2, MS12 |  |
+| `level` | string | yes | `MS1`, `MS2`, `MS12` |  |
 | `msfile` | string (file path) | yes |  | matches ^\S+\.mzML |
 
 `--input` must match `^\S+\.csv$`.

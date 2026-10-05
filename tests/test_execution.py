@@ -95,3 +95,11 @@ def test_keyboard_interrupt_tears_down_the_child_and_its_children(tmp_path):
                 break                                    # gone, as required
         else:
             raise AssertionError(f"process {pid} survived the interrupt")
+
+
+def test_no_timeout_waits_for_the_run_to_finish(tmp_path):
+    # `nfclaw run` sets no wall-clock limit by default; None must mean "wait", not "time out".
+    res = execution.run([PY, "-c", "import time; time.sleep(0.2); print('done')"], cwd=tmp_path,
+                        logs_dir=tmp_path / "logs", timeout_seconds=None)
+    assert res.exit_code == 0
+    assert (tmp_path / "logs" / "stdout.txt").read_text().strip() == "done"

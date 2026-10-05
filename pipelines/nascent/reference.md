@@ -12,7 +12,7 @@ nf-core/nascent pipeline parameters. Every parameter from the pinned `nextflow_s
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--aligner` | string |  |  | bwa, bwamem2, dragmap, bowtie2, hisat2, star |  | bwa | Specify aligner to be used to map reads to reference genome. |
+| `--aligner` | string |  |  | `bwa`, `bwamem2`, `dragmap`, `bowtie2`, `hisat2`, `star` |  | bwa | Specify aligner to be used to map reads to reference genome. |
 | `--skip-alignment` | boolean |  |  |  |  |  | Skip all of the alignment-based processes within the pipeline. |
 | `--skip-trimming` | boolean |  |  |  |  |  | Skip the adapter trimming step. |
 
@@ -29,7 +29,7 @@ nf-core/nascent pipeline parameters. Every parameter from the pinned `nextflow_s
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--version` | boolean |  | yes |  |  |  | Display version and exit. |
@@ -79,7 +79,7 @@ nf-core/nascent pipeline parameters. Every parameter from the pinned `nextflow_s
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--assay-type` | string | yes |  | CoPRO, GROcap, PROcap, CAGE, NETCAGE, RAMPAGE, csRNAseq, STRIPEseq, PROseq, GROseq, R_5, R_3, R1_5, R1_3, R2_5, R2_3 |  |  | What type of nascent or TSS assay the sample is. |
+| `--assay-type` | string | yes |  | `CoPRO`, `GROcap`, `PROcap`, `CAGE`, `NETCAGE`, `RAMPAGE`, `csRNAseq`, `STRIPEseq`, `PROseq`, `GROseq`, `R_5`, `R_3`, `R1_5`, `R1_3`, `R2_5`, `R2_3` |  |  | What type of nascent or TSS assay the sample is. |
 | `--filter-bed` | string |  |  |  | matches ^\S+\.bed(\.gz)?$ |  | Undesired regions, that transcripts should not overlap with |
 | `--grohmm-max-ltprobb` | integer |  |  |  |  | -400 | Maximum LTProbB value to use for groHMM. |
 | `--grohmm-max-uts` | integer |  |  |  |  | 45 | Maximum number of UTs to use for groHMM. |

@@ -39,7 +39,7 @@ nf-core/longraredisease pipeline parameters. Every parameter from the pinned `ne
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -109,7 +109,7 @@ nf-core/longraredisease pipeline parameters. Every parameter from the pinned `ne
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--output-format` | string |  |  | html, tsv |  | html | Output format for SvAnna results. |
+| `--output-format` | string |  |  | `html`, `tsv` |  | html | Output format for SvAnna results. |
 | `--run-svanna` | boolean |  |  |  |  | false | Enable SV annotation with SvAnna. |
 | `--svanna-db` | string (directory path) |  |  |  |  |  | Path to the SvAnna database directory. |
 
@@ -143,7 +143,7 @@ nf-core/longraredisease pipeline parameters. Every parameter from the pinned `ne
 | `--generate-bam-stats` | boolean |  |  |  |  | true | Generate BAM statistics using samtools. |
 | `--generate-coverage-report` | boolean |  |  |  |  | true | Generate coverage statistics. |
 | `--haplotag-bam` | boolean |  |  |  |  | true | Enable haplotagging of BAM files. |
-| `--input-type` | string |  |  | ubam, fastq, bam |  | ubam | Input file type. |
+| `--input-type` | string |  |  | `ubam`, `fastq`, `bam` |  | ubam | Input file type. |
 | `--methyl` | boolean |  |  |  |  | false | Enable methylation calling. |
 | `--minimap2-model` | string |  |  |  |  |  | Minimap2 model for alignment. |
 | `--modify-str-calls` | boolean |  |  |  |  | true | Enable modification of STR calls |

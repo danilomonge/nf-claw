@@ -19,7 +19,14 @@ anywhere this doc shows `nfclaw <cmd>`.
 `nextflow` command that *would* run without launching it, add `--check` (it validates inputs and
 parameters, prints the command, and exits; it writes nothing into `--outdir`, so you can still use
 that directory for the real run). Add `--demo` to run the pinned release's bundled test profile end
-to end.
+to end. A run has no overall time limit unless you pass `--timeout SECONDS`.
+
+Write **absolute paths inside a samplesheet**: Nextflow resolves them against its launch directory,
+which `nfclaw run` sets to `--outdir`, so a relative one cannot mean what it says — `nfclaw run`
+rejects it before launching. `--input` itself may be relative (nfclaw makes it absolute), and it is
+not always a samplesheet: the pipeline's schema decides — a directory or tarball (rangeland), an SDRF
+file or PRIDE accession (mhcquant), or `--input false` where a pipeline documents running without
+one (sarek — nfclaw then leaves `input` unset). The `Inputs` section of `skill.md` says which.
 
 ## Replaying a run
 `<outdir>/provenance/commands.sh` re-runs the recorded command. It reproduces the run into a **fresh**

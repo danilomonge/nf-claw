@@ -8,7 +8,7 @@ summary: nf-core/pixelator is a bioinformatics best-practice analysis pipeline f
 has_samplesheet: true
 input: samplesheet (pool, hash_index, sample, sample_alias, condition, design, panel, panel_file, fastq_1, fastq_2)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
-tools: pixelator, cutadapt, fastp
+tools: ["pixelator", "cutadapt", "fastp"]
 ---
 # pixelator
 
@@ -52,7 +52,7 @@ Any of the optional columns above may be appended to the header when your data n
 |---|---|---|---|---|---|
 | `--input` | string (file path) |  |  | matches ^\S+\.(csv\|tsv\|yml\|yaml)$ | Path to comma-separated file containing information about the samples in the experiment. |
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--technology` | string |  | proxiome-v1, proxiome-v2, hashed_samples, nonhashed_samples |  | The technology used to process the samples |
+| `--technology` | string |  | `proxiome-v1`, `proxiome-v2`, `hashed_samples`, `nonhashed_samples` |  | The technology used to process the samples |
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

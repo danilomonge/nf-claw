@@ -17,13 +17,13 @@ nf-core/pacvar pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--vep-custom-args-cnv` | string |  |  |  |  | --per_gene --buffer_size 5000 --max_sv_size 250000000 --offline --format vcf | Add extra custom arguments to VEP for CNV annotation. |
 | `--vep-custom-args-snv` | string |  |  |  |  | --everything --filter_common --per_gene --total_length --offline --format vcf | Add an extra custom argument to VEP. |
 | `--vep-custom-args-sv` | string |  |  |  |  | --per_gene --buffer_size 5000 --max_sv_size 250000000 --offline --format vcf | Add extra custom arguments to VEP for SV annotation. |
-| `--vep-out-format` | string |  |  | json, tab, vcf |  | vcf | VEP output-file format. |
+| `--vep-out-format` | string |  |  | `json`, `tab`, `vcf` |  | vcf | VEP output-file format. |
 
 ## general_workflow_options
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--workflow` | string |  |  | wgs, repeat |  | wgs | Option to choose which workflow type to run |
+| `--workflow` | string |  |  | `wgs`, `repeat` |  | wgs | Option to choose which workflow type to run |
 
 ## generic_options
 
@@ -39,7 +39,7 @@ nf-core/pacvar pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/refs/heads/pacvar/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -115,7 +115,7 @@ nf-core/pacvar pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--skip-phase` | boolean |  |  |  |  | false | Option to skip phasing |
 | `--skip-snp` | boolean |  |  |  |  | false | Option to skip SNP variant calling |
 | `--skip-sv` | boolean |  |  |  |  | false | Option to skip SV variant calling |
-| `--snv-caller` | string |  |  | deepvariant, gatk4 |  | deepvariant | The tool to use for calling SNP variants |
-| `--sv-caller` | string |  |  | pbsv, sawfish |  | sawfish | The tool to use for calling structural variants |
+| `--snv-caller` | string |  |  | `deepvariant`, `gatk4` |  | deepvariant | The tool to use for calling SNP variants |
+| `--sv-caller` | string |  |  | `pbsv`, `sawfish` |  | sawfish | The tool to use for calling structural variants |
 
 <!-- Generated from nf-core/pacvar@20364830237171928c79e59651142460379d1459. Do not edit by hand. -->

@@ -30,7 +30,7 @@ nf-core/hicar pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--maps-cutoff-fold-change` | number |  |  |  |  | 2 | MAPS regression fold change cutoff value |
 | `--maps-digest-file` | string |  |  |  |  | None | output of restriction_cut_multipleenzyme.py. |
 | `--maps-filter` | string |  |  |  |  | None | MAPS regression filter file name |
-| `--maps-model` | string |  |  | pospoisson, negbinom |  | pospoisson | MAPS regression type |
+| `--maps-model` | string |  |  | `pospoisson`, `negbinom` |  | pospoisson | MAPS regression type |
 | `--merge-map-py-source` | string |  | yes |  |  | https://raw.githubusercontent.com/ijuric/MAPS/91c9c360092b25a217d91b9ea07eba5dd2ac72f4/bin/utils/genomic_features_generator/scripts/merge_map.py | source code path for merge_map.py |
 | `--peak-pair-block` | number |  | yes |  |  | 1000000000 | The block number of peak pair |
 | `--remove-dup` | boolean |  | yes |  |  |  | remove duplicates for high resolution peaks or not |
@@ -74,7 +74,7 @@ nf-core/hicar pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--multiqc-config` | string |  | yes |  |  |  | Custom config file to supply to MultiQC. |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden-params` | boolean |  | yes |  |  |  | Show all params when using `--help` |
 | `--tracedir` | string |  | yes |  |  | ${params.outdir}/pipeline_info | Directory to keep pipeline Nextflow logs and reports. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |

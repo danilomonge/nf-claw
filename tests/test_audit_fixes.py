@@ -255,7 +255,7 @@ def test_inputs_section_shows_enum_and_no_fabricated_values():
         Column("fastq_1", "string", False, None, "file-path"),
     ))
     out = write_skill._inputs_section(insch)
-    assert "XX, XY, NA" in out                                   # enum → allowed values (a fact)
+    assert "`XX`, `XY`, `NA`" in out                             # enum → allowed values (a fact)
     assert "string (file path)" in out                          # file-path columns marked
     assert "data/sample1_" not in out and "sample1" not in out  # no invented values
     csv = out.split("```csv\n")[1].split("```")[0].strip()

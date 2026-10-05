@@ -28,7 +28,7 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--skip-contig-prinseq` | boolean |  |  |  |  |  | Skip the filtering of low complexity contigs with prinseq |
 | `--skip-sspace-basic` | boolean |  |  |  |  | true | Skip the contig extension with sspace_basic |
 | `--spades-hmm` | string |  |  |  |  |  | File or directory with amino acid HMMs for Spades HMM-guided mode. |
-| `--spades-mode` | string |  |  | rnaviral, corona, metaviral, meta, metaplasmid, plasmid, isolate, rna, bio |  | rnaviral | Specific SPAdes mode to run |
+| `--spades-mode` | string |  |  | `rnaviral`, `corona`, `metaviral`, `meta`, `metaplasmid`, `plasmid`, `isolate`, `rna`, `bio` |  | rnaviral | Specific SPAdes mode to run |
 | `--spades-yml` | string |  | yes |  |  |  | Path to yml file containing read information. |
 
 ## generic_options
@@ -48,7 +48,7 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
 | `--prefix` | string |  | yes |  |  |  | Prefix that will be used to generate a global prefix, date and runname will be added for all output files and directories. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -106,9 +106,9 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 |---|---|---|---|---|---|---|---|
 | `--call-intermediate-variants` | boolean |  |  |  |  |  | Call variants during the iterations |
 | `--intermediate-consensus-caller` | string |  |  |  |  | bcftools | Consensus tool used for calling new consensus during iterations |
-| `--intermediate-mapper` | string |  |  | bwamem2, bowtie2 |  | bwamem2 | Mapping tool used during iterations |
+| `--intermediate-mapper` | string |  |  | `bwamem2`, `bowtie2` |  | bwamem2 | Mapping tool used during iterations |
 | `--intermediate-mapping-stats` | boolean |  |  |  |  | true | Calculate summary statistics during iterations |
-| `--intermediate-variant-caller` | string |  |  | ivar, bcftools |  | ivar | Variant caller used during iterations |
+| `--intermediate-variant-caller` | string |  |  | `ivar`, `bcftools` |  | ivar | Variant caller used during iterations |
 | `--iterative-refinement-cycles` | integer |  |  |  |  | 2 | Number of iterations |
 | `--skip-iterative-refinement` | boolean |  |  |  |  |  | Don't realign reads to consensus sequences and redefine the consensus through (multiple) iterations |
 
@@ -125,7 +125,7 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--arguments-krona` | string |  | yes |  |  |  | Arguments for Krona tool |
 | `--bracken-db` | string |  |  |  |  | https://genome-idx.s3.amazonaws.com/kraken/k2_viral_20230314.tar.gz | Location of bracken database |
 | `--kaiju-db` | string |  |  |  |  | https://kaiju-idx.s3.eu-central-1.amazonaws.com/2023/kaiju_db_rvdb_2023-05-26.tgz | Location of Kaiju database |
-| `--kaiju-taxon-rank` | string |  | yes | superkingdom, phylum, class, order, family, genus, species |  | species | Level of taxa rank that needs to be determined |
+| `--kaiju-taxon-rank` | string |  | yes | `superkingdom`, `phylum`, `class`, `order`, `family`, `genus`, `species` |  | species | Level of taxa rank that needs to be determined |
 | `--kraken2-db` | string |  |  |  |  | https://genome-idx.s3.amazonaws.com/kraken/k2_viral_20230314.tar.gz | Location of the Kraken2 database |
 | `--kraken2-save-minimizers` | boolean |  |  |  |  |  | Save kraken2's used minimizers |
 | `--kraken2-save-readclassification` | boolean |  |  |  |  |  | Save summary overview of read classifications in a txt file |
@@ -158,14 +158,14 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--arguments-vrhyme` | string |  | yes |  |  | --mems 50 | Arguments for VRhyme tool |
 | `--arguments-vsearch` | string |  | yes |  |  | --maxseqlength 10000000 --id 0.85 --strand both --iddef 0 --no_progress --qmask none | Arguments for VSEARCH tool |
 | `--blacklist` | string |  |  |  |  |  | File containing identifiers to exclude from the scaffolding reference pool |
-| `--cluster-method` | string |  |  | cdhitest, vsearch, mmseqs-linclust, mmseqs-cluster, vrhyme, mash |  | cdhitest | Cluster algorithm used for contigs |
+| `--cluster-method` | string |  |  | `cdhitest`, `vsearch`, `mmseqs-linclust`, `mmseqs-cluster`, `vrhyme`, `mash` |  | cdhitest | Cluster algorithm used for contigs |
 | `--cluster-with-reference-pool` | boolean |  |  |  |  | true | Include BLAST-hit reference sequences in the contig clustering input |
 | `--identity-threshold` | number |  |  |  |  | 0.85 | Identity threshold value used in clustering algorithms |
 | `--keep-unclassified` | boolean |  |  |  |  | true | Keep the contigs that could not be classified with the taxonomic databases (`kaiju_db` & `kraken2_db`) |
 | `--max-contig-size` | integer |  |  |  |  | 10000000 | Maximum allowed contig size |
 | `--max-n-perc` | integer |  |  |  | ≥ 0; ≤ 100 | 50 | Define the maximum percentage of ambiguous bases in a contig |
 | `--min-contig-size` | integer |  |  |  |  | 500 | Minimum allowed contig size |
-| `--network-clustering` | string |  |  | single, complete, uclust, set-cover, cd-hit, leiden |  | single | (only with mash) Algorithm to partition the network. |
+| `--network-clustering` | string |  |  | `single`, `complete`, `uclust`, `set-cover`, `cd-hit`, `leiden` |  | single | (only with mash) Algorithm to partition the network. |
 | `--perc-reads-contig` | integer |  |  |  | ≥ 0; ≤ 99 | 5 | Minimum cumulated sum of mapped read percentages of each member from a cluster group, set to 0 to disable |
 | `--precluster-classifiers` | string |  |  |  | matches ^(kaiju\|kraken2)(,(kaiju\|kraken2))?$ | kraken2,kaiju | Specify the metagenomic classifiers to use for contig taxonomy classification: 'kraken2,kaiju' |
 | `--reference-pool` | string |  |  |  | matches ^.*\.(fasta\|fa\|fas\|fna\|fn)(\.gz)?$ | https://rvdb.dbi.udel.edu/download/C-RVDBv31.0.fasta.gz | Set of fasta sequences used as potential references for the contigs |
@@ -188,7 +188,7 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--arguments-trimmomatic` | string |  | yes |  |  | ILLUMINACLIP:null:2:30:10 | Arguments for Trimmomatic tool |
 | `--arguments-umitools-extract` | string |  | yes |  |  | --umi-separator ":" | Arguments for UMI-tools extract |
 | `--contaminants` | string |  |  |  |  |  | Reference files containing adapter and/or contaminant sequences for sequence kmer matching (used by bbduk) |
-| `--decomplexifier` | string |  |  | bbduk, prinseq |  | prinseq | Specify the decomplexifier to use, bbduk or prinseq |
+| `--decomplexifier` | string |  |  | `bbduk`, `prinseq` |  | prinseq | Specify the decomplexifier to use, bbduk or prinseq |
 | `--host-k2-db` | string |  |  |  |  | s3://ngi-igenomes/test-data/viralrecon/kraken2_human.tar.gz | Kraken2 database used to remove host and contamination |
 | `--merge-reads` | boolean |  |  |  |  |  | Specify if reads coming from the same group or original sample should be merged for the downstream analyses |
 | `--min-trimmed-reads` | integer |  |  |  |  | 1 | Input files with fewer than these reads will be filtered out of the "reads" output channel |
@@ -203,8 +203,8 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--skip-preprocessing` | boolean |  |  |  |  |  | Skip read preprocessing and use input reads for downstream analysis |
 | `--skip-trimming` | boolean |  |  |  |  |  | Skip read trimming |
 | `--skip-umi-extract` | boolean |  |  |  |  | true | With or without UMI extraction |
-| `--trim-tool` | string |  |  | fastp, trimmomatic |  | fastp | The used trimming tool |
-| `--umi-deduplicate` | string |  |  | read, mapping, both |  | read | Specify at what level UMI deduplication should occur. |
+| `--trim-tool` | string |  |  | `fastp`, `trimmomatic` |  | fastp | The used trimming tool |
+| `--umi-deduplicate` | string |  |  | `read`, `mapping`, `both` |  | read | Specify at what level UMI deduplication should occur. |
 | `--umi-discard-read` | integer |  |  |  |  | 0 | Discard R1 / R2 if required 0, meaning not to discard |
 | `--use-host-filtered-reads` | boolean |  |  |  |  |  | Prefer host-filtered reads for downstream mapping & polishing steps once host removal has completed successfully |
 | `--with-umi` | boolean |  |  |  |  |  | With or without UMI detection |
@@ -241,17 +241,17 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--arguments-snpsift-extractfields` | string |  |  |  |  | -s "," -e "." | Arguments for SnpSift ExtractFields tool |
 | `--arguments-tabix` | string |  | yes |  |  | -p vcf -f | Arguments for Tabix tool |
 | `--arguments-umitools-dedup` | string |  | yes |  |  | --umi-separator=':' --method cluster --unmapped-reads use | Arguments for UMI-tools deduplication |
-| `--consensus-caller` | string |  |  | ivar, bcftools |  | ivar | Consensus tool used for calling new consensus in final iteration |
+| `--consensus-caller` | string |  |  | `ivar`, `bcftools` |  | ivar | Consensus tool used for calling new consensus in final iteration |
 | `--deduplicate` | boolean |  |  |  |  | true | Deduplicate the reads |
 | `--ivar-header` | string |  | yes |  |  |  |  |
 | `--keep-unmapped` | boolean |  |  |  |  |  | Keep unmapped reads in the alignments used for contig coverage, polishing and consensus refinement |
-| `--mapper` | string |  |  | bwamem2, bowtie2 |  | bwamem2 | Define which mapping tool needs to be used when mapping reads to reference |
+| `--mapper` | string |  |  | `bwamem2`, `bowtie2` |  | bwamem2 | Define which mapping tool needs to be used when mapping reads to reference |
 | `--mapping-constraints` | string |  |  |  |  |  | Sequence(s) to use as a reference for mapping instead of the de novo contigs or scaffolds |
 | `--mapping-stats` | boolean |  |  |  |  | true | Calculate summary statistics in final iteration |
 | `--min-consensus-depth` | integer |  |  |  | ≥ 1 | 5 | Define the minimum consensus depth |
 | `--min-mapped-reads` | integer |  |  |  | ≥ 1 | 200 | Define the minimum number of mapped reads in order to continue the variant and consensus calling |
 | `--skip-variant-calling` | boolean |  |  |  |  |  | Skip the analysis of variants for the external reference or contigs |
 | `--skip-vcf-annotation` | boolean |  |  |  |  |  | Skip the annotation of the VCF file |
-| `--variant-caller` | string |  |  | ivar, bcftools |  | ivar | Define the variant caller to use: 'ivar' or 'bcftools' |
+| `--variant-caller` | string |  |  | `ivar`, `bcftools` |  | ivar | Define the variant caller to use: 'ivar' or 'bcftools' |
 
 <!-- Generated from nf-core/viralmetagenome@74064a43f4b00c163c22bcfc9cf1d84a2a69e988. Do not edit by hand. -->

@@ -22,7 +22,7 @@ nf-core/variantprioritization pipeline parameters. Every parameter from the pinn
 | `--maf-upper-threshold` | number |  |  |  |  | 0.9 | Upper gnomAD global MAF threshold for variants included in report. |
 | `--panel-id` | string |  |  |  | matches ^\d+(,\d+)*$ | 0 | Comma-separated CPSR virtual panel identifier(s). |
 | `--pgx-findings` | boolean |  |  |  |  |  | Report overlap with pharmacogenomic toxicity variants (CPIC/PgX). |
-| `--pop-gnomad` | string |  |  | afr, amr, eas, sas, asj, nfe, fin, global |  | nfe | gnomAD population source used for ACMG frequency assessment. |
+| `--pop-gnomad` | string |  |  | `afr`, `amr`, `eas`, `sas`, `asj`, `nfe`, `fin`, `global` |  | nfe | gnomAD population source used for ACMG frequency assessment. |
 | `--secondary-findings` | boolean |  |  |  |  |  | Include variants in ACMG secondary findings gene list (v3.2). |
 | `--vep-gencode-basic` | boolean |  |  |  |  |  | Consider basic GENCODE transcript set only with Variant Effect Predictor (VEP) (option '--gencode_basic' in VEP). |
 
@@ -42,7 +42,7 @@ nf-core/variantprioritization pipeline parameters. Every parameter from the pinn
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -73,7 +73,7 @@ nf-core/variantprioritization pipeline parameters. Every parameter from the pinn
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--all-reference-signatures` | boolean |  |  |  |  |  | Use all reference SBS signatures during signature re-fitting. |
-| `--assay` | string |  |  | WGS, WES, TARGETED |  |  | Type of DNA sequencing assay performed for input data. |
+| `--assay` | string |  |  | `WGS`, `WES`, `TARGETED` |  |  | Type of DNA sequencing assay performed for input data. |
 | `--call-conf-tag` | string |  |  |  |  |  | VCF INFO tag for somatic call confidence. |
 | `--cna-analysis` | boolean |  |  |  |  |  | Enable copy-number alteration (CNA) analysis and reporting. |
 | `--cna-overlap-pct` | integer |  |  |  |  | 50 | Mean percent overlap between CNA segment and gene transcripts for reporting gains/losses. |
@@ -94,7 +94,7 @@ nf-core/variantprioritization pipeline parameters. Every parameter from the pinn
 | `--prevalence-reference-signatures` | number |  |  |  |  | 0.1 | Minimum tumor-type prevalence (%) of reference signatures to include in re-fitting. |
 | `--tmb-ad-min` | integer |  |  |  |  |  | Minimum tumor allelic depth (ALT-supporting reads) required for TMB calculation when depth+AF tags are available. |
 | `--tmb-af-min` | number |  |  |  |  |  | Minimum tumor allelic fraction required for inclusion in TMB calculation when AF tag is available. |
-| `--tmb-display` | string |  |  | coding_and_silent, coding_non_silent, missense_only |  | coding_and_silent | TMB measure to show in report. |
+| `--tmb-display` | string |  |  | `coding_and_silent`, `coding_non_silent`, `missense_only` |  | coding_and_silent | TMB measure to show in report. |
 | `--tmb-dp-min` | integer |  |  |  |  |  | Minimum tumor depth required for inclusion in TMB calculation when depth tag is available. |
 | `--tumor-ad-min` | integer |  |  |  |  |  | Minimum tumor allelic depth (ALT-supporting reads) for variant inclusion when tumor depth+AF tags are provided. |
 | `--tumor-af-min` | integer |  |  |  |  | 0 | Minimum tumor allelic fraction for variant inclusion when tumor AF tag is provided. |

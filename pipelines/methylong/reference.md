@@ -12,8 +12,8 @@ nf-core/methylong pipeline parameters. Every parameter from the pinned `nextflow
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--ont-aligner` | string |  |  | dorado, minimap2 |  | dorado | Aligner option in ONT workflow, default is dorado aligner, specify minimap2 to switch |
-| `--pacbio-aligner` | string |  |  | pbmm2, minimap2 |  | pbmm2 | Aligner option in PacBio workflow, default is pbmm2, specify minimap2 to switch |
+| `--ont-aligner` | string |  |  | `dorado`, `minimap2` |  | dorado | Aligner option in ONT workflow, default is dorado aligner, specify minimap2 to switch |
+| `--pacbio-aligner` | string |  |  | `pbmm2`, `minimap2` |  | pbmm2 | Aligner option in PacBio workflow, default is pbmm2, specify minimap2 to switch |
 
 ## dmr_options
 
@@ -22,8 +22,8 @@ nf-core/methylong pipeline parameters. Every parameter from the pinned `nextflow
 | `--dmr-a` | string |  |  |  |  |  | One of the group of DMR analysis in population scale |
 | `--dmr-b` | string |  |  |  |  |  | Another group of DMR analysis in population scale |
 | `--dmr-population-scale` | boolean |  |  |  |  |  | Indicate if required DMR analysis for population scale |
-| `--haplotype-dmrer` | string |  |  | dss, modkit |  | dss | DMRer option in DMR analysis for haplotype level, default is dss, specify modkit to switch |
-| `--population-dmrer` | string |  |  | dss, modkit |  | dss | DMRer option in DMR analysis for population scale, default is dss, specify modkit to switch |
+| `--haplotype-dmrer` | string |  |  | `dss`, `modkit` |  | dss | DMRer option in DMR analysis for haplotype level, default is dss, specify modkit to switch |
+| `--population-dmrer` | string |  |  | `dss`, `modkit` |  | dss | DMRer option in DMR analysis for population scale, default is dss, specify modkit to switch |
 | `--skip-snvs` | boolean |  |  |  |  |  | Indicate if to skip snvcall and phase |
 
 ## fiberseq_options
@@ -41,7 +41,7 @@ nf-core/methylong pipeline parameters. Every parameter from the pinned `nextflow
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--version` | boolean |  | yes |  |  |  | Display version and exit. |
 
@@ -74,7 +74,7 @@ nf-core/methylong pipeline parameters. Every parameter from the pinned `nextflow
 | `--dorado-model` | string |  |  |  |  | sup | Specify dorado model, default is sup, other available models can be found on Dorado's GitHub repository. |
 | `--dorado-modification` | string |  |  |  |  | 5mC_5hmC | Specify dorado modification, default is 5mC_5hmC, other available modifications can be found on Dorado's GitHub repository. |
 | `--pacbio-modcall` | boolean |  |  |  |  |  | Indicate if required modcalling in PacBio workflow |
-| `--pacbio-modcaller` | string |  |  | jasmine, ccsmeth |  | jasmine | Modcaller option in PacBio workflow, default is jasmine, specify ccsmeth to switch |
+| `--pacbio-modcaller` | string |  |  | `jasmine`, `ccsmeth` |  | jasmine | Modcaller option in PacBio workflow, default is jasmine, specify ccsmeth to switch |
 
 ## mod_pileup_options
 
@@ -85,7 +85,7 @@ nf-core/methylong pipeline parameters. Every parameter from the pinned `nextflow
 | `--denovo` | boolean |  |  |  |  |  | This option will identify and output all CG sites found in the consensus sequence from the reads in the `pb-CpG-tools`pileup (reference free); by default reference sequences are used to identify and output all CG sites. |
 | `--m6a` | boolean |  |  |  |  |  | Indicate if pileup m6a motif |
 | `--pileup-count` | boolean |  |  |  |  | model | Specify pbcpgtools pileup mode, default is using model mode, specify this parameter to switch to count mode |
-| `--pileup-method` | string |  |  | pbcpgtools, modkit |  | pbcpgtools | Pileup method in PacBio workflow, default is pbcpgtools, specify modkit to switch |
+| `--pileup-method` | string |  |  | `pbcpgtools`, `modkit` |  | pbcpgtools | Pileup method in PacBio workflow, default is pbcpgtools, specify modkit to switch |
 
 ## multiqc
 

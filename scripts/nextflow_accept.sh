@@ -34,6 +34,11 @@ _run_with_timeout() {
 names=("$@")
 if [ "${#names[@]}" -eq 0 ]; then
   mapfile -t names < <(nfclaw list | cut -f1)
+  # An empty list would "accept" nothing and exit 0 — a vacuous green check.
+  if [ "${#names[@]}" -eq 0 ]; then
+    echo "::error::no pipelines found (nfclaw list returned nothing)"
+    exit 1
+  fi
 fi
 
 tmp="${RUNNER_TEMP:-/tmp}"

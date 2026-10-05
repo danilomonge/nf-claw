@@ -24,17 +24,6 @@ def _repo_root() -> Path:
     return root
 
 
-def _input_value(raw: str | None) -> "Path | str | None":
-    """Resolve a local `--input` to an absolute Path; pass a remote URL through unchanged.
-
-    A URL (contains `://`) must NOT go through `Path().resolve()`, which would mangle it into a
-    bogus local path (e.g. `/repo/https:/host/ss.csv`). nf-core pipelines accept a remote
-    samplesheet URL — Nextflow stages it and nf-schema validates it — so nfclaw forwards it as-is."""
-    if not raw:
-        return None
-    return raw if "://" in raw else Path(raw).expanduser().resolve()
-
-
 def _parse_nxf_env(items: list[str]) -> dict[str, str]:
     """Parse repeatable `--nxf-env KEY=VALUE` into a dict, restricted to `NXF_*` variables.
 
@@ -156,9 +145,16 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("--demo", action="store_true")
     p_run.add_argument("--resume", action="store_true")
     p_run.add_argument("--no-provenance", action="store_true")
-    p_run.add_argument("--timeout", type=_positive_int, default=60 * 60 * 12)
+    # No wall-clock limit by default: a real nf-core run (a sarek WGS, a large rnaseq) can take days,
+    # and Nextflow already bounds each task with its own `time` directive.
+    p_run.add_argument("--timeout", type=_positive_int, default=None, metavar="SECONDS",
+                       help="stop the whole run after SECONDS (default: no limit)")
 
     args, extras = parser.parse_known_args(argv)
+    # Only `run` forwards unrecognised flags (to the pipeline). Anywhere else an unknown flag is a typo
+    # that must not be ignored: `show X --pipeline-versoin 1.0.0` printed the *latest* docs.
+    if extras and args.cmd != "run":
+        parser.error(f"unrecognized arguments: {' '.join(extras)}")
     try:
         root = _repo_root()
     except NfclawError as exc:
@@ -221,7 +217,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             res = orchestration.run_pipeline(
                 args.name, repo_root=root,
-                input_path=_input_value(args.input),
+                input_path=args.input or None,         # interpreted against the pipeline schema
                 outdir=Path(args.outdir).expanduser().resolve(),
                 profile=args.profile,
                 params_file=Path(args.params_file) if args.params_file else None,

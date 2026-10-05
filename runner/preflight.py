@@ -53,7 +53,8 @@ def check_environment(*, profile: str, output_dir: Path, submodule: SubmoduleSta
     # `--check` only validates params and prints the command without launching, so this guard must
     # not block it: a dry run against an existing results directory is legitimate.
     elif output_dir.is_dir() and any(output_dir.iterdir()) and not resume and not check_only:
-        issues.append(f"--outdir is not empty: {output_dir} (use -resume or a fresh dir)")
+        issues.append(f"--outdir is not empty: {output_dir} (pass --resume to continue that run, "
+                      "or use a fresh --outdir)")
     issues += _space_issues(repo_root=repo_root, output_dir=output_dir,
                             work_dir=work_dir, allow_spaces=allow_spaces)
     return issues

@@ -23,7 +23,7 @@ nf-core/phyloplace pipeline parameters. Every parameter from the pinned `nextflo
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -33,7 +33,7 @@ nf-core/phyloplace pipeline parameters. Every parameter from the pinned `nextflo
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--alignmethod` | string |  |  | hmmer, clustalo, mafft |  | clustalo | Method used to align query sequences with. |
+| `--alignmethod` | string |  |  | `hmmer`, `clustalo`, `mafft` |  | clustalo | Method used to align query sequences with. |
 | `--email` | string |  |  |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary. |
 | `--hmmfile` | string (file path) |  |  |  | matches ^(\S+\.(hmm)(\.gz)?\|https?://\S*/[^/.\s]+)$ |  | HMM file. If provided, will be used to align both the reference and query sequences. |
 | `--id` | string |  |  |  |  | placement | Name of analysis |

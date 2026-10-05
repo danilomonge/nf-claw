@@ -8,7 +8,7 @@ summary: nf-core/funcprofiler is a bioinformatics pipeline for read-based functi
 has_samplesheet: true
 input: samplesheet (sample, run_accession, instrument_platform, fastq_1, fastq_2, fasta)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: DIAMOND, eggNOG-mapper, fmh-funprofiler, HUMAnN, mi-faser, MetaPhlAn3, MetaPhlAn4, MultiQC, RGI/CARD, seqkit
+tools: ["DIAMOND", "eggNOG-mapper", "fmh-funprofiler", "HUMAnN", "mi-faser", "MetaPhlAn3", "MetaPhlAn4", "MultiQC", "RGI/CARD", "seqkit"]
 ---
 # funcprofiler
 
@@ -29,7 +29,7 @@ This is the pinned latest release. To run a different one, list the available re
 |---|---|---|---|---|
 | `sample` | string or integer | yes |  | matches ^[^\s]+$ |
 | `run_accession` | string or integer | yes |  | matches ^[^\s]+$ |
-| `instrument_platform` | string | yes | ABI_SOLID, BGISEQ, CAPILLARY, COMPLETE_GENOMICS, DNBSEQ, HELICOS, ILLUMINA, ION_TORRENT, LS454 |  |
+| `instrument_platform` | string | yes | `ABI_SOLID`, `BGISEQ`, `CAPILLARY`, `COMPLETE_GENOMICS`, `DNBSEQ`, `HELICOS`, `ILLUMINA`, `ION_TORRENT`, `LS454` |  |
 | `fastq_1` | string (file path) | yes |  | matches ^\S+\.f(ast)?q\.gz$ |
 | `fastq_2` | string (file path) | no |  | matches ^\S+\.f(ast)?q\.gz$ |
 | `fasta` | string (file path) | no |  | matches ^\S+\.(fasta\|fas\|fna\|fa)\.gz?$ |

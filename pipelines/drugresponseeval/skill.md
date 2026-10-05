@@ -8,7 +8,7 @@ summary: DrEval is a bioinformatics framework that includes a PyPI package (drev
 has_samplesheet: false
 input: parameters (no samplesheet)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
-tools: DrEvalPy, CurveCurator, DIPK, MOLI, SRMF, SuperFELT
+tools: ["DrEvalPy", "CurveCurator", "DIPK", "MOLI", "SRMF", "SuperFELT"]
 ---
 # drugresponseeval
 

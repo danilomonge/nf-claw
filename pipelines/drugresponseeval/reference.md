@@ -17,15 +17,15 @@ nf-core/drugresponseeval pipeline parameters. Every parameter from the pinned `n
 | `--n-cv-splits` | integer |  |  |  | ≥ 2 | 10 | Number of cross-validation splits. |
 | `--no-hyperparameter-tuning` | boolean |  |  |  |  | false | Disable hyperparameter tuning. |
 | `--no-refitting` | boolean |  |  |  |  | false | False by default (=refitting). By default, we use measures calculated with CurveCurator instead of original measures reported by the authors for the available datasets, or invoke automatic fitting of custom raw viability data with CurveCurator. Set this flag to disable this option. |
-| `--optim-metric` | string |  |  | RMSE, MSE, MAE, R^2, Pearson, Spearman, Kendall |  | RMSE | Optimization metric for the pipeline. |
-| `--response-transformation` | string |  |  | None, standard, minmax, robust |  | None | Response transformation |
+| `--optim-metric` | string |  |  | `RMSE`, `MSE`, `MAE`, `R^2`, `Pearson`, `Spearman`, `Kendall` |  | RMSE | Optimization metric for the pipeline. |
+| `--response-transformation` | string |  |  | `None`, `standard`, `minmax`, `robust` |  | None | Response transformation |
 
 ## data_options
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--cross-study-datasets` | string |  |  |  | matches ^(?:\|(?:GDSC[12]\|CCLE\|CTRPv[12]\|TOYv[12]\|PDX_Bruna\|BeatAML2)(,(?:GDSC[12]\|CCLE\|CTRPv[12]\|TOYv[12]\|PDX_Bruna\|BeatAML2))*)$ |  | Datasets for cross-study prediction. |
-| `--measure` | string |  |  | LN_IC50, pEC50, AUC, response, EC50, IC50 |  | LN_IC50 | The name of the drug response measure to use. |
+| `--measure` | string |  |  | `LN_IC50`, `pEC50`, `AUC`, `response`, `EC50`, `IC50` |  | LN_IC50 | The name of the drug response measure to use. |
 | `--path-data` | string (directory path) |  |  |  |  | data | Path to the data directory. |
 | `--zenodo-link` | string |  |  |  | matches (^https://zenodo.org/records/[0-9]+/files/$)\|(https://github.com/nf-core/test-datasets/raw/refs/heads/drugresponseeval/test_data/) | https://zenodo.org/records/20624451/files/ | Link to the latest Zenodo version of the dataset. |
 
@@ -39,7 +39,7 @@ nf-core/drugresponseeval pipeline parameters. Every parameter from the pinned `n
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -83,7 +83,7 @@ nf-core/drugresponseeval pipeline parameters. Every parameter from the pinned `n
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--randomization-mode` | string |  |  |  | matches ^(None\|(?:SVR[CD]\|SVC[CD])(,(?:SVR[CD]\|SVC[CD]))*)$ | None | Randomization mode for the pipeline. |
-| `--randomization-type` | string |  |  | permutation, invariant |  | permutation | Randomization type for the pipeline. |
+| `--randomization-type` | string |  |  | `permutation`, `invariant` |  | permutation | Randomization type for the pipeline. |
 
 ## robustness_options
 

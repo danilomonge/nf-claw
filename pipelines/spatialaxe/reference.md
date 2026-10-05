@@ -24,7 +24,7 @@ nf-core/spatialaxe pipeline parameters. Every parameter from the pinned `nextflo
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -40,8 +40,8 @@ nf-core/spatialaxe pipeline parameters. Every parameter from the pinned `nextflo
 | `--gene-panel` | string (file path) |  |  |  |  |  | Path to gene panel JSON file to use for relabeling transcripts with the correct gene. |
 | `--gene-synonyms` | string (file path) |  |  |  |  |  | Gene synonyms that may have been counted as off-targets but simply differ in name. |
 | `--input` | string (file path) | yes |  |  | matches ^\S+\.csv$ |  | Path to comma-separated file containing information about the Xenium experiment. (eg; meta,path-to-xenium-bundle,path-to-morphology.ome.tif)) |
-| `--method` | string |  |  | cellpose, xeniumranger, baysor, proseg, segger, ficture, stardist |  |  | Segmentation method to run. |
-| `--mode` | string | yes |  | image, coordinate, segfree, preview, qc |  |  | Mode in which the pipeline is to be run. Either image-based segmentation, coordinate-based segmentation, segmentation-free analysis or data preview. |
+| `--method` | string |  |  | `cellpose`, `xeniumranger`, `baysor`, `proseg`, `segger`, `ficture`, `stardist` |  |  | Segmentation method to run. |
+| `--mode` | string | yes |  | `image`, `coordinate`, `segfree`, `preview`, `qc` |  |  | Mode in which the pipeline is to be run. Either image-based segmentation, coordinate-based segmentation, segmentation-free analysis or data preview. |
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 | `--probes-fasta` | string (file path) |  |  |  |  |  | Fasta file for the probe sequences used in the xenium experiment. |
@@ -73,7 +73,7 @@ nf-core/spatialaxe pipeline parameters. Every parameter from the pinned `nextflo
 | `--batch-size-predict` | integer |  |  |  |  | 1 | Number of samples to process per batch during prediction |
 | `--batch-size-train` | integer |  |  |  |  | 4 | Number of samples to process per training batch |
 | `--baysor-config` | string (file path) |  |  |  |  |  | Path to Baysor config TOML file (optional). |
-| `--baysor-prior` | string |  |  | cells, cellpose |  |  | Prior segmentation type for Baysor. 'cells' uses Xenium bundle cell_id column; 'cellpose' uses Cellpose mask as image prior. |
+| `--baysor-prior` | string |  |  | `cells`, `cellpose` |  |  | Prior segmentation type for Baysor. 'cells' uses Xenium bundle cell_id column; 'cellpose' uses Cellpose mask as image prior. |
 | `--baysor-prior-confidence` | number |  |  |  |  | 0.2 | Baysor prior-segmentation-confidence (0-1). |
 | `--baysor-scale` | integer |  |  |  |  | 30 | Baysor --scale parameter for non-tiled runs. |
 | `--baysor-tiling` | boolean |  |  |  |  | true | Enable tiled Baysor segmentation (divide transcripts into patches, run Baysor per patch, stitch results). |
@@ -97,7 +97,7 @@ nf-core/spatialaxe pipeline parameters. Every parameter from the pinned `nextflo
 | `--expansion-distance` | integer |  |  |  |  | 5 | Nuclei boundary expansion distance in µm. Default: 5 (Min: 0, Max: 15 if either boundary-stain or interior-stain are enabled and 100 if nucleus-expansion only) |
 | `--features` | string |  |  |  |  |  | List of features to be passed to the ficture method. (eg: TP53,OCIAD1,BCAS3,SOX) |
 | `--filter-transcripts` | boolean |  |  |  |  | false | Whether to filter the transcripts.parquet file before running Baysor segmentation. |
-| `--format` | string |  |  | xenium, cosmx, merscope |  | xenium | Input data platform. Used by proseg, segger, and spatialdata modules. |
+| `--format` | string |  |  | `xenium`, `cosmx`, `merscope` |  | xenium | Input data platform. Used by proseg, segger, and spatialdata modules. |
 | `--gpu-queue` | string |  |  |  |  |  | AWS Batch queue for GPU tasks (e.g., Segger, ProSeg). |
 | `--image-seg-methods` | array |  |  |  |  |  | List of image-based segmentation methods. |
 | `--interior-stain` | boolean |  |  |  |  | true | Specify the name of the interior stain to use or disable. Supported for cell segmentation staining workflow output bundles. Possible options are: \"18S\" (default) or \"disable\" |
@@ -111,15 +111,15 @@ nf-core/spatialaxe pipeline parameters. Every parameter from the pinned `nextflo
 | `--nucleus-segmentation-only` | boolean |  |  |  |  |  | Whether to only run nucleus segmentation. |
 | `--offtarget-probe-tracking` | boolean |  |  |  |  | false | Whether to run the off-target probe tracking. |
 | `--patch-filter-iqr-multiplier` | number |  |  |  |  | 3.0 | IQR multiplier for empirical cell size filtering during stitching. |
-| `--patch-filter-method` | string |  |  | empirical, distribution, both |  |  | Post-stitch cell size filtering method. Options: 'empirical' (IQR-based), 'distribution' (z-score), 'both', or null to disable. |
+| `--patch-filter-method` | string |  |  | `empirical`, `distribution`, `both` |  |  | Post-stitch cell size filtering method. Options: 'empirical' (IQR-based), 'distribution' (z-score), 'both', or null to disable. |
 | `--patch-filter-z-threshold` | number |  |  |  |  | 4.0 | Z-score threshold for distribution-based cell size filtering during stitching. |
 | `--patch-grid` | string |  |  |  |  | 3x3 | Grid layout for tiling (rows x cols), e.g. '3x3', '4x4'. |
 | `--patch-overlap` | integer |  |  |  |  | 50 | Overlap between adjacent patches in microns. |
 | `--relabel-genes` | boolean |  |  |  |  |  | Whether to relabel genes with gene_panel.json file. True when gene_panel is provided. |
 | `--run-qc` | boolean |  |  |  |  | true | Whether to run the qc layer in the pipeline. |
 | `--segfree-methods` | array |  |  |  |  |  | List of segmentation-free methods. |
-| `--segger-accelerator` | string |  |  | cpu, cuda |  | cpu | Device used for training. (e.g., cuda for GPU or cpu) |
-| `--segger-knn-method` | string |  |  | kd_tree, cuda |  | kd_tree | Method for KNN computation. (e.g., cuda for GPU-based computation) |
+| `--segger-accelerator` | string |  |  | `cpu`, `cuda` |  | cpu | Device used for training. (e.g., cuda for GPU or cpu) |
+| `--segger-knn-method` | string |  |  | `kd_tree`, `cuda` |  | kd_tree | Method for KNN computation. (e.g., cuda for GPU-based computation) |
 | `--segger-model` | string (file path) |  |  |  |  |  | Path to a pre-trained Segger model checkpoint. |
 | `--segger-num-workers` | integer |  |  |  |  | 4 | Number of data-loader workers for Segger. |
 | `--segmentation-refinement` | boolean |  |  |  |  |  | Whether to run refinement on the image-based segmentation methods. Runs coordinate-based methods after the initial image-based segmentation run. |

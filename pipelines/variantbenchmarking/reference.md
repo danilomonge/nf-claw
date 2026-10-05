@@ -24,7 +24,7 @@ nf-core/variantbenchmarking pipeline parameters. Every parameter from the pinned
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -35,7 +35,7 @@ nf-core/variantbenchmarking pipeline parameters. Every parameter from the pinned
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--ambiguous-beds` | string (file path) |  |  |  | matches ^\S+\.(bed)?(\.gz)?$ |  | Path to ambiguous BED. Only applicable to sompy tool. |
-| `--analysis` | string | yes |  | germline, somatic |  |  | The analysis type used by the input files |
+| `--analysis` | string | yes |  | `germline`, `somatic` |  |  | The analysis type used by the input files |
 | `--email` | string |  |  |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary. |
 | `--enable-missing-genotypes` | string |  |  |  | matches ^((test\|truth)?,?)*(?<!,)$ |  | The pipeline filter outs missing genotypes with ./. or 0/0 by default, enable using missing genotypes for test, truth. Should be a comma-separated list of one or more of the following options: test, truth |
 | `--ensemble-truth` | integer |  |  |  | ≥ 1 |  | Ensemble truth using input VCF files following the majority rule specified. This method should be used only if truth file is not available |
@@ -57,7 +57,7 @@ nf-core/variantbenchmarking pipeline parameters. Every parameter from the pinned
 | `--targets-bed` | string (file path) |  |  |  | matches ^\S+\.(bed\|vcf)?(\.gz)?$ |  | Path to targets BED. Works similar to Bcftools -T. It will be only used with happy, sompy or rtgtools. |
 | `--truth-id` | string |  |  |  |  |  | Truth id, sample name to define truth vcf |
 | `--truth-vcf` | string (file path) |  |  |  | matches ^\S+\.vcf(\.gz)?$ |  | Path to the golden set VCF files. |
-| `--variant-type` | string | yes |  | small, snv, indel, structural, copynumber |  |  | Variant types to benchmark |
+| `--variant-type` | string | yes |  | `small`, `snv`, `indel`, `structural`, `copynumber` |  |  | Variant types to benchmark |
 
 ## institutional_config_options
 

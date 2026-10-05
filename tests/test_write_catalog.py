@@ -51,3 +51,16 @@ def test_catalog_deterministic(tmp_path):
     a, b = out_md.read_text(), out_json.read_text()
     write_catalog.generate(pipelines_dir=pdir, out_md=out_md, out_json=out_json)
     assert out_md.read_text() == a and out_json.read_text() == b
+
+
+def test_catalog_keeps_tool_names_that_contain_commas(tmp_path):
+    # skill.md records `tools` as a JSON list. Splitting a comma-joined string broke names such as
+    # airrflow's "SHazaM, Change-O" and readsimulator's "Tetrapods; 2,560 baits ..." into fragments.
+    d = tmp_path / "airrflow"
+    (d / "upstream").mkdir(parents=True)
+    d.joinpath("skill.md").write_text(
+        '---\nname: airrflow\nversion: 1\ndescription: x\n'
+        'tools: ["pRESTO", "SHazaM, Change-O"]\n---\n')
+    out_md, out_json = tmp_path / "c.md", tmp_path / "c.json"
+    write_catalog.generate(pipelines_dir=tmp_path, out_md=out_md, out_json=out_json)
+    assert json.loads(out_json.read_text())[0]["tools"] == ["pRESTO", "SHazaM, Change-O"]

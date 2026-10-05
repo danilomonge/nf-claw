@@ -100,6 +100,21 @@ def test_nonempty_outdir_blocks_run_but_not_check(tmp_path, monkeypatch):
                    for i in preflight.check_environment(**common, check_only=True))
 
 
+
+def test_nonempty_outdir_hint_names_nfclaws_resume_flag(tmp_path, monkeypatch):
+    # The hint said "use -resume", but `nfclaw run ... -resume` is rejected as an unexpected extra
+    # argument — nfclaw's flag is `--resume`.
+    _clean_env(monkeypatch)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "old.txt").write_text("a previous run")
+    issues = preflight.check_environment(profile="singularity", submodule=_st(repo / "up"),
+                                         repo_root=repo, resume=False, output_dir=out)
+    hint = next(i for i in issues if "not empty" in i)
+    assert "--resume" in hint and " -resume" not in hint
+
 def test_outdir_that_is_a_file_is_flagged_cleanly(tmp_path, monkeypatch):
     # An --outdir pointing at an existing file must be reported clearly, not blow up later in
     # iterdir()/mkdir() with an uncaught NotADirectoryError/FileExistsError.

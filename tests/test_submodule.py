@@ -136,3 +136,45 @@ def test_init_failure_is_reported_as_structured_nfclaw_error(tmp_path, monkeypat
         submodule.ensure_initialized("mini", tmp_path / "pipelines", tmp_path)
     assert exc.value.code == ErrorCode.SUBMODULE_INCOMPLETE
     assert "network unavailable" in str(exc.value)
+
+
+def _git_repo(path):
+    import subprocess
+    subprocess.run(["git", "init", "-q", str(path)], check=True)
+    return path
+
+
+def test_init_lock_lives_in_the_repositorys_git_dir(tmp_path):
+    # The lock used to live in the shared temp dir (/tmp on Linux), where a file left by another user
+    # sharing the clone made every first-time `nfclaw run` crash with a raw PermissionError.
+    repo = _git_repo(tmp_path / "repo")
+    with submodule._init_lock(repo):
+        assert (repo / ".git" / "nfclaw-submodule.lock").is_file()
+
+
+def test_unusable_lock_file_is_a_clean_error_not_a_traceback(tmp_path):
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    repo = _git_repo(tmp_path / "repo")
+    (repo / ".git" / "nfclaw-submodule.lock").mkdir()           # cannot be opened as a lock file
+    with pytest.raises(NfclawError) as exc:
+        with submodule._init_lock(repo):
+            pass
+    assert exc.value.code == ErrorCode.ENVIRONMENT
+    assert "nfclaw-submodule.lock" in str(exc.value)
+
+
+def test_lock_never_follows_a_planted_symlink(tmp_path):
+    # Opening the lock with "w" followed a symlink and truncated whatever it pointed at.
+    import os
+
+    import pytest
+    from runner.errors import NfclawError
+    repo = _git_repo(tmp_path / "repo")
+    victim = tmp_path / "victim.txt"
+    victim.write_text("precious")
+    os.symlink(victim, repo / ".git" / "nfclaw-submodule.lock")
+    with pytest.raises(NfclawError):
+        with submodule._init_lock(repo):
+            pass
+    assert victim.read_text() == "precious"

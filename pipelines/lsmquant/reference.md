@@ -22,7 +22,7 @@ nf-core/lsmquant pipeline parameters. Every parameter from the pinned `nextflow_
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/lsmquant/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -39,7 +39,7 @@ nf-core/lsmquant pipeline parameters. Every parameter from the pinned `nextflow_
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--nuclei-quantification` | boolean |  |  |  |  |  | Performs cell nuclei quantification using a pre-trained model. |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--stage` | string |  |  | int_stitch, int_align_stitch, stitch_only |  |  | The stage of the pipeline to run. |
+| `--stage` | string |  |  | `int_stitch`, `int_align_stitch`, `stitch_only` |  |  | The stage of the pipeline to run. |
 
 ## institutional_config_options
 

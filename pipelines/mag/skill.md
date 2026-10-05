@@ -8,7 +8,7 @@ summary: nf-core/mag is a bioinformatics best-practice analysis pipeline for ass
 has_samplesheet: true
 input: samplesheet (sample, run, group, short_reads_1, short_reads_2, short_reads_platform, long_reads, long_reads_platform)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: AdapterRemoval2, ALE, BBnorm/BBTools, BCFtools, Bowtie2, BUSCO, CAT, CheckM, CheckM2, Chopper, COMEBin, CONCOCT, MetaBinner, SemiBin2, DAS Tool, FastP, FastQC, Filtlong, Flye, Freebayes, geNomad, GTDB-Tk, GUNC, BIgMAG, MaxBin2, MEGAHIT, MetaBAT2, MetaEuk, metaMDBG, minimap2, MMseqs2, MultiQC, NanoLyse, NanoPlot, Nanoq, Porechop, Porechop-abi, Prodigal, Prokka, PyDamage, pypolca, SAMtools, Seqtk, SPAdes, Tiara, Trimmomatic
+tools: ["AdapterRemoval2", "ALE", "BBnorm/BBTools", "BCFtools", "Bowtie2", "BUSCO", "CAT", "CheckM", "CheckM2", "Chopper", "COMEBin", "CONCOCT", "MetaBinner", "SemiBin2", "DAS Tool", "FastP", "FastQC", "Filtlong", "Flye", "Freebayes", "geNomad", "GTDB-Tk", "GUNC", "BIgMAG", "MaxBin2", "MEGAHIT", "MetaBAT2", "MetaEuk", "metaMDBG", "minimap2", "MMseqs2", "MultiQC", "NanoLyse", "NanoPlot", "Nanoq", "Porechop", "Porechop-abi", "Prodigal", "Prokka", "PyDamage", "pypolca", "SAMtools", "Seqtk", "SPAdes", "Tiara", "Trimmomatic"]
 ---
 # mag
 
@@ -32,9 +32,9 @@ This is the pinned latest release. To run a different one, list the available re
 | `group` | string or integer | yes |  | matches ^\S+$ |
 | `short_reads_1` | string (file path) | no |  | matches ^\S+\.f(ast)?q\.gz$ |
 | `short_reads_2` | string (file path) | no |  | matches ^\S+\.f(ast)?q\.gz$ |
-| `short_reads_platform` | string | no | ILLUMINA, BGISEQ, LS454, ION_TORRENT, DNBSEQ, ELEMENT, ULTIMA, VELA_DIAGNOSTICS, GENAPSYS, GENEMIND, TAPESTRI |  |
+| `short_reads_platform` | string | no | `ILLUMINA`, `BGISEQ`, `LS454`, `ION_TORRENT`, `DNBSEQ`, `ELEMENT`, `ULTIMA`, `VELA_DIAGNOSTICS`, `GENAPSYS`, `GENEMIND`, `TAPESTRI` |  |
 | `long_reads` | string (file path) | no |  | matches ^\S+\.f(ast)?q\.gz$ |
-| `long_reads_platform` | string | no | OXFORD_NANOPORE, OXFORD_NANOPORE_HQ, PACBIO_CLR, PACBIO_HIFI |  |
+| `long_reads_platform` | string | no | `OXFORD_NANOPORE`, `OXFORD_NANOPORE_HQ`, `PACBIO_CLR`, `PACBIO_HIFI` |  |
 
 `--input` must match `^\S+\.csv$`.
 
@@ -55,9 +55,6 @@ Any of the optional columns above may be appended to the header when your data n
 |---|---|---|---|---|---|
 | `--input` | string (file path) |  |  | matches ^\S+\.csv$ | CSV samplesheet file containing information about the samples in the experiment. |
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-
-## Reference genome
-No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

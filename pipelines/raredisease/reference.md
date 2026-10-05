@@ -12,11 +12,11 @@ nf-core/raredisease pipeline parameters. Every parameter from the pinned `nextfl
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--aligner` | string |  |  | bwa, bwafastalign, bwamem2, bwameme, sentieon |  | bwamem2 | Specifies the alignment algorithm to use - available options are 'bwamem2', 'bwa', 'bwameme' and 'sentieon'. |
+| `--aligner` | string |  |  | `bwa`, `bwafastalign`, `bwamem2`, `bwameme`, `sentieon` |  | bwamem2 | Specifies the alignment algorithm to use - available options are 'bwamem2', 'bwa', 'bwameme' and 'sentieon'. |
 | `--mbuffer-mem` | integer |  |  |  |  | 8192 | Memory allocated for mbuffer in megabytes (MB) (used by bwameme and bwafastalign) |
 | `--min-trimmed-length` | integer |  |  |  |  | 40 | Discard trimmed reads shorter than the given value |
-| `--mt-aligner` | string |  |  | bwa, bwamem2, sentieon |  | bwamem2 | Specifies the alignment algorithm to use - available options are 'bwamem2', 'bwa' and 'sentieon'. |
-| `--mt-subsample-approach` | string |  |  | fraction, reads |  | reads | Subsample mitochondria based on fraction of reads or number of reads |
+| `--mt-aligner` | string |  |  | `bwa`, `bwamem2`, `sentieon` |  | bwamem2 | Specifies the alignment algorithm to use - available options are 'bwamem2', 'bwa' and 'sentieon'. |
+| `--mt-subsample-approach` | string |  |  | `fraction`, `reads` |  | reads | Subsample mitochondria based on fraction of reads or number of reads |
 | `--mt-subsample-rd` | integer |  |  |  |  | 150 | Expected coverage to subsample mt alignment to, when mt_subsample_approach is set to fraction |
 | `--mt-subsample-reads` | integer |  |  |  |  | 18000 | Expected number of reads to subsample mitochondria to, when mt_subsample_approach is set to reads |
 | `--mt-subsample-seed` | integer |  |  |  |  | 30 | Subsampling seed used to influence which subset of mitochondrial reads is kept. Used when mt_subsample_approach is set to fraction |
@@ -27,12 +27,12 @@ nf-core/raredisease pipeline parameters. Every parameter from the pinned `nextfl
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--analysis-type` | string |  |  | wgs, wes, mito |  | wgs | Specifies which analysis type for the pipeline- either 'wgs', 'wes' or 'mito'. This changes resources consumed and tools used. |
+| `--analysis-type` | string |  |  | `wgs`, `wes`, `mito` |  | wgs | Specifies which analysis type for the pipeline- either 'wgs', 'wes' or 'mito'. This changes resources consumed and tools used. |
 | `--concatenate-snv-calls` | boolean |  |  |  |  |  | Specifies whether to generate a concatenated VCF file containing both nuclear & mitochondrial snv calls |
 | `--exclude-alt` | boolean |  |  |  |  |  | After aligning the reads to a reference, remove alignments to alt contigs using samtools view, retaining only primary chromosomes (GRCh37: 1-22,X,Y,MT / GRCh38: chr1-chr22,chrX,chrY,chrM). |
 | `--extract-alignments` | boolean |  |  |  |  |  | After aligning the reads to a reference, extract alignments from specific regions/contigs and restrict the analysis to those regions/contigs. |
 | `--homoplasmy-af-threshold` | number |  |  |  |  | 1.0 | Allele frequency threshold for mitochondrial variants. Variants with an AF above this threshold will be treated as homoplasmic and assigned a 1/1 genotype. Range 0-1.0. |
-| `--ngsbits-samplegender-method` | string |  |  | xy, hetx, sry |  | xy | Method selection for ngs-bits samplegender |
+| `--ngsbits-samplegender-method` | string |  |  | `xy`, `hetx`, `sry` |  | xy | Method selection for ngs-bits samplegender |
 | `--platform` | string |  |  |  |  | illumina | Specifies the platform on which the reads were sequenced. |
 | `--restrict-to-contigs` | string |  |  |  |  |  | Can be specified as RNAME[:STARTPOS[-ENDPOS]]. Multiple regions should be seperated by space |
 | `--run-mt-for-wes` | boolean |  |  |  |  |  | Specifies whether to run mitochondrial analysis for wes samples |
@@ -69,7 +69,7 @@ nf-core/raredisease pipeline parameters. Every parameter from the pinned `nextfl
 | `--multiqc-samples` | string (file path) |  |  |  | matches ^\S+\.tsv$ |  | Path to a file containing internal ids and alternative ids in tab separated format. Will replace the internal id with the alternative id in the report. For more info check, https://docs.seqera.io/multiqc/reports/customisation#sample-name-replacement |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -141,7 +141,7 @@ nf-core/raredisease pipeline parameters. Every parameter from the pinned `nextfl
 | `--fai` | string (file path) |  |  |  | matches ^\S+\.fn?a(sta)?\.fai$ |  | Path to FASTA genome index file. |
 | `--fasta` | string (file path) | yes |  |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ |  | Path to FASTA genome file. |
 | `--gcnvcaller-model` | string (file path) |  |  |  |  |  | A file containing the path to models produced by GATK4 GermlineCNVCaller cohort. |
-| `--genome` | string |  |  | GRCh37, GRCh38 |  | GRCh38 | Name of iGenomes reference. |
+| `--genome` | string |  |  | `GRCh37`, `GRCh38` |  | GRCh38 | Name of iGenomes reference. |
 | `--gens-gnomad-pos` | string (file path) |  | yes |  |  |  | Path to a list of common SNP locations for Gens. |
 | `--gens-interval-list` | string (file path) |  | yes |  |  |  | Path to interval list for Gens. |
 | `--gens-pon-female` | string (file path) |  | yes |  |  |  | Path to female panel of normals for Gens. |
@@ -199,8 +199,8 @@ nf-core/raredisease pipeline parameters. Every parameter from the pinned `nextfl
 |---|---|---|---|---|---|---|---|
 | `--call-interval` | string |  |  |  |  |  | Interval in the reference that will be used in the software. Used only by sentieon. |
 | `--cnvnator-binsize` | integer |  |  |  |  | 1000 | Bin size for CNVnator |
-| `--sentieon-dnascope-pcr-indel-model` | string |  |  | NONE, HOSTILE, AGGRESSIVE, CONSERVATIVE |  | CONSERVATIVE | Option for selecting the PCR indel model used by Sentieon Dnascope. |
-| `--variant-caller` | string |  |  | deepvariant, sentieon |  | deepvariant | Specifies the variant caller to use - available options are 'deepvariant' and 'sentieon'. |
-| `--variant-type` | string |  |  | snp, indel, snp,indel |  | snp,indel | Specifies the variant types for sentieon variant caller. |
+| `--sentieon-dnascope-pcr-indel-model` | string |  |  | `NONE`, `HOSTILE`, `AGGRESSIVE`, `CONSERVATIVE` |  | CONSERVATIVE | Option for selecting the PCR indel model used by Sentieon Dnascope. |
+| `--variant-caller` | string |  |  | `deepvariant`, `sentieon` |  | deepvariant | Specifies the variant caller to use - available options are 'deepvariant' and 'sentieon'. |
+| `--variant-type` | string |  |  | `snp`, `indel`, `snp,indel` |  | snp,indel | Specifies the variant types for sentieon variant caller. |
 
 <!-- Generated from nf-core/raredisease@83f2699d28bc957e1d3b875da3d96004a818c2c3. Do not edit by hand. -->

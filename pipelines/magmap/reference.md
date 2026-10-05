@@ -29,7 +29,7 @@ nf-core/magmap pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -39,7 +39,7 @@ nf-core/magmap pipeline parameters. Every parameter from the pinned `nextflow_sc
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--annotator` | string |  |  | prokka, bakta_supported_only, bakta_all |  | prokka | Which tool to annotate genomes lacking a GFF with: 'prokka', 'bakta_supported_only' (Bacteria to Bakta, everything else -- Archaea and unclassified genomes -- to Prokka) or 'bakta_all' (everything to Bakta, including domains Bakta wasn't designed for). |
+| `--annotator` | string |  |  | `prokka`, `bakta_supported_only`, `bakta_all` |  | prokka | Which tool to annotate genomes lacking a GFF with: 'prokka', 'bakta_supported_only' (Bacteria to Bakta, everything else -- Archaea and unclassified genomes -- to Prokka) or 'bakta_all' (everything to Bakta, including domains Bakta wasn't designed for). |
 | `--bakta-db` | string (directory path) |  |  |  |  | magmap_bakta_db | Path to a directory holding the Bakta database, used only when --annotator is bakta_supported_only or bakta_all. |
 | `--bakta-store-dir` | string (directory path) |  |  |  |  | magmap_bakta | Path to a directory where Bakta annotation output is stored. |
 | `--checkm-metadata` | string |  |  |  |  |  | Comma-separated list of path to tab-separated files containing the output from CheckM. For column description, see [usage docs](https://nf-co.re/magmap/usage#checkmcheckm2-metadata). |
@@ -71,7 +71,7 @@ nf-core/magmap pipeline parameters. Every parameter from the pinned `nextflow_sc
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--bbmap-ambiguous` | string |  |  | best, all, random, toss |  | best | Select how BBmap should treat ambiguous mapping |
+| `--bbmap-ambiguous` | string |  |  | `best`, `all`, `random`, `toss` |  | best | Select how BBmap should treat ambiguous mapping |
 | `--bbmap-minid` | number |  |  |  |  | 0.9 | Minimal identity for BBmap |
 | `--bbmap-save-bam` | boolean |  |  |  |  |  | Save bam output file |
 | `--bbmap-save-index` | boolean |  |  |  |  |  | Save ref folder containing the reference index |
@@ -89,11 +89,11 @@ nf-core/magmap pipeline parameters. Every parameter from the pinned `nextflow_sc
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--genomeset-mode` | string |  |  | joint, sample |  | joint | Perform mapping on all genomes for all samples ('joint') or sample-specific selections of genomes ('sample'). |
+| `--genomeset-mode` | string |  |  | `joint`, `sample` |  | joint | Perform mapping on all genomes for all samples ('joint') or sample-specific selections of genomes ('sample'). |
 | `--skip-sourmash` | boolean |  |  |  |  | true | Skip Sourmash filtering for user-provided genomes |
 | `--sourmash-ksize` | integer |  |  |  |  | 21 | K-mer size used by Sourmash |
 | `--sourmash-save-sourmash` | boolean |  |  |  |  |  | Save Sourmash output |
-| `--species-preference` | string |  |  | all, local, completeness, gtdb |  | all | Select genomes from the same species: 'all', 'local' (prefer local genomes), 'completeness' (prefer the most complete) or 'gtdb' (use GTDB's criterion of completeness and contamination) |
+| `--species-preference` | string |  |  | `all`, `local`, `completeness`, `gtdb` |  | all | Select genomes from the same species: 'all', 'local' (prefer local genomes), 'completeness' (prefer the most complete) or 'gtdb' (use GTDB's criterion of completeness and contamination) |
 
 ## trimming_options
 

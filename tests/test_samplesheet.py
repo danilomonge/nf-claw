@@ -14,7 +14,7 @@ def test_missing_required_column(tmp_path):
 
 def test_missing_input_file(tmp_path):
     ss = tmp_path / "ss.csv"
-    ss.write_text("sample,fastq_1\nA,missing_R1.fastq.gz\n")
+    ss.write_text(f"sample,fastq_1\nA,{tmp_path / 'missing_R1.fastq.gz'}\n")
     issues = samplesheet.validate(ss, SCH)
     assert any("file not found" in i for i in issues)
 
@@ -40,7 +40,7 @@ def test_directory_as_samplesheet_is_flagged_not_crashed(tmp_path):
 def test_valid_sheet(tmp_path):
     (tmp_path / "r1.fq.gz").write_text("x")
     ss = tmp_path / "ss.csv"
-    ss.write_text("sample,fastq_1\nA,r1.fq.gz\n")
+    ss.write_text(f"sample,fastq_1\nA,{tmp_path / 'r1.fq.gz'}\n")
     assert samplesheet.validate(ss, SCH) == []
 
 
@@ -50,7 +50,7 @@ def test_valid_sheet(tmp_path):
 def test_tsv_delimiter_detected(tmp_path):
     (tmp_path / "r1.fq.gz").write_text("x")
     ss = tmp_path / "ss.tsv"
-    ss.write_text("sample\tfastq_1\nA\tr1.fq.gz\n")
+    ss.write_text(f"sample\tfastq_1\nA\t{tmp_path / 'r1.fq.gz'}\n")
     assert samplesheet.validate(ss, SCH) == []
 
 def test_tsv_missing_column_still_detected(tmp_path):
@@ -105,7 +105,7 @@ def test_anyof_dependent_required_column_rule_is_reported(tmp_path):
 def test_anyof_dependent_required_accepts_one_valid_branch(tmp_path):
     (tmp_path / "reads.bam").write_text("x")
     ss = tmp_path / "ss.csv"
-    ss.write_text("patient,sample,lane,bam\nP1,S1,1,reads.bam\n")
+    ss.write_text(f"patient,sample,lane,bam\nP1,S1,1,{tmp_path / 'reads.bam'}\n")
     assert samplesheet.validate(ss, SAREK_LIKE) == []
 
 
@@ -120,7 +120,7 @@ def test_column_enum_pattern_and_range_rules_are_reported(tmp_path):
     ))
     ss = tmp_path / "ss.csv"
     ss.write_text("sample,fastq_1,strandedness,percent_mapped\n"
-                  "bad sample,r1.fq.gz,sideways,101\n")
+                  f"bad sample,{tmp_path / 'r1.fq.gz'},sideways,101\n")
     issues = samplesheet.validate(ss, sch)
     assert any("sample" in i and "must match" in i for i in issues)
     assert any("strandedness" in i and "must be one of" in i for i in issues)
@@ -144,7 +144,7 @@ def test_column_integer_type_rule_is_reported(tmp_path):
 def test_utf8_bom_header_is_stripped(tmp_path):
     (tmp_path / "r1.fq.gz").write_text("x")
     ss = tmp_path / "ss.csv"
-    ss.write_bytes(b"\xef\xbb\xbf" + b"sample,fastq_1\nA,r1.fq.gz\n")   # leading BOM
+    ss.write_bytes(b"\xef\xbb\xbf" + f"sample,fastq_1\nA,{tmp_path / 'r1.fq.gz'}\n".encode())  # BOM
     assert samplesheet.validate(ss, SCH) == []                          # was "missing column 'sample'"
 
 def test_bom_does_not_mask_a_genuinely_missing_column(tmp_path):
@@ -165,3 +165,41 @@ def test_unnamed_single_column_rejects_empty(tmp_path):
     f = tmp_path / "ids.txt"
     f.write_text("\n   \n")
     assert samplesheet.validate(f, UNNAMED) == ["input file has no values"]
+
+
+# nf-schema resolves a relative samplesheet path against Nextflow's launch directory — which nfclaw
+# sets to --outdir — not against the samplesheet's own folder. A relative path that exists next to
+# the samplesheet therefore passed this check and then failed at runtime ("does not exist"), after
+# --outdir and the provenance bundle had already been created. Reject it up front instead.
+def test_relative_path_is_rejected_even_when_it_exists_next_to_the_samplesheet(tmp_path):
+    (tmp_path / "r1.fq.gz").write_text("x")
+    ss = tmp_path / "ss.csv"
+    ss.write_text("sample,fastq_1\nA,r1.fq.gz\n")
+    issues = samplesheet.validate(ss, SCH)
+    assert len(issues) == 1
+    assert "relative path" in issues[0] and "absolute" in issues[0] and "--outdir" in issues[0]
+
+
+def test_tilde_path_is_relative_to_nextflow(tmp_path):
+    # nf-schema does not expand `~` in samplesheet values (verified with nf-schema 2.6.1).
+    ss = tmp_path / "ss.csv"
+    ss.write_text("sample,fastq_1\nA,~/r1.fq.gz\n")
+    assert any("relative path" in i for i in samplesheet.validate(ss, SCH))
+
+
+def test_remote_paths_are_not_checked_locally(tmp_path):
+    ss = tmp_path / "ss.csv"
+    ss.write_text("sample,fastq_1\nA,s3://bucket/r1.fq.gz\n")
+    assert samplesheet.validate(ss, SCH) == []
+
+
+def test_path_format_columns_are_checked_too(tmp_path):
+    # nf-schema's `path` format (a file or a directory; e.g. mhcquant's ReplicateFileName, sopa's
+    # data_path) resolves exactly like `file-path`.
+    sch = InputSchema(columns=(Column("sample", "string", True, None, None),
+                               Column("data", "string", True, None, "path")))
+    ss = tmp_path / "ss.csv"
+    ss.write_text(f"sample,data\nA,data_dir\nB,{tmp_path / 'absent'}\n")
+    issues = samplesheet.validate(ss, sch)
+    assert any("row 2" in i and "relative path" in i for i in issues)
+    assert any("row 3" in i and "file not found" in i for i in issues)

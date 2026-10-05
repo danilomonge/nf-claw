@@ -8,7 +8,7 @@ summary: nf-core/readsimulator is a pipeline to simulate sequencing reads. The p
 has_samplesheet: true
 input: samplesheet (sample, seed)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: ART, bedtools, Bowtie2, CapSim, CRABS, FastQC, InSilicoSeq, MultiQC, ncbi-genome-download, Samtools, Wgsim, Tetrapods; 2,560 baits for 2,386 UCEs; version 1, Tetrapods; 5,472 baits for 5,060 UCEs; version 1, Actinopterygians; 2,001 baits for 500 UCEs; version 1, Acanthomorphs; 2,628 baits for 1,314 UCEs; version 1, Arachnida; 14,799 baits for 1,120 UCEs; version 1, Coleoptera; 13,674 baits for 1,172 UCEs; version 1, Diptera; 31,328 baits for 2,711 UCEs; version 1, Hemiptera; 40,207 baits for 2,731 UCEs; version 1, Hymenoptera; 2,749 baits for 1,510 UCEs; version 1, Hymenoptera; 31,829 baits for 2,590 UCEs; version 2, Anthozoa; 16,306 baits for 720 UCEs and 1,071 exons; version 1
+tools: ["ART", "bedtools", "Bowtie2", "CapSim", "CRABS", "FastQC", "InSilicoSeq", "MultiQC", "ncbi-genome-download", "Samtools", "Wgsim"]
 ---
 # readsimulator
 
@@ -44,7 +44,7 @@ sample,seed
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Reference genome
-No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
+No reference genome is set by default: supply your own (e.g. `--fasta`; the `reference_genome_options` group in [reference.md](reference.md) lists every reference option). Passing `--genome <id>` instead resolves the references from AWS iGenomes, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):
@@ -84,7 +84,7 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/readsimulator/blob/1.0.1/docs/output.md
 
 ## Tools this pipeline runs
-The tools/methods this pipeline runs, per the authors' own list: ART, bedtools, Bowtie2, CapSim, CRABS, FastQC, InSilicoSeq, MultiQC, ncbi-genome-download, Samtools, Wgsim, Tetrapods; 2,560 baits for 2,386 UCEs; version 1, Tetrapods; 5,472 baits for 5,060 UCEs; version 1, Actinopterygians; 2,001 baits for 500 UCEs; version 1, Acanthomorphs; 2,628 baits for 1,314 UCEs; version 1, Arachnida; 14,799 baits for 1,120 UCEs; version 1, Coleoptera; 13,674 baits for 1,172 UCEs; version 1, Diptera; 31,328 baits for 2,711 UCEs; version 1, Hemiptera; 40,207 baits for 2,731 UCEs; version 1, Hymenoptera; 2,749 baits for 1,510 UCEs; version 1, Hymenoptera; 31,829 baits for 2,590 UCEs; version 2, Anthozoa; 16,306 baits for 720 UCEs and 1,071 exons; version 1.
+The tools/methods this pipeline runs, per the authors' own list: ART, bedtools, Bowtie2, CapSim, CRABS, FastQC, InSilicoSeq, MultiQC, ncbi-genome-download, Samtools, Wgsim.
 
 Full list with references: https://github.com/nf-core/readsimulator/blob/1.0.1/CITATIONS.md
 
