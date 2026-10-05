@@ -17,8 +17,25 @@ anywhere this doc shows `nfclaw <cmd>`.
 
 `nfclaw run` executes the pipeline for real — there is no preview/dry-run default. To see the exact
 `nextflow` command that *would* run without launching it, add `--check` (it validates inputs and
-parameters, prints the command, and exits). Add `--demo` to run the pinned release's bundled test
-profile end to end.
+parameters, prints the command, and exits; it writes nothing into `--outdir`, so you can still use
+that directory for the real run). Add `--demo` to run the pinned release's bundled test profile end
+to end. A run has no overall time limit unless you pass `--timeout SECONDS`.
+
+Write **absolute paths inside a samplesheet**: Nextflow resolves them against its launch directory,
+which `nfclaw run` sets to `--outdir`, so a relative one cannot mean what it says — `nfclaw run`
+rejects it before launching. `--input` itself may be relative (nfclaw makes it absolute), and it is
+not always a samplesheet: the pipeline's schema decides — a directory or tarball (rangeland), an SDRF
+file or PRIDE accession (mhcquant), or `--input false` where a pipeline documents running without
+one (sarek — nfclaw then leaves `input` unset). The `Inputs` section of `skill.md` says which.
+
+## Replaying a run
+`<outdir>/provenance/commands.sh` re-runs the recorded command. It reproduces the run into a **fresh**
+directory (default `<outdir>.replay`, or pass one: `./commands.sh /path/to/fresh-dir`) and refuses a
+target that already holds files. That is deliberate: an nf-core pipeline publishes into `--outdir`
+and cannot re-publish over a previous run's files, so replaying in place fails immediately on
+`pipeline_info/execution_trace_*.txt` (and on sarek's `manifest_*.bco.json`). A replay re-executes
+the pipeline — it is a reproduction, not a `--resume` — and the result can be compared against the
+original bundle's `outputs.sha256`.
 
 Trust `skill.md` / `reference.md` over your own memory — they are generated from the pinned commit.
 To set any parameter beyond the essentials, look it up in `pipelines/<name>/reference.md` (the complete
@@ -51,6 +68,18 @@ engine and its runtime explicit and reproducible (both are recorded in `<outdir>
 - `--config PATH` (or `-c`, repeatable) — pass an extra Nextflow config straight through (`-c`),
   e.g. a docker host-network config (`docker { runOptions = "--network host" }`) or custom resources.
 
+## Running on a machine smaller than the pipeline assumes
+nf-core sizes every process from a label in the pipeline's `conf/base.config`, tuned for a server:
+one step can request far more memory than a workstation has (`Process requirement exceeds available
+memory`), and Nextflow retries a failed step with *more*. `--demo` never shows this because nf-core's
+`test` profile ships its own small ceiling; a real run has none. Set one:
+`nfclaw run <name> ... --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h`
+These become Nextflow's `process.resourceLimits` — the ceiling nf-core documents — applied to every
+process and every retry, so one flag covers whatever the pipeline asks for next. Do not chase this
+with `withName:` overrides: those re-size one named process's initial request, so you must name every
+step that could exceed the host, and they do not cap the retry. The generated config is written to
+`<outdir>/provenance/resource_limits.config` and replayed by `commands.sh`.
+
 Any other environment (proxies, `JAVA_HOME`, …) is inherited from your shell unchanged. Each run
 launches Nextflow from its `--outdir`, so its `.nextflow/` history is isolated and `--resume` resumes
 that run (use a distinct `--outdir` per pipeline).
@@ -62,6 +91,33 @@ If a pipeline's `upstream/` is empty, initialise it first:
 git · python 3.11+ (install nfclaw with `pip install -e .`) · nextflow (Java 17+) · docker or
 singularity. **Use a space-free path on macOS *and* Linux** — many bioinformatics tools and
 Nextflow's work directory mishandle spaces in paths; on macOS also avoid iCloud paths.
+
+## Checking a replay
+`nfclaw verify <replay-outdir> --against <original-outdir>` compares the two runs' `outputs.sha256`
+**by path** and reports `identical` / `changed` / `missing` / `extra`. A *missing* or *extra* file
+means the replay did different work (exit 1); a *changed* file does not — nf-core outputs embed
+timestamps (reports, gzip headers, zip entries, MultiQC HTML), so the same file re-made from the same
+inputs is legitimately not byte-identical. Never diff the two `outputs.sha256` files directly: each
+line is `hash  path`, so one changed file appears as both a missing and an extra one.
+
+## Reference genomes
+Some releases resolve a reference **remotely by default** — sarek defaults `--genome` to
+`GATK.GRCh38`, looked up in AWS iGenomes at `s3://ngi-igenomes/igenomes/` — so a run that passes no
+reference of its own reads from S3 and fails on a host without access to that bucket. Each
+`skill.md` states which case its pipeline is in under "Reference genome". Pass your own reference
+(`--fasta`, …) for a self-contained run, or `--igenomes-ignore true` to disable the lookup.
+
+## Warnings are not failures
+A run (and its replay, which executes the identical command) can print warnings that are **not**
+faults and are **not** nf-claw's: Nextflow reporting the `validation.*` config scope as unrecognised
+(its linter does not see plugin-contributed scopes — upstream nf-schema issue), a pinned release
+setting a parameter its own plugin removed (scrnaseq's `validationSchemaIgnoreParams` — `nfclaw run`
+neutralises this one at the config layer via nf-schema's `validation.ignoreParams` and prints an
+advisory recording that it did, leaving the pinned tree untouched), or a `test` profile that deliberately sets
+conflicting references (rnaseq's `--gtf` with `--gff`). They are catalogued with their real cause in
+[`docs/known-issues.md`](docs/known-issues.md) under "Warnings a run prints that are not faults".
+Check there before reporting one: nf-claw wraps releases **unmodified**, so an upstream warning is
+reproduced faithfully by design, not introduced.
 
 ## Run-time errors
 Spaces in a path break many tools, so `nfclaw run` checks the repo path, the Nextflow work

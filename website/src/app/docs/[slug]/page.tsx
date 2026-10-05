@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowLeft, FileText } from "lucide-react";
-import { getDoc, getDocs } from "@/lib/data";
+import { getDefaultBranch, getDoc, getDocs, getRemote } from "@/lib/data";
+import type { LinkContext } from "@/lib/links";
 import { Markdown } from "@/components/ui/markdown";
 import { Reveal } from "@/components/ui/reveal";
 
@@ -58,7 +59,15 @@ export default async function DocPage({
   const doc = getDoc(slug);
   if (!doc) notFound();
 
-  const others = getDocs().filter((d) => d.slug !== slug);
+  const all = getDocs();
+  const others = all.filter((d) => d.slug !== slug);
+  // Repository-relative links resolve to this site's doc pages, or to the file on GitHub.
+  const remote = getRemote();
+  const links: LinkContext = {
+    source: doc.source,
+    docs: Object.fromEntries(all.map((d) => [d.source, d.slug])),
+    repoBlobBase: remote ? `https://github.com/${remote}/blob/${getDefaultBranch()}` : null,
+  };
 
   return (
     <div className="container-site pt-28">
@@ -82,7 +91,7 @@ export default async function DocPage({
               </div>
             </div>
             <div className="glass max-w-prose overflow-hidden p-8 md:p-10">
-              <Markdown content={clean(doc.content)} />
+              <Markdown content={clean(doc.content)} links={links} />
             </div>
           </Reveal>
         </article>

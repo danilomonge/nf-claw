@@ -11,7 +11,7 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-from runner.outputs import is_nextflow_internal
+from runner.outputs import is_result
 from runner.submodule import SubmoduleStatus
 
 
@@ -82,12 +82,10 @@ def output_checksums(outdir: Path) -> dict[str, str]:
     provenance bundle are excluded — they describe the run, they are not its results, and a replay
     would never reproduce them byte-for-byte anyway.
     """
-    prov = outdir / "provenance"
     return {
         rel.as_posix(): _sha256(p)
         for p in sorted(outdir.rglob("*"))
-        if p.is_file() and prov not in p.parents
-        and not is_nextflow_internal(rel := p.relative_to(outdir))
+        if p.is_file() and is_result(rel := p.relative_to(outdir))
     }
 
 
@@ -175,6 +173,9 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         f"default_target={default_target}\n"
         "target=\"${1:-$default_target}\"\n"
         "mkdir -p -- \"$target\"\n"
+        # Absolute before the `cd` below: Nextflow resolves a relative --outdir against its launch
+        # directory, so `./commands.sh fresh` would otherwise publish into fresh/fresh/.
+        "target=\"$(cd -- \"$target\" && pwd)\"\n"
         "if [ -n \"$(ls -A -- \"$target\")\" ]; then\n"
         "  echo \"nfclaw replay: target directory is not empty: $target\" >&2\n"
         "  echo \"Pass an empty or non-existent directory: ./commands.sh /path/to/fresh-dir\" >&2\n"

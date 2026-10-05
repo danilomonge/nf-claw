@@ -24,3 +24,13 @@ def test_collect_excludes_nextflow_internals(tmp_path):
     rep = outputs.collect(tmp_path)
     assert "result.txt" in rep.files
     assert not any(".nextflow" in f for f in rep.files)
+
+
+def test_collect_excludes_the_provenance_bundle(tmp_path):
+    # `nfclaw run` reported "outputs: N files" counting its own params file and logs as results —
+    # inconsistent with outputs.sha256, which (rightly) excludes the provenance bundle.
+    (tmp_path / "provenance" / "logs").mkdir(parents=True)
+    (tmp_path / "provenance" / "params.json").write_text("{}")
+    (tmp_path / "provenance" / "logs" / "stdout.txt").write_text("log")
+    (tmp_path / "result.txt").write_text("r")
+    assert outputs.collect(tmp_path).files == ("result.txt",)

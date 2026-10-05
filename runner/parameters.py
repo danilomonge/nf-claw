@@ -26,6 +26,11 @@ def validate_params(cli_overrides: dict[str, Any], schema: ParamSchema) -> list[
         flag = f"--{key.replace('_', '-')}"
         if key not in known:
             errors.append(f"unknown parameter '{flag}' (not in the pipeline schema)")
+        elif value is None or value is False or value == "":
+            # null is dropped by every nf-schema release; false/"" are dropped by 2.5–2.6 but rejected
+            # by 2.7 (verified). A verdict that depends on the plugin version is not unambiguous, so
+            # it is left to nf-schema at runtime rather than risk rejecting a valid run.
+            continue
         else:
             param = schema.params[key]
             if param.enum and json_scalar(value) not in param.enum:
@@ -199,13 +204,16 @@ def _load_params_file(path: Path) -> dict:
 
 
 def merge(*, cli_overrides: dict[str, Any], params_file: Path | None,
-          input_path: "Path | str | None", outdir: Path) -> dict[str, Any]:
+          input_path: "Path | str | bool | None", outdir: Path) -> dict[str, Any]:
     """Build the full parameter map (params-file < --input/--outdir < CLI) without touching
-    disk, so the merged result can be validated before anything is written or executed."""
+    disk, so the merged result can be validated before anything is written or executed.
+    `input_path=False` (`--input false`) leaves `input` unset — overriding a params-file value."""
     merged: dict[str, Any] = {}
     if params_file and params_file.exists():
         merged.update(_load_params_file(params_file))
-    if input_path is not None:
+    if input_path is False:
+        merged.pop("input", None)
+    elif input_path is not None:
         merged["input"] = str(input_path)
     merged["outdir"] = str(outdir)
     merged.update(cli_overrides)
@@ -213,8 +221,8 @@ def merge(*, cli_overrides: dict[str, Any], params_file: Path | None,
 
 
 def resolve_path_params(merged: dict[str, Any], schema: ParamSchema) -> dict[str, Any]:
-    """Make every file/dir-path param absolute. Nextflow runs with cwd = repo root, so a
-    relative path would otherwise resolve against the repo, not the caller's directory."""
+    """Make every path param absolute. nfclaw launches Nextflow from --outdir, so a relative path
+    would otherwise resolve against the output directory, not the caller's directory."""
     refs = schema.reference_path_params()
     out = dict(merged)
     for key, val in out.items():

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { repoPath } from "./paths";
+import { workflowTriggers } from "./triggers";
 import type { Workflow } from "../types";
 
 /**
@@ -23,10 +24,7 @@ export function getWorkflows(): Workflow[] {
       const nameM = raw.match(/^name:\s*(.+)$/m);
       const name = nameM ? nameM[1].trim().replace(/^["']|["']$/g, "") : file.replace(/\.ya?ml$/, "");
 
-      const triggers = new Set<string>();
-      for (const t of ["push", "pull_request", "schedule", "workflow_dispatch", "release"]) {
-        if (new RegExp(`\\b${t}\\b`).test(raw.split("jobs:")[0] ?? raw)) triggers.add(t);
-      }
+      const triggers = workflowTriggers(raw);
 
       const cronM = raw.match(/cron:\s*["']?([^"'\n#]+)["']?/);
       const schedule = cronM ? cronM[1].trim() : null;
@@ -46,7 +44,7 @@ export function getWorkflows(): Workflow[] {
         }
       }
 
-      return { file, name, triggers: [...triggers], schedule, jobs };
+      return { file, name, triggers, schedule, jobs };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 }

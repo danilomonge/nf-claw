@@ -5,7 +5,7 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from runner import (discovery, engine_version, execution, nextflow_command,
+from runner import (discovery, engine_version, execution, inputs, nextflow_command,
                     outputs, parameters, plugin_compat, preflight, provenance,
                     resources, samplesheet, versions)
 from runner import schema as schema_mod
@@ -25,7 +25,7 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                  outdir: Path, profile: str, params_file: Path | None,
                  cli_overrides: dict, resume: bool, demo: bool,
                  check_only: bool, write_provenance: bool,
-                 timeout_seconds: int, pipeline_version: str | None = None,
+                 timeout_seconds: int | None, pipeline_version: str | None = None,
                  nxf_ver: str | None = None,
                  nxf_env: dict[str, str] | None = None,
                  allow_spaces: bool = False,
@@ -66,22 +66,31 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     work_dir = Path(nxf_overlay.get("NXF_WORK") or os.environ.get("NXF_WORK")
                     or repo_root / "work").expanduser().resolve()
     param_schema = schema_mod.load_param_schema(st.path)
-    input_schema = schema_mod.load_input_schema(st.path)
 
-    # Only a local samplesheet (a Path) gets the deterministic pre-check. A remote --input (URL, a
-    # str) can't be read locally — Nextflow stages it and nf-schema validates it at runtime — so it
-    # is forwarded unchanged, exactly as nf-core pipelines accept it.
-    if isinstance(input_path, Path) and input_schema is not None:
-        problems = samplesheet.validate(input_path, input_schema)
-        if problems:
-            raise NfclawError(ErrorCode.SAMPLESHEET_INVALID,
-                              "Samplesheet failed validation.",
-                              details={"issues": problems})
+    # What --input is comes from the pipeline's own schema, not an assumption: a samplesheet, another
+    # local path (a directory, an SDRF file), or a plain value (a PRIDE accession, a URL, `false`).
+    # Only a local samplesheet gets the deterministic pre-check; a remote one is staged by Nextflow and
+    # validated by nf-schema at runtime, and a plain value is forwarded unchanged.
+    resolved_input = inputs.resolve(input_path, st.path)
+    if resolved_input is not None and resolved_input.local_path is not None:
+        input_schema = (schema_mod.load_input_schema(st.path, resolved_input.samplesheet_schema)
+                        if resolved_input.samplesheet_schema else None)
+        if input_schema is not None:
+            problems = samplesheet.validate(resolved_input.local_path, input_schema)
+            if problems:
+                raise NfclawError(ErrorCode.SAMPLESHEET_INVALID,
+                                  "Samplesheet failed validation.",
+                                  details={"issues": problems})
+        elif resolved_input.must_exist and not resolved_input.local_path.exists():
+            raise NfclawError(ErrorCode.PARAMS_INVALID,
+                              f"--input not found: {resolved_input.local_path}",
+                              fix="Pass an existing file or directory (see Inputs in skill.md).")
 
     # Merge params-file + --input/--outdir + CLI first, then validate the WHOLE map — a typo
     # or bad enum in the params-file must fail fast too, not only CLI flags.
     merged = parameters.merge(cli_overrides=cli_overrides, params_file=params_file,
-                              input_path=input_path, outdir=outdir)
+                              input_path=resolved_input.value if resolved_input else None,
+                              outdir=outdir)
     # Coerce CLI strings to their schema scalar type (e.g. `--skip-busco true` → real boolean)
     # before validating and writing the params-file, so nf-schema sees correctly-typed values.
     merged = parameters.coerce_to_schema(merged, param_schema)
@@ -167,6 +176,9 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     refs = param_schema.reference_path_params()
     prov_inputs = [Path(v) for k, v in resolved.items()
                    if k in refs and k != "outdir" and isinstance(v, str) and "://" not in v]
+    # A local --input is an input whatever its declared format (mhcquant's carries none).
+    if resolved_input is not None and resolved_input.local_path is not None:
+        prov_inputs = list(dict.fromkeys([resolved_input.local_path, *prov_inputs]))
 
     def record(outcome: str) -> None:
         provenance.write(outdir=outdir, pipeline=name, command_str=cmd_str, submodule=st,

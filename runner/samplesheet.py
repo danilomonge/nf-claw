@@ -48,7 +48,6 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
                 "(is it a real .csv/.tsv, not a binary file such as .xlsx?)"]
     if not rows:
         issues.append("samplesheet has no data rows")
-    base = path.parent
     for i, row in enumerate(rows, start=2):
         for col in named:
             val = (row.get(col.name) or "").strip()
@@ -57,10 +56,15 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
             if val:
                 issues.extend(_value_issues(i, col, val))
             if col.is_path and val and "://" not in val:
+                # nf-schema resolves a relative path against Nextflow's launch directory — which
+                # nfclaw sets to --outdir — not against the samplesheet's folder, and it does not
+                # expand `~`. A relative path cannot mean what it says, so require an absolute one.
                 p = Path(val)
                 if not p.is_absolute():
-                    p = base / p
-                if not p.exists():
+                    issues.append(f"row {i}: '{col.name}' is a relative path: {val} — use an "
+                                  "absolute path (Nextflow resolves samplesheet paths against its "
+                                  "launch directory, which nfclaw sets to --outdir)")
+                elif not p.exists():
                     issues.append(f"row {i}: file not found for '{col.name}': {val}")
         values = {col.name: (row.get(col.name) or "").strip() for col in named}
         for trigger, required in input_schema.dependent_required:

@@ -15,6 +15,10 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+          # This job runs upstream pipeline code (Nextflow parses each bumped release's Groovy
+          # config). Keep the write token out of .git/config; create-pull-request authenticates
+          # on its own.
+          persist-credentials: false
       # Ensure submodule tags are present so `git describe --tags` resolves the pinned
       # version deterministically (otherwise the in-job drift gate can fail spuriously).
       - name: Fetch submodule tags
