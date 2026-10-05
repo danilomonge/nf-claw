@@ -141,3 +141,16 @@ def test_undecidable_condition_skips_the_precheck(tmp_path, monkeypatch):
     param = dict(MHCQUANT, **{"if": {"minLength": 3}})
     res = inputs.resolve("samples.tsv", _pipeline(tmp_path, param))
     assert res.samplesheet_schema is None
+
+
+def test_empty_input_is_not_resolved_to_the_working_directory(tmp_path, monkeypatch):
+    # An empty params-file `input` is "not set" (so a required --input is reported missing), never
+    # the caller's directory pre-checked as a samplesheet.
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "nextflow_schema.json").write_text(json.dumps({"$defs": {"io": {"properties": {
+        "input": {"type": "string", "format": "file-path"}}}}}))
+    monkeypatch.chdir(tmp_path)
+    for raw in ("", "   "):
+        res = inputs.resolve(raw, repo)
+        assert res.value == raw and res.local_path is None and res.samplesheet_schema is None

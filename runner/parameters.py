@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import math
 import re
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -26,6 +28,10 @@ def validate_params(cli_overrides: dict[str, Any], schema: ParamSchema) -> list[
         flag = f"--{key.replace('_', '-')}"
         if key not in known:
             errors.append(f"unknown parameter '{flag}' (not in the pipeline schema)")
+        elif not _finite(value):
+            # NaN/Infinity (a YAML `.nan`/`.inf`) has no JSON form: the params file Nextflow reads
+            # would be invalid, whatever type the schema declares.
+            errors.append(f"parameter '{flag}' must be a finite number, got {value!r}")
         elif value is None or value is False or value == "":
             # null is dropped by every nf-schema release; false/"" are dropped by 2.5–2.6 but rejected
             # by 2.7 (verified). A verdict that depends on the plugin version is not unambiguous, so
@@ -109,9 +115,11 @@ def _coerce_scalar(value: str, type_: str):
             return _LEAVE
     if type_ == "number":
         try:
-            return float(value.strip())
+            number = float(value.strip())
         except ValueError:
             return _LEAVE
+        # `nan`/`inf` parse as floats but have no JSON form; left as a string, they are reported.
+        return number if math.isfinite(number) else _LEAVE
     return _LEAVE           # string, or a union like "integer or string" — ambiguous, leave it
 
 
@@ -156,7 +164,7 @@ def pin_report_suffix(merged: dict[str, Any], schema: ParamSchema,
     return {**merged, _REPORT_SUFFIX: stamp}
 
 
-def _load_params_file(path: Path) -> dict:
+def load_params_file(path: Path) -> dict:
     # utf-8-sig so a leading UTF-8 BOM (e.g. from a Windows editor) is stripped: json.loads rejects
     # a BOM outright, so without this a BOM'd params file fails with a cryptic parse error. No-op
     # without a BOM. A binary file (e.g. an .xlsx by mistake) raises UnicodeDecodeError — report it
@@ -203,18 +211,21 @@ def _load_params_file(path: Path) -> dict:
     return data
 
 
-def merge(*, cli_overrides: dict[str, Any], params_file: Path | None,
-          input_path: "Path | str | bool | None", outdir: Path) -> dict[str, Any]:
+def merge(*, cli_overrides: dict[str, Any], params_file: "Path | Mapping[str, Any] | None",
+          input_path: Any, outdir: Path) -> dict[str, Any]:
     """Build the full parameter map (params-file < --input/--outdir < CLI) without touching
     disk, so the merged result can be validated before anything is written or executed.
+    `params_file` is a path to load, or values already loaded with `load_params_file`.
     `input_path=False` (`--input false`) leaves `input` unset — overriding a params-file value."""
     merged: dict[str, Any] = {}
-    if params_file and params_file.exists():
-        merged.update(_load_params_file(params_file))
+    if isinstance(params_file, Mapping):
+        merged.update(params_file)
+    elif params_file and params_file.exists():
+        merged.update(load_params_file(params_file))
     if input_path is False:
         merged.pop("input", None)
     elif input_path is not None:
-        merged["input"] = str(input_path)
+        merged["input"] = str(input_path) if isinstance(input_path, Path) else input_path
     merged["outdir"] = str(outdir)
     merged.update(cli_overrides)
     return merged
@@ -226,12 +237,33 @@ def resolve_path_params(merged: dict[str, Any], schema: ParamSchema) -> dict[str
     refs = schema.reference_path_params()
     out = dict(merged)
     for key, val in out.items():
-        if key in refs and isinstance(val, str) and "://" not in val:
+        # An empty value means "not set" (the pipeline tests its truthiness); resolving it would
+        # silently turn it into the caller's working directory.
+        if key in refs and isinstance(val, str) and val.strip() and "://" not in val:
             out[key] = Path(val).expanduser().resolve().as_posix()
     return out
 
 
+def _finite(value: Any) -> bool:
+    """False for a NaN/Infinity anywhere in `value` (JSON has no literal for either)."""
+    if isinstance(value, float):
+        return math.isfinite(value)
+    if isinstance(value, Mapping):
+        return all(_finite(v) for v in value.values())
+    if isinstance(value, (list, tuple)):
+        return all(_finite(v) for v in value)
+    return True
+
+
 def write_params_file(params: dict[str, Any], dest: Path) -> Path:
+    # allow_nan=False: Python would otherwise write the non-standard `NaN`/`Infinity` literals, which
+    # Nextflow cannot parse. Validation reports such values first; this is the backstop.
+    try:
+        text = json.dumps(params, indent=2, sort_keys=True, allow_nan=False)
+    except ValueError as exc:
+        raise NfclawError(ErrorCode.PARAMS_INVALID,
+                          f"Parameters cannot be written as JSON: {exc}",
+                          fix="Use finite numbers only (no NaN or Infinity).") from exc
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(params, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    dest.write_text(text + "\n", encoding="utf-8")
     return dest

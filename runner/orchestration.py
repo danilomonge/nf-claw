@@ -93,11 +93,18 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                     or repo_root / "work").expanduser().resolve()
     param_schema = schema_mod.load_param_schema(st.path)
 
+    # Read the params file once; it is merged below, and it may be what supplies `input`.
+    file_params = parameters.load_params_file(params_file) if params_file is not None else {}
+
     # What --input is comes from the pipeline's own schema, not an assumption: a samplesheet, another
     # local path (a directory, an SDRF file), or a plain value (a PRIDE accession, a URL, `false`).
     # Only a local samplesheet gets the deterministic pre-check; a remote one is staged by Nextflow and
-    # validated by nf-schema at runtime, and a plain value is forwarded unchanged.
-    resolved_input = inputs.resolve(input_path, st.path)
+    # validated by nf-schema at runtime, and a plain value is forwarded unchanged. The flag wins over
+    # the params file's `input` (as in the merge below), and whichever supplies the value, it is
+    # interpreted the same way — a params-file `input: false` or relative samplesheet means exactly
+    # what `--input false` or `--input sheet.csv` does.
+    raw_input = input_path if input_path is not None else file_params.get("input")
+    resolved_input = inputs.resolve(raw_input, st.path)
     if resolved_input is not None and resolved_input.local_path is not None:
         input_schema = (schema_mod.load_input_schema(st.path, resolved_input.samplesheet_schema)
                         if resolved_input.samplesheet_schema else None)
@@ -114,7 +121,7 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
 
     # Merge params-file + --input/--outdir + CLI first, then validate the WHOLE map — a typo
     # or bad enum in the params-file must fail fast too, not only CLI flags.
-    merged = parameters.merge(cli_overrides=cli_overrides, params_file=params_file,
+    merged = parameters.merge(cli_overrides=cli_overrides, params_file=file_params,
                               input_path=resolved_input.value if resolved_input else None,
                               outdir=outdir)
     # Coerce CLI strings to their schema scalar type (e.g. `--skip-busco true` → real boolean)

@@ -279,7 +279,6 @@ def test_missing_config_fails_fast(tmp_path, monkeypatch):
 def test_url_input_skips_local_validation_and_is_forwarded(tmp_path, monkeypatch):
     # A remote --input (URL) can't be read locally, so it must skip the samplesheet pre-check and be
     # forwarded to Nextflow unchanged (nf-schema stages + validates it). Mirrors nf-core behavior.
-    import json
     from runner.schema import Column, InputSchema
     root = _make_pipeline(tmp_path, "mini")
     monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
@@ -320,7 +319,6 @@ def test_missing_params_file_fails_fast(tmp_path, monkeypatch):
 
 def test_existing_params_file_is_used(tmp_path, monkeypatch):
     # The happy path still works: an existing params-file is read and its values reach the run.
-    import json
     root = _make_pipeline(tmp_path, "mini")
     monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
     pf = tmp_path / "p.json"
@@ -545,7 +543,6 @@ def _make_pipeline_with_bool(tmp_path, name="boolp"):
 
 
 def test_boolean_cli_string_is_coerced_in_params_file(tmp_path, monkeypatch):
-    import json
     root = _make_pipeline_with_bool(tmp_path)
     monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
     res = orchestration.run_pipeline(
@@ -683,7 +680,6 @@ def test_report_suffix_is_pinned_so_the_replay_reproduces_the_run(tmp_path, monk
 
 def test_a_release_without_the_report_suffix_param_is_untouched(tmp_path, monkeypatch):
     # Older releases predate the parameter — passing it would fail nf-schema validation.
-    import json
 
     root = _make_pipeline(tmp_path, "mini")
     monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
@@ -997,3 +993,84 @@ def test_warnings_are_emitted_before_execution(tmp_path, monkeypatch):
             demo=True, check_only=False, write_provenance=False, timeout_seconds=10,
             pipeline_version="dev", on_warning=lambda w: events.append(w))
     assert events[0] == "unreleased code" and events[-1] == "launch"
+
+
+def _check_with_params_file(root, tmp_path, params, name="inp", input_value=None):
+    import json
+    pf = tmp_path / "params.json"
+    pf.write_text(json.dumps(params))
+    return orchestration.run_pipeline(
+        name, repo_root=root, input_path=input_value, outdir=tmp_path / "out",
+        profile="docker", params_file=pf, cli_overrides={}, resume=False,
+        demo=False, check_only=True, write_provenance=False, timeout_seconds=None)
+
+
+_SAREK_LIKE_INPUT = {"type": "string", "format": "file-path", "exists": True,
+                     "schema": "assets/schema_input.json"}
+
+
+def test_params_file_input_false_leaves_input_unset(tmp_path, monkeypatch):
+    # `input: false` in a params file is sarek's `--input false`. It reached nf-schema as a boolean,
+    # which nf-schema 2.7 rejects for a string `input`; it must be left unset, as the flag is.
+    root = _make_pipeline_with_input(tmp_path, _SAREK_LIKE_INPUT)
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.chdir(tmp_path)
+    for value in (False, "false"):
+        assert "input" not in _staged_params(
+            _check_with_params_file(root, tmp_path, {"input": value}))
+
+
+def test_params_file_samplesheet_is_prechecked_like_the_flag(tmp_path, monkeypatch):
+    # A samplesheet named in the params file skipped the pre-check `--input` gets, so a missing or
+    # malformed sheet only failed once Nextflow was running.
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    root = _make_pipeline_with_input(tmp_path, _SAREK_LIKE_INPUT)
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(NfclawError) as exc:
+        _check_with_params_file(root, tmp_path, {"input": "missing.csv"})
+    assert exc.value.code == ErrorCode.SAMPLESHEET_INVALID
+    (tmp_path / "ss.csv").write_text("sample\nA\n")          # missing the required fastq_1 column
+    with pytest.raises(NfclawError) as exc:
+        _check_with_params_file(root, tmp_path, {"input": "ss.csv"})
+    assert exc.value.code == ErrorCode.SAMPLESHEET_INVALID
+
+
+def test_params_file_conditional_samplesheet_is_made_absolute(tmp_path, monkeypatch):
+    # mhcquant's `input` declares its path format only inside `then`, so the generic path-param
+    # pass never touched a params-file value: a relative sheet stayed relative and Nextflow — which
+    # nfclaw launches from --outdir — looked for it there.
+    root = _make_pipeline_with_input(tmp_path, {
+        "type": "string", "pattern": r"^(PXD\d{6,}|\S+\.sdrf\.tsv|\S+\.tsv)$",
+        "if": {"pattern": r"\.tsv$", "not": {"pattern": r"\.sdrf\.tsv$"}},
+        "then": {"format": "file-path", "exists": True, "schema": "assets/schema_input.json"}})
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "reads.fq.gz").write_text("")
+    (tmp_path / "ss.tsv").write_text(f"sample\tfastq_1\nA\t{tmp_path / 'reads.fq.gz'}\n")
+    params = _staged_params(_check_with_params_file(root, tmp_path, {"input": "ss.tsv"}))
+    assert params["input"] == str(tmp_path / "ss.tsv")
+    # ...and an accession in the params file is still forwarded unchanged.
+    params = _staged_params(_check_with_params_file(root, tmp_path, {"input": "PXD009752"}))
+    assert params["input"] == "PXD009752"
+
+
+def test_input_flag_still_wins_over_the_params_file(tmp_path, monkeypatch):
+    root = _make_pipeline_with_input(tmp_path, _SAREK_LIKE_INPUT)
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.chdir(tmp_path)
+    # The params file names a missing sheet, but --input false replaces it: no pre-check, no input.
+    res = _check_with_params_file(root, tmp_path, {"input": "missing.csv"}, input_value="false")
+    assert "input" not in _staged_params(res)
+
+
+def test_params_file_non_string_input_is_reported_not_crashed(tmp_path, monkeypatch):
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    root = _make_pipeline_with_input(tmp_path, _SAREK_LIKE_INPUT)
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(NfclawError) as exc:
+        _check_with_params_file(root, tmp_path, {"input": 42})
+    assert exc.value.code == ErrorCode.PARAMS_INVALID and "expects a string" in str(exc.value)

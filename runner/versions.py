@@ -83,7 +83,7 @@ def _local_tags(upstream: Path) -> list[str]:
     return out.splitlines() if out else []
 
 
-def _semver_key(tag: str) -> tuple[int, int, int]:
+def _semver_key(tag: str) -> tuple[int, ...]:
     m = _SEMVER.match(tag)
     return tuple(int(x) for x in m.groups()) if m else (0, 0, 0)
 

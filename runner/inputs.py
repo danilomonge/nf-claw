@@ -17,6 +17,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from runner.schema import PATH_FORMATS, iter_param_groups
 
@@ -27,7 +28,7 @@ _ANNOTATIONS = ("description", "errorMessage", "title", "$comment", "help_text",
 
 @dataclass(frozen=True)
 class ResolvedInput:
-    value: "str | bool"                  # the params-file value; False = leave `input` unset
+    value: Any                           # the params-file value; False = leave `input` unset
     local_path: Path | None              # the local file/directory the value names, if any
     samplesheet_schema: str | None       # schema file (relative to the pipeline) to pre-check it with
     must_exist: bool = False             # the schema declares `exists: true` for this value
@@ -134,9 +135,15 @@ def _applicable(param: dict, value: str) -> list[dict] | None:
     return parts
 
 
-def resolve(raw: "str | Path | None", repo: Path) -> ResolvedInput | None:
+def resolve(raw: Any, repo: Path) -> ResolvedInput | None:
     """Interpret an `--input` value the way the pipeline's schema declares it.
 
+    The value is the `--input` flag or, without one, the params-file `input` — the same value means
+    the same thing from either source. A params file can also hold a non-string:
+    - a YAML/JSON boolean `false` is `--input false`;
+    - any other non-string value is forwarded unchanged, for parameter validation to report;
+    and a string is interpreted as follows:
+    - an empty value is forwarded unchanged, so a required `--input` is reported missing;
     - a URL is forwarded unchanged (Nextflow stages it, nf-schema validates it);
     - `false` means "no input" — sarek's documented way to run without a samplesheet. It is returned
       as the value `False`, which `parameters.merge` turns into an unset `input`: a boolean false is
@@ -147,7 +154,13 @@ def resolve(raw: "str | Path | None", repo: Path) -> ResolvedInput | None:
     The samplesheet pre-check applies only where the schema says the value is a samplesheet."""
     if raw is None:
         return None
+    if raw is False:
+        return ResolvedInput(False, None, None)
+    if not isinstance(raw, (str, Path)):
+        return ResolvedInput(raw, None, None)
     text = str(raw)
+    if not text.strip():
+        return ResolvedInput(text, None, None)           # "not set": never the caller's directory
     if "://" in text:
         return ResolvedInput(text, None, None)
     if text.strip().lower() == "false":

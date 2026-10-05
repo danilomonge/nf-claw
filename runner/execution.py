@@ -7,6 +7,7 @@ import sys
 import threading
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from runner import runlog
 from runner.errors import ErrorCode, NfclawError
@@ -86,7 +87,7 @@ def _run(command: list[str], *, cwd: Path, logs_dir: Path, timeout_seconds: int 
     # start_new_session puts the child in its own process group, so nfclaw owns its shutdown: the
     # terminal's Ctrl-C reaches nfclaw as a KeyboardInterrupt (not the child), and nfclaw then tears
     # down the whole group below. Without this the child kept running in the background after Ctrl-C.
-    popen_kwargs = {} if sys.platform == "win32" else {"start_new_session": True}
+    popen_kwargs: dict[str, Any] = {} if sys.platform == "win32" else {"start_new_session": True}
     # Inherit the full environment, then overlay the caller's NXF_* overrides (engine version,
     # JVM args, …). Inheriting keeps shell-set vars (proxies, JAVA_HOME) working as before.
     env = {**os.environ, **env_extra} if env_extra else None

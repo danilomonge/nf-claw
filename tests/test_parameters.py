@@ -235,3 +235,34 @@ def test_resolve_path_params_covers_every_nf_schema_path_format(tmp_path, monkey
     assert out == {"db": str(tmp_path / "dbs" / "busco"),
                    "vcfs": str(tmp_path / "vcf" / "*.vcf.gz"),
                    "remote": "s3://bucket/db"}
+
+
+def test_non_finite_numbers_never_reach_the_params_file(tmp_path):
+    # `nan`/`inf` parse as floats, and json.dumps would write the non-standard NaN/Infinity literals
+    # Nextflow cannot read. A CLI string is left uncoerced (and reported); a params-file value (a
+    # YAML `.nan`) is reported whatever the declared type; writing one is refused as a backstop.
+    import math
+
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    ps = _schema_with_types(tmp_path)
+    for text in ("nan", "inf", "-Infinity"):
+        assert parameters.coerce_to_schema({"ratio": text}, ps)["ratio"] == text
+        assert parameters.validate_params({"ratio": text}, ps)          # "expects a number"
+    for value in (math.nan, math.inf, [1.0, math.nan]):
+        errs = parameters.validate_params({"flexible": value}, ps)
+        assert any("finite" in e for e in errs), errs
+    with pytest.raises(NfclawError) as exc:
+        parameters.write_params_file({"ratio": math.nan}, tmp_path / "params.json")
+    assert exc.value.code == ErrorCode.PARAMS_INVALID
+    assert not (tmp_path / "params.json").exists()
+
+
+def test_empty_path_param_is_left_unset_not_resolved_to_cwd(tmp_path, monkeypatch):
+    # `--fasta ""` means "not set"; resolving it made it the caller's working directory.
+    (tmp_path / "nextflow_schema.json").write_text(json.dumps({"definitions": {"g": {"properties": {
+        "fasta": {"type": "string", "format": "file-path"}}}}}))
+    ps = schema.load_param_schema(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    assert parameters.resolve_path_params({"fasta": ""}, ps) == {"fasta": ""}
+    assert parameters.resolve_path_params({"fasta": "  "}, ps) == {"fasta": "  "}
