@@ -224,13 +224,17 @@ def _terminate(proc: subprocess.Popen, grace: float = _GRACE_SECONDS) -> None:
     except OSError:
         pass
     try:
-        proc.wait(timeout=grace)
-    except subprocess.TimeoutExpired:
-        pass
-    while _group_alive(pgid) and time.monotonic() < deadline:
-        time.sleep(0.1)
-    try:
-        os.killpg(pgid, signal.SIGKILL)
-    except OSError:
-        pass                                          # the group is already gone
-    proc.wait()
+        try:
+            proc.wait(timeout=grace)
+        except subprocess.TimeoutExpired:
+            pass
+        while _group_alive(pgid) and time.monotonic() < deadline:
+            time.sleep(0.1)
+    finally:
+        # Also on a second Ctrl-C during the grace period: that asks to stop now, not to leave the
+        # group running — skip the rest of the wait, but still kill it.
+        try:
+            os.killpg(pgid, signal.SIGKILL)
+        except OSError:
+            pass                                      # the group is already gone
+        proc.wait()

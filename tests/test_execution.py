@@ -300,3 +300,23 @@ def test_teardown_kills_a_task_that_outlives_sigterm(tmp_path):
     finally:
         if state() not in ("gone", "Z", "X"):
             os.kill(task, 9)
+
+
+def test_a_second_interrupt_during_teardown_still_kills_the_group(monkeypatch):
+    # A second Ctrl-C while waiting out the grace period aborted the teardown before SIGKILL.
+    import signal
+    import types
+
+    import pytest
+    sent = []
+    monkeypatch.setattr(execution.os, "killpg", lambda pgid, sig: sent.append(sig))
+
+    def interrupted_wait(timeout=None):
+        if timeout is not None:
+            raise KeyboardInterrupt
+        return 0
+
+    proc = types.SimpleNamespace(pid=4242, wait=interrupted_wait)
+    with pytest.raises(KeyboardInterrupt):
+        execution._terminate(proc, grace=5)
+    assert sent == [signal.SIGTERM, signal.SIGKILL]
