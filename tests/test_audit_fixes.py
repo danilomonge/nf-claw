@@ -786,14 +786,25 @@ def test_known_issues_documents_module_not_found_and_python_m_fallback():
     assert "space-free path" in KNOWN_ISSUES
 
 
-def test_preflight_check_only_signature_skips_empty_outdir_guard():
+def test_preflight_check_only_signature_skips_empty_outdir_guard(tmp_path, monkeypatch):
     # The guard is threaded through check_only, not hard-coded, so --check can validate over an
     # existing results dir. (Behaviour is covered end-to-end in tests/test_orchestration.py.)
     import inspect
     from runner import preflight
+    from runner.submodule import SubmoduleStatus
     assert "check_only" in inspect.signature(preflight.check_environment).parameters
-    src = inspect.getsource(preflight.check_environment)
-    assert "not check_only" in src and "is not empty" in src
+    monkeypatch.setattr(preflight.shutil, "which", lambda x: "/usr/bin/" + x)
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "previous_result.txt").write_text("x")
+    st = SubmoduleStatus("p", tmp_path / "up", True, True, "1.0.0", "abc", ())
+
+    def issues(check_only):
+        return preflight.check_environment(profile="singularity", output_dir=out, submodule=st,
+                                           repo_root=tmp_path / "repo", resume=False,
+                                           check_only=check_only)
+    assert any("is not empty" in i for i in issues(check_only=False))
+    assert not any("is not empty" in i for i in issues(check_only=True))
 
 
 def test_metapep_demo_downloads_from_ncbi_via_secret_in_pinned_upstream():
