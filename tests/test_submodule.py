@@ -76,8 +76,8 @@ def test_resolve_uses_committed_skill_version_when_shallow_tags_are_absent(tmp_p
         "---\nversion: 2.1.0\ncommit: abcdef1234567890\n---\n")
 
     def fake_git(path, *args):
-        if args == ("rev-parse", "HEAD"):
-            return "abcdef1234567890"
+        if args == ("rev-parse", "--show-toplevel", "HEAD"):
+            return f"{path}\nabcdef1234567890"                    # the tree is its own repo
         if args == ("describe", "--tags", "--always"):
             return "abcdef1"
         return ""
@@ -96,8 +96,8 @@ def test_resolve_keeps_git_tag_when_available_even_if_skill_is_stale(tmp_path, m
         "---\nversion: abcdef1\ncommit: abcdef1234567890\n---\n")
 
     def fake_git(path, *args):
-        if args == ("rev-parse", "HEAD"):
-            return "abcdef1234567890"
+        if args == ("rev-parse", "--show-toplevel", "HEAD"):
+            return f"{path}\nabcdef1234567890"                    # the tree is its own repo
         if args == ("describe", "--tags", "--always"):
             return "2.1.0"
         return ""
@@ -178,3 +178,36 @@ def test_lock_never_follows_a_planted_symlink(tmp_path):
         with submodule._init_lock(repo):
             pass
     assert victim.read_text() == "precious"
+
+
+def _committed_repo(path):
+    import subprocess
+    path.mkdir(parents=True, exist_ok=True)
+    for args in (["init", "-q"], ["-c", "user.email=t@t", "-c", "user.name=t",
+                                  "commit", "-q", "--allow-empty", "-m", "init"]):
+        subprocess.run(["git", *args], cwd=path, check=True, capture_output=True)
+    return subprocess.run(["git", "rev-parse", "HEAD"], cwd=path, check=True,
+                          capture_output=True, text=True).stdout.strip()
+
+
+def test_a_tree_inside_another_repo_never_reports_that_repos_commit(tmp_path):
+    # An uninitialised (or hand-filled) submodule directory sits inside the nf-claw checkout, and git
+    # run there answers for nf-claw: provenance recorded nf-claw's HEAD as the pipeline's commit.
+    outer_head = _committed_repo(tmp_path)
+    up = tmp_path / "pipelines" / "sarek" / "upstream"
+    up.mkdir(parents=True)
+    for f in submodule.REQUIRED_FILES:
+        (up / f).write_text("x")
+    st = submodule.resolve("sarek", tmp_path / "pipelines")
+    assert st.complete is True                       # the files are there and can still be run...
+    assert st.commit == "" and st.version == ""      # ...but no commit is borrowed from nf-claw
+    assert outer_head and not submodule.is_git_tree(up)
+    assert not submodule.is_git_tree(tmp_path / "pipelines" / "missing" / "upstream")
+
+
+def test_a_tree_that_is_its_own_repo_reports_its_commit(tmp_path):
+    _committed_repo(tmp_path)
+    up = tmp_path / "pipelines" / "sarek" / "upstream"
+    head = _committed_repo(up)
+    assert submodule.is_git_tree(up)
+    assert submodule.resolve("sarek", tmp_path / "pipelines").commit == head

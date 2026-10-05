@@ -78,7 +78,10 @@ def remote_tags(url: str) -> list[str]:
 
 
 def _local_tags(upstream: Path) -> list[str]:
-    """Tags already present in the (initialized) submodule clone — the offline fallback."""
+    """Tags already present in the (initialized) submodule clone — the offline fallback. None for
+    an uninitialised submodule: git run in its empty directory would list nf-claw's own tags."""
+    if not submod.is_git_tree(upstream):
+        return []
     out = submod._git(upstream, "tag", "--list")
     return out.splitlines() if out else []
 
@@ -332,6 +335,15 @@ def materialize(name: str, tag: str, *, pipelines_dir: Path, repo_root: Path) ->
     Reuses the submodule's object store; fetches the tag only if it isn't present yet."""
     upstream = pipelines_dir / name / "upstream"
     dest = cache_dir(name, tag, pipelines_dir) / "upstream"
+    # The cache is a worktree of the submodule's own clone. A tree that is not one (copied files)
+    # would make every git command below act on nf-claw itself: fetch a tag into it, shallow it,
+    # and register the worktree against it.
+    if not submod.is_git_tree(upstream):
+        raise NfclawError(
+            ErrorCode.SUBMODULE_INCOMPLETE,
+            f"pipelines/{name}/upstream is not a git checkout, so nf-core/{name}@{tag} cannot be "
+            "fetched from it.",
+            fix=f"Re-initialise it: git submodule update --init pipelines/{name}/upstream")
     # Reuse the repository-wide git mutation lock: parallel agents may ask for the same release,
     # and git worktree registration plus cache replacement are not safe to race. Rebuild any
     # partial cache rather than treating the presence of main.nf alone as proof it is complete.
