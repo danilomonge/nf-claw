@@ -36,18 +36,19 @@ nothing to look up:
   error. Once nfclaw is done — the provenance bundle included — its **last line** is
   `==> nfclaw run finished <time>: <outcome>` (`success`, `failed (exit status N)`,
   `timed out after N s`, `interrupted`), so a run started in the background
-  (`nohup nfclaw run ... &`) is checked with `tail -n 1 <outdir>/provenance/logs/run.log`. `--resume` appends: a failed attempt is never
-  overwritten by the retry.
+  (`nohup nfclaw run ... &`) is checked with `tail -n 1 <outdir>/provenance/logs/run.log`.
+  `--resume` appends: a failed attempt is never overwritten by the retry.
 - `<outdir>/.nextflow.log` — Nextflow's own detailed log. Nextflow runs from `--outdir`, so its
   console hint "Check '.nextflow.log'" means this file, not one in your working directory.
 - `stdout.txt` / `stderr.txt` beside `run.log` — Nextflow's two streams kept apart. Nextflow prints
-  its error report on stdout; stderr holds only launcher notices.
+  its error reports on stdout; stderr holds the launcher's update notice and, on a failure, the
+  details some errors write there (nf-schema's list of invalid values).
 
-When a run fails, nfclaw's error quotes Nextflow's own error report — and the `Caused by:` chain
-from `.nextflow.log` when the console alone hides the reason (e.g. "Unable to parse config file" ←
-"Network is unreachable") — and names these files by absolute path, plus the failing task's
-`.command.err` (its `.command.log` and `.command.sh` sit beside it). `--check` launches nothing and
-writes no log.
+When a run fails, nfclaw's error quotes what Nextflow reported on stdout and stderr — plus the
+`Caused by:` chain from `.nextflow.log` when the console alone hides the reason (e.g. "Unable to
+parse config file" ← "Network is unreachable") — and names these files by absolute path, along with
+the failing task's `.command.err` (its `.command.log` and `.command.sh` sit beside it). `--check`
+launches nothing and writes no log.
 
 ## Replaying a run
 `<outdir>/provenance/commands.sh` re-runs the recorded command. It reproduces the run into a **fresh**
