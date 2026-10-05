@@ -33,7 +33,7 @@ nf-core/viralrecon pipeline parameters. Every parameter from the pinned `nextflo
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--assemblers` | string |  |  |  |  | spades | Specify which assembly algorithms you would like to use. Available options are 'spades', 'unicycler' and 'minia'. |
-| `--blast-db` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built BLAST database. |
+| `--blast-db` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built BLAST database. |
 | `--min-contig-length` | integer |  |  |  |  | 200 | Minimum contig length to filter from BLAST results. |
 | `--min-perc-contig-aligned` | number |  |  |  |  | 0.7 | Minimum percentage of contig aligned to filter from BLAST results. |
 | `--skip-abacas` | boolean |  |  |  |  |  | Skip ABACAS process for assembly contiguation. |
@@ -52,7 +52,7 @@ nf-core/viralrecon pipeline parameters. Every parameter from the pinned `nextflo
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--kraken2-assembly-host-filter` | boolean |  |  |  |  | true | Remove host reads identified by Kraken2 before running aseembly steps in the pipeline. |
-| `--kraken2-db` | string |  |  |  |  | s3://ngi-igenomes/test-data/viralrecon/kraken2_human.tar.gz | Full path to Kraken2 database built from host genome. |
+| `--kraken2-db` | string (file or directory path) |  |  |  |  | s3://ngi-igenomes/test-data/viralrecon/kraken2_human.tar.gz | Full path to Kraken2 database built from host genome. |
 | `--kraken2-db-name` | string |  |  |  |  | human | Name for host genome as recognised by Kraken2 when using the 'kraken2 build' command. |
 | `--kraken2-variants-host-filter` | boolean |  |  |  |  |  | Remove host reads identified by Kraken2 before running variant calling steps in the pipeline. |
 | `--save-trimmed-fail` | boolean |  |  |  |  |  | Save the trimmed FastQ files in the results directory. |
@@ -108,10 +108,10 @@ nf-core/viralrecon pipeline parameters. Every parameter from the pinned `nextflo
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--freyja-barcodes` | string |  |  |  |  |  | Lineage defining barcodes, default is most recent from UShER database. |
+| `--freyja-barcodes` | string (file or directory path) |  |  |  |  |  | Lineage defining barcodes, default is most recent from UShER database. |
 | `--freyja-db-name` | string |  |  |  |  | freyja_db | Specify the name where to store UShER database (default: 'freyja_db'). |
 | `--freyja-depthcutoff` | integer |  |  |  | ≥ 0 | 0 | Specify a coverage depth minimum which excludes sites with coverage less than the specified value |
-| `--freyja-lineages` | string |  |  |  |  |  | Metadata of lineages that match barcode, default is most recent from UShER database. |
+| `--freyja-lineages` | string (file or directory path) |  |  |  |  |  | Metadata of lineages that match barcode, default is most recent from UShER database. |
 | `--freyja-repeats` | integer |  |  |  | ≥ 1 | 100 | Specify the number of bootstrap repeats to do. |
 | `--max-multiqc-email-size` | string |  | yes |  |  | 25.MB | File size limit when attaching MultiQC reports to summary emails. |
 | `--nextclade-dataset` | string |  |  |  |  |  | Full path to Nextclade dataset required for 'nextclade run' command. |
@@ -145,7 +145,7 @@ nf-core/viralrecon pipeline parameters. Every parameter from the pinned `nextflo
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--additional-annotation` | string (file path) |  |  |  | matches ^\S+(\.gff\|\.gtf)(\.gz)?$ |  | Full path to additional annotation file in GTF or GFF format. |
-| `--bowtie2-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built Bowtie2 index. |
+| `--bowtie2-index` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built Bowtie2 index. |
 | `--fasta` | string (file path) |  |  |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ |  | Path to FASTA genome file. |
 | `--genome` | string |  |  |  |  |  | Name of viral reference genome. |
 | `--gff` | string (file path) |  |  |  | matches ^\S+\.gff(\.gz)?$ |  | Full path to GFF annotation file. |

@@ -39,13 +39,13 @@ nf-core/rangeland pipeline parameters. Every parameter from the pinned `nextflow
 |---|---|---|---|---|---|---|---|
 | `--aoi` | string (file path) | yes |  |  | matches ^\S+\.(gpkg\|shp)$ |  | Area of interest. |
 | `--data-cube` | string (file path) | yes |  |  | matches ^\S+\.prj$ |  | Datacube definition. |
-| `--dem` | string | yes |  |  |  |  | Digital elevation model. |
+| `--dem` | string (file or directory path) | yes |  |  |  |  | Digital elevation model. |
 | `--email` | string |  |  |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary. |
 | `--endmember` | string (file path) | yes |  |  | matches ^\S+\.txt$ |  | Endmember definition. |
-| `--input` | string | yes |  |  |  |  | Root directory or tarball of all satellite imagery. |
+| `--input` | string (file or directory path) | yes |  |  |  |  | Root directory or tarball of all satellite imagery. |
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--wvdb` | string | yes |  |  |  |  | Water vapor dataset. |
+| `--wvdb` | string (file or directory path) | yes |  |  |  |  | Water vapor dataset. |
 
 ## institutional_config_options
 

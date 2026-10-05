@@ -60,20 +60,20 @@ nf-core/reportho pipeline parameters. Every parameter from the pinned `nextflow_
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--eggnog-idmap-path` | string |  |  |  |  |  | Path to the EggNOG ID map. |
-| `--eggnog-path` | string |  |  |  |  |  | Path to the EggNOG database. |
+| `--eggnog-idmap-path` | string (file or directory path) |  |  |  |  |  | Path to the EggNOG ID map. |
+| `--eggnog-path` | string (file or directory path) |  |  |  |  |  | Path to the EggNOG database. |
 | `--local-databases` | boolean |  |  |  |  |  | Use local databases for the analysis. |
 | `--min-coverage` | number |  |  |  |  | 80 | Minimum sequence coverage in Diamond |
 | `--min-identity` | number |  |  |  |  | 90 | Minimum sequence identity in Diamond |
 | `--min-score` | number |  |  |  |  | 2 | Minimum score for the ortholog search. |
 | `--offline-run` | boolean |  |  |  |  |  | Run the pipeline in offline mode. Overrides all online database flags. |
-| `--oma-ensembl-path` | string |  |  |  |  |  | Path to the Ensembl-OMA ID map. |
-| `--oma-path` | string |  |  |  |  |  | Path to the OMA database. |
-| `--oma-refseq-path` | string |  |  |  |  |  | Path to the RefSeq-OMA ID map. |
-| `--oma-uniprot-path` | string |  |  |  |  |  | Path to the Uniprot-OMA ID map. |
-| `--orthoinspector-path` | string |  |  |  |  |  | Path to the OrthoInspector database. |
+| `--oma-ensembl-path` | string (file or directory path) |  |  |  |  |  | Path to the Ensembl-OMA ID map. |
+| `--oma-path` | string (file or directory path) |  |  |  |  |  | Path to the OMA database. |
+| `--oma-refseq-path` | string (file or directory path) |  |  |  |  |  | Path to the RefSeq-OMA ID map. |
+| `--oma-uniprot-path` | string (file or directory path) |  |  |  |  |  | Path to the Uniprot-OMA ID map. |
+| `--orthoinspector-path` | string (file or directory path) |  |  |  |  |  | Path to the OrthoInspector database. |
 | `--orthoinspector-version` | string |  |  |  |  | Eukaryota2023 | The version of the OrthoInspector database to use. |
-| `--panther-path` | string |  |  |  |  |  | Path to the PANTHER database. |
+| `--panther-path` | string (file or directory path) |  |  |  |  |  | Path to the PANTHER database. |
 | `--skip-eggnog` | boolean |  |  |  |  |  | Use EggNOG for the ortholog search. |
 | `--skip-merge` | boolean |  |  |  |  |  | Skip merging IDs based on sequence. |
 | `--skip-oma` | boolean |  |  |  |  |  | Skip using OMA for the ortholog search. |

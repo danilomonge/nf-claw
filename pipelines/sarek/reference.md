@@ -169,7 +169,7 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--ascat-loci-rt` | string (file path) |  |  |  | matches ^\S+\.zip$ |  | Path to ASCAT RT (replictiming) correction file. |
 | `--bwa` | string (directory path) |  |  |  |  |  | Path to BWA mem indices. |
 | `--bwamem2` | string (directory path) |  |  |  |  |  | Path to bwa-mem2 mem indices. |
-| `--chr-dir` | string |  |  |  |  |  | Path to chromosomes folder used with ControLFREEC. |
+| `--chr-dir` | string (file or directory path) |  |  |  |  |  | Path to chromosomes folder used with ControLFREEC. |
 | `--dbsnp` | string (file path) |  |  |  | matches ^\S+\.vcf\.gz$ |  | Path to dbsnp file. |
 | `--dbsnp-tbi` | string (file path) |  |  |  | matches ^\S+\.vcf\.gz\.tbi$ |  | Path to dbsnp index. |
 | `--dbsnp-vqsr` | string |  |  |  |  |  | Label string for VariantRecalibration (haplotypecaller joint variant calling). If you use AWS iGenomes, this has already been set for you appropriately. |
@@ -180,15 +180,15 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--genome` | string |  |  |  |  | GATK.GRCh38 | Name of iGenomes reference. |
 | `--germline-resource` | string (file path) |  |  |  | matches \S+\.vcf\.gz$ |  | Path to GATK Mutect2 Germline Resource File. |
 | `--germline-resource-tbi` | string (file path) |  |  |  | matches \S+\.vcf\.gz\.tbi$ |  | Path to GATK Mutect2 Germline Resource Index. |
-| `--known-indels` | string |  |  |  |  |  | Path to known indels file. |
-| `--known-indels-tbi` | string |  |  |  |  |  | Path to known indels file index. |
+| `--known-indels` | string (file path glob) |  |  |  |  |  | Path to known indels file. |
+| `--known-indels-tbi` | string (file path glob) |  |  |  |  |  | Path to known indels file index. |
 | `--known-indels-vqsr` | string |  |  |  |  |  | Label string for VariantRecalibration (haplotypecaller joint variant calling). If you use AWS iGenomes, this has already been set for you appropriately. |
 | `--known-snps` | string (file path) |  |  |  | matches ^\S+\.vcf\.gz$ |  | Path to known snps file. |
 | `--known-snps-tbi` | string (file path) |  |  |  | matches ^\S+\.vcf\.gz\.tbi$ |  | Path to known snps file snps. |
 | `--known-snps-vqsr` | string |  |  |  |  |  | Label string for VariantRecalibration (haplotypecaller joint variant calling).If you use AWS iGenomes, this has already been set for you appropriately. |
 | `--mappability` | string (file path) |  |  |  | matches ^\S+\.gem$ |  | Path to Control-FREEC mappability file. |
-| `--msisensor2-models` | string |  |  |  |  |  | Path to models folder used with MSIsensor2. |
-| `--msisensorpro-scan` | string |  |  |  |  |  | Path to scan file used with MSIsensorPro. |
+| `--msisensor2-models` | string (file or directory path) |  |  |  |  |  | Path to models folder used with MSIsensor2. |
+| `--msisensorpro-scan` | string (file or directory path) |  |  |  |  |  | Path to scan file used with MSIsensorPro. |
 | `--ngscheckmate-bed` | string (file path) |  |  |  | matches ^\S+\.bed$ |  | Path to SNP bed file for sample checking with NGSCheckMate |
 | `--sentieon-dnascope-model` | string (file path) |  |  |  | matches ^\S+\.model$ |  | Machine learning model for Sentieon Dnascope. |
 | `--snpeff-cache` | string |  |  |  |  | s3://annotation-cache/snpeff_cache/ | Path to snpEff cache. |
@@ -204,7 +204,7 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--bbsplit-fasta-list` | string (file path) |  |  |  |  |  | Path to comma-separated file containing a list of reference genomes to filter reads against with BBSplit. You have to also explicitly set `--tools bbsplit` if you want to use BBSplit. |
-| `--bbsplit-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built BBSplit index. |
+| `--bbsplit-index` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built BBSplit index. |
 | `--group-by-umi-strategy` | string |  |  | `Identity`, `Edit`, `Adjacency`, `Paired` |  | Adjacency | Default strategy for fgbio UMI-based consensus read generation |
 | `--save-bbsplit-reads` | boolean |  |  |  |  |  | If this option is specified, FastQ files split by reference will be saved in the results directory. |
 | `--umi-base-skip` | integer |  |  |  | ≥ 0 |  | Number of bases to skip after the UMI(s) in the read when extracting with fastp. |

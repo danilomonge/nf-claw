@@ -98,7 +98,7 @@ nf-core/createtaxdb pipeline parameters. Every parameter from the pinned `nextfl
 | `--nodesdmp` | string (file path) |  |  |  |  |  | Path to NCBI-style taxonomy node dmp file. |
 | `--nucl2taxid` | string (file path) |  |  |  |  |  | Two column nucleotide sequence accession ID to taxonomy map file. |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--prot2taxid` | string |  |  |  |  |  | Two column protein sequence accession ID to taxonomy map file. |
+| `--prot2taxid` | string (file or directory path) |  |  |  |  |  | Two column protein sequence accession ID to taxonomy map file. |
 
 ## institutional_config_options
 

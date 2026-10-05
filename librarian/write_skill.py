@@ -24,11 +24,20 @@ def _allowed(values: tuple[str, ...] | None) -> str:
     return _cell(", ".join(f"`{v}`" for v in values)) if values else ""
 
 
+# nf-schema's path formats (runner.schema.PATH_FORMATS), as the docs name them. `path` is either a
+# file or a directory; `file-path-pattern` is a glob. All four are made absolute by `nfclaw run`.
+_PATH_FORMAT_LABELS = {
+    "file-path": "file path",
+    "directory-path": "directory path",
+    "path": "file or directory path",
+    "file-path-pattern": "file path glob",
+}
+
+
 def _type_with_fmt(type_: str, fmt: str | None) -> str:
-    """Annotate a type with its path-ness — a schema fact (format: file-path / directory-path)."""
-    if fmt in ("file-path", "directory-path"):
-        return f"{type_} ({fmt.replace('-', ' ')})"
-    return type_
+    """Annotate a type with its path-ness — a schema fact (nf-schema's path `format`s)."""
+    label = _PATH_FORMAT_LABELS.get(fmt or "")
+    return f"{type_} ({label})" if label else type_
 
 
 def _constraints(obj) -> str:

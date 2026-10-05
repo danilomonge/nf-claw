@@ -116,9 +116,9 @@ nf-core/methylseq pipeline parameters. Every parameter from the pinned `nextflow
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--bismark-index` | string |  |  |  |  |  | Path to a directory containing a Bismark reference index. |
+| `--bismark-index` | string (file or directory path) |  |  |  |  |  | Path to a directory containing a Bismark reference index. |
 | `--bwamem-index` | string (directory path) |  |  |  |  |  | Path to the BWA-MEM index filename base |
-| `--bwameth-index` | string |  |  |  |  |  | bwameth index filename base |
+| `--bwameth-index` | string (file or directory path) |  |  |  |  |  | bwameth index filename base |
 | `--fasta` | string (file path) |  |  |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ |  | Path to FASTA genome file |
 | `--fasta-index` | string (file path) |  |  |  | matches ^\S+\.fn?a(sta)?.fai$ |  | Path to Fasta index file. |
 | `--genome` | string |  |  |  |  |  | Name of iGenomes reference. |

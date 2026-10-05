@@ -61,7 +61,7 @@ nf-core/multiplesequencealign pipeline parameters. Every parameter from the pinn
 | `--input` | string (file path) |  |  |  | matches ^\S+\.(csv\|tsv\|yaml\|yml\|json)$ |  | Path to the samplesheet file containing information about datasets to be aligned and evaluated (samplesheet). |
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--pdbs-dir` | string |  |  |  |  |  | Path to a folder containing all the optional data files to be used (e.g. structures). |
+| `--pdbs-dir` | string (file or directory path) |  |  |  |  |  | Path to a folder containing all the optional data files to be used (e.g. structures). |
 | `--seqs` | string (file path) |  |  |  | matches \S+\.f(n\|ast)?a$ |  | Path to the input fasta file. |
 | `--templates-suffix` | string |  |  |  |  | .pdb | Suffix of the files given in the optional_data directory. |
 

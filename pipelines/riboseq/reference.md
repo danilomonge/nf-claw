@@ -121,13 +121,13 @@ nf-core/riboseq pipeline parameters. Every parameter from the pinned `nextflow_s
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--bbsplit-fasta-list` | string (file path) |  |  |  |  |  | Path to comma-separated file containing a list of reference genomes to filter reads against with BBSplit. You have to also explicitly set `--skip_bbsplit false` if you want to use BBSplit. |
-| `--bbsplit-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built BBSplit index. |
+| `--bbsplit-index` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built BBSplit index. |
 | `--extra-fqlint-args` | string |  |  |  |  | --disable-validator P001 | Extra arguments to pass to the fq lint command. |
 | `--remove-ribo-rna` | boolean |  |  |  |  | true | Enable the removal of reads derived from ribosomal RNA. |
 | `--ribo-database-manifest` | string (file path) |  |  |  |  | ${projectDir}/assets/rrna-db-defaults.txt | Text file containing paths to fasta files (one per line) that will be used to create the database for rRNA removal. |
 | `--ribo-removal-tool` | string |  |  | `sortmerna`, `bowtie2`, `ribodetector` |  | sortmerna | Specifies which tool to use for ribosomal RNA removal. |
 | `--ribodetector-chunk-size` | integer |  |  |  |  | 100 | Chunk size for RiboDetector to control memory usage. |
-| `--sortmerna-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built sortmerna index. |
+| `--sortmerna-index` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built sortmerna index. |
 
 ## read_trimming_options
 
@@ -155,8 +155,8 @@ nf-core/riboseq pipeline parameters. Every parameter from the pinned `nextflow_s
 | `--igenomes-base` | string |  | yes |  |  | s3://ngi-igenomes/igenomes/ | The base path to the igenomes reference files |
 | `--igenomes-ignore` | boolean |  | yes |  |  |  | Do not load the iGenomes reference config. |
 | `--kallisto-index` | string (file path) |  |  |  |  |  | Path to a pre-built kallisto index file. |
-| `--salmon-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built Salmon index. |
-| `--star-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built STAR index. |
+| `--salmon-index` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built Salmon index. |
+| `--star-index` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built STAR index. |
 | `--transcript-fasta` | string (file path) |  |  |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ |  | Path to FASTA transcriptome file. |
 
 ## riboseq_specific_options

@@ -29,16 +29,16 @@ This is the pinned latest release. To run a different one, list the available re
 |---|---|---|---|---|
 | `sample` | string | no |  | matches ^\S+$ |
 | `id` | string | no |  | matches ^\S+$ |
-| `data_path` | string | no |  | matches ^\S+$ |
-| `fastq_dir` | string | no |  | matches ^\S+$ |
-| `cytaimage` | string | no |  | matches ^\S+(tif\|tiff)$ |
-| `colorizedimage` | string | no |  | matches ^\S+(tif\|tiff\|jpg\|jpeg\|btf)$ |
-| `darkimage` | string | no |  | matches ^\S+(tif\|tiff\|jpg\|jpeg\|btf)$ |
-| `image` | string | no |  | matches ^\S+(tif\|tiff\|jpg\|jpeg\|btf)$ |
+| `data_path` | string (file or directory path) | no |  | matches ^\S+$ |
+| `fastq_dir` | string (file or directory path) | no |  | matches ^\S+$ |
+| `cytaimage` | string (file or directory path) | no |  | matches ^\S+(tif\|tiff)$ |
+| `colorizedimage` | string (file or directory path) | no |  | matches ^\S+(tif\|tiff\|jpg\|jpeg\|btf)$ |
+| `darkimage` | string (file or directory path) | no |  | matches ^\S+(tif\|tiff\|jpg\|jpeg\|btf)$ |
+| `image` | string (file or directory path) | no |  | matches ^\S+(tif\|tiff\|jpg\|jpeg\|btf)$ |
 | `slide` | string | no |  | matches ^\S+$ |
 | `area` | string | no |  | matches ^\S+$ |
-| `manual_alignment` | string | no |  | matches ^\S+json$ |
-| `slidefile` | string | no |  | matches ^\S+json$ |
+| `manual_alignment` | string (file or directory path) | no |  | matches ^\S+json$ |
+| `slidefile` | string (file or directory path) | no |  | matches ^\S+json$ |
 
 `--input` must match `^\S+\.csv$`.
 

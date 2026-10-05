@@ -104,11 +104,11 @@ nf-core/rnavar pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--genome` | string |  |  |  |  | GRCh38 | Name of iGenomes reference. |
 | `--gff` | string (file path) |  |  |  | matches ^\S+\.gff\d?$ |  | Path to GFF3 annotation file. |
 | `--gtf` | string (file path) |  |  |  | matches ^\S+\.gtf$ |  | Path to GTF annotation file. |
-| `--known-indels` | string |  |  |  |  |  | Path to known indels file. |
-| `--known-indels-tbi` | string |  |  |  |  |  | Path to known indels file index. |
+| `--known-indels` | string (file path glob) |  |  |  |  |  | Path to known indels file. |
+| `--known-indels-tbi` | string (file path glob) |  |  |  |  |  | Path to known indels file index. |
 | `--read-length` | number |  |  |  | ≥ 1 | 150 | Read length |
 | `--snpeff-db` | string |  |  |  |  |  | snpEff DB version. |
-| `--star-index` | string |  |  |  |  |  | Path to STAR index folder or compressed file (tar.gz) |
+| `--star-index` | string (file or directory path) |  |  |  |  |  | Path to STAR index folder or compressed file (tar.gz) |
 | `--vep-cache-version` | integer or string |  |  |  | ≥ 1 |  | VEP cache version. |
 | `--vep-genome` | string |  |  |  |  |  | VEP genome. |
 | `--vep-species` | string |  |  |  |  |  | VEP species. |

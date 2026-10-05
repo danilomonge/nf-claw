@@ -28,8 +28,8 @@ This is the pinned latest release. To run a different one, list the available re
 | column | type | required | allowed values | constraints |
 |---|---|---|---|---|
 | `sample` | string | yes |  | matches ^\S+$ |
-| `rna_matrix` | string | no |  | matches ^\S+$ |
-| `hto_matrix` | string | no |  | matches ^\S+$ |
+| `rna_matrix` | string (file or directory path) | no |  | matches ^\S+$ |
+| `hto_matrix` | string (file or directory path) | no |  | matches ^\S+$ |
 | `bam` | string (file path) | no |  | matches ^\S+\.bam$ |
 | `barcodes` | string (file path) | no |  | matches ^\S+\.tsv$ |
 | `n_samples` | integer | no |  | ≥ 1 |

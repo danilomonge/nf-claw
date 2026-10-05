@@ -308,6 +308,10 @@ def test_load_input_schema_captures_column_enum(tmp_path):
 def test_type_with_fmt_marks_only_path_formats():
     assert write_skill._type_with_fmt("string", "file-path") == "string (file path)"
     assert write_skill._type_with_fmt("string", "directory-path") == "string (directory path)"
+    # nf-schema's other path formats are paths too (the runner makes them absolute), so they are
+    # documented as such — mag's --busco-db (`path`), sarek's --known-indels (`file-path-pattern`).
+    assert write_skill._type_with_fmt("string", "path") == "string (file or directory path)"
+    assert write_skill._type_with_fmt("string", "file-path-pattern") == "string (file path glob)"
     assert write_skill._type_with_fmt("integer", None) == "integer"
     assert write_skill._type_with_fmt("string", "email") == "string"   # non-path format → unchanged
 

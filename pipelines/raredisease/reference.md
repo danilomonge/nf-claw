@@ -146,39 +146,39 @@ nf-core/raredisease pipeline parameters. Every parameter from the pinned `nextfl
 | `--gens-interval-list` | string (file path) |  | yes |  |  |  | Path to interval list for Gens. |
 | `--gens-pon-female` | string (file path) |  | yes |  |  |  | Path to female panel of normals for Gens. |
 | `--gens-pon-male` | string (file path) |  | yes |  |  |  | Path to male panel of normals for Gens. |
-| `--gnomad-af` | string |  |  |  | matches ^\S+\.tab(\.gz)?$ |  | Path to the gnomad tab file with allele frequencies. |
-| `--gnomad-af-idx` | string |  |  |  | matches ^\S+\.tab(\.gz)?\.tbi$ |  | Path to the index file for the gnomad tab file with allele frequencies. |
+| `--gnomad-af` | string (file or directory path) |  |  |  | matches ^\S+\.tab(\.gz)?$ |  | Path to the gnomad tab file with allele frequencies. |
+| `--gnomad-af-idx` | string (file or directory path) |  |  |  | matches ^\S+\.tab(\.gz)?\.tbi$ |  | Path to the index file for the gnomad tab file with allele frequencies. |
 | `--igenomes-base` | string (directory path) |  | yes |  |  | s3://ngi-igenomes/igenomes/ | The base path to the igenomes reference files |
 | `--igenomes-ignore` | boolean |  |  |  |  |  | Do not load the iGenomes reference config. |
-| `--intervals-wgs` | string | yes |  |  | matches ^\S+\.intervals?(_list)?$ |  | Path to the interval list of the genome (autosomes, sex chromosomes, and mitochondria). |
-| `--intervals-y` | string | yes |  |  | matches ^\S+\.intervals?(_list)?$ |  | Path to the interval list of the Y chromosome. |
-| `--known-dbsnp` | string |  |  |  | matches ^\S+\.vcf(\.gz)?$ |  | Path to known dbSNP file. |
-| `--known-dbsnp-tbi` | string |  |  |  | matches ^\S+\.vcf(\.gz)?\.tbi$ |  | Path to known dbSNP file index. |
+| `--intervals-wgs` | string (file or directory path) | yes |  |  | matches ^\S+\.intervals?(_list)?$ |  | Path to the interval list of the genome (autosomes, sex chromosomes, and mitochondria). |
+| `--intervals-y` | string (file or directory path) | yes |  |  | matches ^\S+\.intervals?(_list)?$ |  | Path to the interval list of the Y chromosome. |
+| `--known-dbsnp` | string (file or directory path) |  |  |  | matches ^\S+\.vcf(\.gz)?$ |  | Path to known dbSNP file. |
+| `--known-dbsnp-tbi` | string (file or directory path) |  |  |  | matches ^\S+\.vcf(\.gz)?\.tbi$ |  | Path to known dbSNP file index. |
 | `--local-genomes` | string (directory path) |  |  |  |  |  | Local directory base for genome references that map to the config. |
 | `--manta-call-regions` | string (file path) |  |  |  | matches ^\S+\.bed\.gz$ |  | Path to a bgzipped BED file restricting Manta SV calling to specific regions (e.g. primary chromosomes). Only applied for WGS; for WES, Manta always uses target_bed instead. |
 | `--manta-call-regions-tbi` | string (file path) |  |  |  | matches ^\S+\.bed\.gz\.tbi$ |  | Tabix index for the file supplied via --manta_call_regions. |
 | `--mito-name` | string |  |  |  |  | chrM | Name of the mitochondrial contig in the reference fasta file |
-| `--ml-model` | string |  |  |  |  |  | Path to sentieon machine learning model file. |
+| `--ml-model` | string (file or directory path) |  |  |  |  |  | Path to sentieon machine learning model file. |
 | `--mobile-element-references` | string (file path) |  |  |  | matches ^\S+\.tsv$ |  | File with mobile element references |
 | `--mobile-element-svdb-annotations` | string |  |  |  | matches ^\S+\.csv$ |  | File with mobile element allele frequency references |
 | `--modules-testdata-base-path` | string |  | yes |  |  |  | Base path / URL for data used in the modules |
 | `--mt-fasta` | string (file path) |  |  |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ |  | Path to mitochondrial FASTA genome file. |
-| `--par-bed` | string |  |  |  | matches ^\S+\.bed(\.gz)?$ |  | Path to a BED file containing PAR regions (used by deepvariant). |
+| `--par-bed` | string (file or directory path) |  |  |  | matches ^\S+\.bed(\.gz)?$ |  | Path to a BED file containing PAR regions (used by deepvariant). |
 | `--ploidy-model` | string (directory path) |  |  |  |  |  | Directory containing the ploidy model files |
 | `--readcount-intervals` | string (file path) |  |  |  |  |  | Interval list file containing the intervals over which read counts are tabulated for CNV calling |
-| `--reduced-penetrance` | string |  |  |  |  |  | File with gene ids that have reduced penetrance. For use with genmod |
+| `--reduced-penetrance` | string (file or directory path) |  |  |  |  |  | File with gene ids that have reduced penetrance. For use with genmod |
 | `--rtg-truthvcfs` | string (file path) |  |  |  | matches ^\S+\.(csv\|tsv\|json\|yaml\|yml)$ |  | Vcf used for evaluating variant calls. |
 | `--sambamba-regions` | string (file path) |  |  |  | matches ^\S+\.bed$ |  | A BED file with regions of interest used in sambamba depth. |
 | `--sample-id-map` | string (file path) |  |  |  | matches ^\S+\.csv$ |  | Path to a file containing internal ids and customer ids in csv format. |
 | `--save-reference` | boolean |  |  |  |  |  | If generated by the pipeline save the required indices/references in the results directory. |
-| `--score-config-mt` | string |  |  |  |  |  | MT rank model config file for genmod. |
-| `--score-config-snv` | string |  |  |  |  |  | SNV rank model config file for genmod. |
-| `--score-config-sv` | string |  |  |  |  |  | SV rank model config file for genmod. |
+| `--score-config-mt` | string (file or directory path) |  |  |  |  |  | MT rank model config file for genmod. |
+| `--score-config-snv` | string (file or directory path) |  |  |  |  |  | SNV rank model config file for genmod. |
+| `--score-config-sv` | string (file or directory path) |  |  |  |  |  | SV rank model config file for genmod. |
 | `--sdf` | string (directory path) |  |  |  |  |  | Directory for pre-built sdf index. Used by rtg/vcfeval |
-| `--sequence-dictionary` | string |  |  |  | matches ^\S+\.dict$ |  | Path to the genome dictionary file |
+| `--sequence-dictionary` | string (file or directory path) |  |  |  | matches ^\S+\.dict$ |  | Path to the genome dictionary file |
 | `--svdb-query-bedpedbs` | string (file path) |  |  |  | matches ^\S+\.(csv\|tsv\|json\|yaml\|yml)$ |  | Databases used for structural variant annotation in chrA-posA-chrB-posB-type-count-frequency format. |
 | `--svdb-query-dbs` | string (file path) |  |  |  | matches ^\S+\.(csv\|tsv\|json\|yaml\|yml)$ |  | Databases used for structural variant annotation in vcf format. |
-| `--target-bed` | string |  |  |  | matches ^\S+\.bed$ |  | Path to directory for target bed file. |
+| `--target-bed` | string (file or directory path) |  |  |  | matches ^\S+\.bed$ |  | Path to directory for target bed file. |
 | `--variant-catalog` | string (file path) |  |  |  |  |  | Path to variant catalog file |
 | `--vcf2cytosure-blacklist` | string (file path) |  |  |  | matches ^\S+\.bed$ |  | Path to vcf2cytosure blacklist file |
 | `--vcfanno-extra-resources` | string (file path) |  |  |  |  |  | Path to a VCF file containing annotations. |
@@ -186,8 +186,8 @@ nf-core/raredisease pipeline parameters. Every parameter from the pinned `nextfl
 | `--vcfanno-resources` | string |  |  |  |  |  | Path to a file containing the absolute paths to resources defined within the vcfanno toml file. One line per resource. |
 | `--vcfanno-toml` | string |  |  |  | matches ^\S+\.toml$ |  | Path to the vcfanno toml file. |
 | `--vep-cache` | string |  |  |  |  |  | Path to vep's cache directory. |
-| `--vep-filters` | string |  |  |  |  |  | Path to the file containing HGNC_IDs of interest on separate lines. |
-| `--vep-filters-scout-fmt` | string |  |  |  |  |  | Path to a bed-like file exported by scout, which contains HGNC_IDs to be used in filter_vep. |
+| `--vep-filters` | string (file or directory path) |  |  |  |  |  | Path to the file containing HGNC_IDs of interest on separate lines. |
+| `--vep-filters-scout-fmt` | string (file or directory path) |  |  |  |  |  | Path to a bed-like file exported by scout, which contains HGNC_IDs to be used in filter_vep. |
 | `--vep-plugin-files` | string (file path) |  |  |  | matches ^\S+\.csv$ |  | Databases used by both named and custom plugins to annotate variants. |
 | `--verifybamid-svd-bed` | string (file path) |  |  |  |  |  | Path to a BED file containing markers used by verifybamid2. |
 | `--verifybamid-svd-mu` | string (file path) |  |  |  |  |  | Path to mean matrix file of genotype matrix. Used by verifybamid2. |
@@ -197,7 +197,7 @@ nf-core/raredisease pipeline parameters. Every parameter from the pinned `nextfl
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--call-interval` | string |  |  |  |  |  | Interval in the reference that will be used in the software. Used only by sentieon. |
+| `--call-interval` | string (file or directory path) |  |  |  |  |  | Interval in the reference that will be used in the software. Used only by sentieon. |
 | `--cnvnator-binsize` | integer |  |  |  |  | 1000 | Bin size for CNVnator |
 | `--sentieon-dnascope-pcr-indel-model` | string |  |  | `NONE`, `HOSTILE`, `AGGRESSIVE`, `CONSERVATIVE` |  | CONSERVATIVE | Option for selecting the PCR indel model used by Sentieon Dnascope. |
 | `--variant-caller` | string |  |  | `deepvariant`, `sentieon` |  | deepvariant | Specifies the variant caller to use - available options are 'deepvariant' and 'sentieon'. |

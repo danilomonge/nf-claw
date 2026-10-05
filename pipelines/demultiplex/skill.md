@@ -30,7 +30,7 @@ This is the pinned latest release. To run a different one, list the available re
 | `id` | string | yes |  | matches ^\S+$ |
 | `samplesheet` | string (file path) | yes |  | matches ^\S+\.csv$ |
 | `lane` | integer | no |  | ≥ 1; ≤ 8 |
-| `flowcell` | string | yes |  |  |
+| `flowcell` | string (file or directory path) | yes |  |  |
 | `per_flowcell_manifest` | string (file path) | no |  |  |
 
 `--input` must match `^\S+\.csv$`.

@@ -109,7 +109,7 @@ nf-core/genomeqc pipeline parameters. Every parameter from the pinned `nextflow_
 | `--RM-db` | array |  |  |  |  |  | List of URLs to DFAM h5 partition files to download. |
 | `--RM-download-db` | boolean |  |  |  |  | false | Download h5 partition files from the URLs specified in RM_db. |
 | `--curated-lib` | string (file path) |  |  |  |  |  | Path to a curated repeat library for HiTE. |
-| `--famdb-library` | string |  |  |  |  |  | Path to pre-staged famdb h5 partition file(s). Accepts a single file path or a glob pattern (e.g. '/path/FamDB*'). Alternative to downloading via RM_db. |
+| `--famdb-library` | string (file path glob) |  |  |  |  |  | Path to pre-staged famdb h5 partition file(s). Accepts a single file path or a glob pattern (e.g. '/path/FamDB*'). Alternative to downloading via RM_db. |
 | `--famdb-lineage` | string |  |  |  |  |  | Taxonomic lineage to filter repeat families from famdb (e.g. 'hymenoptera'). Omit to export all families. |
 | `--is-plant` | boolean |  |  |  |  |  | Set to true for plant genomes (passed to HiTE). |
 | `--repeatmasker-speed` | string |  |  | `default`, `q`, `qq` |  | qq | RepeatMasker sensitivity/speed mode. 'default' is most sensitive; 'q' (quick) is ~5x faster; 'qq' (rush) is fastest with lowest sensitivity. |

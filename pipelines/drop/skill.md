@@ -42,7 +42,7 @@ This is the pinned latest release. To run a different one, list the available re
 | `GENE_COUNTS_FILE` | string (file path) | no |  | matches ^\S+\.tsv(\.gz)?$ |
 | `GENE_ANNOTATION` | string | no |  |  |
 | `GENOME` | string | no | `ncbi`, `ucsc` |  |
-| `SPLICE_COUNTS_DIR` | string | no |  | matches ^\S+$ |
+| `SPLICE_COUNTS_DIR` | string (file or directory path) | no |  | matches ^\S+$ |
 | `SEX` | string | no |  |  |
 | `TISSUE` | string | no |  |  |
 | `DISEASE` | string | no |  |  |
