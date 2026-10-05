@@ -187,3 +187,35 @@ def test_log_causes_are_quoted_once(tmp_path):
         "\tat x.y(Z.java:1)\n")
     assert runlog.nextflow_log_causes(log) == [
         "Caused by: java.net.SocketException: Network is unreachable"]
+
+
+# --- stderr: where nf-schema puts its validation details -----------------------------------------
+
+def test_nf_schema_details_are_quoted_from_stderr():
+    # Real nf-core/demo 1.2.0 run with an invalid enum: stdout only says "Validation of pipeline
+    # parameters failed!"; *which* value is invalid is written to stderr.
+    excerpt = runlog.stderr_excerpt(_console("nfschema_validation.stderr.txt"))
+    text = "\n".join(excerpt)
+    assert "* --publish_dir_mode (bogus): Expected any of" in text
+    assert "is available - Please consider updating" not in text      # launcher chatter dropped
+
+
+def test_stderr_with_only_the_update_notice_has_nothing_to_quote():
+    assert runlog.stderr_excerpt(
+        "Nextflow 26.04.6 is available - Please consider updating your version to it\n") == []
+
+
+def test_context_above_an_error_is_only_the_paragraph_directly_above_it():
+    # nf-core prints its citation block before a validation error; only the paragraph adjacent to
+    # the error line is quoted, never the run's banner or parameter summary.
+    excerpt = runlog.error_excerpt(_console("nfschema_validation.stdout.txt"))
+    assert excerpt[-3:] == ["ERROR ~ Validation of pipeline parameters failed!", "",
+                            " -- Check '.nextflow.log' file for details"]
+    assert len(excerpt) <= 6
+    assert not any("zenodo" in line or "userName" in line for line in excerpt)
+
+
+def test_without_a_report_the_console_tail_is_optional():
+    console = _console("workflow_error.txt")
+    assert runlog.error_excerpt(console, tail_if_no_report=False) == []
+    assert runlog.error_excerpt(console)[-1] == "pipeline-level failure: missing --fasta"

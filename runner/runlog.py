@@ -31,6 +31,10 @@ _TAIL_BYTES = 256 * 1024
 _MAX_EXCERPT_LINES = 50
 _CONTEXT_LINES = 6           # non-blank lines quoted from just above the `ERROR ~` line
 _TAIL_LINES = 15             # quoted when Nextflow printed no `ERROR ~` line at all
+_STDERR_LINES = 25
+# The launcher's only routine stderr line; every real run's stderr holds nothing else (even `WARN:`
+# lines go to stdout), so on a failure whatever else is on stderr is part of the error.
+_UPDATE_NOTICE = re.compile(r"^Nextflow \S+ is available - Please consider updating")
 
 # `.nextflow.log` entries: "Oct-05 21:57:35.089 [main] ERROR nextflow.cli.Launcher - …".
 _LOG_ENTRY = re.compile(r"^[A-Z][a-z]{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \[[^\]]*\] ")
@@ -111,41 +115,60 @@ def _reports(lines: list[str]) -> list[tuple[int, tuple[str, ...]]]:
     return reports
 
 
-def error_excerpt(console: str) -> list[str]:
+def error_excerpt(console: str, *, tail_if_no_report: bool = True) -> list[str]:
     """Nextflow's own error reports from a launch's console output, quoted verbatim.
 
     Deterministic: every distinct `ERROR ~` report (Nextflow's error prefix), once each, in the order
     they first appear — Nextflow re-renders the same report when stdout is not a terminal, and the
     nf-core template follows the real one with a generic "ERROR ~ Pipeline failed" — preceded by the
-    few lines printed just above the last rendering of the first: the failed step's progress line, or
-    a config/script syntax error described above `ERROR ~ Config parsing failed`. Without an
+    paragraph printed just above the last rendering of the first: the failed step's progress lines,
+    or a config/script syntax error described above `ERROR ~ Config parsing failed`. Without an
     `ERROR ~` line (an `error "…"` raised in a workflow prints only its message) it is the last lines
-    of the console. A long excerpt keeps its head (`Caused by`) and its tail (`Command error`,
-    `Work dir`)."""
+    of the console, unless `tail_if_no_report` is off. A long excerpt keeps its head and its tail."""
     lines = _clean(console)
     distinct: dict[tuple[str, ...], int] = {}             # report → start of its last rendering
     for at, report in _reports(lines):
         distinct[report] = at                            # insertion order = first appearance
     if distinct:
-        first, start = next(iter(distinct.items()))
-        seen = 0
-        while start > 0 and seen < _CONTEXT_LINES:
-            prev = lines[start - 1]
-            if _CONTEXT_STOP.search(prev):
-                break
-            start -= 1
-            seen += bool(prev)
-        block = _squeeze(lines[start:distinct[first]])
+        block = _paragraph_above(lines, next(iter(distinct.values())))
         for report in distinct:
             block += ([""] if block else []) + list(report)
-    else:
+    elif tail_if_no_report:
         block = [line for line in lines if line][-_TAIL_LINES:]
-    if len(block) > _MAX_EXCERPT_LINES:
-        head, tail = 15, _MAX_EXCERPT_LINES - 16
-        omitted = len(block) - head - tail
-        block = block[:head] + [f"… {omitted} lines omitted (full report in the run log) …"] + \
-            block[-tail:]
-    return block
+    else:
+        block = []
+    return _cap(block)
+
+
+def _paragraph_above(lines: list[str], at: int) -> list[str]:
+    """The run of non-blank lines just above line `at` (blank lines in between skipped), at most
+    `_CONTEXT_LINES` of it, never reaching into the banner or an earlier report."""
+    end = at
+    while end > 0 and not lines[end - 1]:
+        end -= 1
+    start = end
+    while start > 0 and lines[start - 1] and end - start < _CONTEXT_LINES \
+            and not _CONTEXT_STOP.search(lines[start - 1]):
+        start -= 1
+    return lines[start:end]
+
+
+def _cap(block: list[str]) -> list[str]:
+    """A long excerpt keeps its head (`Caused by`) and its tail (`Command error`, `Work dir`)."""
+    if len(block) <= _MAX_EXCERPT_LINES:
+        return block
+    head, tail = 15, _MAX_EXCERPT_LINES - 16
+    omitted = len(block) - head - tail
+    return block[:head] + [f"… {omitted} lines omitted (full report in the run log) …"] + \
+        block[-tail:]
+
+
+def stderr_excerpt(text: str) -> list[str]:
+    """What a failed launch wrote on stderr, minus the launcher's update notice — nf-schema's
+    validation details ("* --param (value): Expected …"), a JVM or launcher error. A successful run's
+    stderr carries nothing but that notice, so nothing here is noise."""
+    lines = [line for line in _clean(text) if not _UPDATE_NOTICE.match(line)]
+    return _cap(_squeeze(lines)[-_STDERR_LINES:])
 
 
 def failing_task_dir(excerpt: list[str]) -> Path | None:
@@ -208,7 +231,7 @@ class RunLog:
         path.parent.mkdir(parents=True, exist_ok=True)
         self._fh = path.open("ab")
         self._lock = threading.Lock()
-        self._tail = bytearray()
+        self._tails = {"out": bytearray(), "err": bytearray()}
         self._finished = False
 
     @classmethod
@@ -228,27 +251,28 @@ class RunLog:
         return log
 
     def note(self, text: str) -> None:
-        """A line of nfclaw's own (header, error, outcome) — not part of the console tail."""
-        self._write((text.rstrip("\n") + "\n").encode("utf-8"), console=False)
+        """A line of nfclaw's own (header, error, outcome) — not part of the console tails."""
+        self._write((text.rstrip("\n") + "\n").encode("utf-8"), stream=None)
 
-    def write(self, chunk: bytes) -> None:
-        """Bytes of the child's console, verbatim."""
-        self._write(chunk, console=True)
+    def write(self, chunk: bytes, stream: str = "out") -> None:
+        """Bytes of the child's console, verbatim; `stream` is "out" or "err"."""
+        self._write(chunk, stream=stream)
 
-    def _write(self, data: bytes, *, console: bool) -> None:
+    def _write(self, data: bytes, *, stream: str | None) -> None:
         with self._lock:
-            if console:
-                self._tail += data
-                del self._tail[:-_TAIL_BYTES]
+            if stream is not None:
+                tail = self._tails[stream]
+                tail += data
+                del tail[:-_TAIL_BYTES]
             try:
                 self._fh.write(data)
                 self._fh.flush()
             except (OSError, ValueError):
                 pass                                     # a full disk must not kill the run itself
 
-    def console_tail(self) -> str:
+    def console_tail(self, stream: str = "out") -> str:
         with self._lock:
-            return self._tail.decode("utf-8", errors="replace")
+            return self._tails[stream].decode("utf-8", errors="replace")
 
     def fail(self, outcome: str, error: str = "") -> None:
         """Record how the run failed: the error text now, the outcome for the final line."""

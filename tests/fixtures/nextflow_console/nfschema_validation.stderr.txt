@@ -1,0 +1,6 @@
+Nextflow 26.04.6 is available - Please consider updating your version to it
+The following invalid input values have been detected:
+
+* --publish_dir_mode (bogus): Expected any of [[symlink, rellink, link, copy, copyNoFollow, move]]
+
+ -- Check script '/mnt/volume/drafts/draft-7/nf-claw/pipelines/demo/upstream/subworkflows/nf-core/utils_nfschema_plugin/main.nf' at line: 68 or see '.nextflow.log' file for more details

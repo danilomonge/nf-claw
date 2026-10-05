@@ -74,6 +74,44 @@ def test_failure_quotes_the_underlying_cause_from_the_nextflow_log(tmp_path):
     assert "nfcore_custom.config" in text
 
 
+def test_failure_quotes_what_nextflow_wrote_on_stderr(tmp_path):
+    # nf-schema writes *which* parameter is invalid to stderr; stdout only says that validation failed.
+    child = ("import sys; print('Nextflow 99 is available - Please consider updating your version "
+             "to it', file=sys.stderr); print('ERROR ~ Validation of pipeline parameters failed!'); "
+             "print(' -- Check .nextflow.log file for details'); sys.stdout.flush(); "
+             "print('* --publish_dir_mode (bogus): Expected any of [copy, link]', file=sys.stderr); "
+             "sys.exit(1)")
+    with pytest.raises(NfclawError) as exc:
+        execution.run([PY, "-c", child], cwd=tmp_path, logs_dir=tmp_path / "logs",
+                      timeout_seconds=30)
+    text = str(exc.value)
+    assert "ERROR ~ Validation of pipeline parameters failed!" in text
+    assert "* --publish_dir_mode (bogus): Expected any of [copy, link]" in text
+    assert "is available" not in text
+
+
+def test_failure_without_a_report_quotes_stderr_rather_than_the_stdout_banner(tmp_path):
+    child = ("import sys; print('BANNER LINE'); print('params summary'); "
+             "print('java.lang.OutOfMemoryError: Java heap space', file=sys.stderr); sys.exit(1)")
+    with pytest.raises(NfclawError) as exc:
+        execution.run([PY, "-c", child], cwd=tmp_path, logs_dir=tmp_path / "logs",
+                      timeout_seconds=30)
+    text = str(exc.value)
+    assert "java.lang.OutOfMemoryError: Java heap space" in text
+    assert "BANNER LINE" not in text
+
+
+def test_failure_without_any_report_quotes_the_stdout_tail(tmp_path):
+    # `error "..."` in a workflow body prints only its message, on stdout.
+    child = ("import sys; print('pipeline-level failure: missing --fasta'); "
+             "print('Nextflow 99 is available - Please consider updating your version to it', "
+             "file=sys.stderr); sys.exit(1)")
+    with pytest.raises(NfclawError) as exc:
+        execution.run([PY, "-c", child], cwd=tmp_path, logs_dir=tmp_path / "logs",
+                      timeout_seconds=30)
+    assert "pipeline-level failure: missing --fasta" in str(exc.value)
+
+
 def test_failure_does_not_point_at_a_nextflow_log_that_was_never_written(tmp_path):
     # Nextflow can fail before it creates its log (e.g. the launcher cannot fetch NXF_VER).
     with pytest.raises(NfclawError) as exc:

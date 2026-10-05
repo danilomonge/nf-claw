@@ -19,7 +19,7 @@ class ExecResult:
     stderr_path: Path
 
 
-def _tee(src, term_stream, log_file, run_log: runlog.RunLog) -> None:
+def _tee(src, term_stream, log_file, run_log: runlog.RunLog, stream: str) -> None:
     """Forward a child stream to the terminal, its own log file and the run log at once, live.
 
     Reads whatever is already available (`read1`) instead of waiting for a full buffer or a whole
@@ -37,7 +37,7 @@ def _tee(src, term_stream, log_file, run_log: runlog.RunLog) -> None:
                 log_file.flush()
             except (OSError, ValueError):
                 pass
-            run_log.write(chunk)
+            run_log.write(chunk, stream)
             if term is not None:
                 try:
                     term.write(chunk)
@@ -107,9 +107,9 @@ def _run(command: list[str], *, cwd: Path, logs_dir: Path, timeout_seconds: int 
         # while nfclaw is blocked reading the other would deadlock. Daemon threads so a wedged reader
         # can never keep the process alive on its own.
         readers = [
-            threading.Thread(target=_tee, args=(proc.stdout, sys.stdout, out_fh, run_log),
+            threading.Thread(target=_tee, args=(proc.stdout, sys.stdout, out_fh, run_log, "out"),
                              daemon=True),
-            threading.Thread(target=_tee, args=(proc.stderr, sys.stderr, err_fh, run_log),
+            threading.Thread(target=_tee, args=(proc.stderr, sys.stderr, err_fh, run_log, "err"),
                              daemon=True),
         ]
         for t in readers:
@@ -152,23 +152,29 @@ def _log_details(run_log: runlog.RunLog) -> dict[str, str]:
 
 
 def _failure(code: int, run_log: runlog.RunLog) -> NfclawError:
-    """The error for a launch that exited non-zero: Nextflow's own report, quoted from this launch's
-    console, plus where the full logs are. Nextflow prints that report on stdout — stderr only carries
-    the launcher's chatter — and refers to its log relative to a directory the reader is not in."""
-    excerpt = runlog.error_excerpt(run_log.console_tail())
+    """The error for a launch that exited non-zero: what Nextflow itself reported, quoted from this
+    launch's console, plus where the full logs are. Nextflow prints its error reports on stdout and
+    some details on stderr (nf-schema's list of invalid values), and refers to its log relative to a
+    directory the reader is not in."""
+    on_stderr = runlog.stderr_excerpt(run_log.console_tail("err"))
+    # Without an `ERROR ~` report on stdout its tail is only worth quoting when stderr is silent too
+    # (an `error "…"` in a workflow prints just its message there); otherwise it is the banner.
+    on_stdout = runlog.error_excerpt(run_log.console_tail("out"),
+                                     tail_if_no_report=not on_stderr)
     details: dict = {"exit_code": code, **_log_details(run_log)}
-    task = runlog.failing_task_dir(excerpt)
+    task = runlog.failing_task_dir(on_stdout + on_stderr)
     if task is not None and task.is_dir():
         details["failing_task"] = str(task / ".command.err")
     message = f"Nextflow execution failed (exit status {code})."
-    if excerpt:
-        message += " Nextflow reported:\n" + "\n".join(f"    {line}" if line else ""
-                                                         for line in excerpt)
+    if on_stdout:
+        message += " Nextflow reported:\n" + _quote(on_stdout)
+    if on_stderr:
+        message += ("\n  and on stderr:\n" if on_stdout else " Nextflow reported on stderr:\n") + \
+            _quote(on_stderr)
     causes = (runlog.nextflow_log_causes(run_log.nextflow_log)
               if "nextflow_log" in details else [])
     if causes:
-        message += "\n  The underlying cause, from the Nextflow log:\n" + \
-            "\n".join(f"    {cause}" for cause in causes)
+        message += "\n  The underlying cause, from the Nextflow log:\n" + _quote(causes)
     task_hint = (" The failing task's complete output is in .command.err and .command.log beside "
                  "`failing_task`." if "failing_task" in details else "")
     return NfclawError(
@@ -177,6 +183,10 @@ def _failure(code: int, run_log: runlog.RunLog) -> NfclawError:
              f"{task_hint} The whole launch is in `run_log`. Common causes and fixes: "
              f"{runlog.known_issues_path()}."),
         details=details)
+
+
+def _quote(lines: list[str]) -> str:
+    return "\n".join(f"    {line}" if line else "" for line in lines)
 
 
 def _terminate(proc: subprocess.Popen) -> None:
