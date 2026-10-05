@@ -8,7 +8,7 @@ summary: nf-core/tumourevo is a bioinformatics pipeline to model tumour evolutio
 has_samplesheet: true
 input: samplesheet (dataset, patient, tumour_sample, normal_sample, cancer_type, cna_caller, vcf, tbi, tumour_alignment, tumour_alignment_index, cna_segments, cna_extra)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: BCFTools, CNAqc, CTREE, EnsemblVEP, mobster, PyClone-VI, SigProfiler, SparseSignatures, Tabix, TINC, VIBER
+tools: ["BCFTools", "CNAqc", "CTREE", "EnsemblVEP", "mobster", "PyClone-VI", "SigProfiler", "SparseSignatures", "Tabix", "TINC", "VIBER"]
 ---
 # tumourevo
 
@@ -54,10 +54,10 @@ Any of the optional columns above may be appended to the header when your data n
 |---|---|---|---|---|---|
 | `--input` | string (file path) |  |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--genome` | string | GRCh38 | GRCh38, GRCh37 |  | Reference genome name. |
+| `--genome` | string | GRCh38 | `GRCh38`, `GRCh37` |  | Reference genome name. |
 
 ## Reference genome
-**This release resolves a reference genome remotely by default.** `--genome` defaults to `GRCh38`, which is looked up in AWS iGenomes at `s3://ngi-igenomes/igenomes/`. A run that passes no reference of its own therefore reads its references over S3 — that fails on a host without access to the bucket, and downloads tens of gigabytes on one that has it. For a self-contained run, pass your own reference instead (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Set `--igenomes-ignore true` to disable the lookup entirely.
+**This release resolves a reference genome remotely by default.** `--genome` defaults to `GRCh38`, which is looked up in AWS iGenomes at `s3://ngi-igenomes/igenomes/`. A run that passes no reference of its own therefore reads its references over S3 — that fails on a host without access to the bucket, and downloads tens of gigabytes on one that has it. For a self-contained run, pass your own reference instead (e.g. `--fasta`; the `main_options` group in [reference.md](reference.md) lists every reference option). Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

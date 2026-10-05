@@ -91,7 +91,7 @@ nf-core/sopa pipeline parameters. Every parameter from the pinned `nextflow_sche
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -149,7 +149,7 @@ nf-core/sopa pipeline parameters. Every parameter from the pinned `nextflow_sche
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--technology` | string | yes |  | xenium, merscope, cosmx, visium_hd, molecular_cartography, macsima, phenocycler, hyperion, ome_tif, toy_dataset |  | xenium | Technology used for the spatial data, e.g., 'xenium', 'merscope', ... |
+| `--technology` | string | yes |  | `xenium`, `merscope`, `cosmx`, `visium_hd`, `molecular_cartography`, `macsima`, `phenocycler`, `hyperion`, `ome_tif`, `toy_dataset` |  | xenium | Technology used for the spatial data, e.g., 'xenium', 'merscope', ... |
 | `--visium-hd-imread-page` | number |  |  |  |  |  | Optional page for the imageio reader |
 
 ## scanpy_preprocessing
@@ -184,7 +184,7 @@ nf-core/sopa pipeline parameters. Every parameter from the pinned `nextflow_sche
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--level` | number |  |  |  |  |  | Level of the image pyramid to use for tissue segmentation |
-| `--mode` | string |  |  | staining, saturation |  |  | Mode for the tissue segmentation: 'staining' or 'saturation' (for H&E images). |
+| `--mode` | string |  |  | `staining`, `saturation` |  |  | Mode for the tissue segmentation: 'staining' or 'saturation' (for H&E images). |
 | `--tissue-segmentation-kwargs` | string |  |  |  |  |  | Additional tissue segmentation parameters as a python dict string |
 | `--use-tissue-segmentation` | boolean |  |  |  |  |  | Whether to run tissue segmentation |
 

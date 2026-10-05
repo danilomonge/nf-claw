@@ -6,9 +6,9 @@ commit: 717fd19e7a40099fbe5362ec48ab8ec21f62d3f8
 description: Submit sequences, assemblies, MAGs, etc., to public archives
 summary: nf-core/seqsubmit is a Nextflow pipeline for submitting sequence data to ENA. The pipeline currently supports the following submission modes, each routed to a dedicated workflow:
 has_samplesheet: false
-input: parameters (no samplesheet)
+input: --input (no samplesheet schema)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: MultiQC, CoverM, CheckM2, CAT and BAT, tRNAscan-SE 2.0, barrnap, ENA Webin-CLI, assembly_uploader, genome_uploader
+tools: ["MultiQC", "CoverM", "CheckM2", "CAT and BAT", "tRNAscan-SE 2.0", "barrnap", "ENA Webin-CLI", "assembly_uploader", "genome_uploader"]
 ---
 # seqsubmit
 
@@ -17,15 +17,15 @@ nf-core/seqsubmit is a Nextflow pipeline for submitting sequence data to ENA. Th
 ## Run it
 ```bash
 git submodule update --init pipelines/seqsubmit/upstream   # first time only
-nfclaw run seqsubmit --outdir results --centre-name <centre_name> --mode <mode> -profile docker
+nfclaw run seqsubmit --input <input> --outdir results --centre-name <centre_name> --mode <mode> -profile docker
 # raw equivalent (the submodule is already pinned to this release, so no -r is needed):
-nextflow run pipelines/seqsubmit/upstream -profile docker --outdir results --centre-name <centre_name> --mode <mode>
+nextflow run pipelines/seqsubmit/upstream -profile docker --input <input> --outdir results --centre-name <centre_name> --mode <mode>
 ```
 
 This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions seqsubmit` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show seqsubmit --pipeline-version X.Y.Z` prints that release's docs). To run unreleased development code instead, add `--pipeline-version dev`: nfclaw resolves nf-core's `dev` branch to its current head commit at run time and records that commit in provenance (`nfclaw show seqsubmit --pipeline-version dev` prints the docs generated from it). Use it only for changes not yet released.
 
 ## Inputs
-This pipeline does not use a samplesheet; configure inputs via parameters.
+This release publishes no samplesheet schema for `--input`, so nfclaw does not pre-check its contents. The parameter reads: Path to samplesheet describing the data to be submitted (supported formats: csv, tsv, yaml, yml, json). Columns/fields depend on the pipeline mode. Configure the other inputs via parameters (see [reference.md](reference.md)).
 
 ## Required parameters
 | parameter | type | default | allowed values | constraints | description |
@@ -33,7 +33,7 @@ This pipeline does not use a samplesheet; configure inputs via parameters.
 | `--input` | string (file path) |  |  | matches ^\S+\.(csv\|tsv\|yaml\|yml\|json)$ | Path to samplesheet describing the data to be submitted (supported formats: csv, tsv, yaml, yml, json). Columns/fields depend on the pipeline mode |
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 | `--centre-name` | string |  |  |  | Name of the submitter's organisation (mandatory for broker accounts). |
-| `--mode` | string |  | mags, bins, metagenomic_assemblies, reads |  | Type of the data to be submitted |
+| `--mode` | string |  | `mags`, `bins`, `metagenomic_assemblies`, `reads` |  | Type of the data to be submitted |
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):
@@ -49,7 +49,7 @@ Every parameter not listed above is optional as far as the schema is concerned. 
 A real (non-`--demo`) run requests the resources the pipeline's `conf/base.config` asks for, which are sized for a server — a single step can request far more memory than a workstation has, and Nextflow retries a failed step with more still. If a run fails with `Process requirement exceeds available memory` (or CPUs), cap every request, and every retry, at what this machine actually has:
 
 ```bash
-nfclaw run seqsubmit --outdir results -profile docker \
+nfclaw run seqsubmit --input <input> --outdir results -profile docker \
   --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h
 ```
 

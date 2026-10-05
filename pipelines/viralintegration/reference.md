@@ -21,7 +21,7 @@ nf-core/viralintegration pipeline parameters. Every parameter from the pinned `n
 | `--multiqc-logo` | string |  | yes |  |  |  | Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file |
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--plaintext-email` | boolean |  | yes |  |  | false | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--validationFailUnrecognisedParams` | boolean |  | yes |  |  | false | Validation of parameters fails when an unrecognised parameter is found. |
 | `--validationLenientMode` | boolean |  | yes |  |  | false | Validation of parameters in lenient more. |

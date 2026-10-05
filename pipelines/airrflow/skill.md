@@ -8,7 +8,7 @@ summary: nf-core/airrflow is a bioinformatics best-practice pipeline to analyze 
 has_samplesheet: true
 input: samplesheet (sample_id, subject_id, species, pcr_target_locus, tissue, sex, age, biomaterial_provider, single_cell, filename_R1, filename_R2, filename_I1, filename)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FastQC, Fastp, pRESTO, SHazaM, Change-O, IgBLAST, Alakazam, SCOPer, Dowser, IgPhyML, RAxML, MultiQC
+tools: ["FastQC", "Fastp", "pRESTO", "SHazaM, Change-O", "IgBLAST", "Alakazam", "SCOPer", "Dowser", "IgPhyML", "RAxML", "MultiQC"]
 ---
 # airrflow
 
@@ -29,8 +29,8 @@ This is the pinned latest release. To run a different one, list the available re
 |---|---|---|---|---|
 | `sample_id` | string or number | yes |  | matches ^\S+$ |
 | `subject_id` | string or number | yes |  | matches ^\S+$ |
-| `species` | string | yes | mouse, human |  |
-| `pcr_target_locus` | string | yes | TR, IG, ig, tr, Ig, Tr |  |
+| `species` | string | yes | `mouse`, `human` |  |
+| `pcr_target_locus` | string | yes | `TR`, `IG`, `ig`, `tr`, `Ig`, `Tr` |  |
 | `tissue` | string | yes |  |  |
 | `sex` | string | yes |  |  |
 | `age` | string or number | yes |  |  |
@@ -55,9 +55,6 @@ Any of the optional columns above may be appended to the header when your data n
 |---|---|---|---|---|---|
 | `--input` | string (file path) |  |  | matches ^\S+\.tsv$ | Path to comma-separated file containing information about the samples in the experiment. |
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-
-## Reference genome
-No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

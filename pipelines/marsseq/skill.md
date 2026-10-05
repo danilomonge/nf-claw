@@ -8,7 +8,7 @@ summary: nf-core/marsseq is a bioinformatics single-cell preprocessing pipeline 
 has_samplesheet: true
 input: samplesheet (batch, fastq_1, fastq_2, amp_batches, seq_batches, well_cells)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: cutadapt, FastQC, fastp, STAR, STARsolo, MultiQC
+tools: ["cutadapt", "FastQC", "fastp", "STAR", "STARsolo", "MultiQC"]
 ---
 # marsseq
 
@@ -48,7 +48,7 @@ batch,fastq_1,fastq_2,amp_batches,seq_batches,well_cells
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Reference genome
-**This release resolves a reference genome remotely by default.** `--genome` defaults to `mm10`, which is looked up in AWS iGenomes. A run that passes no reference of its own therefore reads its references over S3 — that fails on a host without access to the bucket, and downloads tens of gigabytes on one that has it. For a self-contained run, pass your own reference instead (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`).
+**This release resolves a reference genome remotely by default.** `--genome` defaults to `mm10`, which is looked up in AWS iGenomes. A run that passes no reference of its own therefore reads its references over S3 — that fails on a host without access to the bucket, and downloads tens of gigabytes on one that has it. For a self-contained run, pass your own reference instead (e.g. `--fasta`; the `reference_genome_options` group in [reference.md](reference.md) lists every reference option).
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator
 
+# nf-schema's path formats: `path` is a file or a directory, `file-path-pattern` a glob.
+PATH_FORMATS = ("file-path", "directory-path", "path", "file-path-pattern")
+
 
 @dataclass(frozen=True)
 class Param:
@@ -39,8 +42,9 @@ class ParamSchema:
         return set(self.params)
 
     def reference_path_params(self) -> set[str]:
-        return {n for n, p in self.params.items()
-                if p.fmt in ("file-path", "directory-path")}
+        """Every parameter whose value names something on a file system — nf-schema's `file-path`,
+        `directory-path`, `path` (either) and `file-path-pattern` (a glob)."""
+        return {n for n, p in self.params.items() if p.fmt in PATH_FORMATS}
 
     def groups(self) -> dict[str, list[Param]]:
         out: dict[str, list[Param]] = {}
@@ -66,8 +70,10 @@ class Column:
 
     @property
     def is_path(self) -> bool:
-        """Any filesystem path (file or directory) — these values get an existence check."""
-        return self.fmt in ("file-path", "directory-path")
+        """Any filesystem path (a file, a directory, or nf-schema's `path` for either) — these values
+        must be absolute and get an existence check. A glob (`file-path-pattern`) cannot be checked
+        for existence, so it is left to nf-schema."""
+        return self.fmt in ("file-path", "directory-path", "path")
 
 
 @dataclass(frozen=True)
@@ -115,7 +121,7 @@ def _type_of(obj: dict) -> str:
     return "string"
 
 
-def _iter_groups(data: dict) -> Iterator[tuple[str, dict]]:
+def iter_param_groups(data: dict) -> Iterator[tuple[str, dict]]:
     """Yield (group_name, group_object) for every parameter group.
 
     nf-core schemas place groups under "definitions" (older) or "$defs" (newer),
@@ -134,7 +140,7 @@ def _iter_groups(data: dict) -> Iterator[tuple[str, dict]]:
 def load_param_schema(repo: Path) -> ParamSchema:
     data = json.loads((repo / "nextflow_schema.json").read_text(encoding="utf-8"))
     params: dict[str, Param] = {}
-    for gname, gobj in _iter_groups(data):
+    for gname, gobj in iter_param_groups(data):
         props = gobj.get("properties")
         if not isinstance(props, dict):
             continue
@@ -168,8 +174,10 @@ def load_param_schema(repo: Path) -> ParamSchema:
     )
 
 
-def load_input_schema(repo: Path) -> InputSchema | None:
-    path = repo / "assets" / "schema_input.json"
+def load_input_schema(repo: Path, rel: str = "assets/schema_input.json") -> InputSchema | None:
+    """The samplesheet schema at `rel` inside the pipeline (by default the nf-core convention), or
+    None when the file is absent."""
+    path = repo / rel
     if not path.exists():
         return None
     data = json.loads(path.read_text(encoding="utf-8"))

@@ -5,10 +5,10 @@ version: 1.0.0
 commit: 7c5cb9593b80d2a3cdc8bcb14137722351644435
 description: Long-term vegetation trend analysis pipeline for rangeland systems using satellite imagery.
 summary: nf-core/rangeland is a geographical best-practice analysis pipeline for remotely sensed imagery. The pipeline processes satellite imagery alongside auxiliary data in multiple steps to arrive at a set of trend files related to land-cover changes. The main pipeline steps are:
-has_samplesheet: true
-input: samplesheet (sample, fastq_1, fastq_2)
+has_samplesheet: false
+input: --input (no samplesheet schema)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FORCE, MultiQC
+tools: ["FORCE", "MultiQC"]
 ---
 # rangeland
 
@@ -17,26 +17,15 @@ nf-core/rangeland is a geographical best-practice analysis pipeline for remotely
 ## Run it
 ```bash
 git submodule update --init pipelines/rangeland/upstream   # first time only
-nfclaw run rangeland --input samplesheet.csv --outdir results --dem <dem> --wvdb <wvdb> --data-cube <data_cube> --aoi <aoi> --endmember <endmember> -profile docker
+nfclaw run rangeland --input <input> --outdir results --dem <dem> --wvdb <wvdb> --data-cube <data_cube> --aoi <aoi> --endmember <endmember> -profile docker
 # raw equivalent (the submodule is already pinned to this release, so no -r is needed):
-nextflow run pipelines/rangeland/upstream -profile docker --input samplesheet.csv --outdir results --dem <dem> --wvdb <wvdb> --data-cube <data_cube> --aoi <aoi> --endmember <endmember>
+nextflow run pipelines/rangeland/upstream -profile docker --input <input> --outdir results --dem <dem> --wvdb <wvdb> --data-cube <data_cube> --aoi <aoi> --endmember <endmember>
 ```
 
 This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions rangeland` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show rangeland --pipeline-version X.Y.Z` prints that release's docs). To run unreleased development code instead, add `--pipeline-version dev`: nfclaw resolves nf-core's `dev` branch to its current head commit at run time and records that commit in provenance (`nfclaw show rangeland --pipeline-version dev` prints the docs generated from it). Use it only for changes not yet released.
 
 ## Inputs
-| column | type | required | allowed values | constraints |
-|---|---|---|---|---|
-| `sample` | string | yes |  | matches ^\S+$ |
-| `fastq_1` | string (file path) | yes |  | matches ^\S+\.f(ast)?q\.gz$ |
-| `fastq_2` | string (file path) | no |  | matches ^\S+\.f(ast)?q\.gz$ |
-
-The samplesheet is a CSV with this header (the columns the schema requires); fill each value per the table above and `reference.md` (no example value is invented here):
-```csv
-sample,fastq_1
-```
-
-Any of the optional columns above may be appended to the header when your data needs them: `fastq_2`.
+This release publishes no samplesheet schema for `--input`, so nfclaw does not pre-check its contents. The parameter reads: Root directory or tarball of all satellite imagery. Configure the other inputs via parameters (see [reference.md](reference.md)).
 
 ## Required parameters
 | parameter | type | default | allowed values | constraints | description |
@@ -63,7 +52,7 @@ Every parameter not listed above is optional as far as the schema is concerned. 
 A real (non-`--demo`) run requests the resources the pipeline's `conf/base.config` asks for, which are sized for a server — a single step can request far more memory than a workstation has, and Nextflow retries a failed step with more still. If a run fails with `Process requirement exceeds available memory` (or CPUs), cap every request, and every retry, at what this machine actually has:
 
 ```bash
-nfclaw run rangeland --input samplesheet.csv --outdir results -profile docker \
+nfclaw run rangeland --input <input> --outdir results -profile docker \
   --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h
 ```
 

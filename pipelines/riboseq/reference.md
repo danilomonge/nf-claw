@@ -12,16 +12,16 @@ nf-core/riboseq pipeline parameters. Every parameter from the pinned `nextflow_s
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--aligner` | string |  |  | star |  | star | Specifies the alignment algorithm to use - available options are currently 'star'. |
+| `--aligner` | string |  |  | `star` |  | star | Specifies the alignment algorithm to use - available options are currently 'star'. |
 | `--bam-csi-index` | boolean |  |  |  |  |  | Create a CSI index for BAM files instead of the traditional BAI index. This will be required for genomes with larger chromosome sizes. |
 | `--extra-kallisto-quant-args` | string |  |  |  |  |  | Extra arguments to pass to the kallisto quant command in addition to defaults defined by the pipeline. |
 | `--extra-salmon-quant-args` | string |  |  |  |  |  | Extra arguments to pass to Salmon quant command in addition to defaults defined by the pipeline. |
 | `--extra-star-align-args` | string |  |  |  |  |  | Extra arguments to pass to STAR alignment command in addition to defaults defined by the pipeline. Only available for the STAR-Salmon route. |
 | `--kallisto-quant-fraglen` | integer |  |  |  |  |  | Estimated average fragment length required by kallisto for single-end libraries. |
 | `--kallisto-quant-fraglen-sd` | integer |  |  |  |  |  | Estimated standard deviation of the fragment length required by kallisto for single-end libraries. |
-| `--pseudo-aligner` | string |  |  | salmon, kallisto |  | salmon | Pseudo-aligner used for translational efficiency quantification under `--te_quantification_method pseudo`. |
+| `--pseudo-aligner` | string |  |  | `salmon`, `kallisto` |  | salmon | Pseudo-aligner used for translational efficiency quantification under `--te_quantification_method pseudo`. |
 | `--pseudo-aligner-kmer-size` | integer |  |  |  | ≥ 1 | 23 | Kmer length passed to Salmon indexing for pseudo-alignment quantification. |
-| `--salmon-quant-libtype` | string |  |  | A, IS, ISF, ISR, IU, MS, MSF, MSR, MU, OS, OSF, OSR, OU, SF, SR, U |  |  | Override Salmon library type inferred based on strandedness defined in meta object. |
+| `--salmon-quant-libtype` | string |  |  | `A`, `IS`, `ISF`, `ISR`, `IU`, `MS`, `MSF`, `MSR`, `MU`, `OS`, `OSF`, `OSR`, `OU`, `SF`, `SR`, `U` |  |  | Override Salmon library type inferred based on strandedness defined in meta object. |
 | `--seq-center` | string |  |  |  |  |  | Sequencing center information to be added to read group of BAM files. |
 | `--star-ignore-sjdbgtf` | boolean |  |  |  |  |  | When using pre-built STAR indices do not re-extract and use splice junctions from the GTF file. |
 | `--stranded-threshold` | number |  |  |  | ≥ 0.5; ≤ 1 | 0.8 | The fraction of stranded reads that must be assigned to a strandedness for confident assignment. Must be at least 0.5. |
@@ -41,7 +41,7 @@ nf-core/riboseq pipeline parameters. Every parameter from the pinned `nextflow_s
 | `--multiqc-methods-description` | string (file path) |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -125,7 +125,7 @@ nf-core/riboseq pipeline parameters. Every parameter from the pinned `nextflow_s
 | `--extra-fqlint-args` | string |  |  |  |  | --disable-validator P001 | Extra arguments to pass to the fq lint command. |
 | `--remove-ribo-rna` | boolean |  |  |  |  | true | Enable the removal of reads derived from ribosomal RNA. |
 | `--ribo-database-manifest` | string (file path) |  |  |  |  | ${projectDir}/assets/rrna-db-defaults.txt | Text file containing paths to fasta files (one per line) that will be used to create the database for rRNA removal. |
-| `--ribo-removal-tool` | string |  |  | sortmerna, bowtie2, ribodetector |  | sortmerna | Specifies which tool to use for ribosomal RNA removal. |
+| `--ribo-removal-tool` | string |  |  | `sortmerna`, `bowtie2`, `ribodetector` |  | sortmerna | Specifies which tool to use for ribosomal RNA removal. |
 | `--ribodetector-chunk-size` | integer |  |  |  |  | 100 | Chunk size for RiboDetector to control memory usage. |
 | `--sortmerna-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built sortmerna index. |
 
@@ -137,7 +137,7 @@ nf-core/riboseq pipeline parameters. Every parameter from the pinned `nextflow_s
 | `--extra-trimgalore-args` | string |  |  |  |  |  | Extra arguments to pass to Trim Galore! command in addition to defaults defined by the pipeline. |
 | `--fastp-merge` | boolean |  |  |  |  | false | For paired-end data processed with fastp, merge overlapping read pairs into a single read. |
 | `--min-trimmed-reads` | integer |  |  |  |  | 10000 | Minimum number of trimmed reads below which samples are removed from further processing. Some downstream steps in the pipeline will fail if this threshold is too low. |
-| `--trimmer` | string |  |  | trimgalore, fastp |  | trimgalore | Specifies the trimming tool to use - available options are 'trimgalore' and 'fastp'. |
+| `--trimmer` | string |  |  | `trimgalore`, `fastp` |  | trimgalore | Specifies the trimming tool to use - available options are 'trimgalore' and 'fastp'. |
 
 ## reference_genome_options
 
@@ -192,21 +192,21 @@ nf-core/riboseq pipeline parameters. Every parameter from the pinned `nextflow_s
 | `--ribo-lfc-threshold` | number |  |  |  |  | 0 | Minimum absolute log2 fold change for translated mRNA (Ribo-seq) to be considered significant. Set to 0 to disable. Maps to anota2seq selDeltaP / deltaTE lfc_threshold_ribo. |
 | `--rna-lfc-threshold` | number |  |  |  |  | 0 | Minimum absolute log2 fold change for total mRNA to be considered significant. Set to 0 to disable. Maps to anota2seq selDeltaT / deltaTE lfc_threshold_rna. |
 | `--te-lfc-threshold` | number |  |  |  |  | 0.2630344 | Minimum absolute log2 fold change for translational efficiency (TE) to be considered significant. Genes must meet both p-value and effect size thresholds. Default is log2(1.2) matching anota2seq. Maps to anota2seq selDeltaPT / deltaTE lfc_threshold_te. |
-| `--te-quantification-method` | string |  |  | alignment, pseudo, plastid_psite |  | plastid_psite | Quantification method for translational efficiency analysis: 'plastid_psite' (in-frame P-site counts from plastid, default), 'alignment' (STAR -> Salmon) or 'pseudo' (Salmon pseudo-alignment). |
+| `--te-quantification-method` | string |  |  | `alignment`, `pseudo`, `plastid_psite` |  | plastid_psite | Quantification method for translational efficiency analysis: 'plastid_psite' (in-frame P-site counts from plastid, default), 'alignment' (STAR -> Salmon) or 'pseudo' (Salmon pseudo-alignment). |
 | `--translational-efficiency-method` | string |  |  |  | matches ^(anota2seq\|deltate\|dotseq)(,(anota2seq\|deltate\|dotseq))*$ | anota2seq | Comma-separated list of translational efficiency methods to run; any of `anota2seq`, `deltate`, `dotseq`. Each runs independently. `dotseq` is ORF-level only (no gene-level fit) and requires `--extended_orf_analysis true`. |
 
 ## umi_options
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--umi-dedup-tool` | string |  |  | umitools, umicollapse |  | umitools | Specifies the tool to use for UMI deduplication - available options are 'umitools' and 'umicollapse'. |
+| `--umi-dedup-tool` | string |  |  | `umitools`, `umicollapse` |  | umitools | Specifies the tool to use for UMI deduplication - available options are 'umitools' and 'umicollapse'. |
 | `--umi-discard-read` | integer |  |  |  |  |  | After UMI barcode extraction discard either R1 or R2 by setting this parameter to 1 or 2, respectively. |
 | `--umitools-bc-pattern` | string |  |  |  |  |  | The UMI barcode pattern to use e.g. 'NNNNNN' indicates that the first 6 nucleotides of the read are from the UMI. |
 | `--umitools-bc-pattern2` | string |  |  |  |  |  | The UMI barcode pattern to use if the UMI is located in read 2. |
 | `--umitools-dedup-primary-only` | boolean |  |  |  |  | true | Filter to primary alignments before UMI-tools dedup. |
 | `--umitools-dedup-stats` | boolean |  |  |  |  |  | Generate output stats when running "umi_tools dedup". |
 | `--umitools-extract-method` | string |  |  |  |  | string | UMI pattern to use. Can be either 'string' (default) or 'regex'. |
-| `--umitools-grouping-method` | string |  |  | unique, percentile, cluster, adjacency, directional |  | directional | Method to use to determine read groups by subsuming those with similar UMIs. All methods start by identifying the reads with the same mapping position, but treat similar yet nonidentical UMIs differently. |
+| `--umitools-grouping-method` | string |  |  | `unique`, `percentile`, `cluster`, `adjacency`, `directional` |  | directional | Method to use to determine read groups by subsuming those with similar UMIs. All methods start by identifying the reads with the same mapping position, but treat similar yet nonidentical UMIs differently. |
 | `--umitools-umi-separator` | string |  |  |  |  |  | The character that separates the UMI in the read name. Most likely a colon if you skipped the extraction with UMI-tools and used other software. |
 | `--with-umi` | boolean |  |  |  |  |  | Enable UMI extraction and UMI-based read deduplication for all samples unless overridden by the optional `with_umi` samplesheet column. |
 

@@ -29,6 +29,9 @@ jobs:
         with:
           submodules: recursive     # existing pipelines, so the drift gate can regenerate them
           fetch-depth: 0
+          # This job runs upstream pipeline code (Nextflow parses each new release's Groovy config).
+          # Keep the write token out of .git/config; create-pull-request authenticates on its own.
+          persist-credentials: false
       # Existing submodules need their tags present so `git describe --tags` resolves each
       # pinned version deterministically (the drift gate compares regenerated context).
       - name: Fetch submodule tags
@@ -44,11 +47,15 @@ jobs:
       - uses: ./.github/actions/setup-nextflow
       - name: Discover, validate acceptance, keep only what Nextflow accepts
         id: disc
+        env:
+          # Through the environment, never `${{ }}` inside the script: a dispatched value is data.
+          LIMIT: ${{ inputs.limit || '12' }}
         run: |
-          set -e
-          python -m librarian.discover_pipelines --repo-root . --limit "${{ inputs.limit || '12' }}" \
+          # pipefail: a crashed discovery must fail the job, not read as "No new pipelines to add."
+          set -eo pipefail
+          python -m librarian.discover_pipelines --repo-root . --limit "$LIMIT" \
             | tee "$RUNNER_TEMP/disc.out"
-          added=$(grep ': added at ' "$RUNNER_TEMP/disc.out" | sed -E 's/: added at .*//' | tr -d ' ')
+          added=$(sed -nE 's/^([A-Za-z0-9._-]+): added at .*/\1/p' "$RUNNER_TEMP/disc.out")
           if [ -z "$added" ]; then
             echo "No new pipelines to add."
             echo "kept=0" >> "$GITHUB_OUTPUT"

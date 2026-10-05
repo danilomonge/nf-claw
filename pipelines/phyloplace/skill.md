@@ -8,7 +8,7 @@ summary: nf-core/phyloplace is a bioinformatics best-practice analysis pipeline 
 has_samplesheet: false
 input: parameters (no samplesheet)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: HMMER, Biopython, Clustal Omega, MAFFT, EPA-NG, Gappa, DuckDB, seqtk, MultiQC
+tools: ["HMMER", "Biopython", "Clustal Omega", "MAFFT", "EPA-NG", "Gappa", "DuckDB", "seqtk", "MultiQC"]
 ---
 # phyloplace
 

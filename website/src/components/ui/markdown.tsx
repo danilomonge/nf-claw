@@ -1,9 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Check, Copy } from "lucide-react";
+import { resolveDocLink, type LinkContext } from "@/lib/links";
+
+const LINK_CLASS =
+  "font-medium text-claw-300 underline-offset-4 transition hover:text-claw-200 hover:underline";
 
 function CodeBlock({ children }: { children: string }) {
   const [copied, setCopied] = useState(false);
@@ -32,7 +37,14 @@ function CodeBlock({ children }: { children: string }) {
   );
 }
 
-export function Markdown({ content }: { content: string }) {
+export function Markdown({
+  content,
+  links,
+}: {
+  content: string;
+  /** Where the document lives in the repository, so its relative links resolve on the site. */
+  links?: LinkContext;
+}) {
   return (
     <div className="text-fog-muted [overflow-wrap:anywhere]">
       <ReactMarkdown
@@ -55,16 +67,27 @@ export function Markdown({ content }: { content: string }) {
             <h4 className="mb-2 mt-6 text-base font-semibold text-fog">{children}</h4>
           ),
           p: ({ children }) => <p className="my-4 leading-relaxed text-fog-muted">{children}</p>,
-          a: ({ href, children }) => (
-            <a
-              href={href}
-              target={href?.startsWith("http") ? "_blank" : undefined}
-              rel="noreferrer"
-              className="font-medium text-claw-300 underline-offset-4 transition hover:text-claw-200 hover:underline"
-            >
-              {children}
-            </a>
-          ),
+          a: ({ href, children }) => {
+            const resolved = links ? resolveDocLink(href, links) : null;
+            const target = resolved?.href ?? href;
+            if (resolved?.internal) {
+              return (
+                <Link href={resolved.href} className={LINK_CLASS}>
+                  {children}
+                </Link>
+              );
+            }
+            return (
+              <a
+                href={target}
+                target={target?.startsWith("http") ? "_blank" : undefined}
+                rel="noreferrer"
+                className={LINK_CLASS}
+              >
+                {children}
+              </a>
+            );
+          },
           ul: ({ children }) => (
             <ul className="my-4 space-y-2 pl-5 marker:text-claw-400/60 [list-style:disc]">
               {children}

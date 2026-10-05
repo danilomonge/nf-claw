@@ -8,7 +8,7 @@ summary: nf-core/proteinannotator is a bioinformatics pipeline that computes sta
 has_samplesheet: true
 input: samplesheet (id, fasta)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: SeqFu, SeqKit, hmmer, InterProScan, s4pred, MultiQC
+tools: ["SeqFu", "SeqKit", "hmmer", "InterProScan", "s4pred", "MultiQC"]
 ---
 # proteinannotator
 

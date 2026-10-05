@@ -8,7 +8,7 @@ summary: nf-core/drop is a Nextflow rewrite of drop (Detection of RNA Outliers P
 has_samplesheet: true
 input: samplesheet (RNA_ID, RNA_BAM_FILE, RNA_BAI_FILE, DNA_ID, DNA_VCF_FILE, DNA_TBI_FILE, DROP_GROUP, PAIRED_END, COUNT_MODE, COUNT_OVERLAPS, STRAND, HPO_TERMS, GENE_COUNTS_FILE, GENE_ANNOTATION, GENOME, SPLICE_COUNTS_DIR, SEX, TISSUE, DISEASE)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: BBmisc, BCFTools, BeautifulSoup4, BiocManager, BiocParallel, BSgenome, Cowplot, Data.table, DelayedMatrixStats, Devtools, Dplyr, DT, FRASER, GATK, GenomicAlignments, GenomicFeatures, GenomicRanges, Ggplot2, Ggthemes, Hdf5r, Htslib, Knitr, Lxml, MafDB, Magrittr, MultiQC, OUTRIDER, Pheatmap, Plotly.R, Python, R, RColorBrewer, Reshape2, Rmarkdown, Rsamtools, Rtracklayer, R utils, R YAML, SAMtools, Stringr, SummarizedExperiment, Tar, Tidyr, tMAE, Txdbmaker, VariantAnnotation
+tools: ["BBmisc", "BCFTools", "BeautifulSoup4", "BiocManager", "BiocParallel", "BSgenome", "Cowplot", "Data.table", "DelayedMatrixStats", "Devtools", "Dplyr", "DT", "FRASER", "GATK", "GenomicAlignments", "GenomicFeatures", "GenomicRanges", "Ggplot2", "Ggthemes", "Hdf5r", "Htslib", "Knitr", "Lxml", "MafDB", "Magrittr", "MultiQC", "OUTRIDER", "Pheatmap", "Plotly.R", "Python", "R", "RColorBrewer", "Reshape2", "Rmarkdown", "Rsamtools", "Rtracklayer", "R utils", "R YAML", "SAMtools", "Stringr", "SummarizedExperiment", "Tar", "Tidyr", "tMAE", "Txdbmaker", "VariantAnnotation"]
 ---
 # drop
 
@@ -35,13 +35,13 @@ This is the pinned latest release. To run a different one, list the available re
 | `DNA_TBI_FILE` | string (file path) | no |  | matches ^\S+\.vcf.gz.tbi$ |
 | `DROP_GROUP` | string | yes |  | matches ^\S+$ |
 | `PAIRED_END` | boolean | no |  |  |
-| `COUNT_MODE` | string | no | union, IntersectionStrict, IntersectionNotEmpty |  |
+| `COUNT_MODE` | string | no | `union`, `IntersectionStrict`, `IntersectionNotEmpty` |  |
 | `COUNT_OVERLAPS` | boolean | no |  |  |
-| `STRAND` | string | yes | yes, no, reverse |  |
+| `STRAND` | string | yes | `yes`, `no`, `reverse` |  |
 | `HPO_TERMS` | string | no |  |  |
 | `GENE_COUNTS_FILE` | string (file path) | no |  | matches ^\S+\.tsv(\.gz)?$ |
 | `GENE_ANNOTATION` | string | no |  |  |
-| `GENOME` | string | no | ncbi, ucsc |  |
+| `GENOME` | string | no | `ncbi`, `ucsc` |  |
 | `SPLICE_COUNTS_DIR` | string | no |  | matches ^\S+$ |
 | `SEX` | string | no |  |  |
 | `TISSUE` | string | no |  |  |
@@ -74,10 +74,10 @@ RNA_ID	DROP_GROUP	STRAND	SPLICE_COUNTS_DIR
 |---|---|---|---|---|---|
 | `--input` | string (file path) |  |  | matches ^\S+\.tsv$ | Path to the samplesheet file used by the pipeline. The file should be a TSV file. Equivalent to the `sampleAnnotation` parameter in the snakemake pipeline. |
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. Equivalent to the `root` parameter in the snakemake pipeline. |
-| `--genome` | string |  | hg19, hs37d5 , hg38, GRCh38 |  | Equivalent to the `genomeAssembly` parameter in the snakemake pipeline. Either hg19/hs37d5 or hg38/GRCh38, depending on the genome assembly used for mapping |
+| `--genome` | string |  | `hg19`, `hs37d5 `, `hg38`, `GRCh38` |  | Equivalent to the `genomeAssembly` parameter in the snakemake pipeline. Either hg19/hs37d5 or hg38/GRCh38, depending on the genome assembly used for mapping |
 
 ## Reference genome
-No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
+No reference genome is set by default: supply your own (the `input_output_options` group in [reference.md](reference.md) lists the reference options). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

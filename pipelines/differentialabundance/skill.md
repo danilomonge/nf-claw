@@ -8,7 +8,7 @@ summary: nf-core/differentialabundance is a bioinformatics pipeline that can be 
 has_samplesheet: true
 input: samplesheet (sample)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
-tools: decoupler-py, GSEA, affy, DESeq2, GEOQuery, ggplot2, gprofiler2, Limma, optparse, plotly, Proteus, R, RColorBrewer, RMarkdown, shinyngs, SummarizedExperiment, variancePartition, variancePartition::dream
+tools: ["decoupler-py", "GSEA", "affy", "DESeq2", "GEOQuery", "ggplot2", "gprofiler2", "Limma", "optparse", "plotly", "Proteus", "R", "RColorBrewer", "RMarkdown", "shinyngs", "SummarizedExperiment", "variancePartition", "variancePartition::dream"]
 ---
 # differentialabundance
 
@@ -40,7 +40,7 @@ sample
 | parameter | type | default | allowed values | constraints | description |
 |---|---|---|---|---|---|
 | `--study-name` | string | study |  |  | A string identifier used to name result files in the output directory |
-| `--study-type` | string | rnaseq | rnaseq, generic_matrix, affy_array, maxquant, geo_soft_file |  | Input data format category used for input validation and routing (not for selecting analysis methods). |
+| `--study-type` | string | rnaseq | `rnaseq`, `generic_matrix`, `affy_array`, `maxquant`, `geo_soft_file` |  | Input data format category used for input validation and routing (not for selecting analysis methods). |
 | `--input` | string (file path) |  |  | matches ^\S+\.(csv\|tsv)$ | Path to CSV/TSV file containing information about the samples in the experiment. |
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 | `--observations-id-col` | string | sample |  |  | Column in the sample sheet to be used as the primary sample identifier |
@@ -64,7 +64,7 @@ sample
 | `--css-file` | string | ${projectDir}/assets/nf-core_style.css |  |  | CSS to use to style the output, in lieu of the default nf-core styling |
 
 ## Reference genome
-No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
+No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists the reference options). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

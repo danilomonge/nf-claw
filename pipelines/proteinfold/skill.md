@@ -8,7 +8,7 @@ summary: nf-core/proteinfold is a bioinformatics best-practice analysis pipeline
 has_samplesheet: true
 input: samplesheet (sequence, id, fasta)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: AlphaFold, ColabFold, MMseqs2, ESMFold, MultiQC
+tools: ["AlphaFold", "ColabFold", "MMseqs2", "ESMFold", "MultiQC"]
 ---
 # proteinfold
 

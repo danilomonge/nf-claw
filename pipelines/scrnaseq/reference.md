@@ -52,7 +52,7 @@ nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -85,13 +85,13 @@ nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_
 | `--kallisto-index` | string |  |  |  |  |  | Specify a path to the precomputed Kallisto index. |
 | `--kb-t1c` | string (file path) |  |  |  |  |  | Specify a path to the cDNA transcripts-to-capture. |
 | `--kb-t2c` | string (file path) |  |  |  |  |  | Specify a path to the intron transcripts-to-capture. |
-| `--kb-workflow` | string |  |  | standard, lamanno, nac |  | standard | Type of workflow. Use `nac` for an index type that can quantify nascent and mature RNA. Use `lamanno` for RNA velocity based on La Manno et al. 2018 logic. (default: standard) |
+| `--kb-workflow` | string |  |  | `standard`, `lamanno`, `nac` |  | standard | Type of workflow. Use `nac` for an index type that can quantify nascent and mature RNA. Use `lamanno` for RNA velocity based on La Manno et al. 2018 logic. (default: standard) |
 
 ## mandatory_arguments
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--aligner` | string |  |  | kallisto, star, simpleaf, cellranger, cellrangerarc, cellrangermulti |  | simpleaf | Name of the tool to use for scRNA (pseudo-) alignment. |
+| `--aligner` | string |  |  | `kallisto`, `star`, `simpleaf`, `cellranger`, `cellrangerarc`, `cellrangermulti` |  | simpleaf | Name of the tool to use for scRNA (pseudo-) alignment. |
 | `--barcode-whitelist` | string (file path) |  |  |  |  |  | If not using the 10X Genomics platform, a custom barcode whitelist can be used with `--barcode_whitelist`. |
 | `--protocol` | string |  |  |  |  | auto | The protocol that was used to generate the single cell data, e.g. 10x Genomics v2 Chemistry. Can be 'auto' (cellranger only), '10XV1', '10XV2', '10XV3', '10XV4', or any other protocol string that will get directly passed the respective aligner. |
 
@@ -116,7 +116,7 @@ nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_
 | `--qcatch-n-partitions` | integer |  |  |  |  |  | Number of partitions (max barcodes) for QCatch's empty_drops step. |
 | `--remove-doublets` | boolean |  |  |  |  |  | Enable doublet detection and removal using Scrublet via QCatch. |
 | `--simpleaf-index` | string |  |  |  |  |  | Path to pre-built Simpleaf index. |
-| `--simpleaf-umi-resolution` | string |  |  | cr-like, cr-like-em, parsimony, parsimony-em, parsimony-gene, parsimony-gene-em |  | cr-like | UMI resolution strategy to deduplicate UMIs. |
+| `--simpleaf-umi-resolution` | string |  |  | `cr-like`, `cr-like-em`, `parsimony`, `parsimony-em`, `parsimony-gene`, `parsimony-gene-em` |  | cr-like | UMI resolution strategy to deduplicate UMIs. |
 
 ## skip_tools
 
@@ -133,7 +133,7 @@ nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--seq-center` | string |  |  |  |  |  | Name of sequencing center for BAM read group tag. |
-| `--star-feature` | string |  |  | Gene, GeneFull, Gene Velocyto |  | Gene | Quantification type of different transcriptomic feature. Use `GeneFull` on pre-mRNA count for single-nucleus RNA-seq reads. Use `Gene Velocyto` to generate RNA velocity matrix. |
+| `--star-feature` | string |  |  | `Gene`, `GeneFull`, `Gene Velocyto` |  | Gene | Quantification type of different transcriptomic feature. Use `GeneFull` on pre-mRNA count for single-nucleus RNA-seq reads. Use `Gene Velocyto` to generate RNA velocity matrix. |
 | `--star-ignore-sjdbgtf` | string |  |  |  |  |  | Ignore the SJDB GTF file. |
 | `--star-index` | string |  |  |  |  |  | Specify a path to the precomputed STAR index. |
 

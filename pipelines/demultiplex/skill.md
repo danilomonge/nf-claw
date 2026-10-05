@@ -8,7 +8,7 @@ summary: nf-core/demultiplex is a bioinformatics pipeline used to demultiplex th
 has_samplesheet: true
 input: samplesheet (id, samplesheet, lane, flowcell, per_flowcell_manifest)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: fastp, Falco, MultiQC, CheckQC, samshee
+tools: ["fastp", "Falco", "MultiQC", "CheckQC", "samshee"]
 ---
 # demultiplex
 
@@ -46,7 +46,7 @@ Any of the optional columns above may be appended to the header when your data n
 | parameter | type | default | allowed values | constraints | description |
 |---|---|---|---|---|---|
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--demultiplexer` | string | bclconvert | bases2fastq, bcl2fastq, bclconvert, fqtk, sgdemux, mkfastq, mgikit |  | Demultiplexer to use. |
+| `--demultiplexer` | string | bclconvert | `bases2fastq`, `bcl2fastq`, `bclconvert`, `fqtk`, `sgdemux`, `mkfastq`, `mgikit` |  | Demultiplexer to use. |
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

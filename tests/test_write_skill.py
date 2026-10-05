@@ -154,7 +154,7 @@ def test_required_params_only(tmp_path):
     })
     out = write_skill._required_params(ps)
     assert "--input" in out and "--step" in out          # required → shown
-    assert "mapping, markduplicates" in out              # allowed values rendered for required enum
+    assert "`mapping`, `markduplicates`" in out          # allowed values rendered for required enum
     assert "aligner" not in out and "email" not in out   # optional → not shown
 
 
@@ -224,7 +224,7 @@ def test_skill_surfaces_tools_when_citations_present(tmp_path):
     text = skill.read_text()
     assert "## Tools this pipeline runs" in text
     assert "FastQC" in text and "STAR" in text
-    assert "tools: FastQC, STAR" in text.split("---")[1]          # frontmatter (for the catalog)
+    assert 'tools: ["FastQC", "STAR"]' in text.split("---")[1]    # frontmatter (for the catalog)
 
 
 # --- summary: the authors' own one-paragraph description from the README `## Introduction` ---
@@ -447,6 +447,119 @@ def test_no_reference_section_when_the_pipeline_has_no_genome_params(tmp_path):
     pdir = _seed(tmp_path, "mini")
     assert "## Reference genome" not in write_skill.generate(
         "mini", pipelines_dir=pdir)[0].read_text()
+
+
+
+# --- the reference-genome section names only flags and groups the schema actually has ---
+def test_reference_section_names_the_schemas_own_group_and_flags(tmp_path):
+    # oncoanalyser / variantprioritization: --genome lives in a differently named group and there is
+    # no --fasta. The section still said "the `reference_genome_options` group ... e.g. `--fasta`".
+    pdir = _seed_with_schema(tmp_path, "onco", {"definitions": {"reference_data_options": {
+        "properties": {"genome": {"type": "string"},
+                       "ref_data_path": {"type": "string", "format": "path"}}}}})
+    text = write_skill.generate("onco", pipelines_dir=pdir)[0].read_text()
+    assert "## Reference genome" in text and "`reference_data_options`" in text
+    assert "reference_genome_options" not in text and "--fasta" not in text
+
+
+def test_reference_section_points_at_fasta_in_its_own_group(tmp_path):
+    # raredisease: the reference files are in `reference_file_options`, not `reference_genome_options`.
+    pdir = _seed_with_schema(tmp_path, "rare", {"definitions": {
+        "input_output_options": {"properties": {"genome": {"type": "string"}}},
+        "reference_file_options": {"properties": {"fasta": {"type": "string",
+                                                            "format": "file-path"}}}}})
+    text = write_skill.generate("rare", pipelines_dir=pdir)[0].read_text()
+    assert "`--fasta`" in text and "`reference_file_options`" in text
+    assert "reference_genome_options" not in text
+
+
+def test_no_reference_section_without_a_genome_parameter(tmp_path):
+    # mag / nanoseq / airrflow / coproid declare igenomes_base but no --genome: the section told the
+    # agent to pass `--genome <id>`, a flag the runner itself rejects as unknown.
+    pdir = _seed_with_schema(tmp_path, "nogenome", {"definitions": {"reference_genome_options": {
+        "properties": {"igenomes_base": {"type": "string",
+                                         "default": "s3://ngi-igenomes/igenomes/"},
+                       "igenomes_ignore": {"type": "boolean"}}}}})
+    text = write_skill.generate("nogenome", pipelines_dir=pdir)[0].read_text()
+    assert "## Reference genome" not in text and "--genome" not in text
+
+
+# --- tools: names are kept whole, and only software sections count ---
+def test_tools_frontmatter_is_a_json_list_that_keeps_commas(tmp_path):
+    # airrflow cites "SHazaM, Change-O" as one tool; a comma-joined frontmatter split it in two.
+    pdir = _seed(tmp_path, "mini")
+    (pdir / "mini" / "upstream" / "CITATIONS.md").write_text(
+        "# mini\n\n## Pipeline tools\n\n- [SHazaM, Change-O](u)\n- [pRESTO](u)\n")
+    text = write_skill.generate("mini", pipelines_dir=pdir)[0].read_text()
+    assert 'tools: ["SHazaM, Change-O", "pRESTO"]' in text.split("---")[1]
+
+
+def test_data_and_framework_sections_are_not_tools(tmp_path):
+    # readsimulator lists bait sets under "Reference probe/baitset databases"; raredisease lists
+    # nf-core and Nextflow under "Nextflow & nf-core". Neither is software the pipeline runs.
+    up = tmp_path / "upstream"
+    up.mkdir()
+    (up / "CITATIONS.md").write_text(
+        "# x\n\n## Pipeline tools\n\n- [STAR](u)\n\n"
+        "## Reference probe/baitset databases\n\n- [Tetrapods; 2,560 baits](u)\n\n"
+        "## Test Data\n\n- [Full-size data](u)\n\n"
+        "## Nextflow & nf-core\n\n- [nf-core](u)\n- [Nextflow](u)\n")
+    assert write_skill._pipeline_tools(up) == ["STAR"]
+
+
+# --- allowed values: each value is its own code span, so values containing commas stay legible ---
+def test_allowed_values_are_quoted_one_by_one(tmp_path):
+    # ampliseq --filter-ssu allows "bac,arc,mito,euk", "bac", ...; joined with ", " the cell read
+    # "bac,arc,mito,euk, bac, arc, ..." and neither an agent nor the website could split it back.
+    pdir = _seed_with_schema(tmp_path, "enums", {"definitions": {"g": {"properties": {
+        "filter_ssu": {"type": "string", "enum": ["bac,arc", "bac", "vst"]}}}}})
+    ref = write_skill.generate("enums", pipelines_dir=pdir)[1].read_text()
+    assert "| `bac,arc`, `bac`, `vst` |" in ref
+
+
+# --- an --input that is not a samplesheet is documented from its own parameter ---
+def test_input_that_is_not_a_samplesheet_is_documented_from_its_parameter(tmp_path):
+    # rangeland: --input is a directory or tarball of imagery, but the release still ships the
+    # nf-core template schema_input.json (sample, fastq_1, fastq_2), which the skill presented as
+    # the input — and the runner then rejected the real directory as "samplesheet not found".
+    import json
+    pdir = _seed_with_schema(tmp_path, "imagery", {"definitions": {"input_output_options": {
+        "required": ["input", "outdir"],
+        "properties": {
+            "input": {"type": "string", "format": "path", "exists": True,
+                      "description": "Root directory or tarball of all satellite imagery."},
+            "outdir": {"type": "string", "format": "directory-path"}}}}})
+    assets = pdir / "imagery" / "upstream" / "assets"
+    assets.mkdir()
+    (assets / "schema_input.json").write_text(json.dumps({"items": {
+        "properties": {"sample": {"type": "string"},
+                       "fastq_1": {"type": "string", "format": "file-path"}},
+        "required": ["sample", "fastq_1"]}}))
+    text = write_skill.generate("imagery", pipelines_dir=pdir)[0].read_text()
+    front = text.split("---")[1]
+    assert "has_samplesheet: false" in front and "input: --input (no samplesheet schema)" in front
+    assert "fastq_1" not in text and "samplesheet.csv" not in text
+    run = next(line for line in text.splitlines() if line.startswith("nfclaw run imagery"))
+    assert "--input <input>" in run
+    # States only what the release publishes — bactmap and seqsubmit take a samplesheet too, they
+    # just ship no schema for it — and quotes the parameter's own description.
+    assert "publishes no samplesheet schema for `--input`" in text
+    assert "Root directory or tarball of all satellite imagery." in text
+    assert "does not take a samplesheet" not in text
+
+
+def test_input_summary_names_an_input_without_a_samplesheet_schema():
+    ps = ParamSchema(title="t", description="d", params={
+        "input": Param("input", "string", None, None, "Path to a sample sheet", None, True, "io")})
+    assert write_skill._input_summary(None, ps) == "--input (no samplesheet schema)"
+    assert write_skill._input_summary(None) == "parameters (no samplesheet)"
+
+
+def test_cli_requires_a_pipeline_name_or_all():
+    import pytest
+    with pytest.raises(SystemExit) as exc:
+        write_skill.main([])                          # crashed with a TypeError
+    assert exc.value.code == 2
 
 
 # --- dev: docs generated from an unreleased development commit ---------------------------------

@@ -21,7 +21,7 @@ nf-core/crisprseq pipeline parameters. Every parameter from the pinned `nextflow
 | `--multiqc-methods-description` | string (file path) |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--version` | boolean |  | yes |  |  |  | Display version and exit. |
 
@@ -29,7 +29,7 @@ nf-core/crisprseq pipeline parameters. Every parameter from the pinned `nextflow
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--analysis` | string | yes |  | screening, targeted |  |  | Type of analysis to perform. Targeted for targeted CRISPR experiments and screening for CRISPR screening experiments. |
+| `--analysis` | string | yes |  | `screening`, `targeted` |  |  | Type of analysis to perform. Targeted for targeted CRISPR experiments and screening for CRISPR screening experiments. |
 | `--email` | string |  |  |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary. |
 | `--input` | string (file path) |  |  |  | matches ^\S+\.csv$ |  | Path to comma-separated file containing information about the samples in the experiment. |
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
@@ -85,7 +85,7 @@ nf-core/crisprseq pipeline parameters. Every parameter from the pinned `nextflow
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--aligner` | string |  |  | minimap2, bwa, bowtie2 |  | minimap2 | Aligner program to use. |
+| `--aligner` | string |  |  | `minimap2`, `bwa`, `bowtie2` |  | minimap2 | Aligner program to use. |
 | `--protospacer` | string |  |  |  | matches ^[ACGTacgt]+$ |  | Provide the same protospacer sequence for all samples. Will override protospacer sequences provided by an input samplesheet. |
 
 ## targeted_pipeline_steps

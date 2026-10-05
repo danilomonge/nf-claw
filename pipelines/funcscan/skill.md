@@ -8,7 +8,7 @@ summary: nf-core/funcscan is a bioinformatics best-practice analysis pipeline fo
 has_samplesheet: true
 input: samplesheet (sample, fasta, protein, gbk, gff, gff_type)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: ABRicate, AMPir, AMPlify, AMRFinderPlus, AntiSMASH, argNorm, Bakta, BiG-SLiCE, comBGC, DeepARG, DeepBGC, fARGene, GECCO, AMPcombi, hAMRonization, HMMER, InterPro, InterProScan, Macrel, MMseqs2, Prodigal, PROKKA, Pyrodigal, RGI, dbCAN, SeqKit
+tools: ["ABRicate", "AMPir", "AMPlify", "AMRFinderPlus", "AntiSMASH", "argNorm", "Bakta", "BiG-SLiCE", "comBGC", "DeepARG", "DeepBGC", "fARGene", "GECCO", "AMPcombi", "hAMRonization", "HMMER", "InterPro", "InterProScan", "Macrel", "MMseqs2", "Prodigal", "PROKKA", "Pyrodigal", "RGI", "dbCAN", "SeqKit"]
 ---
 # funcscan
 
@@ -32,7 +32,7 @@ This is the pinned latest release. To run a different one, list the available re
 | `protein` | string (file path) | no |  | matches ^\S+\.(faa\|fasta)(\.gz)?$ |
 | `gbk` | string (file path) | no |  | matches ^\S+\.(gbk\|gbff)(\.gz)?$ |
 | `gff` | string (file path) | no |  | matches ^\S+\.(gff\|gff3)(\.gz)?$ |
-| `gff_type` | string | no | NCBI_prok, prodigal, NCBI_euk, JGI |  |
+| `gff_type` | string | no | `NCBI_prok`, `prodigal`, `NCBI_euk`, `JGI` |  |
 
 `--input` must match `^\S+\.csv$`.
 

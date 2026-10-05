@@ -8,7 +8,7 @@ summary: nf-core/magmap is a bioinformatics best-practice analysis pipeline that
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FastQC, Trim Galore!, sourmash, Prokka, Bakta, BBmap, samtools, gtdbtk, checkm, FeatureCounts, R, Tidyverse, data.table, DuckDB, MultiQC
+tools: ["FastQC", "Trim Galore!", "sourmash", "Prokka", "Bakta", "BBmap", "samtools", "gtdbtk", "checkm", "FeatureCounts", "R", "Tidyverse", "data.table", "DuckDB", "MultiQC"]
 ---
 # magmap
 

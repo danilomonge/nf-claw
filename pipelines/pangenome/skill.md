@@ -6,9 +6,9 @@ commit: 3d02bd1df79f48b4bfdb4ad95d4ca0d7f6aeb337
 description: The pangenome graph construction pipeline renders a collection of sequences into a pangenome graph. Its goal is to build a graph that is locally directed and acyclic while preserving large-scale variation. Maintaining local linearity is important for interpretation, visualization, mapping, comparative genomics, and reuse of pangenome graphs
 summary: nf-core/pangenome is a bioinformatics best-practice analysis pipeline for pangenome graph construction. The pipeline renders a collection of sequences into a pangenome graph. Its goal is to build a graph that is locally directed and acyclic while preserving large-scale variation. Maintaining local linearity is important for interpretation, visualization, mapping, comparative genomics, and reuse of pangenome graphs.
 has_samplesheet: false
-input: parameters (no samplesheet)
+input: --input (no samplesheet schema)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: GFAFFIX, MultiQC, NET2COMMUNITIES, ODGI, PGGB, SAMTOOLS, SEQWISH, SMOOTHXG, VCFLIB, VG, WFMASH
+tools: ["GFAFFIX", "MultiQC", "NET2COMMUNITIES", "ODGI", "PGGB", "SAMTOOLS", "SEQWISH", "SMOOTHXG", "VCFLIB", "VG", "WFMASH"]
 ---
 # pangenome
 
@@ -17,15 +17,15 @@ nf-core/pangenome is a bioinformatics best-practice analysis pipeline for pangen
 ## Run it
 ```bash
 git submodule update --init pipelines/pangenome/upstream   # first time only
-nfclaw run pangenome --outdir results --n-haplotypes <n_haplotypes> -profile docker
+nfclaw run pangenome --input <input> --outdir results --n-haplotypes <n_haplotypes> -profile docker
 # raw equivalent (the submodule is already pinned to this release, so no -r is needed):
-nextflow run pipelines/pangenome/upstream -profile docker --outdir results --n-haplotypes <n_haplotypes>
+nextflow run pipelines/pangenome/upstream -profile docker --input <input> --outdir results --n-haplotypes <n_haplotypes>
 ```
 
 This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions pangenome` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show pangenome --pipeline-version X.Y.Z` prints that release's docs). To run unreleased development code instead, add `--pipeline-version dev`: nfclaw resolves nf-core's `dev` branch to its current head commit at run time and records that commit in provenance (`nfclaw show pangenome --pipeline-version dev` prints the docs generated from it). Use it only for changes not yet released.
 
 ## Inputs
-This pipeline does not use a samplesheet; configure inputs via parameters.
+This release publishes no samplesheet schema for `--input`, so nfclaw does not pre-check its contents. The parameter reads: Path to BGZIPPED input FASTA to build the pangenome graph from. Configure the other inputs via parameters (see [reference.md](reference.md)).
 
 ## Required parameters
 | parameter | type | default | allowed values | constraints | description |
@@ -49,7 +49,7 @@ Every parameter not listed above is optional as far as the schema is concerned. 
 A real (non-`--demo`) run requests the resources the pipeline's `conf/base.config` asks for, which are sized for a server — a single step can request far more memory than a workstation has, and Nextflow retries a failed step with more still. If a run fails with `Process requirement exceeds available memory` (or CPUs), cap every request, and every retry, at what this machine actually has:
 
 ```bash
-nfclaw run pangenome --outdir results -profile docker \
+nfclaw run pangenome --input <input> --outdir results -profile docker \
   --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h
 ```
 

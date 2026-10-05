@@ -195,3 +195,43 @@ def test_pin_report_suffix_is_a_no_op_when_the_release_lacks_the_param():
     # Older releases predate the parameter; setting it would be an unknown param and fail validation.
     ps = schema.load_param_schema(FIX / "mini")
     assert "trace_report_suffix" not in parameters.pin_report_suffix({}, ps)
+
+
+def test_falsy_values_are_left_to_nf_schema(tmp_path):
+    # Whether false/"" are valid depends on the release's nf-schema (verified: 2.5.1 and 2.6.1 drop
+    # them before validating, 2.7.2 rejects them for a string/enum); null is dropped by all three. An
+    # error that only some plugin versions raise is not unambiguous, so nfclaw does not pre-judge it.
+    ps = schema.load_param_schema(FIX / "mini")
+    assert parameters.validate_params({"input": False, "aligner": ""}, ps) == []
+    assert parameters.validate_params({"aligner": None}, ps) == []
+    assert parameters.validate_params({"alnger": False}, ps)          # an unknown name is still unknown
+    # 0 is not dropped by nf-schema, so it is still checked
+    (tmp_path / "nextflow_schema.json").write_text(json.dumps({"definitions": {"g": {"properties": {
+        "threads": {"type": "integer", "minimum": 1}}}}}))
+    assert parameters.validate_params({"threads": 0}, schema.load_param_schema(tmp_path))
+
+
+def test_merge_input_false_unsets_the_input(tmp_path):
+    # `--input false` overrides a params-file `input` by leaving it unset (see inputs.resolve).
+    pf = tmp_path / "p.json"
+    pf.write_text(json.dumps({"input": "/data/ss.csv", "genome": "GRCh38"}))
+    merged = parameters.merge(cli_overrides={}, params_file=pf, input_path=False,
+                              outdir=tmp_path / "out")
+    assert "input" not in merged and merged["genome"] == "GRCh38"
+
+
+def test_resolve_path_params_covers_every_nf_schema_path_format(tmp_path, monkeypatch):
+    # Nextflow launches from --outdir, so every relative path parameter must be made absolute —
+    # including nf-schema's `path` (a file or directory, e.g. mag --busco-db) and
+    # `file-path-pattern` (a glob, e.g. sarek --known-indels), not only file-path/directory-path.
+    (tmp_path / "nextflow_schema.json").write_text(json.dumps({"definitions": {"g": {"properties": {
+        "db": {"type": "string", "format": "path"},
+        "vcfs": {"type": "string", "format": "file-path-pattern"},
+        "remote": {"type": "string", "format": "path"}}}}}))
+    ps = schema.load_param_schema(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    out = parameters.resolve_path_params(
+        {"db": "dbs/busco", "vcfs": "vcf/*.vcf.gz", "remote": "s3://bucket/db"}, ps)
+    assert out == {"db": str(tmp_path / "dbs" / "busco"),
+                   "vcfs": str(tmp_path / "vcf" / "*.vcf.gz"),
+                   "remote": "s3://bucket/db"}

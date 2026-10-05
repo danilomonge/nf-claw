@@ -44,7 +44,7 @@ nf-core/detaxizer pipeline parameters. Every parameter from the pinned `nextflow
 | `--classification-kraken2-post-filtering` | boolean |  |  |  |  |  | If the filtered reads should be classified with kraken2. |
 | `--filter-trimmed` | boolean |  |  |  |  |  | If the pre-processed reads should be used by the filter. |
 | `--filter-with-classification` | boolean |  |  |  |  |  | When a validation via blastn is wanted but the filtering should use the IDs from the classification process. |
-| `--filtering-tool` | string |  |  | seqkit, bbmap |  | seqkit | Select the read-filtering tool: seqkit or bbmap. seqkit normalizes FASTQ headers by temporarily renaming them; bbmap uses filterbyname.sh for exact header matching -- Note: BBTools I/O forces any base that is N to Q=0 (!). |
+| `--filtering-tool` | string |  |  | `seqkit`, `bbmap` |  | seqkit | Select the read-filtering tool: seqkit or bbmap. seqkit normalizes FASTQ headers by temporarily renaming them; bbmap uses filterbyname.sh for exact header matching -- Note: BBTools I/O forces any base that is N to Q=0 (!). |
 | `--output-removed-reads` | boolean |  |  |  |  |  | If the removed reads should also be written to the output folder. |
 | `--preprocessing` | boolean |  |  |  |  |  | If preprocessing with fastp should be turned on. |
 | `--save-intermediates` | boolean |  |  |  |  |  | Save intermediates to the results folder. |
@@ -73,7 +73,7 @@ nf-core/detaxizer pipeline parameters. Every parameter from the pinned `nextflow
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |

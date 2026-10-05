@@ -8,7 +8,7 @@ summary: nf-core/spatialaxe is a bioinformatics best-practice processing and qua
 has_samplesheet: true
 input: samplesheet (sample, bundle, image)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: MultiQC
+tools: ["MultiQC"]
 ---
 # spatialaxe
 
@@ -45,7 +45,7 @@ Any of the optional columns above may be appended to the header when your data n
 |---|---|---|---|---|---|
 | `--input` | string (file path) |  |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the Xenium experiment. (eg; meta,path-to-xenium-bundle,path-to-morphology.ome.tif)) |
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--mode` | string |  | image, coordinate, segfree, preview, qc |  | Mode in which the pipeline is to be run. Either image-based segmentation, coordinate-based segmentation, segmentation-free analysis or data preview. |
+| `--mode` | string |  | `image`, `coordinate`, `segfree`, `preview`, `qc` |  | Mode in which the pipeline is to be run. Either image-based segmentation, coordinate-based segmentation, segmentation-free analysis or data preview. |
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

@@ -8,7 +8,7 @@ summary: nf-core/fastqrepair is a bioinformatics pipeline that can be used to re
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FastQC, gzrt, Wipertools, BBMap, MultiQC
+tools: ["FastQC", "gzrt", "Wipertools", "BBMap", "MultiQC"]
 ---
 # fastqrepair
 

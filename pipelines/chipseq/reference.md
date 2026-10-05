@@ -24,7 +24,7 @@ nf-core/chipseq pipeline parameters. Every parameter from the pinned `nextflow_s
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--aligner` | string |  |  | bwa, bowtie2, chromap, star |  | bwa | Specifies the alignment algorithm to use - available options are 'bwa', 'bowtie2' and 'star'. |
+| `--aligner` | string |  |  | `bwa`, `bowtie2`, `chromap`, `star` |  | bwa | Specifies the alignment algorithm to use - available options are 'bwa', 'bowtie2' and 'star'. |
 | `--bamtools-filter-pe-config` | string |  | yes |  |  | $projectDir/assets/bamtools_filter_pe.json | BAMTools JSON file with custom filters for paired-end data. |
 | `--bamtools-filter-se-config` | string |  | yes |  |  | $projectDir/assets/bamtools_filter_se.json | BAMTools JSON file with custom filters for single-end data. |
 | `--bwa-min-score` | integer |  |  |  |  |  | Don’t output BWA MEM alignments with score lower than this parameter. |
@@ -48,7 +48,7 @@ nf-core/chipseq pipeline parameters. Every parameter from the pinned `nextflow_s
 | `--multiqc-methods-description` | string (file path) |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--validationFailUnrecognisedParams` | boolean |  | yes |  |  |  | Validation of parameters fails when an unrecognised parameter is found. |
 | `--validationLenientMode` | boolean |  | yes |  |  |  | Validation of parameters in lenient more. |
@@ -64,7 +64,7 @@ nf-core/chipseq pipeline parameters. Every parameter from the pinned `nextflow_s
 | `--input` | string (file path) | yes |  |  | matches ^\S+\.csv$ |  | Path to comma-separated file containing information about the samples in the experiment. |
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--read-length` | integer |  |  | 50, 75, 100, 150, 200 |  |  | Read length used to calculate MACS3 genome size for peak calling if `--macs_gsize` isn't provided. |
+| `--read-length` | integer |  |  | `50`, `75`, `100`, `150`, `200` |  |  | Read length used to calculate MACS3 genome size for peak calling if `--macs_gsize` isn't provided. |
 | `--seq-center` | string |  |  |  |  |  | Sequencing center information to be added to read group of BAM files. |
 
 ## institutional_config_options

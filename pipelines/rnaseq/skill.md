@@ -8,7 +8,7 @@ summary: nf-core/rnaseq is a bioinformatics pipeline that can be used to analyse
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, strandedness, seq_platform, seq_center, genome_bam, transcriptome_bam, percent_mapped)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: BBMap, BEDTools, Bowtie2, Bracken, fastp, FastQC, featureCounts, fq, GffRead, HISAT2, Kallisto, Kraken2, MultiQC, picard-tools, preseq, Qualimap 2, RiboDetector, RSEM, RustQC, RSeQC, Salmon, SeqKit, SAMtools, SortMeRNA, STAR, StringTie2, Sylph, Trim Galore!, tximport, UCSC tools, UMI-tools, UMICollapse, R, DESeq2, dupRadar, ggplot2, optparse, pheatmap, RColorBrewer, SummarizedExperiment, Tximeta
+tools: ["BBMap", "BEDTools", "Bowtie2", "Bracken", "fastp", "FastQC", "featureCounts", "fq", "GffRead", "HISAT2", "Kallisto", "Kraken2", "MultiQC", "picard-tools", "preseq", "Qualimap 2", "RiboDetector", "RSEM", "RustQC", "RSeQC", "Salmon", "SeqKit", "SAMtools", "SortMeRNA", "STAR", "StringTie2", "Sylph", "Trim Galore!", "tximport", "UCSC tools", "UMI-tools", "UMICollapse", "R", "DESeq2", "dupRadar", "ggplot2", "optparse", "pheatmap", "RColorBrewer", "SummarizedExperiment", "Tximeta"]
 ---
 # rnaseq
 
@@ -30,7 +30,7 @@ This is the pinned latest release. To run a different one, list the available re
 | `sample` | string or integer | yes |  | matches ^\S+$ |
 | `fastq_1` | string (file path) | yes |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q(\.gz)?$ |
 | `fastq_2` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q(\.gz)?$ |
-| `strandedness` | string | yes | forward, reverse, unstranded, auto |  |
+| `strandedness` | string | yes | `forward`, `reverse`, `unstranded`, `auto` |  |
 | `seq_platform` | string | no |  | matches ^\S+$ |
 | `seq_center` | string | no |  | matches ^\S+$ |
 | `genome_bam` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.(bam\|BAM)$ |
@@ -53,7 +53,7 @@ Any of the optional columns above may be appended to the header when your data n
 | `--outdir` | string (directory path) |  |  | length ≥ 1 | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Reference genome
-No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
+No reference genome is set by default: supply your own (e.g. `--fasta`; the `reference_genome_options` group in [reference.md](reference.md) lists every reference option). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

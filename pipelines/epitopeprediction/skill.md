@@ -8,7 +8,7 @@ summary: nf-core/epitopeprediction is a bioinformatics best-practice analysis pi
 has_samplesheet: true
 input: samplesheet (sample, alleles, mhc_class, filename)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: MultiQC, SnpSift, Epytope (FRED2), MHCflurry, MHCnuggets, NetMHC-4.0, NetMHCpan-4.0, NetMHCpan-4.1, NetMHCII-2.3, NetMHCIIpan-4.0
+tools: ["MultiQC", "SnpSift", "Epytope (FRED2)", "MHCflurry", "MHCnuggets", "NetMHC-4.0", "NetMHCpan-4.0", "NetMHCpan-4.1", "NetMHCII-2.3", "NetMHCIIpan-4.0"]
 ---
 # epitopeprediction
 

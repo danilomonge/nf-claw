@@ -6,9 +6,9 @@ commit: 834642d8ac150ca10d705833223e7bcf15efc210
 description: A mapping-based pipeline for creating a phylogeny from bacterial whole genome sequences
 summary: nf-core/bactmap is a bioinformatics best-practice analysis pipeline for mapping short reads from bacterial WGS to a reference sequence, creating filtered VCF files, making pseudogenomes based on high quality positions in the VCF files and optionally creating a phylogeny from an alignment of the pseudogenomes.
 has_samplesheet: false
-input: parameters (no samplesheet)
+input: --input (no samplesheet schema)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
-tools: bcftools, BWA, fastp, FastQC, FastTree2, Gubbins, IQ-TREE2, Mash, MultiQC, RapidNJ, RAxML-NG, Rasusa, samtools, SNP-sites
+tools: ["bcftools", "BWA", "fastp", "FastQC", "FastTree2", "Gubbins", "IQ-TREE2", "Mash", "MultiQC", "RapidNJ", "RAxML-NG", "Rasusa", "samtools", "SNP-sites"]
 ---
 # bactmap
 
@@ -17,15 +17,15 @@ nf-core/bactmap is a bioinformatics best-practice analysis pipeline for mapping 
 ## Run it
 ```bash
 git submodule update --init pipelines/bactmap/upstream   # first time only
-nfclaw run bactmap --outdir results --reference <reference> -profile docker
+nfclaw run bactmap --input <input> --outdir results --reference <reference> -profile docker
 # raw equivalent (the submodule is already pinned to this release, so no -r is needed):
-nextflow run pipelines/bactmap/upstream -profile docker --outdir results --reference <reference>
+nextflow run pipelines/bactmap/upstream -profile docker --input <input> --outdir results --reference <reference>
 ```
 
 This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions bactmap` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show bactmap --pipeline-version X.Y.Z` prints that release's docs). To run unreleased development code instead, add `--pipeline-version dev`: nfclaw resolves nf-core's `dev` branch to its current head commit at run time and records that commit in provenance (`nfclaw show bactmap --pipeline-version dev` prints the docs generated from it). Use it only for changes not yet released.
 
 ## Inputs
-This pipeline does not use a samplesheet; configure inputs via parameters.
+This release publishes no samplesheet schema for `--input`, so nfclaw does not pre-check its contents. The parameter reads: Path to a sample sheet describing paths to input fastq files. Configure the other inputs via parameters (see [reference.md](reference.md)).
 
 ## Required parameters
 | parameter | type | default | allowed values | constraints | description |
@@ -46,7 +46,7 @@ Every parameter not listed above is optional as far as the schema is concerned. 
 A real (non-`--demo`) run requests the resources the pipeline's `conf/base.config` asks for, which are sized for a server — a single step can request far more memory than a workstation has, and Nextflow retries a failed step with more still. If a run fails with `Process requirement exceeds available memory` (or CPUs), cap every request, and every retry, at what this machine actually has:
 
 ```bash
-nfclaw run bactmap --outdir results -profile docker \
+nfclaw run bactmap --input <input> --outdir results -profile docker \
   --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h
 ```
 

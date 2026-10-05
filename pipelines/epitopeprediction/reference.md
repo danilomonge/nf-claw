@@ -13,7 +13,7 @@ nf-core/epitopeprediction pipeline parameters. Every parameter from the pinned `
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--external-tools-meta` | string |  | yes |  |  |  | Specifies the path to the JSON file with meta information on external prediction tools. |
-| `--netmhc-system` | string |  |  | linux, darwin |  | linux | Specifies the operating system in use (Linux or Darwin). This is only necessary if conda is used. |
+| `--netmhc-system` | string |  |  | `linux`, `darwin` |  | linux | Specifies the operating system in use (Linux or Darwin). This is only necessary if conda is used. |
 | `--netmhciipan-path` | string (file path) |  |  |  | matches ^\S+\.tar\.gz$ |  | To use the 'netmhciipan' tool, specify the path to the original software tarball for NetMHCIIpan 3.1 here. |
 | `--netmhcpan-path` | string (file path) |  |  |  | matches ^\S+\.tar\.gz$ |  | To use the 'netmhcpan' tool, specify the path to the original software tarball for NetMHCpan 4.0 here. |
 
@@ -32,7 +32,7 @@ nf-core/epitopeprediction pipeline parameters. Every parameter from the pinned `
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |

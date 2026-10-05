@@ -22,7 +22,7 @@ nf-core/seqsubmit pipeline parameters. Every parameter from the pinned `nextflow
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -61,13 +61,13 @@ nf-core/seqsubmit pipeline parameters. Every parameter from the pinned `nextflow
 |---|---|---|---|---|---|---|---|
 | `--centre-name` | string | yes |  |  |  |  | Name of the submitter's organisation (mandatory for broker accounts). |
 | `--is-private` | boolean |  |  |  |  | false | Use that flag if you are referencing private data accessions in the samplesheet |
-| `--mode` | string | yes |  | mags, bins, metagenomic_assemblies, reads |  |  | Type of the data to be submitted |
+| `--mode` | string | yes |  | `mags`, `bins`, `metagenomic_assemblies`, `reads` |  |  | Type of the data to be submitted |
 | `--release-date` | string |  |  |  | matches ^\d{4}-\d{2}-\d{2}$ |  | Date (YYYY-MM-DD) until which the newly created study stays private in ENA. |
 | `--study-metadata` | string (file path) |  |  |  |  |  | Path to a file (JSON, CSV, or TSV) with metadata for registering a new ENA study. Required if --submission_study is not set. |
 | `--submission-study` | string |  |  |  |  |  | ENA study accession (PRJ/ERP) to submit the data to |
 | `--test-upload` | boolean |  |  |  |  | true | Upload to ENA TEST server instead of LIVE server |
 | `--upload-tpa` | boolean |  |  |  |  | false | Mark the assemblies as a Third PArty (TPA) |
-| `--webincli-mode` | string |  |  | submit, validate |  | submit | Webin-CLI mode for ENA interaction: `submit` uploads data, `validate` performs validation only. |
+| `--webincli-mode` | string |  |  | `submit`, `validate` |  | submit | Webin-CLI mode for ENA interaction: `submit` uploads data, `validate` performs validation only. |
 
 ## rna_detection_options
 

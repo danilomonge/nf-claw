@@ -37,7 +37,7 @@ nf-core/hic pipeline parameters. Every parameter from the pinned `nextflow_schem
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--chromosome-size` | string (file path) |  |  |  |  |  | Full path to file specifying chromosome sizes (tab separated with chromosome name and size)`. |
-| `--digestion` | string |  |  | hindiii, mboi, dpnii, arima |  |  | Name of restriction enzyme to automatically set the restriction_site and ligation_site options (hindiii, mboi, dpnii, arima) |
+| `--digestion` | string |  |  | `hindiii`, `mboi`, `dpnii`, `arima` |  |  | Name of restriction enzyme to automatically set the restriction_site and ligation_site options (hindiii, mboi, dpnii, arima) |
 | `--ligation-site` | string |  |  |  |  |  | Expected motif after DNA ligation. Several motifs (comma separated) can be provided. |
 | `--restriction-fragments` | string (file path) |  |  |  |  |  | Full path to restriction fragment (bed) file. |
 | `--restriction-site` | string |  |  |  |  |  | Restriction motifs used during digestion. Several motifs (comma separated) can be provided. |
@@ -72,7 +72,7 @@ nf-core/hic pipeline parameters. Every parameter from the pinned `nextflow_schem
 | `--multiqc-logo` | string |  | yes |  |  |  | Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file |
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden-params` | boolean |  | yes |  |  |  | Show all params when using `--help` |
 | `--tracedir` | string |  | yes |  |  | ${params.outdir}/pipeline_info | Directory to keep pipeline Nextflow logs and reports. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |

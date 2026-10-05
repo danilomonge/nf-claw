@@ -17,7 +17,7 @@ nf-core/denovotranscript pipeline parameters. Every parameter from the pinned `n
 | `--extra-trinity-args` | string |  |  |  |  |  | Extra arguments to pass to Trinity command in addition to defaults. Applies to both trinity and trinity_no_norm. |
 | `--hard-filtered-transcripts` | boolean |  |  |  |  |  | Include soft filtered transcripts (in addition to the medium filtered transcripts) from rnaSPAdes in the input to EvidentialGene tr2aacds. |
 | `--soft-filtered-transcripts` | boolean |  |  |  |  |  | Include hard filtered transcripts (in addition to medium filtered transcripts) from rnaSPAdes in the input to EvidentialGene tr2aacds. |
-| `--ss` | string |  |  | rf, fr |  |  | Set strand-specific type for rnaSPAdes. Use `rf` when first read in pair corresponds to reverse gene strand (antisense data, e.g. obtained via dUTP protocol) and `fr` otherwise (forward). |
+| `--ss` | string |  |  | `rf`, `fr` |  |  | Set strand-specific type for rnaSPAdes. Use `rf` when first read in pair corresponds to reverse gene strand (antisense data, e.g. obtained via dUTP protocol) and `fr` otherwise (forward). |
 
 ## busco_options
 
@@ -26,7 +26,7 @@ nf-core/denovotranscript pipeline parameters. Every parameter from the pinned `n
 | `--busco-config` | string |  |  |  |  |  | Path to BUSCO config file. |
 | `--busco-lineage` | string |  |  |  |  | auto | The BUSCO lineage to use, or `auto` to automatically select lineage |
 | `--busco-lineages-path` | string |  |  |  |  |  | Path to local BUSCO lineages directory. |
-| `--busco-mode` | string |  |  | genome, proteins, transcriptome |  | transcriptome | The mode to run BUSCO in. One of genome, proteins, or transcriptome |
+| `--busco-mode` | string |  |  | `genome`, `proteins`, `transcriptome` |  | transcriptome | The mode to run BUSCO in. One of genome, proteins, or transcriptome |
 
 ## fastqc_fastp_options
 
@@ -52,7 +52,7 @@ nf-core/denovotranscript pipeline parameters. Every parameter from the pinned `n
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--version` | boolean |  | yes |  |  |  | Display version and exit. |

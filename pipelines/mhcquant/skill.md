@@ -8,7 +8,7 @@ summary: nfcore/mhcquant is a best-practice bioinformatics pipeline to process d
 has_samplesheet: true
 input: samplesheet (ID, Sample, Condition, ReplicateFileName, Fasta, SearchPreset)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: OpenMS, ThermoRawFileParser, tdf2mzml, Comet, DeepLC, MS²PIP, Ionmob, IM2Deep, MS²Rescore, TIMS²Rescore, Percolator, Mokapot, EasyPQP, Epicore, pridepy, sdrf-pipelines, MultiQC
+tools: ["OpenMS", "ThermoRawFileParser", "tdf2mzml", "Comet", "DeepLC", "MS²PIP", "Ionmob", "IM2Deep", "MS²Rescore", "TIMS²Rescore", "Percolator", "Mokapot", "EasyPQP", "Epicore", "pridepy", "sdrf-pipelines", "MultiQC"]
 ---
 # mhcquant
 

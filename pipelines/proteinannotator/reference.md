@@ -51,7 +51,7 @@ nf-core/proteinannotator pipeline parameters. Every parameter from the pinned `n
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -81,7 +81,7 @@ nf-core/proteinannotator pipeline parameters. Every parameter from the pinned `n
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--s4pred-outfmt` | string |  |  | ss2, fas, horiz |  | ss2 | Choose the output format (i.e., 'ss2', 'fas', 'horiz') for the s4pred per amino acid probability predictions (i.e., α-helix, β-strand, coil). Modifies the --outfmt parameter of s4pred run_model. |
+| `--s4pred-outfmt` | string |  |  | `ss2`, `fas`, `horiz` |  | ss2 | Choose the output format (i.e., 'ss2', 'fas', 'horiz') for the s4pred per amino acid probability predictions (i.e., α-helix, β-strand, coil). Modifies the --outfmt parameter of s4pred run_model. |
 | `--skip-s4pred` | boolean |  |  |  |  |  | Skip the secondary structure prediction. |
 
 ## quality_check_params

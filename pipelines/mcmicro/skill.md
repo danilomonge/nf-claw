@@ -8,7 +8,7 @@ summary: nf-core/mcmicro is a nextflow pipeline for processing highly-multiplexe
 has_samplesheet: false
 input: parameters (no samplesheet)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: ASHLAR, Backsub, BaSiCPy, Bioformats, Cellpose, Coreograph, MCQuant, Mesmer, MultiQC, SciMap
+tools: ["ASHLAR", "Backsub", "BaSiCPy", "Bioformats", "Cellpose", "Coreograph", "MCQuant", "Mesmer", "MultiQC", "SciMap"]
 ---
 # mcmicro
 

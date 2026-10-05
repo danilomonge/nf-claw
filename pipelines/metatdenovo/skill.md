@@ -8,7 +8,7 @@ summary: nf-core/metatdenovo is a bioinformatics best-practice analysis pipeline
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FastQC, MultiQC, Trim Galore!, khmer, Seqtk, RNAspade, Megahit, TransDecoder, Prokka, Prodigal, BBmap, FeatureCounts, Eggnog, Kofamscan, HMMsearch, EUKulele, Diamond, TaxonKit, CAT, transrate
+tools: ["FastQC", "MultiQC", "Trim Galore!", "khmer", "Seqtk", "RNAspade", "Megahit", "TransDecoder", "Prokka", "Prodigal", "BBmap", "FeatureCounts", "Eggnog", "Kofamscan", "HMMsearch", "EUKulele", "Diamond", "TaxonKit", "CAT", "transrate"]
 ---
 # metatdenovo
 

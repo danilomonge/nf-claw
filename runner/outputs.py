@@ -19,10 +19,17 @@ def is_nextflow_internal(rel: Path) -> bool:
     return head == ".nextflow" or head.startswith(".nextflow.log")
 
 
+def is_result(rel: Path) -> bool:
+    """Whether a path (relative to the outdir) is one of the run's results: not Nextflow's own state
+    and not nfclaw's `provenance/` bundle, which describes the run rather than being part of it."""
+    in_bundle = len(rel.parts) > 1 and rel.parts[0] == "provenance"
+    return not in_bundle and not is_nextflow_internal(rel)
+
+
 def collect(outdir: Path) -> OutputsReport:
     pinfo = outdir / "pipeline_info"
     mqc = next(iter(sorted(outdir.glob("**/multiqc_report.html"))), None)
     files = tuple(sorted(str(rel) for p in outdir.rglob("*")
-                         if p.is_file() and not is_nextflow_internal(rel := p.relative_to(outdir))))
+                         if p.is_file() and is_result(rel := p.relative_to(outdir))))
     return OutputsReport(pipeline_info=pinfo if pinfo.is_dir() else None,
                          multiqc_report=mqc, files=files)

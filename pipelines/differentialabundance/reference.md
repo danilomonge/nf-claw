@@ -40,7 +40,7 @@ nf-core/differentialabundance pipeline parameters. Every parameter from the pinn
 | `--seed` | integer |  |  |  |  |  | Global seed for stochastic methods |
 | `--study-abundance-type` | string |  | yes |  |  | abundance | Label describing the abundance values in the report heading. |
 | `--study-name` | string | yes |  |  |  | study | A string identifier used to name result files in the output directory |
-| `--study-type` | string | yes |  | rnaseq, generic_matrix, affy_array, maxquant, geo_soft_file |  | rnaseq | Input data format category used for input validation and routing (not for selecting analysis methods). |
+| `--study-type` | string | yes |  | `rnaseq`, `generic_matrix`, `affy_array`, `maxquant`, `geo_soft_file` |  | rnaseq | Input data format category used for input validation and routing (not for selecting analysis methods). |
 
 ## base_observations_e_g_samples_options
 
@@ -63,18 +63,18 @@ nf-core/differentialabundance pipeline parameters. Every parameter from the pinn
 |---|---|---|---|---|---|---|---|
 | `--deseq2-alpha` | number |  |  |  |  | 0.1 | `alpha` parameter passed to results() |
 | `--deseq2-alt-hypothesis` | string |  |  |  |  | greaterAbs | `altHypothesis` parameter passed to results() |
-| `--deseq2-fit-type` | string |  |  | parametric, local, mean, glmGamPoi |  | parametric | `fitType` parameter passed to DESeq() |
+| `--deseq2-fit-type` | string |  |  | `parametric`, `local`, `mean`, `glmGamPoi` |  | parametric | `fitType` parameter passed to DESeq() |
 | `--deseq2-independent-filtering` | boolean |  |  |  |  | true | `independentFiltering` parameter passed to results() |
 | `--deseq2-lfc-threshold` | number |  |  |  |  | 0 | `lfcThreshold` parameter passed to results() |
 | `--deseq2-min-replicates-for-replace` | integer |  |  |  |  | 7 | 'minReplicatesForReplace' parameter passed to DESeq() |
 | `--deseq2-minmu` | number |  |  |  |  | 0.5 | `minmu` parameter passed to results() |
 | `--deseq2-p-adjust-method` | string |  |  |  |  | BH | `pAdjustMethod` parameter passed to results() |
-| `--deseq2-sf-type` | string |  |  | ratio, poscounts, iterate |  | ratio | `sfType` parameter passed to DESeq() |
+| `--deseq2-sf-type` | string |  |  | `ratio`, `poscounts`, `iterate` |  | ratio | `sfType` parameter passed to DESeq() |
 | `--deseq2-shrink-lfc` | boolean |  |  |  |  | true | Shrink fold changes in results? |
-| `--deseq2-test` | string |  |  | Wald, LRT |  | Wald | `test` parameter passed to DESeq() |
+| `--deseq2-test` | string |  |  | `Wald`, `LRT` |  | Wald | `test` parameter passed to DESeq() |
 | `--deseq2-use-t` | boolean |  |  |  |  | false | `useT` parameter passed to DESeq2 |
 | `--deseq2-vs-blind` | boolean |  |  |  |  | true | `blind` parameter for rlog() and/ or vst() |
-| `--deseq2-vs-method` | string |  |  | rlog, vst, rlog,vst |  | vst | variance stabilisation method to use when making a variance stabilised matrix |
+| `--deseq2-vs-method` | string |  |  | `rlog`, `vst`, `rlog,vst` |  | vst | variance stabilisation method to use when making a variance stabilised matrix |
 | `--deseq2-vst-nsub` | integer |  |  |  |  | 1000 | `nsub` parameter passed to vst() |
 
 ## differential_differential_analysis
@@ -85,7 +85,7 @@ nf-core/differentialabundance pipeline parameters. Every parameter from the pinn
 | `--differential-file-suffix` | string |  |  |  |  |  | Advanced option: the suffix associated tabular differential results tables. Will by default use the appropriate suffix according to the study_type. |
 | `--differential-max-pval` | number | yes |  |  |  | 1 | Maximum p value used to calculate differential feature numbers |
 | `--differential-max-qval` | number | yes |  |  |  | 0.05 | Maximum q value used to calculate differential feature numbers |
-| `--differential-method` | string |  |  | deseq2, limma, dream, propd |  | deseq2 | Differential analysis method |
+| `--differential-method` | string |  |  | `deseq2`, `limma`, `dream`, `propd` |  | deseq2 | Differential analysis method |
 | `--differential-min-fold-change` | number | yes |  |  |  | 2 | Minimum fold change used to calculate differential feature numbers. Note that this number will be log2 transformed |
 | `--differential-palette-name` | string | yes |  |  |  | Set1 | Valid R palette name |
 | `--differential-subset-to-contrast-samples` | boolean |  |  |  |  | false | In differential analysis (DEseq2 or Limma), subset to the contrast samples before modelling variance? |
@@ -94,10 +94,10 @@ nf-core/differentialabundance pipeline parameters. Every parameter from the pinn
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--dream-adjust-method` | string |  |  | BH, BY, holm, hochberg, hommel, bonferroni, fdr, none |  | BH | Method used to adjust p-values for multiple testing (passed to p.adjust). |
+| `--dream-adjust-method` | string |  |  | `BH`, `BY`, `holm`, `hochberg`, `hommel`, `bonferroni`, `fdr`, `none` |  | BH | Method used to adjust p-values for multiple testing (passed to p.adjust). |
 | `--dream-apply-voom` | boolean |  |  |  |  | false | Turns on and off usage of voomWithDreamWeights() normalization in the DREAM module. |
 | `--dream-confint` | boolean |  |  |  |  | false | passed to variancePartition::dream(), logical, should 95% confidence intervals be output for logFC? Alternatively, can take a numeric value between zero and one specifying the confidence level required. |
-| `--dream-ddf` | string |  |  | adaptive, Satterthwaite, Kenward-Roger |  | adaptive | Method used to estimate effective degrees of freedom for hypothesis testing in the linear mixed model. Allowed values: adaptive (default), Satterthwaite, Kenward-Roger. |
+| `--dream-ddf` | string |  |  | `adaptive`, `Satterthwaite`, `Kenward-Roger` |  | adaptive | Method used to estimate effective degrees of freedom for hypothesis testing in the linear mixed model. Allowed values: adaptive (default), Satterthwaite, Kenward-Roger. |
 | `--dream-lfc` | integer |  |  |  |  | 0 |  |
 | `--dream-p-value` | integer |  |  |  |  | 1 |  |
 | `--dream-proportion` | number |  |  |  |  | 0.01 | passed to variancePartition::dream() (via eBayes), assumed proportion of genes that are differentially expressed (numeric 0-1). |
@@ -111,12 +111,12 @@ nf-core/differentialabundance pipeline parameters. Every parameter from the pinn
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--limma-adjust-method` | string |  |  | holm, hochberg, hommel, bonferroni, BH, BY, fdr, null |  | BH | passed to topTable(), method used to adjust the p-values for multiple testing. |
+| `--limma-adjust-method` | string |  |  | `holm`, `hochberg`, `hommel`, `bonferroni`, `BH`, `BY`, `fdr`, `null` |  | BH | passed to topTable(), method used to adjust the p-values for multiple testing. |
 | `--limma-block` | string |  |  |  |  |  | Sample sheet column to be used to derive a vector or factor specifying a blocking variable on the arrays for limma::lmFit(); however, for random effects models, DREAM is the recommended approach in this pipeline |
 | `--limma-confint` | boolean |  |  |  |  | false | passed to topTable(), logical, should confidence 95% intervals be output for logFC? Alternatively, can take a numeric value between zero and one specifying the confidence level required. |
 | `--limma-correlation` | string |  |  |  |  |  | passed to limma::lmFit(), the inter-duplicate or inter-technical replicate correlation; however for random effects models, DREAM is the recommended approach in this pipeline |
 | `--limma-lfc` | integer |  |  |  |  | 0 | passed to topTable(), minimum absolute log2-fold-change required |
-| `--limma-method` | string |  |  | ls, robust |  | ls | passed to lmFit(), the fitting method |
+| `--limma-method` | string |  |  | `ls`, `robust` |  | ls | passed to lmFit(), the fitting method |
 | `--limma-ndups` | number |  |  |  |  |  | passed to lmFit(), positive integer giving the number of times each distinct probe is printed on each array. |
 | `--limma-p-value` | number |  |  |  |  | 1 | cutoff value for adjusted p-values. Only genes with lower p-values are listed. |
 | `--limma-proportion` | number |  |  |  |  | 0.01 | passed to eBayes(), a numeric value between 0 and 1, assumed proportion of genes which are differentially expressed |
@@ -168,7 +168,7 @@ nf-core/differentialabundance pipeline parameters. Every parameter from the pinn
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--functional-method` | string |  |  | none, gsea, gprofiler2, decoupler, grea |  | none | Functional analysis method. Set to 'none' (default) to disable functional analysis. |
+| `--functional-method` | string |  |  | `none`, `gsea`, `gprofiler2`, `decoupler`, `grea` |  | none | Functional analysis method. Set to 'none' (default) to disable functional analysis. |
 | `--gene-sets-files` | string |  |  |  |  |  | Gene sets in [GMT or GMX-format](https://docs.gsea-msigdb.org/#GSEA/Data_Formats/#gene-set-database-formats); for GSEA: multiple comma-separated input files in either format are possible. For gprofiler2: A single file in GMT format is possible; this has lowest priority and will be overridden by --gprofiler2_token and --gprofiler2_organism. |
 
 ## functional_gprofiler2
@@ -177,8 +177,8 @@ nf-core/differentialabundance pipeline parameters. Every parameter from the pinn
 |---|---|---|---|---|---|---|---|
 | `--gprofiler2-background-column` | string |  |  |  |  |  | Which column to use as gene IDs in the background matrix. |
 | `--gprofiler2-background-file` | string |  |  |  | matches ^\S+\.(csv\|tsv\|txt)$\|auto\|false | auto | Path to CSV/TSV/TXT file that should be used as a background list of genes for the query; alternatively, 'auto' (default) or 'false'. |
-| `--gprofiler2-correction-method` | string |  |  | gSCS, analytical, g_SCS, fdr, false_discovery_rate, bonferroni |  | gSCS | The method that should be used for multiple testing correction. |
-| `--gprofiler2-domain-scope` | string |  |  | annotated, known, custom, custom_annotated |  | annotated | How to calculate the statistical domain size. |
+| `--gprofiler2-correction-method` | string |  |  | `gSCS`, `analytical`, `g_SCS`, `fdr`, `false_discovery_rate`, `bonferroni` |  | gSCS | The method that should be used for multiple testing correction. |
+| `--gprofiler2-domain-scope` | string |  |  | `annotated`, `known`, `custom`, `custom_annotated` |  | annotated | How to calculate the statistical domain size. |
 | `--gprofiler2-evcodes` | boolean |  |  |  |  | false | Whether to include evcodes in the results. |
 | `--gprofiler2-max-qval` | number |  |  |  |  | 0.05 | Maximum q value used for significance testing. |
 | `--gprofiler2-measure-underrepresentation` | boolean |  |  |  |  | false | Should underrepresentation be measured instead of overrepresentation? |
@@ -203,19 +203,19 @@ nf-core/differentialabundance pipeline parameters. Every parameter from the pinn
 |---|---|---|---|---|---|---|---|
 | `--gsea-make-sets` | boolean |  |  |  |  | true | Make detailed geneset report? |
 | `--gsea-median` | boolean |  |  |  |  | false | Use median for class metrics |
-| `--gsea-metric` | string |  |  | Signal2Noise, tTest, Ratio_of_Classes, Diff_of_Classes, log2_Ratio_of_Classes |  | Signal2Noise | Metric for ranking genes |
-| `--gsea-norm` | string |  |  | meandiv, null |  | meandiv | Normalisation mode |
+| `--gsea-metric` | string |  |  | `Signal2Noise`, `tTest`, `Ratio_of_Classes`, `Diff_of_Classes`, `log2_Ratio_of_Classes` |  | Signal2Noise | Metric for ranking genes |
+| `--gsea-norm` | string |  |  | `meandiv`, `null` |  | meandiv | Normalisation mode |
 | `--gsea-nperm` | integer |  |  |  |  | 1000 | Number of permutations |
 | `--gsea-num` | integer |  |  |  |  | 100 | Number of markers |
-| `--gsea-order` | string |  |  | descending, ascending |  | descending | Gene list ordering mode |
-| `--gsea-permute` | string |  |  | phenotype, gene_set |  | phenotype | Permutation type |
+| `--gsea-order` | string |  |  | `descending`, `ascending` |  | descending | Gene list ordering mode |
+| `--gsea-permute` | string |  |  | `phenotype`, `gene_set` |  | phenotype | Permutation type |
 | `--gsea-plot-top-x` | integer |  |  |  |  | 20 | Plot graphs for the top sets of each phenotype |
-| `--gsea-rnd-type` | string |  |  | no_balance, equalize_and_balance |  | no_balance | Randomization mode |
+| `--gsea-rnd-type` | string |  |  | `no_balance`, `equalize_and_balance` |  | no_balance | Randomization mode |
 | `--gsea-save-rnd-lists` | boolean |  |  |  |  | false | Save random ranked lists |
-| `--gsea-scoring-scheme` | string |  |  | weighted, weighted_p2, weighted_p1.5, classic |  | weighted | Enrichment statistic |
+| `--gsea-scoring-scheme` | string |  |  | `weighted`, `weighted_p2`, `weighted_p1.5`, `classic` |  | weighted | Enrichment statistic |
 | `--gsea-set-max` | integer |  |  |  |  | 500 | Max size: exclude larger sets |
 | `--gsea-set-min` | integer |  |  |  |  | 15 | Min size: exclude smaller sets |
-| `--gsea-sort` | string |  |  | real, absolute |  | real | Gene list sorting mode |
+| `--gsea-sort` | string |  |  | `real`, `absolute` |  | real | Gene list sorting mode |
 | `--gsea-zip-report` | boolean |  |  |  |  | false | Make a zipped file with all reports |
 
 ## generic_options
@@ -228,7 +228,7 @@ nf-core/differentialabundance pipeline parameters. Every parameter from the pinn
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  |  | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  |  | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  |  |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -283,10 +283,10 @@ nf-core/differentialabundance pipeline parameters. Every parameter from the pinn
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--proteus-measurecol-prefix` | string |  |  |  |  | LFQ intensity | Prefix of the column names of the MaxQuant proteingroups table in which the intensity values are saved; the prefix has to be followed by the sample names that are also found in the samplesheet. Default: 'LFQ intensity'; will search for both the prefix as entered and the prefix followed by one whitespace. |
-| `--proteus-norm-function` | string |  |  | normalizeMedian, normalizeQuantiles |  | normalizeMedian | Normalization function to use on the MaxQuant intensities. |
+| `--proteus-norm-function` | string |  |  | `normalizeMedian`, `normalizeQuantiles` |  | normalizeMedian | Normalization function to use on the MaxQuant intensities. |
 | `--proteus-palette-name` | string |  |  |  |  | Set1 | Valid R palette name |
 | `--proteus-plotmv-loess` | boolean |  |  |  |  | true | Should a loess line be added to the plot of mean-variance relationship of the conditions? Default: true. |
-| `--proteus-plotsd-method` | string |  |  | violin, dist, box |  | violin | Which method to use for plotting sample distributions of the MaxQuant intensities; one of 'violin', 'dist', 'box'. |
+| `--proteus-plotsd-method` | string |  |  | `violin`, `dist`, `box` |  | violin | Which method to use for plotting sample distributions of the MaxQuant intensities; one of 'violin', 'dist', 'box'. |
 
 ## reference_genome_options
 

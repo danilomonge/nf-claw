@@ -8,7 +8,7 @@ summary: nfcore/chipseq is a bioinformatics analysis pipeline used for Chromatin
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, replicate, antibody, control, control_replicate)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: BWA, BEDTools, BamTools, Bowtie2, Chromap, deepTools, FastQC, featureCounts, HOMER, MACS3, MultiQC, phantompeakqualtools, picard-tools, preseq, pysam, SAMtools, STAR, Trim Galore!, UCSC tools, R, DESeq2, UpSetR, ggplot2, reshape2, scales, pheatmap, RColorBrewer, optparse
+tools: ["BWA", "BEDTools", "BamTools", "Bowtie2", "Chromap", "deepTools", "FastQC", "featureCounts", "HOMER", "MACS3", "MultiQC", "phantompeakqualtools", "picard-tools", "preseq", "pysam", "SAMtools", "STAR", "Trim Galore!", "UCSC tools", "R", "DESeq2", "UpSetR", "ggplot2", "reshape2", "scales", "pheatmap", "RColorBrewer", "optparse"]
 ---
 # chipseq
 
@@ -52,7 +52,7 @@ Any of the optional columns above may be appended to the header when your data n
 | `--fasta` | string (file path) |  |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ | Path to FASTA genome file. |
 
 ## Reference genome
-No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
+No reference genome is set by default: supply your own (e.g. `--fasta`; the `reference_genome_options` group in [reference.md](reference.md) lists every reference option). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

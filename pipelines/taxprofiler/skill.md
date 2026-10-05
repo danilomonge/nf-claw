@@ -8,7 +8,7 @@ summary: nf-core/taxprofiler is a bioinformatics best-practice analysis pipeline
 has_samplesheet: true
 input: samplesheet (sample, run_accession, instrument_platform, fastq_1, fastq_2, fasta)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FastQC, MultiQC, falco, fastp, AdapterRemoval2, Nonpareil, Porechop, Porechop_ABI, Filtlong, nanoq, BBTools, PRINSEQ++, Bowtie2, minimap2, SAMTools, Bracken, Kraken2, KrakenUniq, MetaPhlAn, MALT, MEGAN, DIAMOND, Centrifuge, Kaiju, mOTUs, KMCP, ganon, melon, Krona, TAXPASTA, sylph, MetaCache
+tools: ["FastQC", "MultiQC", "falco", "fastp", "AdapterRemoval2", "Nonpareil", "Porechop", "Porechop_ABI", "Filtlong", "nanoq", "BBTools", "PRINSEQ++", "Bowtie2", "minimap2", "SAMTools", "Bracken", "Kraken2", "KrakenUniq", "MetaPhlAn", "MALT", "MEGAN", "DIAMOND", "Centrifuge", "Kaiju", "mOTUs", "KMCP", "ganon", "melon", "Krona", "TAXPASTA", "sylph", "MetaCache"]
 ---
 # taxprofiler
 
@@ -29,7 +29,7 @@ This is the pinned latest release. To run a different one, list the available re
 |---|---|---|---|---|
 | `sample` | string or integer | yes |  | matches ^[^\s]+$ |
 | `run_accession` | string or integer | yes |  | matches ^[^\s]+$ |
-| `instrument_platform` | string | yes | ABI_SOLID, BGISEQ, CAPILLARY, COMPLETE_GENOMICS, DNBSEQ, HELICOS, ILLUMINA, ION_TORRENT, LS454, OXFORD_NANOPORE, PACBIO_SMRT |  |
+| `instrument_platform` | string | yes | `ABI_SOLID`, `BGISEQ`, `CAPILLARY`, `COMPLETE_GENOMICS`, `DNBSEQ`, `HELICOS`, `ILLUMINA`, `ION_TORRENT`, `LS454`, `OXFORD_NANOPORE`, `PACBIO_SMRT` |  |
 | `fastq_1` | string (file path) | no |  | matches ^\S+\.f(ast)?q\.gz$ |
 | `fastq_2` | string (file path) | no |  | matches ^\S+\.f(ast)?q\.gz$ |
 | `fasta` | string (file path) | no |  | matches ^\S+\.(fasta\|fas\|fna\|fa)\.gz?$ |

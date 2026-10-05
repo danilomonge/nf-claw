@@ -67,7 +67,7 @@ nf-core/createtaxdb pipeline parameters. Every parameter from the pinned `nextfl
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--unzip-batch-size` | integer | yes |  |  |  | 10000 | How many files to unzip in parallel in a single job. |
@@ -92,7 +92,7 @@ nf-core/createtaxdb pipeline parameters. Every parameter from the pinned `nextfl
 | `--genomesizes` | string |  |  |  |  |  | Path to NCBI or GTDB genome sizes file. |
 | `--input` | string (file path) | yes |  |  | matches ^\S+\.csv$ |  | Path to comma-separated file containing information about the samples in the experiment. |
 | `--malt-mapdb` | string (file path) |  |  |  |  |  | Path to MEGAN6/MALT mapping db file. |
-| `--malt-mapdb-format` | string |  |  | mdb, a2t, s2t, a2ec, s2ec, t4ec, a2eggnog, s2eggnog, t4eggnog, a2gtdb, s2gtdb, t4gtdb, a2interpro2go, s2interpro2go, t4interprotogo, a2kegg, s2kegg, t4kegg, a2pgpt, s2pgpt, t4pgpt, a2seed, s2seed, t4seed |  |  | Specify the type of MALT mapdb provided, based on the corresponding MALT flag. |
+| `--malt-mapdb-format` | string |  |  | `mdb`, `a2t`, `s2t`, `a2ec`, `s2ec`, `t4ec`, `a2eggnog`, `s2eggnog`, `t4eggnog`, `a2gtdb`, `s2gtdb`, `t4gtdb`, `a2interpro2go`, `s2interpro2go`, `t4interprotogo`, `a2kegg`, `s2kegg`, `t4kegg`, `a2pgpt`, `s2pgpt`, `t4pgpt`, `a2seed`, `s2seed`, `t4seed` |  |  | Specify the type of MALT mapdb provided, based on the corresponding MALT flag. |
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--namesdmp` | string (file path) |  |  |  |  |  | Path to NCBI-style taxonomy names dmp file. |
 | `--nodesdmp` | string (file path) |  |  |  |  |  | Path to NCBI-style taxonomy node dmp file. |

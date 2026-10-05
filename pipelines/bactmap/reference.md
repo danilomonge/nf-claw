@@ -26,7 +26,7 @@ nf-core/bactmap pipeline parameters. Every parameter from the pinned `nextflow_s
 | `--multiqc-config` | string |  | yes |  |  |  | Custom config file to supply to MultiQC. |
 | `--multiqc-title` | string |  | yes |  |  |  | Custom title for the MultiQC report. |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden-params` | boolean |  |  |  |  |  | Show all params when using `--help` |
 | `--singularity-pull-docker-container` | boolean |  | yes |  |  |  | Instead of directly downloading Singularity images for use with Singularity, force the workflow to pull and convert Docker containers instead. |
 | `--skip-multiqc` | boolean |  | yes |  |  |  | NOT USED: Skip MultiQC |

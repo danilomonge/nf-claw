@@ -58,7 +58,7 @@ nf-core/rnastructurome pipeline parameters. Every parameter from the pinned `nex
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -142,7 +142,7 @@ nf-core/rnastructurome pipeline parameters. Every parameter from the pinned `nex
 | `--rfcount-paired-only` | boolean |  |  |  |  | false | For paired-end samples, use only reads with both mates mapped (`--paired-only`). |
 | `--rfcount-primary-only` | boolean |  |  |  |  | false | Use only primary alignments in rf-count (`--primary-only`). |
 | `--rfcount-properly-paired` | boolean |  |  |  |  | false | For paired-end samples, use only properly paired reads (`--properly-paired`). |
-| `--rfcount-strandedness` | string |  |  | unstranded, first, second |  | unstranded | Library strandedness fallback for rf-count-genome when RSeQC inference is unavailable (e.g. viral/bacterial references without a usable BED annotation). |
+| `--rfcount-strandedness` | string |  |  | `unstranded`, `first`, `second` |  | unstranded | Library strandedness fallback for rf-count-genome when RSeQC inference is unavailable (e.g. viral/bacterial references without a usable BED annotation). |
 | `--rfcount-trim-5prime` | integer |  |  |  | ≥ 0 | 0 | Trim this many bases from the 5' read end for rf-count (`-t5`). |
 | `--rfeval-ignore-terminal` | boolean |  |  |  |  | true | Exclude terminal base-pairs from rf-eval calculations (`-it`). |
 | `--rfeval-img` | boolean |  |  |  |  | false | Generate R metric plots in rf-eval (`-g`). |
@@ -188,7 +188,7 @@ nf-core/rnastructurome pipeline parameters. Every parameter from the pinned `nex
 | `--rfnorm-median-coverage` | number |  |  |  | ≥ 0 | 0 | Discard transcripts with median coverage below this threshold (`--median-coverage`). |
 | `--rfnorm-nan` | string |  |  |  |  |  | Positions with read coverage below this threshold are reported as NaN (`--nan`). Auto: 1000 for MaP, 50 for RT-stop. Set to 0 to disable NaN masking. |
 | `--rfnorm-norm-independent` | boolean |  |  |  |  | false | Normalize each reactive base independently (`--norm-independent`). |
-| `--rfnorm-norm-method` | integer |  |  | 2, 3, 4 |  |  | Override rf-norm normalization method (`-nm`). 2=90% Winsorizing, 3=Box-plot, 4=Mitchell (MaP only). |
+| `--rfnorm-norm-method` | integer |  |  | `2`, `3`, `4` |  |  | Override rf-norm normalization method (`-nm`). 2=90% Winsorizing, 3=Box-plot, 4=Mitchell (MaP only). |
 | `--rfnorm-norm-window` | integer |  |  |  | ≥ 1 |  | Normalization window size (`--norm-window`). Auto: 50 for DMS or RT-stop, unset otherwise; leave unset to use the auto default. |
 | `--rfnorm-normfactor-min-coverage` | integer |  |  |  | ≥ 1 |  | rf-normfactor minimum coverage (`-mc`): bases below this coverage are excluded from the normalization factor calculation. Auto: 1000 for MaP, 50 for RT-stop; leave unset to use the auto default. |
 | `--rfnorm-prefilter-min-coverage` | integer |  |  |  | ≥ 0 | 1 | Genome route only: after rf-rctools extract, keep transcripts with at least one position at this coverage or higher before rf-norm. Set to 0 to keep the full annotation RC. |
@@ -196,7 +196,7 @@ nf-core/rnastructurome pipeline parameters. Every parameter from the pinned `nex
 | `--rfnorm-raw` | boolean |  |  |  |  | false | Score raw reactivities without applying normalization (`--raw`). |
 | `--rfnorm-reactive-bases` | string |  |  |  | matches ^[A-Za-z]+$ |  | Reactive bases used for normalization window selection (`--reactive-bases`), e.g. `AC` for DMS. |
 | `--rfnorm-remap-reactivities` | boolean |  |  |  |  | false | Remap normalized reactivities to the 0-1 range according to Zarringhalam et al. (`--remap-reactivities`). |
-| `--rfnorm-score-method` | integer |  |  | 1, 2, 3, 4 |  |  | Override rf-norm scoring method (`-sm`). 1=Ding, 2=Rouskin, 3=Siegfried, 4=Zubradt. |
+| `--rfnorm-score-method` | integer |  |  | `1`, `2`, `3`, `4` |  |  | Override rf-norm scoring method (`-sm`). 1=Ding, 2=Rouskin, 3=Siegfried, 4=Zubradt. |
 | `--rfnorm-use-normfactor` | boolean |  |  |  |  |  | Cross-experiment normalization via rf-normfactor (one factor set per reference, fed to rf-norm via `-nf`), putting reactivities on a common scale. Leave unset for auto (enabled only for a reference with more than one treated sample to cross-normalise); set `true` to force on, `false` to force off (per-sample box-plot). |
 | `--rfnorm-window-offset` | integer |  |  |  | ≥ 0 |  | Normalization window offset (`--window-offset`). |
 | `--rfrctools-gtf-attribute` | string |  |  |  |  | transcript_id | GTF attribute used as the output RC entry ID by rf-rctools (`-b`). |
@@ -234,7 +234,7 @@ nf-core/rnastructurome pipeline parameters. Every parameter from the pinned `nex
 | `--method` | string |  |  |  |  |  | Fallback probing method for rows missing `method`. |
 | `--organism` | string |  |  |  |  |  | Fallback organism for rows missing `organism`, typically a Latin binomial such as `Homo sapiens`. |
 | `--pH` | number |  |  |  |  |  | Fallback DMS reaction pH for rows missing `pH`. |
-| `--principle` | string |  |  | RT-stop, MaP, rt-stop, map |  |  | Fallback probing principle for rows missing `principle`. |
+| `--principle` | string |  |  | `RT-stop`, `MaP`, `rt-stop`, `map` |  |  | Fallback probing principle for rows missing `principle`. |
 | `--sample-id` | string |  |  |  | matches ^\S+$ |  | Fallback sample ID for rows missing `sample_id`. |
 | `--umi-pattern` | string |  |  |  |  |  | Fallback UMI pattern for rows missing `umi_pattern`. Supplying a pattern enables umi_tools extract before cutadapt. |
 

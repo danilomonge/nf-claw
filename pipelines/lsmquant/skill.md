@@ -8,7 +8,7 @@ summary: nf-core/lsmquant is a bioinformatics pipeline that performs preprocessi
 has_samplesheet: true
 input: samplesheet (sample_id, img_directory, parameter_file)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: BaSiC, elastix, MultiQC, NuMorph, 3DUnetCNN
+tools: ["BaSiC", "elastix", "MultiQC", "NuMorph", "3DUnetCNN"]
 ---
 # lsmquant
 

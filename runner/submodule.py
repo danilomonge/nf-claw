@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import os
 import re
 import subprocess
 import tempfile
@@ -29,25 +30,53 @@ def _thread_lock(key: str) -> threading.Lock:
         return _THREAD_LOCKS.setdefault(key, threading.Lock())
 
 
+def _lock_path(repo_root: Path) -> Path:
+    """Where the submodule lock lives: in the repository's own git directory, which every process
+    initialising this clone's submodules writes to anyway. Never the shared temp directory, where a
+    file another user left blocked every first-time run and a planted symlink could redirect it."""
+    common = _git(repo_root, "rev-parse", "--git-common-dir")
+    if common:
+        git_dir = Path(common)
+        if not git_dir.is_absolute():
+            git_dir = repo_root / git_dir
+        if git_dir.is_dir():
+            return git_dir / "nfclaw-submodule.lock"
+    # Not a git checkout (submodule init will then fail on its own): a per-user temp lock.
+    key = hashlib.sha256(str(repo_root.resolve()).encode()).hexdigest()[:16]
+    uid = os.getuid() if hasattr(os, "getuid") else 0
+    return Path(tempfile.gettempdir()) / f"nfclaw-submodule-{uid}-{key}.lock"
+
+
 @contextlib.contextmanager
 def _init_lock(repo_root: Path):
     """Serialize `git submodule update` across concurrent nfclaw processes on the same repo.
-    Without it, parallel inits race on `.git/config` ("could not lock config file"). The lock
-    is an flock on a per-repo temp file — it never touches the working tree. No-op where flock
-    is unavailable (Windows)."""
+    Without it, parallel inits race on `.git/config` ("could not lock config file"). The lock is an
+    flock on a file in the repository's git directory (see `_lock_path`) — it never touches the
+    working tree, and it is opened without following symlinks or truncating anything. Thread-only
+    where flock is unavailable (Windows)."""
     key = hashlib.sha256(str(repo_root.resolve()).encode()).hexdigest()[:16]
     if fcntl is None:
         with _thread_lock(key):
             yield
         return
     with _thread_lock(key):
-        lock_path = Path(tempfile.gettempdir()) / f"nfclaw-submodule-{key}.lock"
-        with open(lock_path, "w") as fh:
-            fcntl.flock(fh, fcntl.LOCK_EX)
+        lock_path = _lock_path(repo_root)
+        try:
+            fd = os.open(lock_path, os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0), 0o666)
+        except OSError as exc:
+            raise NfclawError(
+                ErrorCode.ENVIRONMENT,
+                f"Could not open the submodule lock file {lock_path}: {exc.strerror or exc}",
+                fix="If no other nfclaw process is running, remove it (it must be a regular file "
+                    "you can write), then retry.") from exc
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX)
             try:
                 yield
             finally:
-                fcntl.flock(fh, fcntl.LOCK_UN)
+                fcntl.flock(fd, fcntl.LOCK_UN)
+        finally:
+            os.close(fd)
 
 
 @dataclass(frozen=True)

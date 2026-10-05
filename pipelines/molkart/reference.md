@@ -24,7 +24,7 @@ nf-core/molkart pipeline parameters. Every parameter from the pinned `nextflow_s
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -86,7 +86,7 @@ nf-core/molkart pipeline parameters. Every parameter from the pinned `nextflow_s
 | `--segmentation-max-area` | integer |  |  |  |  |  | Maximum area size (in pixels) for segmentation masks. |
 | `--segmentation-method` | string | yes |  |  |  | mesmer | List of segmentation tools to apply to the image. Allowed values: mesmer, cellpose, stardist, ilastik. Use a comma-separated string without whitespaces for multiple methods. |
 | `--segmentation-min-area` | integer |  |  |  |  |  | Minimum area size (in pixels) for segmentation masks. |
-| `--stardist-model` | string |  |  | 2D_versatile_fluo, 2D_paper_dsb2018, 2D_versatile_he |  | 2D_versatile_fluo | Model to use for segmentation with stardist. |
+| `--stardist-model` | string |  |  | `2D_versatile_fluo`, `2D_paper_dsb2018`, `2D_versatile_he` |  | 2D_versatile_fluo | Model to use for segmentation with stardist. |
 | `--stardist-n-tiles-x` | integer |  |  |  |  | 3 | Number of tiles on the X axis for Stardist. |
 | `--stardist-n-tiles-y` | integer |  |  |  |  | 3 | Number of tiles on the Y axis for Stardist. |
 

@@ -8,7 +8,7 @@ summary: More introductory material: bytesize talk, nextflow summit talk, poster
 has_samplesheet: true
 input: samplesheet (id, fasta, reference, optional_data, template)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: 3DCoffee, ClustalO, csvtk, FAMSA, FoldMason, Kalign3, learnMSA, MAFFT, MAGUS, MultiQC, mTM-align, Muscle5, T-Coffee, UPP, Biopython
+tools: ["3DCoffee", "ClustalO", "csvtk", "FAMSA", "FoldMason", "Kalign3", "learnMSA", "MAFFT", "MAGUS", "MultiQC", "mTM-align", "Muscle5", "T-Coffee", "UPP", "Biopython"]
 ---
 # multiplesequencealign
 

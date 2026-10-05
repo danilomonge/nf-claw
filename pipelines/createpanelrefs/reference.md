@@ -30,7 +30,7 @@ nf-core/createpanelrefs pipeline parameters. Every parameter from the pinned `ne
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -40,22 +40,22 @@ nf-core/createpanelrefs pipeline parameters. Every parameter from the pinned `ne
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--gens-analysis-type` | string |  |  | srs, lrs |  | srs | GENS panel of normals analysis type ('srs' or 'lrs'). |
+| `--gens-analysis-type` | string |  |  | `srs`, `lrs` |  | srs | GENS panel of normals analysis type ('srs' or 'lrs'). |
 | `--gens-bin-length` | number |  |  |  |  | 100 | Length (in bp) of the bins. If zero, no binning will be performed. |
 | `--gens-maximum-chunk-size` | number |  |  |  |  | 167772150 | Maximum chunk size when writing the HDF5 file |
 | `--gens-min-interval-median-percentile` | number |  |  |  |  | 5 | Minimum interval median percentile for gatk CreateReadCountPanelOfNormals |
 | `--gens-pon-name` | string |  |  |  |  | gens | Name for panel of normals. |
-| `--gens-readcount-format` | string |  |  | HDF5, TSV |  | HDF5 | Output file format for count data |
+| `--gens-readcount-format` | string |  |  | `HDF5`, `TSV` |  | HDF5 | Output file format for count data |
 
 ## germlinecnvcaller_options
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--gcnv-analysis-type` | string |  |  | wgs, wes |  | wgs | Specifies which analysis type for the pipeline- either 'wgs' or 'wes'. |
+| `--gcnv-analysis-type` | string |  |  | `wgs`, `wes` |  | wgs | Specifies which analysis type for the pipeline- either 'wgs' or 'wes'. |
 | `--gcnv-bin-length` | number |  |  |  |  | 1000 | Length (in bp) of the bins. If zero, no binning will be performed. |
 | `--gcnv-model-name` | string |  |  |  |  | germlinecnvcaller | Name for panel of normals. |
 | `--gcnv-padding` | number |  |  |  |  | 0 | Length (in bp) of the padding regions on each side of the intervals. |
-| `--gcnv-readcount-format` | string |  |  | HDF5, TSV |  | HDF5 | Output file format for count data |
+| `--gcnv-readcount-format` | string |  |  | `HDF5`, `TSV` |  | HDF5 | Output file format for count data |
 | `--gcnv-scatter-content` | number |  |  |  |  | 5000 | When scattering with this argument, each of the resultant files will (ideally) have this amount of interval-counts. |
 
 ## input_output_options

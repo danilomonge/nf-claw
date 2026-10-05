@@ -8,7 +8,7 @@ summary: nf-core/proteinfamilies is a bioinformatics pipeline that generates pro
 has_samplesheet: true
 input: samplesheet (sample, fasta, existing_hmms_to_update, existing_msas_to_update)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: SeqFu, SeqKit, MMseqs2, FAMSA, mafft, ClipKIT, hmmer, HH-suite3, Biopython, CMAPLE, MultiQC
+tools: ["SeqFu", "SeqKit", "MMseqs2", "FAMSA", "mafft", "ClipKIT", "hmmer", "HH-suite3", "Biopython", "CMAPLE", "MultiQC"]
 ---
 # proteinfamilies
 

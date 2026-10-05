@@ -17,7 +17,7 @@ nf-core/readsimulator pipeline parameters. Every parameter from the pinned `next
 | `--amplicon-read-count` | integer |  |  |  |  | 500 | Number of reads to be simulated per amplicon. |
 | `--amplicon-read-length` | integer |  |  |  |  | 130 | Length of reads to be simulated. |
 | `--amplicon-rv-primer` | string |  |  |  |  | CATAGTGGGGTATCTAATCCCAGTTTG | Reverse primer to use with crabs_insilicopcr. |
-| `--amplicon-seq-system` | string |  |  | GA1, GA2, HS10, HS20, HS25, HSXn, HSXt, MinS, MSv1, MSv3, NS50 |  | HS25 | Sequencing system of reads to be simulated. |
+| `--amplicon-seq-system` | string |  |  | `GA1`, `GA2`, `HS10`, `HS20`, `HS25`, `HSXn`, `HSXt`, `MinS`, `MSv1`, `MSv3`, `NS50` |  | HS25 | Sequencing system of reads to be simulated. |
 
 ## generic_options
 
@@ -32,7 +32,7 @@ nf-core/readsimulator pipeline parameters. Every parameter from the pinned `next
 | `--multiqc-logo` | string |  | yes |  |  |  | Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file |
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--validationFailUnrecognisedParams` | boolean |  | yes |  |  |  | Validation of parameters fails when an unrecognised parameter is found. |
 | `--validationLenientMode` | boolean |  | yes |  |  |  | Validation of parameters in lenient more. |
@@ -71,14 +71,14 @@ nf-core/readsimulator pipeline parameters. Every parameter from the pinned `next
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--metagenome-abundance` | string |  |  | uniform, halfnormal, exponential, lognormal, zero_inflated_lognormal |  | lognormal | Abundance distribution. |
+| `--metagenome-abundance` | string |  |  | `uniform`, `halfnormal`, `exponential`, `lognormal`, `zero_inflated_lognormal` |  | lognormal | Abundance distribution. |
 | `--metagenome-abundance-file` | string (file path) |  |  |  | matches ^\S+\.tsv$ |  | Path to tab-separated file containing abundance distribution. |
-| `--metagenome-coverage` | string |  |  | uniform, halfnormal, exponential, lognormal, zero_inflated_lognormal |  |  | Coverage distribution. |
+| `--metagenome-coverage` | string |  |  | `uniform`, `halfnormal`, `exponential`, `lognormal`, `zero_inflated_lognormal` |  |  | Coverage distribution. |
 | `--metagenome-coverage-file` | string (file path) |  |  |  | matches ^\S+\.tsv$ |  | Path to tab-separated file containing coverage information. |
 | `--metagenome-gc-bias` | boolean |  |  |  |  |  | Use this option to prevent simulating reads that have abnormal GC content. |
-| `--metagenome-input-format` | string |  |  | genomes, draft |  | genomes | Format of FASTA file used to generate reads |
-| `--metagenome-mode` | string |  |  | kde, basic |  | kde | Can be 'kde', or 'basic'. |
-| `--metagenome-model` | string |  |  | HiSeq, NovaSeq, MiSeq |  | MiSeq | Can be 'HiSeq', 'NovaSeq', or 'MiSeq'. |
+| `--metagenome-input-format` | string |  |  | `genomes`, `draft` |  | genomes | Format of FASTA file used to generate reads |
+| `--metagenome-mode` | string |  |  | `kde`, `basic` |  | kde | Can be 'kde', or 'basic'. |
+| `--metagenome-model` | string |  |  | `HiSeq`, `NovaSeq`, `MiSeq` |  | MiSeq | Can be 'HiSeq', 'NovaSeq', or 'MiSeq'. |
 | `--metagenome-n-reads` | string |  |  |  |  | 1M | Number of reads to generate. |
 
 ## reference_genome_options
@@ -90,7 +90,7 @@ nf-core/readsimulator pipeline parameters. Every parameter from the pinned `next
 | `--igenomes-ignore` | boolean |  | yes |  |  |  | Do not load the iGenomes reference config. |
 | `--ncbidownload-accessions` | string (file path) |  |  |  |  |  | Path to text file containing accession ids (one accession per row). |
 | `--ncbidownload-group` | string |  |  |  | matches ^((all\|archaea\|bacteria\|fungi\|invertebrate\|metagenomes\|plant\|protozoa\|vertebrate_mammalian\|vertebrate_other\|viral)?,?)*(?<!,)$ | all | The NCBI taxonomic groups to download. Options include 'all', 'archaea', 'bacteria', 'fungi', 'invertebrate', 'metagenomes', 'plant', 'protozoa', 'vertebrate_mammalian', 'vertebrate_other', and 'viral'. A comma-separated list is also valid (e.g., 'bacteria,viral'). |
-| `--ncbidownload-section` | string |  |  | refseq, genbank |  | refseq | The NCBI section to download. 'refseq' or 'genbank'. |
+| `--ncbidownload-section` | string |  |  | `refseq`, `genbank` |  | refseq | The NCBI section to download. 'refseq' or 'genbank'. |
 | `--ncbidownload-taxids` | string (file path) |  |  |  |  |  | Path to text file containing taxids (one taxid per row). |
 
 ## simulation_options
@@ -107,12 +107,12 @@ nf-core/readsimulator pipeline parameters. Every parameter from the pinned `next
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--probe-file` | string (file path) |  |  |  |  |  | Path to bait/probe file. Can be a fasta file or a bed file. |
-| `--probe-ref-name` | string |  |  | Tetrapods-UCE-2.5Kv1, Tetrapods-UCE-5Kv1, Actinopterygians-0.5Kv1, Acanthomorphs-1Kv1, Arachnida-1.1Kv1, Coleoptera-1.1Kv1, Diptera-2.7Kv1, Hemiptera-2.7Kv1, Hymenoptera-1.5Kv1, Hymenoptera-2.5Kv2, Anthozoa-1.7Kv1 |  | Tetrapods-UCE-5Kv1 | Name of supported probe. Mandatory if not using `--probes` parameter. |
+| `--probe-ref-name` | string |  |  | `Tetrapods-UCE-2.5Kv1`, `Tetrapods-UCE-5Kv1`, `Actinopterygians-0.5Kv1`, `Acanthomorphs-1Kv1`, `Arachnida-1.1Kv1`, `Coleoptera-1.1Kv1`, `Diptera-2.7Kv1`, `Hemiptera-2.7Kv1`, `Hymenoptera-1.5Kv1`, `Hymenoptera-2.5Kv2`, `Anthozoa-1.7Kv1` |  | Tetrapods-UCE-5Kv1 | Name of supported probe. Mandatory if not using `--probes` parameter. |
 | `--target-capture-fmedian` | integer |  |  |  |  | 500 | Median of fragment size at shearing. |
 | `--target-capture-fshape` | number |  |  |  |  | 6 | Shape parameter of the fragment size distribution. |
 | `--target-capture-illen` | integer |  |  |  |  | 150 | Illumina: read length. |
-| `--target-capture-ilmode` | string |  |  | pe, mp, se |  | pe | Illumina: Sequencing mode. |
-| `--target-capture-mode` | string |  |  | illumina, pacbio |  | illumina | Simulate 'illumina' or 'pacbio' reads. |
+| `--target-capture-ilmode` | string |  |  | `pe`, `mp`, `se` |  | pe | Illumina: Sequencing mode. |
+| `--target-capture-mode` | string |  |  | `illumina`, `pacbio` |  | illumina | Simulate 'illumina' or 'pacbio' reads. |
 | `--target-capture-num` | integer |  |  |  |  | 500000 | Number of fragments. |
 | `--target-capture-pblen` | integer |  |  |  |  | 30000 | PacBio: Average (polymerase) read length. |
 | `--target-capture-smedian` | integer |  |  |  |  | 1300 | Median of fragment size distribution. |

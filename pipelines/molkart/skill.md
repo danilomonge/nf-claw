@@ -8,7 +8,7 @@ summary: nf-core/molkart is a pipeline for processing Molecular Cartography data
 has_samplesheet: true
 input: samplesheet (sample, nuclear_image, spot_table, membrane_image)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: anndata, Cellpose, ilastik, Mesmer, Mindagap, MultiQC, Stardist
+tools: ["anndata", "Cellpose", "ilastik", "Mesmer", "Mindagap", "MultiQC", "Stardist"]
 ---
 # molkart
 

@@ -8,7 +8,7 @@ summary: nf-core/rnafusion is a bioinformatics best-practice analysis pipeline f
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, bam, bai, cram, crai, junctions, splice_junctions, strandedness, seq_platform, seq_center)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: Arriba, BEDOPS, FastP, FastQC, FusionCatcher, FusionInspector, Fusion-report, GATK4, MegaFusion, MultiQC, picard-tools, SAMtools, STAR, STAR-Fusion, StringTie
+tools: ["Arriba", "BEDOPS", "FastP", "FastQC", "FusionCatcher", "FusionInspector", "Fusion-report", "GATK4", "MegaFusion", "MultiQC", "picard-tools", "SAMtools", "STAR", "STAR-Fusion", "StringTie"]
 ---
 # rnafusion
 
@@ -36,7 +36,7 @@ This is the pinned latest release. To run a different one, list the available re
 | `crai` | string (file path) | no |  | matches ^\S+\.cram\.crai$ |
 | `junctions` | string (file path) | no |  | matches ^\S+\.junction$ |
 | `splice_junctions` | string (file path) | no |  | matches ^\S+\.SJ.out.tab$ |
-| `strandedness` | string | yes | forward, reverse, unstranded, unknown |  |
+| `strandedness` | string | yes | `forward`, `reverse`, `unstranded`, `unknown` |  |
 | `seq_platform` | string | no |  | matches ^\S+$ |
 | `seq_center` | string | no |  | matches ^\S+$ |
 
@@ -61,7 +61,7 @@ Any of the optional columns above may be appended to the header when your data n
 | `--tools` | string |  |  | matches ^((arriba\|ctatsplicing\|fusioncatcher\|starfusion\|stringtie\|fusionreport\|fastp\|salmon\|fusioninspector\|all)?,?)*(?<!,)$ | Comma-delimited list of tools to run |
 
 ## Reference genome
-No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes, which needs access to that bucket and downloads them.
+No reference genome is set by default: supply your own (e.g. `--fasta`; the `reference_genome_options` group in [reference.md](reference.md) lists every reference option). Passing `--genome <id>` instead resolves the references from AWS iGenomes, which needs access to that bucket and downloads them.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

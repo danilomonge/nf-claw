@@ -25,7 +25,7 @@ nf-core/phaseimpute pipeline parameters. Every parameter from the pinned `nextfl
 | `--multiqc-sample-names` | string |  |  |  |  |  | Optional TSV file with headers, passed to the MultiQC --sample_names argument. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/phaseimpute/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -70,7 +70,7 @@ nf-core/phaseimpute pipeline parameters. Every parameter from the pinned `nextfl
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--chunk-model` | string |  | yes | recursive, sequential |  | sequential | Model type to use for GLIMPSE2_CHUNK |
+| `--chunk-model` | string |  | yes | `recursive`, `sequential` |  | sequential | Model type to use for GLIMPSE2_CHUNK |
 | `--compute-freq` | boolean |  |  |  |  |  | Should the allele frequency for each variant (AC/AN fields necessary for Glimpse1 and the validation step) be computed using VCFFIXUP tool. This can be necessary if the fields are absent from the panel or if samples have been removed. |
 | `--normalize` | boolean |  |  |  | matches true\|false |  | Should the reference panel be normalized |
 | `--panel` | string (file path) |  |  |  | matches ^\S+\.(csv\|tsv\|yaml\|json)$ |  | Path to comma or tab-separated file, yaml or json file containing reference panel information. |

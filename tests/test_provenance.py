@@ -121,6 +121,23 @@ def test_replay_runs_in_the_target_directory(tmp_path):
     assert (target / "pwd.txt").read_text().strip() == str(target)
 
 
+
+def test_replay_into_a_relative_target_publishes_into_that_target(tmp_path):
+    # The script cds into the target before launching, so a relative target passed through as-is
+    # became <target>/<target>: `./commands.sh fresh` published into fresh/fresh/, and
+    # `nfclaw verify fresh --against out` then reported every file missing. --outdir must be absolute.
+    import subprocess
+
+    out = tmp_path / "out"
+    out.mkdir()
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="pwd >pwd.txt; echo",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    r = subprocess.run([str(prov / "commands.sh"), "fresh"], cwd=tmp_path,
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    assert (tmp_path / "fresh" / "pwd.txt").read_text().strip() == str(tmp_path / "fresh")
+    assert r.stdout.strip() == f"--outdir {tmp_path / 'fresh'}"
+
 def test_records_nextflow_env_and_probes_version_with_it(tmp_path, monkeypatch):
     out = tmp_path / "out"
     out.mkdir()

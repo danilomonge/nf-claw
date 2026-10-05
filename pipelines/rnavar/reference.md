@@ -12,7 +12,7 @@ nf-core/rnavar pipeline parameters. Every parameter from the pinned `nextflow_sc
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--aligner` | string | yes |  | star |  | star | Specifies the alignment algorithm to use. |
+| `--aligner` | string | yes |  | `star` |  | star | Specifies the alignment algorithm to use. |
 | `--bam-csi-index` | boolean |  |  |  |  |  | Create a CSI index for BAM files instead of the traditional BAI index. This will be required for genomes with larger chromosome sizes. |
 | `--save-align-intermeds` | boolean |  |  |  |  |  | Save the intermediate BAM files from the alignment step. |
 | `--save-unaligned` | boolean |  |  |  |  |  | Where possible, save unaligned reads from aligner to the results directory. |
@@ -51,7 +51,7 @@ nf-core/rnavar pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/rnavar/data/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -100,7 +100,7 @@ nf-core/rnavar pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--exon-bed` | string (file path) |  |  |  | matches ^\S+\.bed$ |  | Path to BED file containing exon intervals. This will be created from the GTF file if not specified. |
 | `--fasta` | string (file path) |  |  |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ |  | Path to FASTA genome file. |
 | `--fasta-fai` | string (file path) |  |  |  |  |  | Path to FASTA reference index. |
-| `--feature-type` | string |  |  | exon, transcript, gene |  | exon | Type of feature to parse from annotation file |
+| `--feature-type` | string |  |  | `exon`, `transcript`, `gene` |  | exon | Type of feature to parse from annotation file |
 | `--genome` | string |  |  |  |  | GRCh38 | Name of iGenomes reference. |
 | `--gff` | string (file path) |  |  |  | matches ^\S+\.gff\d?$ |  | Path to GFF3 annotation file. |
 | `--gtf` | string (file path) |  |  |  | matches ^\S+\.gtf$ |  | Path to GTF annotation file. |
@@ -119,7 +119,7 @@ nf-core/rnavar pipeline parameters. Every parameter from the pinned `nextflow_sc
 |---|---|---|---|---|---|---|---|
 | `--umitools-bc-pattern` | string |  |  |  | matches ^[NXC]*$ |  | The UMI barcode pattern to use e.g. 'NNNNNN' indicates that the first 6 nucleotides of the read are from the UMI. |
 | `--umitools-bc-pattern2` | string |  |  |  | matches ^[NXC]*$ |  | The UMI barcode pattern to use if the UMI is located in read 2. |
-| `--umitools-extract-method` | string |  |  | string, regex |  | string | UMI pattern to use. Can be either 'string' (default) or 'regex'. |
+| `--umitools-extract-method` | string |  |  | `string`, `regex` |  | string | UMI pattern to use. Can be either 'string' (default) or 'regex'. |
 | `--umitools-umi-separator` | string |  |  |  |  |  | The character that separates the UMI in the read name. Most likely a colon if you skipped the extraction with UMI-tools and used other software. |
 
 ## variant_annotation
@@ -146,7 +146,7 @@ nf-core/rnavar pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--vep-dbnsfp` | boolean |  |  |  |  |  | Enable the use of the VEP dbNSFP plugin. |
 | `--vep-include-fasta` | boolean |  | yes |  |  |  | Allow usage of fasta file for annotation with VEP |
 | `--vep-loftee` | boolean |  |  |  |  |  | Enable the use of the VEP LOFTEE plugin. |
-| `--vep-out-format` | string |  | yes | json, tab, vcf |  | vcf | VEP output-file format. |
+| `--vep-out-format` | string |  | yes | `json`, `tab`, `vcf` |  | vcf | VEP output-file format. |
 | `--vep-spliceai` | boolean |  |  |  |  |  | Enable the use of the VEP SpliceAI plugin. |
 | `--vep-spliceregion` | boolean |  |  |  |  |  | Enable the use of the VEP SpliceRegion plugin. |
 | `--vep-version` | string |  |  |  |  | 115.2-1 | Should reflect the VEP version used in the container. |

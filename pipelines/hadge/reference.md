@@ -19,7 +19,7 @@ nf-core/hadge pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--bff-doHeatmap` | boolean |  |  |  |  | true | Whether to generate heatmaps in BFF. |
 | `--bff-doTSNE` | boolean |  |  |  |  |  | Whether to compute tSNE visualization in BFF. |
 | `--bff-majorityConsensusThreshold` | number or null |  |  |  |  |  | Majority consensus threshold. |
-| `--bff-methods` | string |  |  | COMBINED, RAW, CLUSTER |  | COMBINED | Method(s) to use within BFF. |
+| `--bff-methods` | string |  |  | `COMBINED`, `RAW`, `CLUSTER` |  | COMBINED | Method(s) to use within BFF. |
 | `--bff-methodsForConsensus` | string or null |  |  |  |  |  | Methods to use for consensus calling. |
 | `--bff-metricsFile` | string or null |  |  |  |  |  | Optional metrics file path. |
 | `--bff-perCellSaturation` | number or null |  |  |  |  |  | Per-cell saturation value. |
@@ -123,7 +123,7 @@ nf-core/hadge pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -205,7 +205,7 @@ nf-core/hadge pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--htodemux-visualization-tSNE` | boolean |  |  |  |  | true | Generate a two dimensional tSNE embedding for HTOs. |
 | `--htodemux-visualization-tSNEApprox` | boolean |  |  |  |  |  | Approximate tSNE. |
 | `--htodemux-visualization-tSNEDimMax` | integer |  |  |  | ≥ 1 | 2 | Max number of donors. |
-| `--htodemux-visualization-tSNEIdents` | string |  |  | Singlet, Doublet, Negative |  | Negative | What should we remove from the object (we have Singlet, Doublet and Negative). |
+| `--htodemux-visualization-tSNEIdents` | string |  |  | `Singlet`, `Doublet`, `Negative` |  | Negative | What should we remove from the object (we have Singlet, Doublet and Negative). |
 | `--htodemux-visualization-tSNEInvert` | boolean |  |  |  |  | true | Invert tSNE selection. |
 | `--htodemux-visualization-tSNEPerplexity` | integer |  |  |  | ≥ 1 | 100 | Value for perplexity. |
 | `--htodemux-visualization-tSNEVerbose` | boolean |  |  |  |  |  | Verbose tSNE. |
@@ -223,7 +223,7 @@ nf-core/hadge pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--genetic-tools` | string |  |  |  | matches ^(vireo\|demuxlet\|freemuxlet\|souporcell\|cellsnp)(,(vireo\|demuxlet\|freemuxlet\|souporcell\|cellsnp))*$ | vireo | Tools used for genetic demultiplexing. |
 | `--hash-tools` | string |  |  |  | matches ^(htodemux\|multiseq\|bff\|demuxem\|gmm-demux\|hasheddrops\|hashsolo)(,(htodemux\|multiseq\|bff\|demuxem\|gmm-demux\|hasheddrops\|hashsolo))*$ | gmm-demux | Tools used for hash demultiplexing. |
 | `--input` | string (file path) | yes |  |  | matches ^\S+\.csv$ |  | Path to comma-separated file containing information about the samples in the experiment. |
-| `--mode` | string | yes |  | genetic, hashing, rescue, donor_match |  | rescue | Mode of the pipeline. |
+| `--mode` | string | yes |  | `genetic`, `hashing`, `rescue`, `donor_match` |  | rescue | Mode of the pipeline. |
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 | `--save-intermediates` | boolean |  |  |  |  |  | Save intermediate files. |
@@ -283,7 +283,7 @@ nf-core/hadge pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--souporcell-max-loci` | integer |  |  |  | ≥ 0 | 2048 | Max loci per cell, affects speed. |
 | `--souporcell-min-alt` | integer |  |  |  | ≥ 0 | 10 | Min alt to use locus. |
 | `--souporcell-min-ref` | integer |  |  |  | ≥ 0 | 10 | Min ref to use locus. |
-| `--souporcell-ploidy` | integer |  |  | 1, 2 |  | 2 | Ploidy, must be 1 or 2. |
+| `--souporcell-ploidy` | integer |  |  | `1`, `2` |  | 2 | Ploidy, must be 1 or 2. |
 | `--souporcell-restarts` | integer |  |  |  | ≥ 0 | 100 | Number of restarts in clustering, when there are > 12 clusters we recommend increasing this to avoid local minima. |
 | `--souporcell-skip-remap` | boolean |  |  |  |  |  | Don't remap with minimap2 (not recommended unless in conjunction with --common_variants). |
 
@@ -295,9 +295,9 @@ nf-core/hadge pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--vireo-cell-ambient-rnas` | boolean |  |  |  |  |  | If true, detect ambient RNAs in each cell (experimental feature). |
 | `--vireo-cell-range` | string |  |  |  |  | all | Range of cells to process, e.g., '0-10000'. Default is 'all'. |
 | `--vireo-extra-donor` | integer |  |  |  | ≥ 0 | 0 | Number of extra donors in pre-cluster, when GT needs to be learned. |
-| `--vireo-extra-donor-mode` | string |  |  | size, distance |  | distance | Method for searching from extra donors. 'size': n_cell per donor; 'distance': GT distance between donors. |
+| `--vireo-extra-donor-mode` | string |  |  | `size`, `distance` |  | distance | Method for searching from extra donors. 'size': n_cell per donor; 'distance': GT distance between donors. |
 | `--vireo-force-learn-gt` | boolean |  |  |  |  | true | If true, treat donor GT as prior only and learn genotypes from data. |
-| `--vireo-genotag` | string |  |  | GT, GP, PL |  | GT | The tag for donor genotype in VCF file. Options: GT, GP, PL. |
+| `--vireo-genotag` | string |  |  | `GT`, `GP`, `PL` |  | GT | The tag for donor genotype in VCF file. Options: GT, GP, PL. |
 | `--vireo-n-init` | integer |  |  |  | ≥ 1 | 50 | Number of random initializations when GT needs to be learned. |
 | `--vireo-no-doublet` | boolean |  |  |  |  |  | If true, do not check for doublets during demultiplexing. |
 | `--vireo-no-plot` | boolean |  |  |  |  |  | If true, turn off plotting GT distance. |

@@ -8,7 +8,7 @@ summary: nf-core/reportho is a bioinformatics pipeline that compares and summari
 has_samplesheet: true
 input: samplesheet (id, query, fasta)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: OMA, PANTHER, OrthoInspector, EggNOG, UniProt, UniProt ID Mapping, Diamond, RefSeq, Ensembl, MultiQC
+tools: ["OMA", "PANTHER", "OrthoInspector", "EggNOG", "UniProt", "UniProt ID Mapping", "Diamond", "RefSeq", "Ensembl", "MultiQC"]
 ---
 # reportho
 

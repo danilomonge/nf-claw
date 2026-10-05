@@ -8,7 +8,7 @@ summary: nf-core/createtaxdb is a bioinformatics pipeline that constructs custom
 has_samplesheet: true
 input: samplesheet (id, taxid, fasta_dna, fasta_aa)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: Bracken, Centrifuge, Centrifuger, DIAMOND, ganon, Kaiju, KMCP, Kraken2, KrakenUniq, MALT, MetaCache, MultiQC, SeqKit2, sourmash, sylph
+tools: ["Bracken", "Centrifuge", "Centrifuger", "DIAMOND", "ganon", "Kaiju", "KMCP", "Kraken2", "KrakenUniq", "MALT", "MetaCache", "MultiQC", "SeqKit2", "sourmash", "sylph"]
 ---
 # createtaxdb
 

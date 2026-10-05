@@ -8,7 +8,7 @@ summary: nf-core/genomeassembler is a bioinformatics pipeline that carries out g
 has_samplesheet: true
 input: samplesheet (sample, group, ref_fasta, ref_gff, use_ref, strategy, assembler, assembly_scaffolding_order, genome_size, flye_mode, flye_args, hifiasm_args, assembler_ont, assembler_ont_args, assembler_hifi, assembler_hifi_args, ontreads, ont_collect, ont_adapters, ont_fastplong_args, hifireads, hifi_adapters, hifi_fastplong_args, jellyfish, jellyfish_k, jellyfish_size, polish, polish_pilon, polish_dorado, polish_medaka, medaka_model, scaffold_longstitch, scaffold_links, scaffold_ragtag, scaffold_hic, hic_aligner, merqury, qc_reads, busco, busco_db, busco_lineage, quast, ref_map_bam, assembly, assembly_map_bam, csi_index_size, lift_annotations, use_short_reads, shortread_trim, meryl_k, shortread_F, shortread_R, paired, hic_trim, hic_F, hic_R)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
-tools: fastp, hifiasm, flye, pilon, medaka, dorado, LINKS, longstitch, yahs, RagTag, liftoff, BUSCO, genomescope2, jellyfish, meryl, QUAST, minimap2, samtools, bwa-mem2, picard
+tools: ["fastp", "hifiasm", "flye", "pilon", "medaka", "dorado", "LINKS", "longstitch", "yahs", "RagTag", "liftoff", "BUSCO", "genomescope2", "jellyfish", "meryl", "QUAST", "minimap2", "samtools", "bwa-mem2", "picard"]
 ---
 # genomeassembler
 
@@ -33,10 +33,10 @@ This is the pinned latest release. To run a different one, list the available re
 | `ref_gff` | string (file path) | no |  |  |
 | `use_ref` | boolean | no |  |  |
 | `strategy` | string | no |  |  |
-| `assembler` | string | no | flye, hifiasm, flye_hifiasm, hifiasm_hifiasm, flye_flye, hifiasm_flye |  |
-| `assembly_scaffolding_order` | string | no | ont_on_hifi, hifi_on_ont |  |
+| `assembler` | string | no | `flye`, `hifiasm`, `flye_hifiasm`, `hifiasm_hifiasm`, `flye_flye`, `hifiasm_flye` |  |
+| `assembly_scaffolding_order` | string | no | `ont_on_hifi`, `hifi_on_ont` |  |
 | `genome_size` | string | no |  |  |
-| `flye_mode` | string | no | --pacbio-raw, --pacbio-corr, --pacbio-hifi, --nano-raw, --nano-corr, --nano-hq |  |
+| `flye_mode` | string | no | `--pacbio-raw`, `--pacbio-corr`, `--pacbio-hifi`, `--nano-raw`, `--nano-corr`, `--nano-hq` |  |
 | `flye_args` | string | no |  |  |
 | `hifiasm_args` | string | no |  |  |
 | `assembler_ont` | string | no |  |  |
@@ -53,7 +53,7 @@ This is the pinned latest release. To run a different one, list the available re
 | `jellyfish` | boolean | no |  |  |
 | `jellyfish_k` | integer | no |  |  |
 | `jellyfish_size` | string | no |  |  |
-| `polish` | string | no | pilon, dorado, medaka, dorado+pilon, medaka+pilon |  |
+| `polish` | string | no | `pilon`, `dorado`, `medaka`, `dorado+pilon`, `medaka+pilon` |  |
 | `polish_pilon` | boolean | no |  |  |
 | `polish_dorado` | boolean | no |  |  |
 | `polish_medaka` | boolean | no |  |  |
@@ -62,9 +62,9 @@ This is the pinned latest release. To run a different one, list the available re
 | `scaffold_links` | boolean | no |  |  |
 | `scaffold_ragtag` | boolean | no |  |  |
 | `scaffold_hic` | boolean | no |  |  |
-| `hic_aligner` | string | no | bwa-mem2, minimap2 |  |
+| `hic_aligner` | string | no | `bwa-mem2`, `minimap2` |  |
 | `merqury` | boolean | no |  |  |
-| `qc_reads` | string | no | ont, hifi |  |
+| `qc_reads` | string | no | `ont`, `hifi` |  |
 | `busco` | boolean | no |  |  |
 | `busco_db` | string (directory path) | no |  |  |
 | `busco_lineage` | string | no |  |  |

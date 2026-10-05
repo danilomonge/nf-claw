@@ -8,7 +8,7 @@ summary: nf-core/rnastructurome is a bioinformatics pipeline for analysing chemi
 has_samplesheet: true
 input: samplesheet (sample, sample_id, fastq_1, fastq_2, method, principle, chemical, RT_enzyme, organism, pH, adapter_3p, adapter_5p, umi_pattern, condition, sample_group, replicate, group)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FastQC, UMI-tools, Cutadapt, GffRead, STAR, Bowtie, Bowtie2, SAMtools, BEDOPS, RSeQC, RNAFramework, UCSC wigToBigWig, R2DT, ViennaRNA, MultiQC
+tools: ["FastQC", "UMI-tools", "Cutadapt", "GffRead", "STAR", "Bowtie", "Bowtie2", "SAMtools", "BEDOPS", "RSeQC", "RNAFramework", "UCSC wigToBigWig", "R2DT", "ViennaRNA", "MultiQC"]
 ---
 # rnastructurome
 
@@ -40,7 +40,7 @@ This is the pinned latest release. To run a different one, list the available re
 | `adapter_3p` | string | no |  |  |
 | `adapter_5p` | string | no |  |  |
 | `umi_pattern` | string | no |  |  |
-| `condition` | string | yes | treated, untreated, denatured |  |
+| `condition` | string | yes | `treated`, `untreated`, `denatured` |  |
 | `sample_group` | string | yes |  | matches ^\S+$ |
 | `replicate` | string or integer | yes |  |  |
 | `group` | string | no |  | matches ^\S+$ |
