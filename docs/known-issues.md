@@ -311,6 +311,19 @@ the same `NXF_OFFLINE=true` that `CLAUDE.md` documents under "Tuning the Nextflo
 skipping remote config fetches; it is the general answer whenever a pinned release reaches out to
 `nf-core/configs` on a network-restricted host, not only for sarek.
 
+### `WARN: The following invalid input values have been detected: * --igenomes_base: …` (an institutional profile)
+**Set by the institutional profile, not by you, the pipeline or nf-claw — and it does not affect
+results.** Reproduced with `nfclaw run fetchngs --pipeline-version dev … -profile binac2` (fetchngs
+`dev` at f754e0a, Nextflow 25.10.4): nf-core/configs' `conf/binac2.config` sets
+`params.igenomes_base = '/pfs/10/project/db/igenomes'` for *every* pipeline, so the cluster's local
+iGenomes mirror is used by the pipelines that resolve references. A pipeline that declares no such
+parameter (fetchngs downloads reads; it never resolves a genome) does not have it in its
+`nextflow_schema.json`, and the profile's own `validation.ignoreParams` list does not name it — so
+nf-schema reports the profile's value as an unknown parameter. Nothing reads it, and the run proceeds.
+The same shape applies to any institutional profile that sets a parameter a given pipeline does not
+declare. It needs no fix; the lasting one is upstream — the profile adding the name to its
+`validation.ignoreParams` (report it to nf-core/configs).
+
 ### `ERROR org.pf4j.AbstractExtensionFinder - Different class loaders`
 **A plugin-cache condition on the host, not a defect in the pipeline or in nf-claw.** pf4j (the
 plugin framework Nextflow uses) raises this when it finds the same extension point loaded by two

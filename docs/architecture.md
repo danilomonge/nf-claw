@@ -35,6 +35,13 @@ Three zones:
   publishes into `--outdir` and cannot re-publish over a previous run's files, so replaying in place
   fails on contact. `--check` is side-effect-free for the same reason — it stages its params file in
   a temp directory, never in `--outdir`, so a dry run cannot spoil the directory the real run needs.
+  `--pipeline-version` selects another release (materialized as a git worktree of that tag under
+  the git-ignored `pipelines/<name>/.versions/<tag>/`) or `dev`, nf-core's development branch. A
+  branch moves, so `dev` is resolved to its head commit on every request and materialized per commit
+  (`.versions/dev-<commit12>/`): once checked out a tree never changes, which keeps `commands.sh`
+  replays faithful and lets two runs on different `dev` heads proceed side by side. The run warns
+  that the code is unreleased, provenance records `version: dev` with the exact commit, and the
+  last-resolved head is kept as `origin/dev` in the submodule clone as the offline fallback.
 - **`librarian/`** — maintenance (run via `make`): generates `skill.md`/`reference.md`/`catalog.*`
   from each submodule, and bumps submodules to the latest release.
 

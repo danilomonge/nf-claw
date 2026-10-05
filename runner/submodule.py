@@ -88,6 +88,9 @@ class SubmoduleStatus:
     version: str
     commit: str
     missing_files: tuple[str, ...]
+    # Advisories about how this tree was resolved (e.g. it is unreleased `dev` code), surfaced to
+    # the caller as run warnings. Empty for the pinned release and for any other release tag.
+    notes: tuple[str, ...] = ()
 
 
 def _git(path: Path, *args: str) -> str:
