@@ -33,10 +33,10 @@ Every `nfclaw run` records itself at a fixed place — there is no need to redir
 nothing to look up:
 - `<outdir>/provenance/logs/run.log` — the whole launch in order: nfclaw's header (command, launch
   directory, Nextflow log path, advisories), everything Nextflow printed, and on failure nfclaw's
-  error. Once the run ends, its **last line** is `==> nfclaw run finished <time>: <outcome>`
-  (`success`, `failed (exit status N)`, `timed out after N s`, `interrupted`), so a run started in
-  the background (`nohup nfclaw run ... &`) is checked with
-  `tail -n 1 <outdir>/provenance/logs/run.log`. `--resume` appends: a failed attempt is never
+  error. Once nfclaw is done — the provenance bundle included — its **last line** is
+  `==> nfclaw run finished <time>: <outcome>` (`success`, `failed (exit status N)`,
+  `timed out after N s`, `interrupted`), so a run started in the background
+  (`nohup nfclaw run ... &`) is checked with `tail -n 1 <outdir>/provenance/logs/run.log`. `--resume` appends: a failed attempt is never
   overwritten by the retry.
 - `<outdir>/.nextflow.log` — Nextflow's own detailed log. Nextflow runs from `--outdir`, so its
   console hint "Check '.nextflow.log'" means this file, not one in your working directory.

@@ -149,3 +149,41 @@ def test_log_causes_ignore_exceptions_outside_the_last_error_entry(tmp_path):
 
 def test_log_causes_of_a_missing_log_are_empty(tmp_path):
     assert runlog.nextflow_log_causes(tmp_path / "absent.log") == []
+
+
+def test_log_causes_keep_a_multi_line_exception_message(tmp_path):
+    # Real shape (Nextflow 26.04, a config syntax error): the message continues on the lines after
+    # "startup failed:" and stops where the stack frames begin.
+    log = tmp_path / ".nextflow.log"
+    log.write_text(
+        "Oct-05 22:03:47.926 [main] ERROR nextflow.cli.Launcher - Config parsing failed\n"
+        "nextflow.exception.ConfigParseException: Config parsing failed\n"
+        "\tat nextflow.config.ConfigBuilder.build(ConfigBuilder.groovy:821)\n"
+        "Caused by: org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:\n"
+        "_nf_config_ffa03b8917b73ec2: 3: Unexpected input: '}' @ line 3, column 1.\n"
+        "   }\n"
+        "   ^\n"
+        "\n"
+        "1 error\n"
+        "\n"
+        "\tat org.codehaus.groovy.control.ErrorCollector.failIfErrors(ErrorCollector.java:292)\n"
+        "\t... 9 common frames omitted\n")
+    assert runlog.nextflow_log_causes(log) == [
+        "Caused by: org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:",
+        "  _nf_config_ffa03b8917b73ec2: 3: Unexpected input: '}' @ line 3, column 1.",
+        "     }",
+        "     ^",
+        "  1 error",
+    ]
+
+
+def test_log_causes_are_quoted_once(tmp_path):
+    log = tmp_path / ".nextflow.log"
+    log.write_text(
+        "Oct-05 10:00:01.000 [main] ERROR nextflow.cli.Launcher - boom\n"
+        "Caused by: java.net.SocketException: Network is unreachable\n"
+        "\tat x.y(Z.java:1)\n"
+        "Caused by: java.net.SocketException: Network is unreachable\n"
+        "\tat x.y(Z.java:1)\n")
+    assert runlog.nextflow_log_causes(log) == [
+        "Caused by: java.net.SocketException: Network is unreachable"]

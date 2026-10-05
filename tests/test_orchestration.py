@@ -362,10 +362,83 @@ def test_run_is_logged_in_the_bundle_with_nextflow_log_and_advisories(tmp_path, 
         "mini", repo_root=root, input_path=None, outdir=out,
         profile="docker", params_file=None, cli_overrides={}, resume=False,
         demo=True, check_only=False, write_provenance=False, timeout_seconds=10)
-    assert eseen["logs_dir"] == out / "provenance" / "logs"
-    assert eseen["nextflow_log"] == out / ".nextflow.log"
-    assert "engine too old" in eseen["notes"]
-    assert res.log_path == out / "provenance" / "logs" / "run.log"
+    log_path = out / "provenance" / "logs" / "run.log"
+    assert eseen["run_log"].path == log_path and eseen["logs_dir"] == log_path.parent
+    assert eseen["run_log"].nextflow_log == out / ".nextflow.log"
+    log = log_path.read_text()
+    assert "warning: engine too old" in log and f"nextflow log: {out / '.nextflow.log'}" in log
+    assert log.rstrip().splitlines()[-1].endswith(": success")
+    assert res.log_path == log_path
+
+
+def test_run_log_states_the_outcome_only_once_the_bundle_is_written(tmp_path, monkeypatch):
+    # Its last line is what a background run is polled on; it must not say "success" while nfclaw is
+    # still hashing the outputs into the bundle (minutes for a large run).
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: None)
+    log_path = tmp_path / "out" / "provenance" / "logs" / "run.log"
+    at_bundle_time = {}
+    real_write = orchestration.provenance.write
+
+    def write(**k):
+        at_bundle_time["log"] = log_path.read_text()
+        return real_write(**k)
+
+    monkeypatch.setattr(orchestration.provenance, "write", write)
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=False, write_provenance=True, timeout_seconds=10)
+    assert "nfclaw run finished" not in at_bundle_time["log"]
+    assert log_path.read_text().rstrip().splitlines()[-1].endswith(": success")
+
+
+def test_failed_run_log_ends_after_the_bundle_with_the_failure(tmp_path, monkeypatch):
+    import pytest
+
+    from runner.errors import ErrorCode, NfclawError
+
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+
+    def boom(*a, **k):
+        err = NfclawError(ErrorCode.EXECUTION_FAILED, "Nextflow exited 3")
+        k["run_log"].fail("failed (exit status 3)", str(err))
+        raise err
+
+    monkeypatch.setattr(orchestration.execution, "run", boom)
+    with pytest.raises(NfclawError):
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+            profile="docker", params_file=None, cli_overrides={}, resume=False,
+            demo=True, check_only=False, write_provenance=True, timeout_seconds=10)
+    log = (tmp_path / "out" / "provenance" / "logs" / "run.log").read_text()
+    assert "Nextflow exited 3" in log
+    assert log.rstrip().splitlines()[-1].endswith(": failed (exit status 3)")
+    assert (tmp_path / "out" / "provenance" / "run_manifest.json").exists()
+
+
+def test_run_log_never_claims_success_when_nfclaw_fails_after_nextflow(tmp_path, monkeypatch):
+    import pytest
+
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: None)
+
+    def disk_full(**k):
+        raise OSError("No space left on device")
+
+    monkeypatch.setattr(orchestration.provenance, "write", disk_full)
+    with pytest.raises(OSError):
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+            profile="docker", params_file=None, cli_overrides={}, resume=False,
+            demo=True, check_only=False, write_provenance=True, timeout_seconds=10)
+    log = (tmp_path / "out" / "provenance" / "logs" / "run.log").read_text()
+    assert "No space left on device" in log
+    last = log.rstrip().splitlines()[-1]
+    assert not last.endswith(": success") and "after Nextflow succeeded" in last
 
 
 def test_check_only_names_no_run_log(tmp_path, monkeypatch):

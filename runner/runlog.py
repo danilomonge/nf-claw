@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import os
 import re
+import shlex
+import sys
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,6 +37,8 @@ _LOG_ENTRY = re.compile(r"^[A-Z][a-z]{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \[[^\]]*
 _LOG_ERROR = re.compile(r"^[A-Z][a-z]{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \[[^\]]*\] ERROR ")
 _LOG_TAIL_BYTES = 2 * 1024 * 1024
 _MAX_CAUSES = 8
+_MAX_CAUSE_LINES = 6         # continuation lines kept per cause message
+_STACK_FRAME = re.compile(r"^\s+(at |\.\.\. \d+ (common frames omitted|more))")
 
 _ANSI = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]|\x1b[@-_]")
 # Lines that end the context above `ERROR ~`: Nextflow's banner and launch line, and the end (or
@@ -158,7 +162,7 @@ def failing_task_dir(excerpt: list[str]) -> Path | None:
 
 def nextflow_log_causes(log: Path) -> list[str]:
     """The exception chain behind Nextflow's last error, from its own log: the `Caused by: …` lines
-    of the last ERROR entry. Deterministic, and often the only place the real reason is written —
+    of the last ERROR entry, each with the rest of its message when it spans several lines. Deterministic, and often the only place the real reason is written —
     the console says "Unable to parse config file" while the log says "Network is unreachable".
     Empty when the entry carries no chain (a failed task's entry just repeats the console report)."""
     try:
@@ -171,30 +175,60 @@ def nextflow_log_causes(log: Path) -> list[str]:
     errors = [i for i, line in enumerate(lines) if _LOG_ERROR.match(line)]
     if not errors:
         return []
-    causes: list[str] = []
+    causes: list[list[str]] = []
+    current: list[str] | None = None                     # the cause whose message is being read
     for line in lines[errors[-1] + 1:]:
         if _LOG_ENTRY.match(line):
             break                                        # the next entry: the error's chain is over
         if line.startswith("Caused by: ") and line[len("Caused by: "):].strip():
-            cause = line.rstrip()
-            if cause not in causes:
-                causes.append(cause)
-    return causes[:_MAX_CAUSES]
+            current = [line.rstrip()]
+            causes.append(current)
+        elif _STACK_FRAME.match(line):
+            current = None                               # the message ends where the frames begin
+        elif current is not None and line.strip() and len(current) <= _MAX_CAUSE_LINES:
+            current.append("  " + line.rstrip())         # a message that spans several lines
+    distinct: list[list[str]] = []
+    for cause in causes:
+        if cause not in distinct:
+            distinct.append(cause)
+    return [line for cause in distinct[:_MAX_CAUSES] for line in cause]
 
 
 class RunLog:
     """`run.log` for one launch: appended to (never truncated) and safe to write from both of the
-    child's stream readers at once. Keeps the tail of this launch's console for quoting its error."""
+    child's stream readers at once. Keeps the tail of this launch's console for quoting its error.
 
-    def __init__(self, path: Path):
+    Whoever opens it closes it with `finish()`, once nfclaw is done with the run — after the
+    provenance bundle is written — so the final line never announces an outcome early."""
+
+    def __init__(self, path: Path, *, nextflow_log: Path | None = None):
         self.path = path
+        self.nextflow_log = nextflow_log
+        self.outcome = "failed"                          # until the run says otherwise
         path.parent.mkdir(parents=True, exist_ok=True)
         self._fh = path.open("ab")
         self._lock = threading.Lock()
         self._tail = bytearray()
+        self._finished = False
+
+    @classmethod
+    def open(cls, logs_dir: Path, *, command: list[str], launch_dir: Path,
+             nextflow_log: Path | None = None, notes: list[str] | tuple[str, ...] = ()) -> "RunLog":
+        """Start the record of a launch: its header, and one line on the terminal saying where it
+        is — before anything else prints, since a long run's own output soon buries it."""
+        log = cls(logs_dir / RUN_LOG_NAME, nextflow_log=nextflow_log)
+        log.note(f"==> nfclaw run started {now()}")
+        log.note(f"    command: {shlex.join(command)}")
+        log.note(f"    launch dir: {launch_dir}")
+        if nextflow_log is not None:
+            log.note(f"    nextflow log: {nextflow_log}")
+        for note in notes:
+            log.note(f"    warning: {note}")
+        print(f"nfclaw: logging this run to {log.path}", file=sys.stderr, flush=True)
+        return log
 
     def note(self, text: str) -> None:
-        """A line of nfclaw's own (header, outcome) — not part of the console tail."""
+        """A line of nfclaw's own (header, error, outcome) — not part of the console tail."""
         self._write((text.rstrip("\n") + "\n").encode("utf-8"), console=False)
 
     def write(self, chunk: bytes) -> None:
@@ -216,12 +250,18 @@ class RunLog:
         with self._lock:
             return self._tail.decode("utf-8", errors="replace")
 
-    def finish(self, outcome: str, error: str = "") -> None:
-        """Close the record of this launch: the error text (if any), then one last line — always the
-        file's final line once the run ends — `==> nfclaw run finished <time>: <outcome>`."""
+    def fail(self, outcome: str, error: str = "") -> None:
+        """Record how the run failed: the error text now, the outcome for the final line."""
+        self.outcome = outcome
         if error:
             self.note(error)
-        self.note(f"==> nfclaw run finished {now()}: {outcome}")
+
+    def finish(self) -> None:
+        """Close the record with its last line — `==> nfclaw run finished <time>: <outcome>`."""
+        if self._finished:
+            return
+        self._finished = True
+        self.note(f"==> nfclaw run finished {now()}: {self.outcome}")
         try:
             self._fh.close()
         except OSError:

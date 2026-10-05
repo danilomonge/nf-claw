@@ -190,25 +190,42 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # the cwd only decides where the engine state lands — including Nextflow's own log.
     # The run is recorded at a fixed place, `<outdir>/provenance/logs/run.log` (see runner.runlog):
     # nobody launching it, in the foreground or the background, has to redirect it or be told where.
+    # Its last line states the outcome and is written last of all — after the bundle — because it
+    # is what a background run is polled on.
     logs_dir = outdir / "provenance" / "logs"
+    run_log = runlog.RunLog.open(logs_dir, command=cmd, launch_dir=outdir,
+                                 nextflow_log=runlog.nextflow_log_path(outdir, nxf_overlay),
+                                 notes=warnings)
     try:
-        execution.run(cmd, cwd=outdir, logs_dir=logs_dir,
-                      timeout_seconds=timeout_seconds, env_extra=nxf_overlay,
-                      nextflow_log=runlog.nextflow_log_path(outdir, nxf_overlay),
-                      notes=warnings)
-    except BaseException:
-        # A failed run is exactly when the bundle is needed most: `commands.sh` is what replays the
-        # run once the cause is fixed, and the checksums record what it did manage to produce. Write
-        # it, then re-raise — a provenance error must never replace the real failure as the cause.
-        if write_provenance:
-            try:
-                record("failed")
-            except Exception:                         # best effort; must not mask the real failure
-                pass
-        raise
-    report = outputs.collect(outdir)
-    if write_provenance:
-        record("success")
+        try:
+            execution.run(cmd, cwd=outdir, logs_dir=logs_dir,
+                          timeout_seconds=timeout_seconds, env_extra=nxf_overlay,
+                          run_log=run_log)
+        except BaseException:
+            # A failed run is exactly when the bundle is needed most: `commands.sh` is what replays
+            # the run once the cause is fixed, and the checksums record what it did manage to
+            # produce. Write it, then re-raise — a provenance error must never replace the real
+            # failure as the cause.
+            if write_provenance:
+                try:
+                    record("failed")
+                except Exception:                     # best effort; must not mask the real failure
+                    pass
+            raise
+        run_log.outcome = "success"
+        try:
+            report = outputs.collect(outdir)
+            if write_provenance:
+                record("success")
+        except BaseException as exc:
+            # Nextflow succeeded but nfclaw could not finish (a full disk while hashing outputs, an
+            # interrupt): the log's last line must not claim a success the bundle does not back.
+            what = "interrupted" if isinstance(exc, KeyboardInterrupt) else "failed"
+            run_log.fail(f"{what} after Nextflow succeeded ({type(exc).__name__}: {exc})",
+                         f"nfclaw: {type(exc).__name__}: {exc}")
+            raise
+    finally:
+        run_log.finish()
     return RunResult(command=cmd_str, outdir=outdir, checked_only=False,
                      outputs_report=report, warnings=warnings,
                      log_path=logs_dir / runlog.RUN_LOG_NAME)

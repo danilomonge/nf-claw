@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import shlex
 import signal
 import subprocess
 import sys
@@ -59,25 +58,31 @@ def _join(threads: list[threading.Thread]) -> None:
 
 def run(command: list[str], *, cwd: Path, logs_dir: Path,
         timeout_seconds: int | None, env_extra: dict[str, str] | None = None,
-        nextflow_log: Path | None = None, notes: list[str] | tuple[str, ...] = ()) -> ExecResult:
+        nextflow_log: Path | None = None, notes: list[str] | tuple[str, ...] = (),
+        run_log: runlog.RunLog | None = None) -> ExecResult:
     """Run `command` from `cwd`, streaming its output live and recording it under `logs_dir`.
 
     `stdout.txt`/`stderr.txt` keep the child's two streams; `run.log` keeps the whole launch in order
-    with nfclaw's header and a final outcome line (see `runner.runlog`). All three are appended to, so
-    a relaunch (`--resume`) never overwrites the attempt that failed. `nextflow_log` is where Nextflow
-    writes its own log for this launch; `notes` are advisories recorded in the run log's header."""
+    (see `runner.runlog`). All three are appended to, so a relaunch (`--resume`) never overwrites the
+    attempt that failed. A caller that does more work after the launch (`nfclaw run` writes the
+    provenance bundle) passes its own open `run_log` and finishes it itself; otherwise one is opened
+    here — with `nextflow_log` and the `notes` advisories in its header — and finished on return."""
+    own = run_log is None
+    if run_log is None:
+        run_log = runlog.RunLog.open(logs_dir, command=command, launch_dir=cwd,
+                                     nextflow_log=nextflow_log, notes=notes)
+    try:
+        return _run(command, cwd=cwd, logs_dir=logs_dir, timeout_seconds=timeout_seconds,
+                    env_extra=env_extra, run_log=run_log)
+    finally:
+        if own:
+            run_log.finish()
+
+
+def _run(command: list[str], *, cwd: Path, logs_dir: Path, timeout_seconds: int | None,
+         env_extra: dict[str, str] | None, run_log: runlog.RunLog) -> ExecResult:
     logs_dir.mkdir(parents=True, exist_ok=True)
     out_p, err_p = logs_dir / "stdout.txt", logs_dir / "stderr.txt"
-    run_log = runlog.RunLog(logs_dir / runlog.RUN_LOG_NAME)
-    run_log.note(f"==> nfclaw run started {runlog.now()}")
-    run_log.note(f"    command: {shlex.join(command)}")
-    run_log.note(f"    launch dir: {cwd}")
-    if nextflow_log is not None:
-        run_log.note(f"    nextflow log: {nextflow_log}")
-    for note in notes:
-        run_log.note(f"    warning: {note}")
-    # Say where the record is before anything else prints: a long run's own output soon buries it.
-    print(f"nfclaw: logging this run to {run_log.path}", file=sys.stderr, flush=True)
     # start_new_session puts the child in its own process group, so nfclaw owns its shutdown: the
     # terminal's Ctrl-C reaches nfclaw as a KeyboardInterrupt (not the child), and nfclaw then tears
     # down the whole group below. Without this the child kept running in the background after Ctrl-C.
@@ -96,7 +101,7 @@ def run(command: list[str], *, cwd: Path, logs_dir: Path,
             err = NfclawError(ErrorCode.EXECUTION_FAILED, f"Could not launch process: {exc}",
                               fix="Ensure `nextflow` is installed and on PATH.",
                               details={"run_log": str(run_log.path)})
-            run_log.finish("could not launch", str(err))
+            run_log.fail("could not launch", str(err))
             raise err from exc
         # One drainer per stream: both pipes must be read concurrently, or a child that fills one
         # while nfclaw is blocked reading the other would deadlock. Daemon threads so a wedged reader
@@ -118,8 +123,8 @@ def run(command: list[str], *, cwd: Path, logs_dir: Path,
                               fix="Increase --timeout or use a smaller dataset; the run log shows "
                                   "how far the run got.",
                               details={"timeout_seconds": timeout_seconds,
-                                       **_log_details(run_log, nextflow_log)})
-            run_log.finish(f"timed out after {timeout_seconds} s", str(err))
+                                       **_log_details(run_log)})
+            run_log.fail(f"timed out after {timeout_seconds} s", str(err))
             raise err from exc
         except BaseException:
             # Ctrl-C (KeyboardInterrupt) or any other interruption of the wait: tear down the child
@@ -127,31 +132,31 @@ def run(command: list[str], *, cwd: Path, logs_dir: Path,
             # never left running in the background. Then re-raise so the interrupt is not swallowed.
             _terminate(proc)
             _join(readers)
-            run_log.finish("interrupted")
+            run_log.fail("interrupted")
             raise
         _join(readers)
     if code != 0:
-        err = _failure(code, run_log, nextflow_log)
-        run_log.finish(f"failed (exit status {code})", str(err))
+        err = _failure(code, run_log)
+        run_log.fail(f"failed (exit status {code})", str(err))
         raise err
-    run_log.finish("success")
+    run_log.outcome = "success"
     return ExecResult(code, out_p, err_p)
 
 
-def _log_details(run_log: runlog.RunLog, nextflow_log: Path | None) -> dict[str, str]:
+def _log_details(run_log: runlog.RunLog) -> dict[str, str]:
     """The files that hold the rest of the story, as absolute paths — only ones that exist."""
     details = {"run_log": str(run_log.path)}
-    if nextflow_log is not None and nextflow_log.is_file():
-        details["nextflow_log"] = str(nextflow_log)
+    if run_log.nextflow_log is not None and run_log.nextflow_log.is_file():
+        details["nextflow_log"] = str(run_log.nextflow_log)
     return details
 
 
-def _failure(code: int, run_log: runlog.RunLog, nextflow_log: Path | None) -> NfclawError:
+def _failure(code: int, run_log: runlog.RunLog) -> NfclawError:
     """The error for a launch that exited non-zero: Nextflow's own report, quoted from this launch's
     console, plus where the full logs are. Nextflow prints that report on stdout — stderr only carries
     the launcher's chatter — and refers to its log relative to a directory the reader is not in."""
     excerpt = runlog.error_excerpt(run_log.console_tail())
-    details: dict = {"exit_code": code, **_log_details(run_log, nextflow_log)}
+    details: dict = {"exit_code": code, **_log_details(run_log)}
     task = runlog.failing_task_dir(excerpt)
     if task is not None and task.is_dir():
         details["failing_task"] = str(task / ".command.err")
@@ -159,7 +164,8 @@ def _failure(code: int, run_log: runlog.RunLog, nextflow_log: Path | None) -> Nf
     if excerpt:
         message += " Nextflow reported:\n" + "\n".join(f"    {line}" if line else ""
                                                          for line in excerpt)
-    causes = runlog.nextflow_log_causes(nextflow_log) if "nextflow_log" in details else []
+    causes = (runlog.nextflow_log_causes(run_log.nextflow_log)
+              if "nextflow_log" in details else [])
     if causes:
         message += "\n  The underlying cause, from the Nextflow log:\n" + \
             "\n".join(f"    {cause}" for cause in causes)
