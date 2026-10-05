@@ -599,6 +599,36 @@ def test_demo_allows_required_input_to_come_from_test_profile(tmp_path, monkeypa
     assert res.checked_only and "-profile test,docker" in res.command
 
 
+def test_a_profile_or_config_that_can_set_params_defers_required_checks(tmp_path, monkeypatch):
+    # nf-core's canonical test command is `-profile test,docker` (no --demo), and a --config file can
+    # set `params.input`; nf-schema sees both, so rejecting them as "missing --input" up front was a
+    # false positive. Only an engine-only profile with no --config is judged by nfclaw.
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    cfg = tmp_path / "params.config"
+    cfg.write_text("params.input = '/data/ss.csv'\n")
+    for profile, configs in (("test,docker", ()), ("docker,mylab", ()), ("docker", (str(cfg),))):
+        res = orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+            profile=profile, params_file=None, cli_overrides={}, resume=False,
+            demo=False, check_only=True, write_provenance=False, timeout_seconds=10,
+            configs=configs)
+        assert res.checked_only, profile
+
+
+def test_engine_profiles_alone_still_require_the_input(tmp_path, monkeypatch):
+    import pytest
+    from runner.errors import NfclawError
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    for profile in ("docker", "singularity,arm64", "conda,debug"):
+        with pytest.raises(NfclawError, match="missing required parameter '--input'"):
+            orchestration.run_pipeline(
+                "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+                profile=profile, params_file=None, cli_overrides={}, resume=False,
+                demo=False, check_only=True, write_provenance=False, timeout_seconds=10)
+
+
 def _pipeline_with_report_suffix(tmp_path, name="mini"):
     """`mini`, plus the nf-core template's trace_report_suffix parameter."""
     import json

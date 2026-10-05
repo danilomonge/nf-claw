@@ -132,7 +132,12 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # rather than writing a second, differently-named set of reports beside them.
     merged = parameters.pin_report_suffix(merged, param_schema)
     param_errors = parameters.validate_params(merged, param_schema)
-    if not demo:
+    composed_profile = nextflow_command.compose_profile(profile, demo=demo)
+    # A missing required parameter can only be judged up front when nothing but the values merged
+    # above can supply one. A `test` or institutional profile, or a --config file, can assign params
+    # that nf-schema then sees — nf-core's own `-profile test,docker` sets --input — so then (and for
+    # --demo, which adds `test`) nf-schema judges required-ness at launch instead.
+    if not extra_configs and not nextflow_command.may_set_params(composed_profile):
         param_errors.extend(parameters.missing_required_params(merged, param_schema))
     if param_errors:
         raise NfclawError(ErrorCode.PARAMS_INVALID,
@@ -140,7 +145,6 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                           fix="Use parameter names and allowed values from reference.md.",
                           details={"issues": param_errors})
 
-    composed_profile = nextflow_command.compose_profile(profile, demo=demo)
     issues = preflight.check_environment(profile=composed_profile, output_dir=outdir,
                                          submodule=st, repo_root=repo_root, resume=resume,
                                          work_dir=work_dir, allow_spaces=allow_spaces,

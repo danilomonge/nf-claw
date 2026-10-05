@@ -4,6 +4,20 @@ import shlex
 from pathlib import Path
 
 
+# The nf-core template's profiles for choosing a container engine or a runtime tweak. Across every
+# pinned release none of them sets a required parameter (some set optional ones, e.g. `enable_conda`,
+# `arm`, `use_gpu`), unlike `test*` or an institutional profile, which can set `--input` and the like.
+ENGINE_PROFILES = frozenset({
+    "docker", "singularity", "apptainer", "podman", "shifter", "charliecloud", "conda", "mamba",
+    "wave", "arm", "arm64", "emulate_amd64", "gitpod", "gpu", "debug",
+})
+
+
+def may_set_params(profile: str) -> bool:
+    """Whether a profile in this composition can set pipeline parameters (anything but an engine)."""
+    return any(p.strip() not in ENGINE_PROFILES for p in profile.split(",") if p.strip())
+
+
 def compose_profile(profile: str, *, demo: bool = False,
                     modifiers: tuple[str, ...] = ()) -> str:
     parts = [p.strip() for p in profile.split(",") if p.strip()]

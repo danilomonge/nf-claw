@@ -36,3 +36,11 @@ def test_command_never_carries_a_positional_argument(tmp_path):
         assert rest[i].startswith("-"), f"positional argument in the command: {rest[i]!r}"
         i += 1 if rest[i] == "-resume" else 2              # flags take no value; options take one
     assert i == len(rest)
+
+
+def test_only_engine_profiles_are_known_not_to_set_params():
+    from runner.nextflow_command import may_set_params
+    assert not may_set_params("docker")
+    assert not may_set_params("singularity, arm64,debug")
+    assert may_set_params("test,docker")
+    assert may_set_params("docker,uppmax")                  # an institutional profile can set params
