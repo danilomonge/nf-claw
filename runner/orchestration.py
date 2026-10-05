@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import os
 import tempfile
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -10,6 +12,28 @@ from runner import (discovery, engine_version, execution, inputs, nextflow_comma
                     resources, samplesheet, versions)
 from runner import schema as schema_mod
 from runner.errors import ErrorCode, NfclawError
+from runner.submodule import SubmoduleStatus
+
+
+def _resume_advisory(outdir: Path, st: SubmoduleStatus) -> list[str]:
+    """Advise when `--resume` continues a run that executed different pipeline code.
+
+    Resuming re-launches whatever the request resolves to *now*. For a release that is the code the
+    earlier run used, but `dev` moves: the run being resumed may have executed an older commit.
+    Nextflow's cache stays correct either way (it reuses only tasks whose code and inputs are
+    unchanged), so this is advisory — it explains why some tasks re-run and that the results now
+    mix two commits. The earlier commit comes from that run's provenance manifest, if it wrote one."""
+    try:
+        prev = json.loads((outdir / "provenance" / "run_manifest.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    prev_commit = prev.get("commit") if isinstance(prev, dict) else None
+    if not isinstance(prev_commit, str) or not prev_commit or prev_commit == st.commit:
+        return []
+    return [f"--resume continues a run that executed {prev.get('version') or '?'} "
+            f"(commit {prev_commit[:12]}); this launch executes {st.version} (commit "
+            f"{st.commit[:12]}). Nextflow reuses only tasks whose code and inputs are unchanged, "
+            "so tasks touched by the change re-run and the results combine both commits."]
 
 
 @dataclass
@@ -30,7 +54,8 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                  nxf_env: dict[str, str] | None = None,
                  allow_spaces: bool = False,
                  configs: tuple[str, ...] | list[str] = (),
-                 limits: "resources.ResourceLimits | None" = None) -> RunResult:
+                 limits: "resources.ResourceLimits | None" = None,
+                 on_warning: Callable[[str], None] | None = None) -> RunResult:
     pipelines_dir = repo_root / "pipelines"
     discovery.find(name, pipelines_dir)                       # 404 if unknown
     # Extra Nextflow config files passed straight through as `-c` (e.g. a docker host-network or
@@ -116,10 +141,14 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
         raise NfclawError(ErrorCode.ENVIRONMENT, "Preflight checks failed.",
                           details={"issues": issues})
 
+    # First, how the tree itself was resolved: running unreleased `dev` code (and, offline, a
+    # possibly stale `dev` head) is said up front, so it is never mistaken for a release run.
+    warnings = list(st.notes)
+    warnings += _resume_advisory(outdir, st) if resume else []
     # Advisory only: preflight has confirmed nextflow is on PATH, so compare the installed
     # engine to the pipeline's declared requirement. Non-blocking — Nextflow is the authority
     # and enforces this itself at launch; we just surface it earlier with a clear message.
-    warnings = engine_version.check(st.path, nxf_ver=nxf_overlay.get("NXF_VER"))
+    warnings += engine_version.check(st.path, nxf_ver=nxf_overlay.get("NXF_VER"))
     # Same contract: advisory, never blocking. Explains a warning the pinned release will emit for a
     # reason that is invisible in its log, so it is not mistaken for a fault in the run or in nfclaw.
     warnings += plugin_compat.check(st.path)
@@ -127,6 +156,11 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # spurious "positional argument `nextflow`" logged on every sarek run). Surfaced up front so the
     # log message arrives explained rather than re-investigated as a wrapper or samplesheet fault.
     warnings += plugin_compat.known_plugin_warnings(st.path)
+    # Say them now, before Nextflow starts: a run can take hours, and one that fails never returns
+    # its RunResult — an advisory that only arrives with the result arrives too late, or not at all.
+    if on_warning is not None:
+        for w in warnings:
+            on_warning(w)
 
     # Where the files nfclaw generates for the run (params file, resource-limits config) are staged.
     # A real run stages them in its own provenance bundle. `--check` must not: it validates and

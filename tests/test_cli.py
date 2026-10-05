@@ -293,3 +293,119 @@ def test_run_surfaces_engine_warning_on_stderr(tmp_path, monkeypatch, capsys):
     cap = capsys.readouterr()
     assert "CMD" in cap.out                                    # command still on stdout
     assert "warning: engine too old" in cap.err               # advisory on stderr
+
+
+# --- dev: the unreleased development branch ---------------------------------------------------
+
+def test_versions_lists_dev_after_every_release(tmp_path, monkeypatch, capsys):
+    from runner import versions
+    root = _seed(tmp_path)
+    monkeypatch.setattr(cli, "_repo_root", lambda: root)
+    monkeypatch.setattr(versions, "available",
+                        lambda name, **k: [("2.0.0", True), ("1.2.0", False)])
+    monkeypatch.setattr(versions, "dev_head", lambda name, **k: ("f754e0a247b0" + "0" * 28, True))
+    assert cli.main(["versions", "sarek"]) == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[0].startswith("2.0.0\tlatest")              # the first line is still the newest release
+    assert lines[-1].startswith("dev\t") and "unreleased" in lines[-1]
+    assert "f754e0a247b0" in lines[-1] and "last fetched" not in lines[-1]
+
+
+def test_versions_marks_an_offline_dev_head_as_last_fetched(tmp_path, monkeypatch, capsys):
+    from runner import versions
+    root = _seed(tmp_path)
+    monkeypatch.setattr(cli, "_repo_root", lambda: root)
+    monkeypatch.setattr(versions, "available", lambda name, **k: [])
+    monkeypatch.setattr(versions, "dev_head", lambda name, **k: ("a" * 40, False))
+    assert cli.main(["versions", "sarek"]) == 0
+    captured = capsys.readouterr()
+    assert "no release" in captured.err.lower()
+    assert captured.out.startswith("dev\t") and "last fetched" in captured.out
+
+
+def test_versions_omits_dev_when_the_pipeline_has_none(tmp_path, monkeypatch, capsys):
+    from runner import versions
+    root = _seed(tmp_path)
+    monkeypatch.setattr(cli, "_repo_root", lambda: root)
+    monkeypatch.setattr(versions, "available", lambda name, **k: [("2.0.0", True)])
+    monkeypatch.setattr(versions, "dev_head", lambda name, **k: (None, True))
+    assert cli.main(["versions", "sarek"]) == 0
+    assert "dev" not in capsys.readouterr().out
+
+
+def test_show_dev_prints_generated_docs_and_the_advisory(tmp_path, monkeypatch, capsys):
+    from runner import versions
+    from runner.submodule import SubmoduleStatus
+    root = _seed(tmp_path)
+    monkeypatch.setattr(cli, "_repo_root", lambda: root)
+    cached = root / "pipelines" / "sarek" / ".versions" / "dev-f754e0a247b0" / "upstream"
+    st = SubmoduleStatus("sarek", cached, True, True, "dev", "f754e0a247b0" + "0" * 28, (),
+                         notes=("nf-core/sarek@dev is unreleased development code",))
+    seen = {}
+
+    def fake_ensure(name, version, **k):
+        seen["version"] = version
+        return st
+
+    monkeypatch.setattr(versions, "ensure", fake_ensure)
+
+    def fake_generate(status, *, dest_dir):
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        (dest_dir / "skill.md").write_text("# sarek @ dev\n")
+        return dest_dir / "skill.md", dest_dir / "reference.md"
+
+    monkeypatch.setattr(versions, "generate_docs", fake_generate)
+    assert cli.main(["show", "sarek", "--pipeline-version", "dev"]) == 0
+    captured = capsys.readouterr()
+    assert seen["version"] == "dev"
+    assert "# sarek @ dev" in captured.out
+    assert "warning: nf-core/sarek@dev is unreleased" in captured.err
+
+
+def test_run_threads_dev_with_the_users_exact_flags(tmp_path, monkeypatch, capsys):
+    # The command from the feature request: dev + an institutional profile + a pinned engine.
+    from runner import orchestration
+    captured = {}
+
+    def fake_run(*a, **k):
+        captured.update(k)
+        return orchestration.RunResult("CMD", Path("/o"), True, None,
+                                       warnings=["nf-core/fetchngs@dev is unreleased"])
+
+    monkeypatch.setattr(orchestration, "run_pipeline", fake_run)
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "fetchngs", "--pipeline-version", "dev", "--input", "ids.csv",
+                     "--outdir", str(tmp_path / "fetchngs_all12"), "-profile", "binac2",
+                     "--nxf-ver", "25.10.4"]) == 0
+    assert captured["pipeline_version"] == "dev"
+    assert captured["profile"] == "binac2" and captured["nxf_ver"] == "25.10.4"
+    assert captured["cli_overrides"] == {}                     # nothing leaked to the pipeline
+    assert "warning: nf-core/fetchngs@dev is unreleased" in capsys.readouterr().err
+
+
+def test_run_says_warnings_before_launch_and_only_once(tmp_path, monkeypatch, capsys):
+    # A dev run can take hours, and a failed one never returns: the advisory must be printed as
+    # soon as it is known (before Nextflow starts), not with the result — and not twice.
+    from runner import orchestration
+    from runner.errors import ErrorCode, NfclawError
+
+    def fake_run(*a, on_warning, **k):
+        on_warning("nf-core/fetchngs@dev is unreleased")
+        raise NfclawError(ErrorCode.EXECUTION_FAILED, "Nextflow execution failed.")
+
+    monkeypatch.setattr(orchestration, "run_pipeline", fake_run)
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "fetchngs", "--pipeline-version", "dev",
+                     "--outdir", str(tmp_path / "out")]) == 1
+    err = capsys.readouterr().err
+    assert err.index("warning: nf-core/fetchngs@dev") < err.index("Nextflow execution failed")
+
+    def fake_ok(*a, on_warning, **k):
+        on_warning("said early")
+        return orchestration.RunResult("CMD", Path("/o"), True, None,
+                                       warnings=["said early", "only in result"])
+
+    monkeypatch.setattr(orchestration, "run_pipeline", fake_ok)
+    assert cli.main(["run", "fetchngs", "--outdir", str(tmp_path / "out")]) == 0
+    err = capsys.readouterr().err
+    assert err.count("warning: said early") == 1 and "warning: only in result" in err

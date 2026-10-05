@@ -22,7 +22,7 @@ nfclaw run rangeland --input <input> --outdir results --dem <dem> --wvdb <wvdb> 
 nextflow run pipelines/rangeland/upstream -profile docker --input <input> --outdir results --dem <dem> --wvdb <wvdb> --data-cube <data_cube> --aoi <aoi> --endmember <endmember>
 ```
 
-This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions rangeland` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show rangeland --pipeline-version X.Y.Z` prints that release's docs).
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions rangeland` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show rangeland --pipeline-version X.Y.Z` prints that release's docs). To run unreleased development code instead, add `--pipeline-version dev`: nfclaw resolves nf-core's `dev` branch to its current head commit at run time and records that commit in provenance (`nfclaw show rangeland --pipeline-version dev` prints the docs generated from it). Use it only for changes not yet released.
 
 ## Inputs
 This release publishes no samplesheet schema for `--input`, so nfclaw does not pre-check its contents. The parameter reads: Root directory or tarball of all satellite imagery. Configure the other inputs via parameters (see [reference.md](reference.md)).

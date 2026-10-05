@@ -203,3 +203,274 @@ def test_generate_docs_writes_version_markdowns(tmp_path):
     assert "# mini" in skill_path.read_text()
     assert "version: 1.2.0" in skill_path.read_text()
     assert "mini" in ref_path.read_text()
+
+
+# --- dev: the unreleased development branch, resolved to an immutable per-commit tree ---------
+# A real nf-core-like remote (release on `main`, development on `dev`) and a shallow clone of the
+# release as the "submodule", exactly as `git submodule update --init --depth 1` leaves it.
+
+_GIT_ID = ("-c", "user.email=t@t", "-c", "user.name=t")
+
+
+def _commit_tree(repo, msg, files):
+    for rel, text in files.items():
+        p = repo / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text)
+    _git(repo, *_GIT_ID, "add", ".")
+    _git(repo, *_GIT_ID, "commit", "-q", "-m", msg)
+    return subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], check=True,
+                          capture_output=True, text=True).stdout.strip()
+
+
+_PIPELINE_FILES = {"main.nf": "workflow {}\n", "nextflow.config": "manifest {}\n",
+                   "nextflow_schema.json": "{}\n"}
+
+
+def _nfcore_remote(tmp_path, *, with_dev=True):
+    """`remote/` with release 1.0.0 on main and (optionally) one commit ahead on `dev`.
+    Returns (remote_url, release_sha, dev_sha_or_None)."""
+    remote = tmp_path / "remote"
+    remote.mkdir()
+    _git(remote, "init", "-q", "-b", "main")
+    release = _commit_tree(remote, "release", _PIPELINE_FILES)
+    _git(remote, "tag", "1.0.0")
+    dev = None
+    if with_dev:
+        _git(remote, "checkout", "-q", "-b", "dev")
+        dev = _commit_tree(remote, "dev work", {"main.nf": "workflow { /* dev */ }\n"})
+        _git(remote, "checkout", "-q", "main")
+    return f"file://{remote}", release, dev
+
+
+def _library(tmp_path, url, name="p"):
+    """An nf-claw-shaped repo root: `.gitmodules` naming the remote, and the pipeline's
+    `upstream/` as a shallow, single-branch clone of the release (no `dev` objects locally)."""
+    root = tmp_path / "lib"
+    pdir = root / "pipelines"
+    (pdir / name).mkdir(parents=True)
+    (root / ".gitmodules").write_text(
+        f'[submodule "pipelines/{name}/upstream"]\n'
+        f"\tpath = pipelines/{name}/upstream\n\turl = {url}\n")
+    subprocess.run(["git", "clone", "-q", "--depth", "1", "--single-branch", "--branch", "main",
+                    url, str(pdir / name / "upstream")], check=True, capture_output=True)
+    return root, pdir
+
+
+def _advance_dev(tmp_path, text):
+    remote = tmp_path / "remote"
+    _git(remote, "checkout", "-q", "dev")
+    sha = _commit_tree(remote, "more dev work", {"main.nf": text})
+    _git(remote, "checkout", "-q", "main")
+    return sha
+
+
+@pytest.mark.parametrize("raw,expected", [
+    ("dev", True), (" dev ", True), ("DEV", True), ("Dev", True),
+    ("1.0.0", False), ("v1.0.0", False), ("develop", False), ("dev1", False), ("", False),
+    (None, False)])
+def test_is_dev_request(raw, expected):
+    assert versions.is_dev_request(raw) is expected
+
+
+def test_dev_label_is_commit_keyed():
+    assert versions.dev_label("f754e0a247b03f169782dbb5c688e055044a5988") == "dev-f754e0a247b0"
+
+
+def test_remote_branch_head_found_missing_and_unreachable(tmp_path):
+    url, _, dev = _nfcore_remote(tmp_path)
+    assert versions.remote_branch_head(url, "dev") == dev
+    assert versions.remote_branch_head(url, "no-such-branch") is None     # reachable, no branch
+    with pytest.raises(versions.RemoteUnavailable):                       # never "no branch"
+        versions.remote_branch_head(f"file://{tmp_path}/does-not-exist", "dev")
+
+
+def test_materialize_dev_checks_out_the_dev_head(tmp_path):
+    url, release, dev = _nfcore_remote(tmp_path)
+    root, pdir = _library(tmp_path, url)
+    st = versions.materialize_dev("p", pipelines_dir=pdir, repo_root=root)
+    assert st.version == "dev" and st.commit == dev and st.complete
+    assert st.path == pdir / "p" / versions.CACHE_DIRNAME / versions.dev_label(dev) / "upstream"
+    assert (st.path / "main.nf").read_text() == "workflow { /* dev */ }\n"
+    assert versions.is_cached(st) and versions.is_dev(st)
+    # it is announced as unreleased code, naming the exact commit
+    assert any("unreleased" in n and dev in n for n in st.notes)
+    # the pinned release tree is untouched
+    assert (pdir / "p" / "upstream" / "main.nf").read_text() == "workflow {}\n"
+    # and the head is remembered for the offline fallback
+    assert versions._local_dev_head(pdir / "p" / "upstream") == dev
+
+
+def test_materialize_dev_follows_the_branch_and_keeps_earlier_commits_intact(tmp_path):
+    url, _, first = _nfcore_remote(tmp_path)
+    root, pdir = _library(tmp_path, url)
+    a = versions.materialize_dev("p", pipelines_dir=pdir, repo_root=root)
+    second = _advance_dev(tmp_path, "workflow { /* dev v2 */ }\n")
+    b = versions.materialize_dev("p", pipelines_dir=pdir, repo_root=root)
+    assert (a.commit, b.commit) == (first, second)
+    assert a.path != b.path                                     # a new head never replaces a tree
+    assert (a.path / "main.nf").read_text() == "workflow { /* dev */ }\n"   # replays stay faithful
+    assert (b.path / "main.nf").read_text() == "workflow { /* dev v2 */ }\n"
+
+
+def test_materialize_dev_reuses_a_complete_tree_without_fetching(tmp_path, monkeypatch):
+    url, _, dev = _nfcore_remote(tmp_path)
+    root, pdir = _library(tmp_path, url)
+    first = versions.materialize_dev("p", pipelines_dir=pdir, repo_root=root)
+    monkeypatch.setattr(versions, "_fetch_dev",
+                        lambda *a, **k: pytest.fail("an unchanged dev head must not be refetched"))
+    again = versions.materialize_dev("p", pipelines_dir=pdir, repo_root=root)
+    assert again.path == first.path and again.commit == dev
+
+
+def test_materialize_dev_runs_the_newer_head_when_dev_moves_mid_resolution(tmp_path, monkeypatch):
+    # ls-remote saw one head, but by the time it is fetched dev has moved on: run what was fetched
+    # (the newer development code) rather than failing on a commit that is no longer the head.
+    url, _, stale = _nfcore_remote(tmp_path)
+    root, pdir = _library(tmp_path, url)
+    newer = _advance_dev(tmp_path, "workflow { /* moved */ }\n")
+    monkeypatch.setattr(versions, "remote_branch_head", lambda *a, **k: stale)
+    st = versions.materialize_dev("p", pipelines_dir=pdir, repo_root=root)
+    assert st.commit == newer
+    assert (st.path / "main.nf").read_text() == "workflow { /* moved */ }\n"
+
+
+def test_materialize_dev_offline_falls_back_to_last_fetched_head(tmp_path, monkeypatch):
+    url, _, dev = _nfcore_remote(tmp_path)
+    root, pdir = _library(tmp_path, url)
+    online = versions.materialize_dev("p", pipelines_dir=pdir, repo_root=root)
+
+    def unreachable(*a, **k):
+        raise versions.RemoteUnavailable("network down")
+
+    monkeypatch.setattr(versions, "remote_branch_head", unreachable)
+    offline = versions.materialize_dev("p", pipelines_dir=pdir, repo_root=root)
+    assert offline.path == online.path and offline.commit == dev
+    # the stale-head risk is said first, then the unreleased-code advisory
+    assert "could not reach" in offline.notes[0] and dev[:12] in offline.notes[0]
+    assert any("unreleased" in n for n in offline.notes)
+
+
+def test_materialize_dev_offline_with_nothing_fetched_is_a_clear_error(tmp_path, monkeypatch):
+    url, _, _ = _nfcore_remote(tmp_path)
+    root, pdir = _library(tmp_path, url)
+
+    def unreachable(*a, **k):
+        raise versions.RemoteUnavailable("network down")
+
+    monkeypatch.setattr(versions, "remote_branch_head", unreachable)
+    with pytest.raises(NfclawError) as exc:
+        versions.materialize_dev("p", pipelines_dir=pdir, repo_root=root)
+    assert exc.value.code == ErrorCode.SUBMODULE_INCOMPLETE
+    assert "network" in str(exc.value)
+
+
+def test_materialize_dev_without_a_dev_branch_is_version_not_found(tmp_path):
+    url, _, _ = _nfcore_remote(tmp_path, with_dev=False)
+    root, pdir = _library(tmp_path, url)
+    with pytest.raises(NfclawError) as exc:
+        versions.materialize_dev("p", pipelines_dir=pdir, repo_root=root)
+    assert exc.value.code == ErrorCode.VERSION_NOT_FOUND
+    assert "no 'dev' branch" in str(exc.value)
+    assert not (pdir / "p" / versions.CACHE_DIRNAME).exists()             # nothing half-made
+
+
+def test_materialize_dev_rejects_an_incomplete_dev_tree(tmp_path):
+    url, _, _ = _nfcore_remote(tmp_path)
+    remote = tmp_path / "remote"
+    _git(remote, "checkout", "-q", "dev")
+    _git(remote, "rm", "-q", "nextflow_schema.json")
+    _git(remote, *_GIT_ID, "commit", "-q", "-m", "restructure")
+    _git(remote, "checkout", "-q", "main")
+    root, pdir = _library(tmp_path, url)
+    with pytest.raises(NfclawError) as exc:
+        versions.materialize_dev("p", pipelines_dir=pdir, repo_root=root)
+    assert exc.value.code == ErrorCode.SUBMODULE_INCOMPLETE
+    assert "nextflow_schema.json" in str(exc.value)
+
+
+def test_materialize_dev_git_failure_is_a_structured_error(tmp_path, monkeypatch):
+    url, _, _ = _nfcore_remote(tmp_path)
+    root, pdir = _library(tmp_path, url)
+    monkeypatch.setattr(
+        versions, "_fetch_dev",
+        lambda *a, **k: (_ for _ in ()).throw(
+            subprocess.CalledProcessError(1, ["git", "fetch"], stderr="connection reset")))
+    with pytest.raises(NfclawError) as exc:
+        versions.materialize_dev("p", pipelines_dir=pdir, repo_root=root)
+    assert exc.value.code == ErrorCode.SUBMODULE_INCOMPLETE
+    assert "connection reset" in str(exc.value)
+
+
+def test_local_dev_head_ignores_the_enclosing_repository(tmp_path):
+    # An uninitialized submodule is an empty directory inside the nf-claw repo; git run there would
+    # answer for nf-claw itself. Its own `origin/dev` must never be mistaken for the pipeline's.
+    outer = tmp_path / "outer"
+    outer.mkdir()
+    _git(outer, "init", "-q", "-b", "main")
+    sha = _commit_tree(outer, "outer", {"README": "x\n"})
+    _git(outer, "update-ref", "refs/remotes/origin/dev", sha)
+    empty = outer / "pipelines" / "p" / "upstream"
+    empty.mkdir(parents=True)
+    assert versions._local_dev_head(empty) == ""
+
+
+def test_dev_head_reports_freshness(tmp_path):
+    url, _, dev = _nfcore_remote(tmp_path)
+    root, pdir = _library(tmp_path, url)
+    assert versions.dev_head("p", pipelines_dir=pdir, repo_root=root) == (dev, True)
+    (root / ".gitmodules").write_text("")                        # no remote known → local only
+    assert versions.dev_head("p", pipelines_dir=pdir, repo_root=root) == (None, False)
+    (root / ".gitmodules").write_text(
+        f'[submodule "pipelines/p/upstream"]\n\turl = {url}\n')
+    versions.materialize_dev("p", pipelines_dir=pdir, repo_root=root)
+    (root / ".gitmodules").write_text("")                        # offline again: last fetched head
+    assert versions.dev_head("p", pipelines_dir=pdir, repo_root=root) == (dev, False)
+
+
+def test_ensure_dev_routes_to_materialize_dev(tmp_path, monkeypatch):
+    from runner.submodule import SubmoduleStatus
+    pin = SubmoduleStatus("p", tmp_path / "up", True, True, "2.0.0", "abc", ())
+    dev = SubmoduleStatus("p", tmp_path / ".versions" / "dev-x" / "upstream", True, True,
+                          "dev", "f" * 40, ())
+    monkeypatch.setattr(versions.submod, "ensure_initialized", lambda *a, **k: pin)
+    monkeypatch.setattr(versions, "resolve",
+                        lambda *a, **k: pytest.fail("dev is a branch, not a release tag"))
+    monkeypatch.setattr(versions, "materialize_dev", lambda name, **k: dev)
+    assert versions.ensure("p", "dev", pipelines_dir=tmp_path, repo_root=tmp_path) is dev
+    assert versions.ensure("p", "DEV", pipelines_dir=tmp_path, repo_root=tmp_path) is dev
+
+
+def test_ensure_dev_end_to_end_with_real_git(tmp_path):
+    url, release, dev = _nfcore_remote(tmp_path)
+    root, pdir = _library(tmp_path, url)
+    # the pinned skill.md lets submodule.resolve report the release, as in the real library
+    (pdir / "p" / "skill.md").write_text(f"---\nname: p\nversion: 1.0.0\ncommit: {release}\n---\n")
+    st = versions.ensure("p", "dev", pipelines_dir=pdir, repo_root=root)
+    assert st.version == "dev" and st.commit == dev and versions.is_dev(st)
+
+
+def test_unknown_version_error_mentions_dev(tmp_path, monkeypatch):
+    monkeypatch.setattr(versions, "release_tags", lambda *a, **k: ["2.0.0"])
+    with pytest.raises(NfclawError) as exc:
+        versions.resolve("p", "9.9.9", pipelines_dir=tmp_path, repo_root=tmp_path)
+    assert "`dev`" in exc.value.fix
+
+
+def test_generate_docs_for_dev_commit(tmp_path):
+    import shutil
+    from pathlib import Path
+    from runner.submodule import SubmoduleStatus
+    fix = Path(__file__).parent / "fixtures" / "mini"
+    sha = "f754e0a247b03f169782dbb5c688e055044a5988"
+    dest = tmp_path / ".versions" / versions.dev_label(sha) / "upstream"
+    dest.mkdir(parents=True)
+    for f in ("main.nf", "nextflow.config"):
+        (dest / f).write_text("x")
+    shutil.copy(fix / "nextflow_schema.json", dest / "nextflow_schema.json")
+    st = SubmoduleStatus("mini", dest, True, True, "dev", sha, ())
+    skill_path, _ = versions.generate_docs(st, dest_dir=dest.parent)
+    text = skill_path.read_text()
+    assert "version: dev" in text and f"commit: {sha}" in text
+    assert "--pipeline-version dev" in text
+    assert f"pipelines/mini/.versions/dev-{sha[:12]}/upstream" in text

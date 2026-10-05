@@ -22,7 +22,7 @@ nfclaw run seqsubmit --input <input> --outdir results --centre-name <centre_name
 nextflow run pipelines/seqsubmit/upstream -profile docker --input <input> --outdir results --centre-name <centre_name> --mode <mode>
 ```
 
-This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions seqsubmit` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show seqsubmit --pipeline-version X.Y.Z` prints that release's docs).
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions seqsubmit` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show seqsubmit --pipeline-version X.Y.Z` prints that release's docs). To run unreleased development code instead, add `--pipeline-version dev`: nfclaw resolves nf-core's `dev` branch to its current head commit at run time and records that commit in provenance (`nfclaw show seqsubmit --pipeline-version dev` prints the docs generated from it). Use it only for changes not yet released.
 
 ## Inputs
 This release publishes no samplesheet schema for `--input`, so nfclaw does not pre-check its contents. The parameter reads: Path to samplesheet describing the data to be submitted (supported formats: csv, tsv, yaml, yml, json). Columns/fields depend on the pipeline mode. Configure the other inputs via parameters (see [reference.md](reference.md)).

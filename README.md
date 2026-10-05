@@ -33,9 +33,14 @@ nfclaw list                  # or: python3 -m runner list
 nfclaw run rnaseq --input samplesheet.csv --outdir results -profile docker
 
 # run a specific (non-latest) release — default stays the pinned latest
-nfclaw versions rnaseq                                   # list release tags (latest is flagged)
+nfclaw versions rnaseq                                   # list release tags (latest is flagged; dev last)
 nfclaw show rnaseq --pipeline-version 3.14.0             # that release's skill.md (schema + flags), generated on demand
 nfclaw run  rnaseq --pipeline-version 3.14.0 --input samplesheet.csv --outdir results -profile docker
+
+# run unreleased development code: the head of nf-core's `dev` branch (like `nextflow run -r dev`),
+# resolved to its exact commit at run time and recorded in provenance
+nfclaw show rnaseq --pipeline-version dev                # skill.md generated from the current dev commit
+nfclaw run  rnaseq --pipeline-version dev --input samplesheet.csv --outdir results -profile docker
 
 # pin the Nextflow engine / set NXF_* for one run (both recorded in provenance)
 nfclaw run rnaseq --nxf-ver 25.10.2 --input ss.csv --outdir results -profile docker  # if a newer Nextflow breaks the release

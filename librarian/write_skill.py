@@ -6,7 +6,7 @@ import json
 import re
 from pathlib import Path
 
-from runner import engine_version, inputs
+from runner import engine_version, inputs, versions
 from runner import schema as schema_mod
 from runner import submodule as submod
 from runner.schema import InputSchema, Param, ParamSchema, json_scalar
@@ -137,12 +137,13 @@ def _pipeline_tools(upstream: Path) -> list[str]:
     return tools
 
 
-def _tools_section(name: str, st: SubmoduleStatus, tools: list[str]) -> str:
+def _tools_section(name: str, st: SubmoduleStatus, tools: list[str],
+                   ref: str | None = None) -> str:
     if not tools:
         return ""
     return (f"The tools/methods this pipeline runs, per the authors' own list: "
             f"{', '.join(tools)}.\n\nFull list with references: "
-            f"https://github.com/nf-core/{name}/blob/{st.version}/CITATIONS.md\n")
+            f"https://github.com/nf-core/{name}/blob/{ref or st.version}/CITATIONS.md\n")
 
 
 def _summary(upstream: Path) -> str:
@@ -244,34 +245,36 @@ def _reference_section(ps: ParamSchema) -> str:
     )
 
 
-def _engine_section(name: str, st: SubmoduleStatus) -> str:
+def _engine_section(name: str, st: SubmoduleStatus, what: str = "release") -> str:
     """The Nextflow version this release declares, and how to run exactly that one.
 
     The engine is not a neutral detail: a release is written against the Nextflow line it declares,
     and a newer *major* changes the config parser. Running nf-core/scrnaseq 4.2.0 (which declares
     `!>=25.10.4`) on Nextflow 26.04.6 adds `Unrecognized config option 'validation.*'` warnings that
     the same run on 25.10.4 does not produce — verified by running both. The declared version is a
-    fact in the pinned manifest, so it is surfaced here with the flag that pins it."""
+    fact in the pinned manifest, so it is surfaced here with the flag that pins it. `what` names
+    the tree in the prose: a `release`, or the `commit` of unreleased `dev` code."""
     spec = engine_version.required_spec(st.path / "nextflow.config")
     if not spec:
         return ""
     pin = engine_version.minimum_version(spec)
     pin_line = ""
     if pin:
-        pin_line = (f"\n\nTo run the engine this release targets — worth doing if a newer Nextflow "
-                    f"emits config-parser warnings the release never saw:\n```bash\n"
+        pin_line = (f"\n\nTo run the engine this {what} targets — worth doing if a newer Nextflow "
+                    f"emits config-parser warnings the {what} never saw:\n```bash\n"
                     f"nfclaw run {name} ... --nxf-ver {pin}\n```\n"
                     "`--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same "
                     "engine. See [known-issues](../../docs/known-issues.md).")
-    return f"This release declares `nextflowVersion = '{spec}'`.{pin_line}\n"
+    return f"This {what} declares `nextflowVersion = '{spec}'`.{pin_line}\n"
 
 
-def _outputs_section(name: str, st: SubmoduleStatus) -> str:
+def _outputs_section(name: str, st: SubmoduleStatus, ref: str | None = None,
+                     what: str = "release") -> str:
     mq = " A MultiQC HTML report aggregates QC across steps." if _produces_multiqc(st.path) else ""
     link = ""
     if (st.path / "docs" / "output.md").exists():
-        link = ("\n\nThe exact output files and directory layout for this release are documented "
-                f"upstream: https://github.com/nf-core/{name}/blob/{st.version}/docs/output.md")
+        link = (f"\n\nThe exact output files and directory layout for this {what} are documented "
+                f"upstream: https://github.com/nf-core/{name}/blob/{ref or st.version}/docs/output.md")
     return (
         "Results land in `--outdir`, organised into one sub-directory per pipeline step/module; "
         "standardized run metadata in `<outdir>/pipeline_info/` (execution report, software "
@@ -464,18 +467,20 @@ def _input_arg(ps: ParamSchema, insch: InputSchema | None) -> str:
 
 
 def _run_invocation(name: str, ps: ParamSchema, insch: InputSchema | None,
-                    pipeline_version: str | None = None) -> tuple[str, str]:
+                    pipeline_version: str | None = None,
+                    tree: str | None = None) -> tuple[str, str]:
     """The (nfclaw, raw nextflow) example commands. `--input` comes from `_input_arg`, and every
     schema-required param beyond input/outdir that has NO default
     is shown as an explicit `<placeholder>` (those carrying a default are filled by nf-schema, so
     the one-liner stays runnable as printed). When rendering a non-pinned version, the nfclaw
-    command carries `--pipeline-version <tag>` and the raw command targets that version's tree."""
+    command carries `--pipeline-version <tag>` and the raw command targets that version's tree
+    (`tree` names its cache directory when that differs from the tag, as for a `dev` commit)."""
     inp = _input_arg(ps, insch)
     extra = "".join(f" --{p.name.replace('_', '-')} <{p.name}>"
                     for p in ps.params.values()
                     if p.required and p.name not in ("input", "outdir") and p.default is None)
     ver = f" --pipeline-version {pipeline_version}" if pipeline_version else ""
-    upstream = (f"pipelines/{name}/.versions/{pipeline_version}/upstream"
+    upstream = (f"pipelines/{name}/.versions/{tree or pipeline_version}/upstream"
                 if pipeline_version else f"pipelines/{name}/upstream")
     nfclaw = f"nfclaw run {name}{inp} --outdir results{extra}{ver} -profile docker"
     raw = f"nextflow run {upstream} -profile docker{inp} --outdir results{extra}"
@@ -501,10 +506,35 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"tools: {json.dumps(tools, ensure_ascii=False)}\n"
         "---\n"
     )
-    tools_md = _tools_section(name, st, tools)
+    # Unreleased `dev` code is identified by its commit, never by the moving branch name: the docs
+    # link to that commit's files and the raw command runs that commit's materialized tree.
+    dev = versions.is_dev_request(pipeline_version)
+    if dev:
+        pipeline_version = versions.DEV_BRANCH                # one spelling in every command shown
+    ref = st.commit if dev else st.version
+    what = "commit" if dev else "release"
+    tree = versions.dev_label(st.commit) if dev else pipeline_version
+    tools_md = _tools_section(name, st, tools, ref)
     tools_block = f"## Tools this pipeline runs\n{tools_md}\n" if tools_md else ""
-    nfclaw_cmd, raw_cmd = _run_invocation(name, ps, insch, pipeline_version)
-    if pipeline_version:
+    nfclaw_cmd, raw_cmd = _run_invocation(name, ps, insch, pipeline_version, tree)
+    if dev:
+        first_line = (f"# nfclaw resolves nf-core/{name}'s {pipeline_version} branch to its current head "
+                      f"on every run (these docs: commit {st.commit[:12]}); the default (no "
+                      "--pipeline-version) is the latest release.")
+        raw_comment = (f"# raw equivalent (runs the materialized {pipeline_version} commit "
+                       f"{st.commit[:12]} directly):")
+        demo_line = (f"nfclaw run {name} --demo --outdir results --pipeline-version {pipeline_version}"
+                     "   # adds the upstream test profile (-profile test,docker)")
+        version_note = (f"**Unreleased development code.** These docs describe nf-core/{name}'s "
+                        f"`{pipeline_version}` branch at commit `{st.commit}` — code that has not been "
+                        "released. The branch moves: every `--pipeline-version "
+                        f"{pipeline_version}` run resolves its head afresh, so two runs can execute "
+                        "different code, and a parameter documented here can change or disappear. "
+                        "Each run records the commit it executed in "
+                        "`<outdir>/provenance/run_manifest.json`, and `commands.sh` replays exactly "
+                        f"that commit. Prefer a release (`nfclaw versions {name}`) unless you need "
+                        "changes that are not in one yet.\n\n")
+    elif pipeline_version:
         first_line = (f"# nfclaw fetches and materializes nf-core/{name}@{pipeline_version} "
                       "on first use; the default (no --pipeline-version) is the latest release.")
         raw_comment = f"# raw equivalent (runs the materialized {pipeline_version} tree directly):"
@@ -519,10 +549,15 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         version_note = (f"This is the pinned latest release. To run a different one, list the available "
                         f"releases with `nfclaw versions {name}` and add `--pipeline-version X.Y.Z` to the "
                         f"command above (`nfclaw show {name} --pipeline-version X.Y.Z` prints that release's "
-                        "docs).\n\n")
+                        "docs). To run unreleased development code instead, add `--pipeline-version "
+                        f"{versions.DEV_BRANCH}`: nfclaw resolves nf-core's `{versions.DEV_BRANCH}` "
+                        "branch to its current head commit at run time and records that commit in "
+                        f"provenance (`nfclaw show {name} --pipeline-version {versions.DEV_BRANCH}` "
+                        "prints the docs generated from it). Use it only for changes not yet "
+                        "released.\n\n")
     reference = _reference_section(ps)
     reference_block = f"## Reference genome\n{reference}\n" if reference else ""
-    engine = _engine_section(name, st)
+    engine = _engine_section(name, st, what)
     engine_block = f"## Nextflow engine\n{engine}\n" if engine else ""
     mandatory = _mandatory_params(ps)
     mandatory_block = f"## Mandatory arguments\n{mandatory}\n" if mandatory else ""
@@ -541,7 +576,7 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"## Other parameters\n{_param_groups(ps)}\n"
         f"## Resources\n{_resources_section(name, ps, insch, pipeline_version)}\n"
         f"{engine_block}"
-        f"## Outputs\n{_outputs_section(name, st)}\n"
+        f"## Outputs\n{_outputs_section(name, st, ref, what)}\n"
         f"{tools_block}"
         "## Demo\n```bash\n"
         f"{demo_line}\n```\n\n"
@@ -550,7 +585,7 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         "description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. "
         "Nextflow's nf-schema validates every parameter against this schema at runtime, so an "
         "unknown or invalid value fails fast. Upstream usage: "
-        f"https://github.com/nf-core/{name}/blob/{st.version}/docs/usage.md\n\n"
+        f"https://github.com/nf-core/{name}/blob/{ref}/docs/usage.md\n\n"
         f"<!-- Generated from nf-core/{name}@{st.commit}. Do not edit by hand. -->\n"
     )
     return fm + body

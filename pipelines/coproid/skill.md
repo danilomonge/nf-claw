@@ -22,7 +22,7 @@ nfclaw run coproid --input samplesheet.csv --outdir results --genome-sheet <geno
 nextflow run pipelines/coproid/upstream -profile docker --input samplesheet.csv --outdir results --genome-sheet <genome_sheet> --kraken2-db <kraken2_db> --sp-sources <sp_sources> --sp-labels <sp_labels>
 ```
 
-This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions coproid` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show coproid --pipeline-version X.Y.Z` prints that release's docs).
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions coproid` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show coproid --pipeline-version X.Y.Z` prints that release's docs). To run unreleased development code instead, add `--pipeline-version dev`: nfclaw resolves nf-core's `dev` branch to its current head commit at run time and records that commit in provenance (`nfclaw show coproid --pipeline-version dev` prints the docs generated from it). Use it only for changes not yet released.
 
 ## Inputs
 | column | type | required | allowed values | constraints |

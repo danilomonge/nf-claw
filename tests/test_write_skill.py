@@ -560,3 +560,66 @@ def test_cli_requires_a_pipeline_name_or_all():
     with pytest.raises(SystemExit) as exc:
         write_skill.main([])                          # crashed with a TypeError
     assert exc.value.code == 2
+
+
+# --- dev: docs generated from an unreleased development commit ---------------------------------
+
+_DEV_SHA = "f754e0a247b03f169782dbb5c688e055044a5988"
+
+
+def _dev_status(tmp_path, name="mini"):
+    up = tmp_path / ".versions" / f"dev-{_DEV_SHA[:12]}" / "upstream"
+    up.mkdir(parents=True)
+    for f in ("main.nf", "nextflow.config"):
+        (up / f).write_text("x")
+    (up / "nextflow.config").write_text("manifest {\n  nextflowVersion = '!>=25.10.4'\n}\n")
+    shutil.copy(FIX / name / "nextflow_schema.json", up / "nextflow_schema.json")
+    (up / "docs").mkdir()
+    (up / "docs" / "output.md").write_text("# outputs\n")
+    return SubmoduleStatus(name, up, True, True, "dev", _DEV_SHA, ())
+
+
+def test_dev_render_runs_and_links_the_exact_commit(tmp_path):
+    st = _dev_status(tmp_path)
+    skill, ref = write_skill.render_status(st, pipeline_version="dev")
+    assert "version: dev" in skill and f"commit: {_DEV_SHA}" in skill
+    # the run, resources and demo commands all ask for dev
+    # (the engine section's `nfclaw run mini ... --nxf-ver X` elides the rest of the command)
+    run_lines = [ln for ln in skill.splitlines()
+                 if ln.startswith("nfclaw run") and " ... " not in ln]
+    assert len(run_lines) == 3 and all("--pipeline-version dev" in ln for ln in run_lines)
+    # the raw equivalent runs that commit's immutable tree, never a moving `dev` path
+    assert f"nextflow run pipelines/mini/.versions/dev-{_DEV_SHA[:12]}/upstream" in skill
+    # upstream links point at the commit the docs were generated from, not the moving branch
+    assert f"blob/{_DEV_SHA}/docs/output.md" in skill
+    assert f"blob/{_DEV_SHA}/docs/usage.md" in skill
+    assert "blob/dev/" not in skill
+    assert "This commit declares `nextflowVersion = '!>=25.10.4'`" in skill
+
+
+def test_dev_render_warns_that_the_code_is_unreleased(tmp_path):
+    st = _dev_status(tmp_path)
+    skill, _ = write_skill.render_status(st, pipeline_version="dev")
+    assert "**Unreleased development code.**" in skill
+    assert "run_manifest.json" in skill and "commands.sh" in skill
+    # the release-only discovery nudge is replaced by the dev warning
+    assert "This is the pinned latest release" not in skill
+
+
+def test_dev_render_normalizes_the_spelling(tmp_path):
+    st = _dev_status(tmp_path)
+    upper, _ = write_skill.render_status(st, pipeline_version="DEV")
+    lower, _ = write_skill.render_status(st, pipeline_version="dev")
+    assert upper == lower
+
+
+def test_pinned_skill_points_agents_at_dev(tmp_path):
+    # The committed skill.md is how an agent learns that unreleased code is runnable at all.
+    pdir = _seed(tmp_path, "mini")
+    skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
+    text = skill.read_text()
+    assert "--pipeline-version dev" in text
+    assert "nfclaw show mini --pipeline-version dev" in text
+    for line in text.splitlines():                           # the default commands stay on the pin
+        if line.startswith("nfclaw run"):
+            assert "--pipeline-version" not in line

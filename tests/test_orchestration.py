@@ -3,6 +3,8 @@ import re
 import shutil
 from pathlib import Path
 
+import pytest
+
 from runner import orchestration, submodule
 
 
@@ -723,3 +725,172 @@ def test_local_input_without_a_path_format_is_still_hashed_into_provenance(tmp_p
         demo=False, check_only=False, write_provenance=True, timeout_seconds=None)
     hashed = (tmp_path / "out" / "provenance" / "inputs.sha256").read_text()
     assert str(tmp_path / "study.sdrf.tsv") in hashed
+
+
+# --- dev: running unreleased development code -------------------------------------------------
+
+def _git(path, *args):
+    import subprocess
+    return subprocess.run(["git", "-C", str(path), "-c", "user.email=t@t", "-c", "user.name=t",
+                           *args], check=True, capture_output=True, text=True).stdout.strip()
+
+
+def _library_with_dev(tmp_path, name="mini"):
+    """A real nf-core-like remote (release 1.0.0 on main, newer code on `dev`) and an nf-claw
+    root whose `pipelines/<name>/upstream` is a shallow clone of the release, as in production."""
+    import subprocess
+    remote = tmp_path / "remote"
+    remote.mkdir()
+    _git(remote, "init", "-q", "-b", "main")
+    for f in ("main.nf", "nextflow.config"):
+        (remote / f).write_text("x")
+    shutil.copy(Path(__file__).parent / "fixtures" / name / "nextflow_schema.json",
+                remote / "nextflow_schema.json")
+    _git(remote, "add", ".")
+    _git(remote, "commit", "-q", "-m", "release")
+    release = _git(remote, "rev-parse", "HEAD")
+    _git(remote, "tag", "1.0.0")
+    _git(remote, "checkout", "-q", "-b", "dev")
+    (remote / "main.nf").write_text("x // dev\n")
+    _git(remote, "commit", "-q", "-am", "dev work")
+    dev = _git(remote, "rev-parse", "HEAD")
+    _git(remote, "checkout", "-q", "main")
+    root = tmp_path / "lib"
+    (root / "pipelines" / name).mkdir(parents=True)
+    (root / ".gitmodules").write_text(
+        f'[submodule "pipelines/{name}/upstream"]\n\turl = file://{remote}\n')
+    subprocess.run(["git", "clone", "-q", "--depth", "1", "--single-branch", "--branch", "main",
+                    f"file://{remote}", str(root / "pipelines" / name / "upstream")],
+                   check=True, capture_output=True)
+    (root / "pipelines" / name / "skill.md").write_text(
+        f"---\nname: {name}\nversion: 1.0.0\ncommit: {release}\n---\n")
+    return root, remote, dev
+
+
+@pytest.fixture
+def dev_library(tmp_path):
+    """`_library_with_dev`, plus teardown that makes git's read-only pack files removable so
+    pytest's tmp cleanup never trips over them (even when the test fails)."""
+    yield lambda: _library_with_dev(tmp_path)
+    for p in sorted(tmp_path.rglob("*"), reverse=True):
+        try:
+            p.chmod(0o700)
+        except OSError:
+            pass
+
+
+def test_dev_check_targets_the_materialized_commit_and_warns(tmp_path, monkeypatch, dev_library):
+    root, _, dev = dev_library()
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    ids = tmp_path / "ids.csv"
+    ids.write_text("SRR9984183\n")
+    res = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=ids, outdir=tmp_path / "out",
+        profile="binac2", params_file=None, cli_overrides={}, resume=False,
+        demo=False, check_only=True, write_provenance=False, timeout_seconds=10,
+        pipeline_version="dev", nxf_ver="25.10.4")
+    tree = root / "pipelines" / "mini" / ".versions" / f"dev-{dev[:12]}" / "upstream"
+    assert res.command.startswith(f"nextflow run {tree.as_posix()} -profile binac2 ")
+    assert (tree / "main.nf").read_text() == "x // dev\n"
+    assert any("unreleased development code" in w and dev in w for w in res.warnings)
+    assert not (tmp_path / "out").exists()                     # --check still leaves --outdir alone
+
+
+def test_dev_run_records_the_commit_and_replays_exactly_it(tmp_path, monkeypatch, dev_library):
+    import json
+    root, _, dev = dev_library()
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: None)
+    monkeypatch.setattr(orchestration.provenance, "_nextflow_version", lambda env_extra=None: "stub")
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=False, write_provenance=True, timeout_seconds=10,
+        pipeline_version="dev")
+    prov = tmp_path / "out" / "provenance"
+    manifest = json.loads((prov / "run_manifest.json").read_text())
+    assert manifest["version"] == "dev" and manifest["commit"] == dev
+    # the replay runs the immutable tree of that commit, not whatever `dev` is by then
+    assert f".versions/dev-{dev[:12]}/upstream" in (prov / "commands.sh").read_text()
+
+
+def test_resuming_a_dev_run_after_dev_moved_says_so(tmp_path, monkeypatch, dev_library):
+    root, remote, first = dev_library()
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: None)
+    monkeypatch.setattr(orchestration.provenance, "_nextflow_version", lambda env_extra=None: "stub")
+    kw = dict(repo_root=root, input_path=None, outdir=tmp_path / "out", profile="docker",
+              params_file=None, cli_overrides={}, demo=True, check_only=False,
+              write_provenance=True, timeout_seconds=10, pipeline_version="dev")
+    orchestration.run_pipeline("mini", resume=False, **kw)
+    same = orchestration.run_pipeline("mini", resume=True, **kw)
+    assert not any("--resume continues" in w for w in same.warnings)    # dev unchanged → silent
+    _git(remote, "checkout", "-q", "dev")
+    (remote / "main.nf").write_text("x // dev v2\n")
+    _git(remote, "commit", "-q", "-am", "more dev work")
+    second = _git(remote, "rev-parse", "HEAD")
+    _git(remote, "checkout", "-q", "main")
+    moved = orchestration.run_pipeline("mini", resume=True, **kw)
+    advisory = [w for w in moved.warnings if "--resume continues" in w]
+    assert advisory and first[:12] in advisory[0] and second[:12] in advisory[0]
+
+
+def test_status_notes_surface_as_run_warnings(tmp_path, monkeypatch):
+    from dataclasses import replace
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+
+    def fake_ensure(name, version, *, pipelines_dir, repo_root):
+        st = submodule.resolve_at(name, pipelines_dir / name / "upstream")
+        return replace(st, notes=("stale dev head", "unreleased code"))
+
+    monkeypatch.setattr(orchestration.versions, "ensure", fake_ensure)
+    res = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10,
+        pipeline_version="dev")
+    assert res.warnings[:2] == ["stale dev head", "unreleased code"]   # said first, in order
+
+
+def test_resume_advisory_tolerates_missing_or_bad_manifests(tmp_path):
+    from runner.submodule import SubmoduleStatus
+    st = SubmoduleStatus("p", tmp_path, True, True, "dev", "b" * 40, ())
+    out = tmp_path / "out"
+    assert orchestration._resume_advisory(out, st) == []                 # no previous bundle
+    (out / "provenance").mkdir(parents=True)
+    manifest = out / "provenance" / "run_manifest.json"
+    for text in ("not json", "[]", '{"commit": null}', '{"commit": ""}', '{"commit": "' + "b" * 40 + '"}'):
+        manifest.write_text(text)
+        assert orchestration._resume_advisory(out, st) == [], text
+    manifest.write_text('{"version": "1.0.0", "commit": "' + "a" * 40 + '"}')
+    [w] = orchestration._resume_advisory(out, st)
+    assert "1.0.0 (commit aaaaaaaaaaaa)" in w and "dev (commit bbbbbbbbbbbb)" in w
+
+
+def test_warnings_are_emitted_before_execution(tmp_path, monkeypatch):
+    from dataclasses import replace
+
+    from runner.errors import ErrorCode, NfclawError
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+
+    def fake_ensure(name, version, *, pipelines_dir, repo_root):
+        st = submodule.resolve_at(name, pipelines_dir / name / "upstream")
+        return replace(st, notes=("unreleased code",))
+
+    events = []
+    monkeypatch.setattr(orchestration.versions, "ensure", fake_ensure)
+
+    def boom(*a, **k):
+        events.append("launch")
+        raise NfclawError(ErrorCode.EXECUTION_FAILED, "Nextflow exited 1")
+
+    monkeypatch.setattr(orchestration.execution, "run", boom)
+    with pytest.raises(NfclawError):
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+            profile="docker", params_file=None, cli_overrides={}, resume=False,
+            demo=True, check_only=False, write_provenance=False, timeout_seconds=10,
+            pipeline_version="dev", on_warning=lambda w: events.append(w))
+    assert events[0] == "unreleased code" and events[-1] == "launch"
