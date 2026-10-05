@@ -26,7 +26,7 @@ RUN_LOG_NAME = "run.log"
 # The tail of a launch's console kept in memory for quoting its error. Nextflow ends a failed run
 # with its error report, so the tail always holds it; a bound keeps a days-long run cheap.
 _TAIL_BYTES = 256 * 1024
-_MAX_EXCERPT_LINES = 40
+_MAX_EXCERPT_LINES = 50
 _CONTEXT_LINES = 6           # non-blank lines quoted from just above the `ERROR ~` line
 _TAIL_LINES = 15             # quoted when Nextflow printed no `ERROR ~` line at all
 
@@ -37,9 +37,10 @@ _LOG_TAIL_BYTES = 2 * 1024 * 1024
 _MAX_CAUSES = 8
 
 _ANSI = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]|\x1b[@-_]")
-# Lines that end the context above `ERROR ~`: Nextflow's banner and launch line, and the last line of
-# an earlier report (26.x prints the report twice when stdout is not a terminal).
-_CONTEXT_STOP = re.compile(r"N E X T F L O W|^Launching `|^\s*-- Check ")
+# Lines that end the context above `ERROR ~`: Nextflow's banner and launch line, and the end (or
+# start) of an earlier report — Nextflow re-renders a report when stdout is not a terminal.
+_CONTEXT_STOP = re.compile(r"N E X T F L O W|^Launching `|^\s*-- Check |^ERROR ~")
+_REPORT_END = re.compile(r"^\s*-- Check ")
 
 
 def now() -> str:
@@ -87,18 +88,42 @@ def _squeeze(lines: list[str]) -> list[str]:
     return out
 
 
-def error_excerpt(console: str) -> list[str]:
-    """Nextflow's own error report from a launch's console output, quoted verbatim.
+def _reports(lines: list[str]) -> list[tuple[int, tuple[str, ...]]]:
+    """Each `ERROR ~` report in the console as (start index, lines): from its `ERROR ~` line through
+    Nextflow's closing "-- Check '.nextflow.log' file for details" (or up to the next report)."""
+    reports = []
+    i = 0
+    while i < len(lines):
+        if not lines[i].startswith("ERROR ~"):
+            i += 1
+            continue
+        j = i + 1
+        while j < len(lines) and not lines[j].startswith("ERROR ~"):
+            j += 1
+            if _REPORT_END.match(lines[j - 1]):
+                break
+        reports.append((i, tuple(_squeeze(lines[i:j]))))
+        i = j
+    return reports
 
-    Deterministic: from the last `ERROR ~` line (Nextflow's error prefix) to the end, with the few
-    lines Nextflow prints just above it — a config or script syntax error is described there, above
-    `ERROR ~ Config parsing failed`. Without an `ERROR ~` line (an `error "…"` raised in a workflow
-    prints only its message) it is the last lines of the console. A long report keeps its head
-    (`Caused by`) and its tail (`Command error`, `Work dir`)."""
+
+def error_excerpt(console: str) -> list[str]:
+    """Nextflow's own error reports from a launch's console output, quoted verbatim.
+
+    Deterministic: every distinct `ERROR ~` report (Nextflow's error prefix), once each, in the order
+    they first appear — Nextflow re-renders the same report when stdout is not a terminal, and the
+    nf-core template follows the real one with a generic "ERROR ~ Pipeline failed" — preceded by the
+    few lines printed just above the last rendering of the first: the failed step's progress line, or
+    a config/script syntax error described above `ERROR ~ Config parsing failed`. Without an
+    `ERROR ~` line (an `error "…"` raised in a workflow prints only its message) it is the last lines
+    of the console. A long excerpt keeps its head (`Caused by`) and its tail (`Command error`,
+    `Work dir`)."""
     lines = _clean(console)
-    marks = [i for i, line in enumerate(lines) if line.startswith("ERROR ~")]
-    if marks:
-        start = marks[-1]
+    distinct: dict[tuple[str, ...], int] = {}             # report → start of its last rendering
+    for at, report in _reports(lines):
+        distinct[report] = at                            # insertion order = first appearance
+    if distinct:
+        first, start = next(iter(distinct.items()))
         seen = 0
         while start > 0 and seen < _CONTEXT_LINES:
             prev = lines[start - 1]
@@ -106,11 +131,13 @@ def error_excerpt(console: str) -> list[str]:
                 break
             start -= 1
             seen += bool(prev)
-        block = _squeeze(lines[start:])
+        block = _squeeze(lines[start:distinct[first]])
+        for report in distinct:
+            block += ([""] if block else []) + list(report)
     else:
         block = [line for line in lines if line][-_TAIL_LINES:]
     if len(block) > _MAX_EXCERPT_LINES:
-        head, tail = 12, _MAX_EXCERPT_LINES - 13
+        head, tail = 15, _MAX_EXCERPT_LINES - 16
         omitted = len(block) - head - tail
         block = block[:head] + [f"… {omitted} lines omitted (full report in the run log) …"] + \
             block[-tail:]

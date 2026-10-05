@@ -42,6 +42,22 @@ def test_excerpt_of_a_task_failure_is_the_last_error_report_once():
     assert "BOOM | 0 of 1" in excerpt                    # the progress line naming the failed step
 
 
+def test_excerpt_of_an_nf_core_failure_quotes_each_distinct_report_once():
+    # Real nf-core/demo 1.2.0 console (corrupt FASTQ): Nextflow renders the process report three
+    # times, and the nf-core template then adds its generic "ERROR ~ Pipeline failed" report — which
+    # is the *last* `ERROR ~` line but not the cause. Each distinct report is quoted once, in order.
+    excerpt = runlog.error_excerpt(_console("nfcore_task_failure.txt"))
+    text = "\n".join(excerpt)
+    assert text.count("ERROR ~ Error executing process > 'NFCORE_DEMO:DEMO:FASTQC (BROKEN)'") == 1
+    assert text.count("ERROR ~ Pipeline failed.") == 1
+    assert text.index("Error executing process") < text.index("Pipeline failed.")
+    assert "java.util.zip.ZipException: Not in GZIP format" in text      # the tool's own error
+    assert "Work dir:" in text
+    assert len(excerpt) <= 50
+    assert runlog.failing_task_dir(excerpt) == Path(
+        "/mnt/volume/drafts/draft-7/nf-claw/work/67/506aabdbd84ecedb67949041e7e5f2")
+
+
 def test_excerpt_keeps_the_detail_nextflow_prints_before_its_error_line():
     # A config/script syntax error is described *above* `ERROR ~ Config parsing failed`.
     excerpt = "\n".join(runlog.error_excerpt(_console("config_parse_error.txt")))
@@ -71,7 +87,7 @@ def test_a_long_error_report_is_capped_but_keeps_its_head_and_tail():
     console = "\n".join(["ERROR ~ Error executing process > 'BIG'", "Caused by:", *body,
                          "Work dir:", "  /w/ab/cdef"]) + "\n"
     excerpt = runlog.error_excerpt(console)
-    assert len(excerpt) <= 45
+    assert len(excerpt) <= 50
     assert excerpt[0] == "ERROR ~ Error executing process > 'BIG'"
     assert excerpt[-2:] == ["Work dir:", "  /w/ab/cdef"]
     assert any("lines omitted" in line for line in excerpt)
