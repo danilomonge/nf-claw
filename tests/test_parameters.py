@@ -266,3 +266,23 @@ def test_empty_path_param_is_left_unset_not_resolved_to_cwd(tmp_path, monkeypatc
     monkeypatch.chdir(tmp_path)
     assert parameters.resolve_path_params({"fasta": ""}, ps) == {"fasta": ""}
     assert parameters.resolve_path_params({"fasta": "  "}, ps) == {"fasta": "  "}
+
+
+def test_unreadable_params_file_is_a_clean_error(tmp_path, monkeypatch):
+    import pathlib
+
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    pf = tmp_path / "p.json"
+    pf.write_text("{}")
+    real_open = pathlib.Path.open
+
+    def deny(self, *a, **k):
+        if self == pf:
+            raise PermissionError(13, "Permission denied", str(self))
+        return real_open(self, *a, **k)
+
+    monkeypatch.setattr(pathlib.Path, "open", deny)
+    with pytest.raises(NfclawError) as exc:
+        parameters.load_params_file(pf)
+    assert exc.value.code == ErrorCode.PARAMS_INVALID and "cannot be read" in str(exc.value)

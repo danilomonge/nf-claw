@@ -116,3 +116,23 @@ def test_the_timestamp_mask_is_confined_to_pipeline_info(tmp_path):
     assert cmp.missing == ["results/sample_2026-07-14_14-13-15.vcf"]
     assert cmp.extra == ["results/sample_2026-07-14_15-14-07.vcf"]
     assert not cmp.structurally_equal
+
+
+def test_unreadable_run_is_a_clean_error(tmp_path, monkeypatch):
+    # verify hashes a replay directory it did not write; one unreadable file raised a raw OSError.
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    orig, replay = tmp_path / "orig", tmp_path / "replay"
+    (orig / "provenance").mkdir(parents=True)
+    (orig / "provenance" / "outputs.sha256").write_text("abc  a.txt\n")
+    replay.mkdir()
+    (replay / "a.txt").write_text("a")
+
+    def deny(path):
+        raise PermissionError(13, "Permission denied", str(path))
+
+    monkeypatch.setattr(verify.provenance, "_sha256", deny)
+    with pytest.raises(NfclawError) as exc:
+        verify.compare(orig, replay)
+    assert exc.value.code == ErrorCode.ENVIRONMENT
+    assert "Permission denied" in str(exc.value) and "a.txt" in str(exc.value)

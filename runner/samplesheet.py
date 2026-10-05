@@ -47,6 +47,9 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
     except UnicodeDecodeError:
         return [f"samplesheet is not valid UTF-8 text: {path} "
                 "(is it a real .csv/.tsv, not a binary file such as .xlsx?)"]
+    except OSError as exc:
+        # It exists and is a file (checked above) but cannot be read — e.g. another user's sheet.
+        return [f"samplesheet cannot be read: {exc.strerror or exc}: {path}"]
     except csv.Error as exc:
         # The parser gave up on the file's structure — in practice an unbalanced quote, which makes
         # the rest of the file one field until it exceeds the csv module's field size limit.

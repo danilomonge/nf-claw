@@ -176,6 +176,11 @@ def load_params_file(path: Path) -> dict:
             ErrorCode.PARAMS_INVALID,
             f"--params-file is not valid UTF-8 text: {path}",
             fix="Pass a plain-text JSON or YAML file, not a binary one.") from exc
+    except OSError as exc:
+        raise NfclawError(
+            ErrorCode.PARAMS_INVALID,
+            f"--params-file cannot be read: {exc.strerror or exc}: {path}",
+            fix="Pass a params file you can read.") from exc
     if path.suffix.lower() == ".json":
         try:
             data = json.loads(text)
