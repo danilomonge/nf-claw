@@ -5,8 +5,8 @@
 #
 # For each pipeline this initialises the pinned submodule and runs
 # `nextflow run <upstream> -profile test,docker -preview` with the Nextflow
-# version the release declares (floored to a -preview-capable lenient-parser
-# version for releases older than 22.06). "Accepted" means Nextflow compiled the
+# version the release declares (a release declaring an engine older than 22.10.0
+# is checked on 24.10.5, a -preview-capable lenient-parser version). "Accepted" means Nextflow compiled the
 # pipeline, resolved its config/profile and validated its parameters; a real
 # REJECTION is a parse / version / parameter / DSL error. A pipeline that gets
 # past those but whose -preview cannot stage remote test inputs (analysis-time

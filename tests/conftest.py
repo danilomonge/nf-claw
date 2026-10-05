@@ -1,6 +1,18 @@
 import os
+import tempfile
 
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def _isolate_temp_dir(monkeypatch, tmp_path_factory):
+    """Point Python's temp root at a per-test directory pytest cleans up.
+
+    `nfclaw run --check` deliberately stages its params file in a fresh temp directory that outlives
+    the process (the printed command must stay runnable), so every check-only test left an
+    `nfclaw-check-*` directory behind in the system temp dir.
+    """
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path_factory.mktemp("tmp")))
 
 
 @pytest.fixture(autouse=True)
