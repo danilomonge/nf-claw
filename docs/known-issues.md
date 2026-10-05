@@ -16,8 +16,9 @@ flag — `--extra_star_align_args='--outFilterMismatchNmax 5'` (or put it in a `
 two-token form `--extra_star_align_args '--outFilterMismatchNmax 5'` is rejected fast with an
 `unknown parameter` error rather than run incorrectly, so this is never a silent failure.
 
-When a run fails for any other reason, nfclaw's error quotes Nextflow's own error report and names,
-by absolute path, the run log (`<outdir>/provenance/logs/run.log` — the whole launch, ending with its
+When a run fails for any other reason, nfclaw's error quotes Nextflow's own error report (with the
+`Caused by:` chain from Nextflow's log when the console hides it) and names, by absolute path, the
+run log (`<outdir>/provenance/logs/run.log` — the whole launch, ending with its
 outcome), Nextflow's log (`<outdir>/.nextflow.log`) and the failing task's `.command.err`, then points
 back to this file; match the symptom below and apply the fix.
 

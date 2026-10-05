@@ -9,8 +9,9 @@ paths that do not depend on where they are standing:
   failed is never overwritten by the one that fixes it.
 - Nextflow's own log — `<outdir>/.nextflow.log` (or `NXF_LOG_FILE`, resolved against `--outdir`).
 
-Nothing here guesses a cause. On failure nfclaw quotes Nextflow's own error report verbatim and names
-the files that hold the rest; the reader (or agent) does the diagnosis.
+Nothing here guesses a cause. On failure nfclaw quotes Nextflow's own error report verbatim — plus
+the exception chain behind it from Nextflow's log, where the real reason is often the only thing
+written — and names the files that hold the rest; the reader (or agent) does the diagnosis.
 """
 from __future__ import annotations
 
@@ -28,6 +29,12 @@ _TAIL_BYTES = 256 * 1024
 _MAX_EXCERPT_LINES = 40
 _CONTEXT_LINES = 6           # non-blank lines quoted from just above the `ERROR ~` line
 _TAIL_LINES = 15             # quoted when Nextflow printed no `ERROR ~` line at all
+
+# `.nextflow.log` entries: "Oct-05 21:57:35.089 [main] ERROR nextflow.cli.Launcher - …".
+_LOG_ENTRY = re.compile(r"^[A-Z][a-z]{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \[[^\]]*\] ")
+_LOG_ERROR = re.compile(r"^[A-Z][a-z]{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \[[^\]]*\] ERROR ")
+_LOG_TAIL_BYTES = 2 * 1024 * 1024
+_MAX_CAUSES = 8
 
 _ANSI = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]|\x1b[@-_]")
 # Lines that end the context above `ERROR ~`: Nextflow's banner and launch line, and the last line of
@@ -120,6 +127,32 @@ def failing_task_dir(excerpt: list[str]) -> Path | None:
                     path = nxt.strip()
                     return Path(path) if path.startswith("/") else None
     return None
+
+
+def nextflow_log_causes(log: Path) -> list[str]:
+    """The exception chain behind Nextflow's last error, from its own log: the `Caused by: …` lines
+    of the last ERROR entry. Deterministic, and often the only place the real reason is written —
+    the console says "Unable to parse config file" while the log says "Network is unreachable".
+    Empty when the entry carries no chain (a failed task's entry just repeats the console report)."""
+    try:
+        with log.open("rb") as fh:
+            fh.seek(0, os.SEEK_END)
+            fh.seek(max(0, fh.tell() - _LOG_TAIL_BYTES))
+            lines = fh.read().decode("utf-8", errors="replace").splitlines()
+    except OSError:
+        return []
+    errors = [i for i, line in enumerate(lines) if _LOG_ERROR.match(line)]
+    if not errors:
+        return []
+    causes: list[str] = []
+    for line in lines[errors[-1] + 1:]:
+        if _LOG_ENTRY.match(line):
+            break                                        # the next entry: the error's chain is over
+        if line.startswith("Caused by: ") and line[len("Caused by: "):].strip():
+            cause = line.rstrip()
+            if cause not in causes:
+                causes.append(cause)
+    return causes[:_MAX_CAUSES]
 
 
 class RunLog:

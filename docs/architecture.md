@@ -13,7 +13,7 @@ Three zones:
   `-params-file`, runs `nextflow run` from `--outdir`, records the launch in
   `<outdir>/provenance/logs/run.log` (`runner/runlog.py`: nfclaw's header, Nextflow's console in
   order, and a final outcome line; appended on `--resume`; on failure the error quotes Nextflow's
-  report and names `run.log`, `.nextflow.log` and the failing task's `.command.err` by absolute
+  report and the `Caused by:` chain of its log's last error, and names `run.log`, `.nextflow.log` and the failing task's `.command.err` by absolute
   path), and writes a provenance bundle. Nextflow's `nf-schema`
   plugin remains authoritative at runtime, including for conditional requirements and any schema
   constraints the lightweight pre-check cannot interpret safely.

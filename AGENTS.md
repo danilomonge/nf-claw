@@ -43,9 +43,11 @@ nothing to look up:
 - `stdout.txt` / `stderr.txt` beside `run.log` — Nextflow's two streams kept apart. Nextflow prints
   its error report on stdout; stderr holds only launcher notices.
 
-When a run fails, nfclaw's error quotes Nextflow's own error report and names these files by absolute
-path — plus the failing task's `.command.err` (its `.command.log` and `.command.sh` sit beside it).
-`--check` launches nothing and writes no log.
+When a run fails, nfclaw's error quotes Nextflow's own error report — and the `Caused by:` chain
+from `.nextflow.log` when the console alone hides the reason (e.g. "Unable to parse config file" ←
+"Network is unreachable") — and names these files by absolute path, plus the failing task's
+`.command.err` (its `.command.log` and `.command.sh` sit beside it). `--check` launches nothing and
+writes no log.
 
 ## Replaying a run
 `<outdir>/provenance/commands.sh` re-runs the recorded command. It reproduces the run into a **fresh**

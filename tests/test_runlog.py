@@ -91,3 +91,45 @@ def test_failing_task_dir_is_read_from_the_report():
 
 def test_no_failing_task_dir_when_the_report_names_none():
     assert runlog.failing_task_dir(runlog.error_excerpt(_console("config_parse_error.txt"))) is None
+
+
+# --- the underlying cause, from Nextflow's own log -----------------------------------------------
+
+def test_log_causes_quote_the_exception_chain_of_the_last_error():
+    # Real .nextflow.log of a run whose host cannot reach GitHub: the console only says "Unable to
+    # parse config file"; the reason exists nowhere but in the log's exception chain.
+    causes = runlog.nextflow_log_causes(FIXTURES / "nextflow_log_config_unreachable.log")
+    assert causes == [
+        "Caused by: java.io.IOException: Cannot read config file include: "
+        "https://raw.githubusercontent.com/nf-core/configs/master/nfcore_custom.config",
+        "Caused by: java.net.SocketException: Network is unreachable",
+    ]
+
+
+def test_log_causes_are_empty_for_a_task_failure_report(tmp_path):
+    # A failed task's entry repeats the console report; its bare "Caused by:" heading is not a cause.
+    log = tmp_path / ".nextflow.log"
+    log.write_text(
+        "Oct-05 21:42:15.651 [TaskFinalizer-1] ERROR nextflow.processor.TaskProcessor - "
+        "Error executing process > 'BOOM'\n\nCaused by:\n"
+        "  Process `BOOM` terminated with an error exit status (3)\n\n"
+        "Oct-05 21:42:15.663 [TaskFinalizer-1] DEBUG nextflow.Session - Session aborted\n")
+    assert runlog.nextflow_log_causes(log) == []
+
+
+def test_log_causes_ignore_exceptions_outside_the_last_error_entry(tmp_path):
+    log = tmp_path / ".nextflow.log"
+    log.write_text(
+        "Oct-05 10:00:00.000 [main] WARN  nextflow.Foo - retrying\n"
+        "Caused by: java.net.SocketTimeoutException: earlier, recovered\n"
+        "Oct-05 10:00:01.000 [main] ERROR nextflow.cli.Launcher - boom\n"
+        "Caused by: java.lang.IllegalStateException: the real one\n"
+        "\tat x.y(Z.java:1)\n"
+        "Oct-05 10:00:02.000 [main] DEBUG nextflow.Session - after\n"
+        "Caused by: java.lang.RuntimeException: after the error entry\n")
+    assert runlog.nextflow_log_causes(log) == [
+        "Caused by: java.lang.IllegalStateException: the real one"]
+
+
+def test_log_causes_of_a_missing_log_are_empty(tmp_path):
+    assert runlog.nextflow_log_causes(tmp_path / "absent.log") == []

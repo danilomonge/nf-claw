@@ -1,6 +1,7 @@
 import os
 import sys
 import pytest
+from pathlib import Path
 from runner import execution
 from runner.errors import NfclawError
 
@@ -56,6 +57,21 @@ def test_failure_quotes_nextflow_error_and_points_at_the_real_logs(tmp_path):
     assert exc.value.details["exit_code"] == 1
     assert "known-issues.md" in exc.value.fix
     assert "stderr.txt" not in text
+
+
+def test_failure_quotes_the_underlying_cause_from_the_nextflow_log(tmp_path):
+    # The console said only "Unable to parse config file"; the cause is in Nextflow's log alone.
+    import shutil
+    nf_log = tmp_path / ".nextflow.log"
+    shutil.copy(Path(__file__).parent / "fixtures" / "nextflow_console" /
+                "nextflow_log_config_unreachable.log", nf_log)
+    child = "import sys; print('ERROR ~ Unable to parse config file'); sys.exit(1)"
+    with pytest.raises(NfclawError) as exc:
+        execution.run([PY, "-c", child], cwd=tmp_path, logs_dir=tmp_path / "logs",
+                      timeout_seconds=30, nextflow_log=nf_log)
+    text = str(exc.value)
+    assert "Caused by: java.net.SocketException: Network is unreachable" in text
+    assert "nfcore_custom.config" in text
 
 
 def test_failure_does_not_point_at_a_nextflow_log_that_was_never_written(tmp_path):

@@ -159,6 +159,10 @@ def _failure(code: int, run_log: runlog.RunLog, nextflow_log: Path | None) -> Nf
     if excerpt:
         message += " Nextflow reported:\n" + "\n".join(f"    {line}" if line else ""
                                                          for line in excerpt)
+    causes = runlog.nextflow_log_causes(nextflow_log) if "nextflow_log" in details else []
+    if causes:
+        message += "\n  The underlying cause, from the Nextflow log:\n" + \
+            "\n".join(f"    {cause}" for cause in causes)
     task_hint = (" The failing task's complete output is in .command.err and .command.log beside "
                  "`failing_task`." if "failing_task" in details else "")
     return NfclawError(
