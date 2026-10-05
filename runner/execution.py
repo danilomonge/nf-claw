@@ -5,6 +5,7 @@ import signal
 import subprocess
 import sys
 import threading
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -190,19 +191,46 @@ def _quote(lines: list[str]) -> str:
     return "\n".join(f"    {line}" if line else "" for line in lines)
 
 
-def _terminate(proc: subprocess.Popen) -> None:
+_GRACE_SECONDS = 10
+
+
+def _group_alive(pgid: int) -> bool:
+    try:
+        os.killpg(pgid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:                       # members exist that we may not signal: still not gone
+        return True
+    return True
+
+
+def _terminate(proc: subprocess.Popen, grace: float = _GRACE_SECONDS) -> None:
     """Stop the child and everything it launched.
 
-    Signals the whole process group (SIGTERM first, so Nextflow runs its JVM shutdown hooks and
-    cleans up its own tasks; SIGKILL only if it does not exit), because killing just the child would
-    orphan the task processes it spawned.
+    Signals the whole process group, because killing just the child would orphan the task processes
+    it spawned: SIGTERM first, so Nextflow runs its JVM shutdown hooks and cleans up its own tasks, then
+    SIGKILL for whatever is still running once the grace period is over. The group is waited on, not
+    just its leader — Nextflow exiting does not mean its tasks did, and a task that ignores or is
+    still handling SIGTERM would otherwise be left running in the background.
     """
-    if hasattr(os, "killpg"):
-        for sig in (signal.SIGTERM, signal.SIGKILL):
-            try:
-                os.killpg(os.getpgid(proc.pid), sig)
-                proc.wait(timeout=10)
-                return
-            except (OSError, ProcessLookupError, subprocess.TimeoutExpired):
-                continue
-    proc.kill()
+    if not hasattr(os, "killpg"):                     # Windows: no process groups to signal
+        proc.kill()
+        proc.wait()
+        return
+    pgid = proc.pid                                   # start_new_session: the child leads its group
+    deadline = time.monotonic() + grace
+    try:
+        os.killpg(pgid, signal.SIGTERM)
+    except OSError:
+        pass
+    try:
+        proc.wait(timeout=grace)
+    except subprocess.TimeoutExpired:
+        pass
+    while _group_alive(pgid) and time.monotonic() < deadline:
+        time.sleep(0.1)
+    try:
+        os.killpg(pgid, signal.SIGKILL)
+    except OSError:
+        pass                                          # the group is already gone
+    proc.wait()
