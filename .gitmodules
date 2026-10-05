@@ -262,3 +262,12 @@
 [submodule "pipelines/funcprofiler/upstream"]
 	path = pipelines/funcprofiler/upstream
 	url = https://github.com/nf-core/funcprofiler.git
+[submodule "pipelines/datasync/upstream"]
+	path = pipelines/datasync/upstream
+	url = https://github.com/nf-core/datasync.git
+[submodule "pipelines/hadge/upstream"]
+	path = pipelines/hadge/upstream
+	url = https://github.com/nf-core/hadge.git
+[submodule "pipelines/tumourevo/upstream"]
+	path = pipelines/tumourevo/upstream
+	url = https://github.com/nf-core/tumourevo.git

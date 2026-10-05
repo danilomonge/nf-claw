@@ -363,6 +363,19 @@
     "version": "3.2.2"
   },
   {
+    "description": "A simple sysops pipeline that can be used to synchronize, integrity check and permanently archive data.",
+    "input": "samplesheet (sample, input, output_path, checksum_md5, checksum_sha)",
+    "name": "datasync",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/datasync is a Nextflow pipeline for copying files and directories between storage locations and documenting their integrity. For every row in an input samplesheet, the pipeline:",
+    "tools": [
+      "Rclone",
+      "MultiQC",
+      "R"
+    ],
+    "version": "1.0.0"
+  },
+  {
     "description": "An nf-core demo pipeline",
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "demo",
@@ -714,6 +727,29 @@
       "Tiara"
     ],
     "version": "1.0.1"
+  },
+  {
+    "description": "Comprehensive pipeline for donor demultiplexing in single cell",
+    "input": "samplesheet (sample, rna_matrix, hto_matrix, bam, barcodes, n_samples, vcf)",
+    "name": "hadge",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/hadge (hashing deconvolution combined with genotype information) is a bioinformatics pipeline that combines 11 methods to perform both hashing- and genotype-based deconvolution on single cell multiplexing data. It takes a samplesheet with count matrices, BAM and VCF files as input, performs deconvolution with every method, joins all results and finally recovers previously discarded cells by combining the best performing methods (donor matching).",
+    "tools": [
+      "Demuxlet",
+      "Freemuxlet",
+      "Souporcell",
+      "Vireo",
+      "BFF",
+      "Demuxem",
+      "GMM-Demux",
+      "HashedDrops",
+      "Hashsolo",
+      "HTODemux",
+      "Multiseq",
+      "Cellsnp-lite",
+      "MultiQC"
+    ],
+    "version": "1.0.0"
   },
   {
     "description": "A pipeline to investigate horizontal gene transfer from NGS data",
@@ -2069,6 +2105,27 @@
       "MetaCache"
     ],
     "version": "2.0.1"
+  },
+  {
+    "description": "Analysis pipeline to model tumour clonal evolution from WGS data (driver annotation, quality control of copy number calls, subclonal and mutational signature deconvolution)",
+    "input": "samplesheet (dataset, patient, tumour_sample, normal_sample, cancer_type, cna_caller, vcf, tbi, tumour_alignment, tumour_alignment_index, cna_segments, cna_extra)",
+    "name": "tumourevo",
+    "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
+    "summary": "nf-core/tumourevo is a bioinformatics pipeline to model tumour evolution from whole-genome sequencing (WGS) data. The pipeline performs state-of-the-art downstream analysis of variant and copy-number calls from tumour-normal matched sequencing assays, reconstructing the evolutionary processes leading to the observed tumour genome. This analysis can be done at the level of single samples, multiple samples from the same patient (multi-region/longitudinal assays), and of multiple patients from distinct cohorts.",
+    "tools": [
+      "BCFTools",
+      "CNAqc",
+      "CTREE",
+      "EnsemblVEP",
+      "mobster",
+      "PyClone-VI",
+      "SigProfiler",
+      "SparseSignatures",
+      "Tabix",
+      "TINC",
+      "VIBER"
+    ],
+    "version": "1.0.0"
   },
   {
     "description": "Variant Benchmarking pipeline for germline and somatic variant callers",
