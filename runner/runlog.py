@@ -29,7 +29,7 @@ RUN_LOG_NAME = "run.log"
 # with its error report, so the tail always holds it; a bound keeps a days-long run cheap.
 _TAIL_BYTES = 256 * 1024
 _MAX_EXCERPT_LINES = 50
-_CONTEXT_LINES = 6           # non-blank lines quoted from just above the `ERROR ~` line
+_CONTEXT_LINES = 6           # at most this much of the paragraph just above an `ERROR ~` report
 _TAIL_LINES = 15             # the last paragraph, quoted when Nextflow printed no `ERROR ~` line
 _STDERR_LINES = 25
 # The launcher's only routine stderr line; every real run's stderr holds nothing else (even `WARN:`
@@ -203,9 +203,10 @@ def failing_task_dir(excerpt: list[str]) -> Path | None:
 
 def nextflow_log_causes(log: Path) -> list[str]:
     """The exception chain behind Nextflow's last error, from its own log: the `Caused by: …` lines
-    of the last ERROR entry, each with the rest of its message when it spans several lines. Deterministic, and often the only place the real reason is written —
-    the console says "Unable to parse config file" while the log says "Network is unreachable".
-    Empty when the entry carries no chain (a failed task's entry just repeats the console report)."""
+    of the last ERROR entry, each with the rest of its message when it spans several lines.
+    Deterministic, and often the only place the real reason is written — the console says "Unable
+    to parse config file" while the log says "Network is unreachable". Empty when the entry carries
+    no chain (a failed task's entry just repeats the console report)."""
     try:
         with log.open("rb") as fh:
             fh.seek(0, os.SEEK_END)
