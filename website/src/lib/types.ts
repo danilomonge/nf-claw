@@ -27,6 +27,11 @@ export interface SamplesheetColumn {
   constraints: string;
 }
 
+export interface SamplesheetHeader {
+  format: "csv" | "tsv";
+  header: string; // exactly as skill.md gives it (TAB-separated for a TSV)
+}
+
 export interface RequiredParam {
   name: string;
   type: string;
@@ -45,9 +50,10 @@ export interface Pipeline {
   url: string; // upstream git url
   policy: string; // version policy (sources.tsv)
   runCommand: string;
-  rawCommand: string;
+  rawCommand: string | null;
   demoCommand: string | null;
   samplesheet: SamplesheetColumn[];
+  samplesheetHeaders: SamplesheetHeader[]; // one per allowed column group
   requiredParams: RequiredParam[];
   groups: ParameterGroup[];
   parameterCount: number;

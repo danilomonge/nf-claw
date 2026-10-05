@@ -24,7 +24,9 @@ export async function generateMetadata({
 
 function clean(md: string): string {
   const base = md
-    .replace(/^---[\s\S]*?---\s*/m, "") // frontmatter
+    // Frontmatter only at the very start: with a multiline flag `^` matched any `---` line, so a
+    // horizontal rule deleted everything up to the next `---` (even one inside a table separator).
+    .replace(/^---\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/, "")
     .replace(/<!--[\s\S]*?-->/g, "") // comments
     .replace(/^<p[\s\S]*?<\/p>\s*/i, "") // leading centered logo block
     .trim();
