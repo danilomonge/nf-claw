@@ -12,7 +12,7 @@ nf-core/rnadnavar pipeline parameters. Every parameter from the pinned `nextflow
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--aligner` | string |  |  | bwa-mem, bwa-mem2, dragmap |  | bwa-mem | Specify aligner to be used to map reads to reference genome. |
+| `--aligner` | string |  |  | `bwa-mem`, `bwa-mem2`, `dragmap` |  | bwa-mem | Specify aligner to be used to map reads to reference genome. |
 | `--bam-csi-index` | boolean |  |  |  |  |  | Create a CSI index for BAM files instead of the traditional BAI index. This will be required for genomes with larger chromosome sizes. |
 | `--save-align-intermeds` | boolean |  |  |  |  |  | Save the intermediate BAM files from the alignment step. |
 | `--save-unaligned` | boolean |  |  |  |  |  | Where possible, save unaligned reads from aligner to the results directory. |
@@ -36,7 +36,7 @@ nf-core/rnadnavar pipeline parameters. Every parameter from the pinned `nextflow
 | `--vep-dbnsfp` | boolean |  | yes |  |  |  | Enable the use of the VEP dbNSFP plugin. |
 | `--vep-include-fasta` | boolean |  | yes |  |  |  | Allow usage of fasta file for annotation with VEP |
 | `--vep-loftee` | boolean |  | yes |  |  |  | Enable the use of the VEP LOFTEE plugin. |
-| `--vep-out-format` | string |  | yes | json, tab, vcf |  | vcf | VEP output-file format. |
+| `--vep-out-format` | string |  | yes | `json`, `tab`, `vcf` |  | vcf | VEP output-file format. |
 | `--vep-spliceai` | boolean |  | yes |  |  |  | Enable the use of the VEP SpliceAI plugin. |
 | `--vep-spliceregion` | boolean |  | yes |  |  |  | Enable the use of the VEP SpliceRegion plugin. |
 
@@ -82,7 +82,7 @@ nf-core/rnadnavar pipeline parameters. Every parameter from the pinned `nextflow
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -101,7 +101,7 @@ nf-core/rnadnavar pipeline parameters. Every parameter from the pinned `nextflow
 | `--save-mapped` | boolean |  |  |  |  |  | Save mapped files. |
 | `--save-output-as-bam` | boolean |  |  |  |  |  | Saves output from Markduplicates & Baserecalibration as BAM file instead of CRAM |
 | `--split-fastq` | integer |  |  |  |  | 50000000 | Specify how many reads each split of a FastQ file contains. Set 0 to turn off splitting at all. |
-| `--step` | string |  |  | mapping, markduplicates, splitncigar, prepare_recalibration, recalibrate, variant_calling, norm, consensus, annotate, filtering, rna_filtering, realignment |  | mapping | Starting step |
+| `--step` | string |  |  | `mapping`, `markduplicates`, `splitncigar`, `prepare_recalibration`, `recalibrate`, `variant_calling`, `norm`, `consensus`, `annotate`, `filtering`, `rna_filtering`, `realignment` |  | mapping | Starting step |
 
 ## institutional_config_options
 

@@ -40,7 +40,7 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--vep-include-fasta` | boolean |  |  |  |  |  | Allow usage of fasta file for annotation with VEP |
 | `--vep-loftee` | boolean |  |  |  |  |  | Enable the use of the VEP LOFTEE plugin. |
 | `--vep-mastermind` | boolean |  |  |  |  |  | Enable the use of the VEP Mastermind plugin. |
-| `--vep-out-format` | string |  |  | json, tab, vcf |  | vcf | VEP output-file format. |
+| `--vep-out-format` | string |  |  | `json`, `tab`, `vcf` |  | vcf | VEP output-file format. |
 | `--vep-phenotypes` | boolean |  |  |  |  |  | Enable the use of the VEP Phenotypes plugin. |
 | `--vep-spliceai` | boolean |  |  |  |  |  | Enable the use of the VEP SpliceAI plugin. |
 | `--vep-spliceregion` | boolean |  |  |  |  |  | Enable the use of the VEP SpliceRegion plugin. |
@@ -86,7 +86,7 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -99,7 +99,7 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | `--input` | string (file path) |  |  |  | matches ^\S+\.(csv\|tsv\|yaml\|yml\|json)$ |  | Path to comma-separated file containing information about the samples in the experiment. |
 | `--input-restart` | string (file path) |  | yes |  | matches ^\S+\.(csv\|tsv\|yaml\|yml\|json)$ |  | Automatic retrieval for restart |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--step` | string | yes |  | mapping, markduplicates, prepare_recalibration, recalibrate, variant_calling, annotate |  | mapping | Starting step |
+| `--step` | string | yes |  | `mapping`, `markduplicates`, `prepare_recalibration`, `recalibrate`, `variant_calling`, `annotate` |  | mapping | Starting step |
 
 ## institutional_config_options
 
@@ -151,7 +151,7 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--aligner` | string |  |  | bwa-mem, bwa-mem2, dragmap, sentieon-bwamem, parabricks |  | bwa-mem | Specify aligner to be used to map reads to reference genome. |
+| `--aligner` | string |  |  | `bwa-mem`, `bwa-mem2`, `dragmap`, `sentieon-bwamem`, `parabricks` |  | bwa-mem | Specify aligner to be used to map reads to reference genome. |
 | `--markduplicates-pixel-distance` | integer |  |  |  |  |  |  |
 | `--save-mapped` | boolean |  |  |  |  |  | Save mapped files. |
 | `--save-output-as-bam` | boolean |  |  |  |  |  | Saves output from mapping (if `--save_mapped`), Markduplicates & Baserecalibration as BAM file instead of CRAM |
@@ -163,7 +163,7 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--ascat-alleles` | string (file path) |  |  |  | matches ^\S+\.zip$ |  | Path to ASCAT allele zip file. |
-| `--ascat-genome` | string |  |  | hg19, hg38 |  |  | ASCAT genome. |
+| `--ascat-genome` | string |  |  | `hg19`, `hg38` |  |  | ASCAT genome. |
 | `--ascat-loci` | string (file path) |  |  |  | matches ^\S+\.zip$ |  | Path to ASCAT loci zip file. |
 | `--ascat-loci-gc` | string (file path) |  |  |  | matches ^\S+\.zip$ |  | Path to ASCAT GC content correction file. |
 | `--ascat-loci-rt` | string (file path) |  |  |  | matches ^\S+\.zip$ |  | Path to ASCAT RT (replictiming) correction file. |
@@ -205,12 +205,12 @@ nf-core/sarek pipeline parameters. Every parameter from the pinned `nextflow_sch
 |---|---|---|---|---|---|---|---|
 | `--bbsplit-fasta-list` | string (file path) |  |  |  |  |  | Path to comma-separated file containing a list of reference genomes to filter reads against with BBSplit. You have to also explicitly set `--tools bbsplit` if you want to use BBSplit. |
 | `--bbsplit-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built BBSplit index. |
-| `--group-by-umi-strategy` | string |  |  | Identity, Edit, Adjacency, Paired |  | Adjacency | Default strategy for fgbio UMI-based consensus read generation |
+| `--group-by-umi-strategy` | string |  |  | `Identity`, `Edit`, `Adjacency`, `Paired` |  | Adjacency | Default strategy for fgbio UMI-based consensus read generation |
 | `--save-bbsplit-reads` | boolean |  |  |  |  |  | If this option is specified, FastQ files split by reference will be saved in the results directory. |
 | `--umi-base-skip` | integer |  |  |  | ≥ 0 |  | Number of bases to skip after the UMI(s) in the read when extracting with fastp. |
 | `--umi-in-read-header` | boolean |  |  |  |  |  | Move UMIs from fastq read headers to a tag prior to deduplication. |
 | `--umi-length` | integer |  |  |  | ≥ 1 |  | Length of the UMI(s) in the read. |
-| `--umi-location` | string |  |  | read1, read2, per_read, index1, index2, per_index |  |  | Location of the UMI(s) to be extracted with fastp. |
+| `--umi-location` | string |  |  | `read1`, `read2`, `per_read`, `index1`, `index2`, `per_index` |  |  | Location of the UMI(s) to be extracted with fastp. |
 | `--umi-read-structure` | string |  |  |  |  |  | Specify UMI read structure for fgbio UMI consensus read generation |
 | `--umi-tag` | string |  |  |  |  |  | Tag detailing where UMIs are present inside the bam/cram file (e.g. RX). |
 

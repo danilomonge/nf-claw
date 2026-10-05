@@ -8,7 +8,7 @@ summary: nf-core/sopa is the Nextflow version of Sopa. Built on top of SpatialDa
 has_samplesheet: true
 input: samplesheet (sample, id, data_path, fastq_dir, cytaimage, colorizedimage, darkimage, image, slide, area, manual_alignment, slidefile)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
-tools: AnnData, Scanpy, Space Ranger, SpatialData
+tools: ["AnnData", "Scanpy", "Space Ranger", "SpatialData"]
 ---
 # sopa
 
@@ -52,7 +52,7 @@ sample,id,data_path,fastq_dir,cytaimage,colorizedimage,darkimage,image,slide,are
 |---|---|---|---|---|---|
 | `--input` | string (file path) |  |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--technology` | string | xenium | xenium, merscope, cosmx, visium_hd, molecular_cartography, macsima, phenocycler, hyperion, ome_tif, toy_dataset |  | Technology used for the spatial data, e.g., 'xenium', 'merscope', ... |
+| `--technology` | string | xenium | `xenium`, `merscope`, `cosmx`, `visium_hd`, `molecular_cartography`, `macsima`, `phenocycler`, `hyperion`, `ome_tif`, `toy_dataset` |  | Technology used for the spatial data, e.g., 'xenium', 'merscope', ... |
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

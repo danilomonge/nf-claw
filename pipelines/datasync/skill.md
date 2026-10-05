@@ -8,7 +8,7 @@ summary: nf-core/datasync is a Nextflow pipeline for copying files and directori
 has_samplesheet: true
 input: samplesheet (sample, input, output_path, checksum_md5, checksum_sha)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: Rclone, MultiQC, R
+tools: ["Rclone", "MultiQC", "R"]
 ---
 # datasync
 

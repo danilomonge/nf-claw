@@ -21,7 +21,7 @@ nf-core/metapep pipeline parameters. Every parameter from the pinned `nextflow_s
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--version` | boolean |  | yes |  |  |  | Display version and exit. |
 
@@ -60,7 +60,7 @@ nf-core/metapep pipeline parameters. Every parameter from the pinned `nextflow_s
 | `--min-pep-len` | integer |  |  |  | ≥ 1 | 9 | Minimum length of produced peptides. |
 | `--pred-buffer-files` | integer |  | yes |  | ≥ 1 | 1000 | Number of files, which are merged in `MERGE_PREDICTION_BUFFER` |
 | `--pred-chunk-size-scaling` | integer |  | yes |  | ≥ 1 | 10 | Scaling factor for `prediction_chunk_size` parameter for usage in python scripts to reduce memory usage when handling DataFrames. |
-| `--pred-method` | string |  |  | syfpeithi, mhcflurry, mhcnuggets-class-1, mhcnuggets-class-2 |  | syfpeithi | Epitope prediction method to use |
+| `--pred-method` | string |  |  | `syfpeithi`, `mhcflurry`, `mhcnuggets-class-1`, `mhcnuggets-class-2` |  | syfpeithi | Epitope prediction method to use |
 | `--prediction-chunk-size` | integer |  |  |  | ≥ 1 | 4000000 | Maximum chunk size (#peptides) for epitope prediction jobs. |
 | `--prodigal-mode` | string |  |  |  |  | meta | Prodigal mode, 'meta' or 'single'. |
 | `--show-supported-models` | boolean |  |  |  |  |  | Display supported alleles of all prediction methods and exit. |

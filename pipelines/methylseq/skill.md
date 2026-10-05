@@ -8,7 +8,7 @@ summary: nf-core/methylseq is a bioinformatics analysis pipeline used for Methyl
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, genome)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FastQC, MultiQC, Trim Galore!, Bismark, BWA-MEM, bwa-meth, Picard, Qualimap, Preseq, rastair, Samtools, Bedtools
+tools: ["FastQC", "MultiQC", "Trim Galore!", "Bismark", "BWA-MEM", "bwa-meth", "Picard", "Qualimap", "Preseq", "rastair", "Samtools", "Bedtools"]
 ---
 # methylseq
 
@@ -46,10 +46,10 @@ Any of the optional columns above may be appended to the header when your data n
 |---|---|---|---|---|---|
 | `--input` | string (file path) |  |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--aligner` | string | bismark | bismark, bismark_hisat, bwameth, bwamem |  | Alignment tool to use. |
+| `--aligner` | string | bismark | `bismark`, `bismark_hisat`, `bwameth`, `bwamem` |  | Alignment tool to use. |
 
 ## Reference genome
-No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
+No reference genome is set by default: supply your own (e.g. `--fasta`; the `reference_genome_options` group in [reference.md](reference.md) lists every reference option). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

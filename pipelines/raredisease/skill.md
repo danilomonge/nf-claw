@@ -8,7 +8,7 @@ summary: nf-core/raredisease is a best-practice bioinformatic pipeline for calli
 has_samplesheet: true
 input: samplesheet (sample, lane, fastq_1, fastq_2, spring_1, spring_2, bam, bai, sex, phenotype, paternal_id, maternal_id, case_id)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: nf-core, Nextflow, BCFtools, BEDTools, BWA-MEM, BWA-MEM2, BWA-MEME, CADD<sup>1</sup>, DeepVariant, Chromograph, Ensembl VEP, ExpansionHunter, FastQC, Fastp, GATK, Genmod, Gens, GLnexus, Manta, Mitosalt, Mosdepth, ngs-bits-samplegender, MultiQC, Peddy, Picard, RetroSeq, rhocall, RTG Tools (vcfeval), saltshaker, Sambamba, Sentieon DNAscope, Sentieon DNASeq, SMNCopyNumberCaller, Spring, stranger, svdb, Tabix, TIDDIT, UPD, UCSC Bigwig and Bigbed, vcf2cytosure, Vcfanno, VerifyBamID2
+tools: ["BCFtools", "BEDTools", "BWA-MEM", "BWA-MEM2", "BWA-MEME", "CADD<sup>1</sup>", "DeepVariant", "Chromograph", "Ensembl VEP", "ExpansionHunter", "FastQC", "Fastp", "GATK", "Genmod", "Gens", "GLnexus", "Manta", "Mitosalt", "Mosdepth", "ngs-bits-samplegender", "MultiQC", "Peddy", "Picard", "RetroSeq", "rhocall", "RTG Tools (vcfeval)", "saltshaker", "Sambamba", "Sentieon DNAscope", "Sentieon DNASeq", "SMNCopyNumberCaller", "Spring", "stranger", "svdb", "Tabix", "TIDDIT", "UPD", "UCSC Bigwig and Bigbed", "vcf2cytosure", "Vcfanno", "VerifyBamID2"]
 ---
 # raredisease
 
@@ -36,7 +36,7 @@ This is the pinned latest release. To run a different one, list the available re
 | `bam` | string (file path) | no |  | matches ^\S+\.bam$ |
 | `bai` | string (file path) | no |  | matches ^\S+\.bai$ |
 | `sex` | integer or string | yes |  |  |
-| `phenotype` | integer | yes | 0, 1, 2 |  |
+| `phenotype` | integer | yes | `0`, `1`, `2` |  |
 | `paternal_id` | string | no |  |  |
 | `maternal_id` | string | no |  |  |
 | `case_id` | string | yes |  | matches ^\S+$ |
@@ -65,7 +65,7 @@ Any of the optional columns above may be appended to the header when your data n
 | `--intervals-y` | string |  |  | matches ^\S+\.intervals?(_list)?$ | Path to the interval list of the Y chromosome. |
 
 ## Reference genome
-**This release resolves a reference genome remotely by default.** `--genome` defaults to `GRCh38`, which is looked up in AWS iGenomes at `s3://ngi-igenomes/igenomes/`. A run that passes no reference of its own therefore reads its references over S3 — that fails on a host without access to the bucket, and downloads tens of gigabytes on one that has it. For a self-contained run, pass your own reference instead (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Set `--igenomes-ignore true` to disable the lookup entirely.
+**This release resolves a reference genome remotely by default.** `--genome` defaults to `GRCh38`, which is looked up in AWS iGenomes at `s3://ngi-igenomes/igenomes/`. A run that passes no reference of its own therefore reads its references over S3 — that fails on a host without access to the bucket, and downloads tens of gigabytes on one that has it. For a self-contained run, pass your own reference instead (e.g. `--fasta`; the `reference_file_options` group in [reference.md](reference.md) lists every reference option). Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):
@@ -104,7 +104,7 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/raredisease/blob/3.1.2/docs/output.md
 
 ## Tools this pipeline runs
-The tools/methods this pipeline runs, per the authors' own list: nf-core, Nextflow, BCFtools, BEDTools, BWA-MEM, BWA-MEM2, BWA-MEME, CADD<sup>1</sup>, DeepVariant, Chromograph, Ensembl VEP, ExpansionHunter, FastQC, Fastp, GATK, Genmod, Gens, GLnexus, Manta, Mitosalt, Mosdepth, ngs-bits-samplegender, MultiQC, Peddy, Picard, RetroSeq, rhocall, RTG Tools (vcfeval), saltshaker, Sambamba, Sentieon DNAscope, Sentieon DNASeq, SMNCopyNumberCaller, Spring, stranger, svdb, Tabix, TIDDIT, UPD, UCSC Bigwig and Bigbed, vcf2cytosure, Vcfanno, VerifyBamID2.
+The tools/methods this pipeline runs, per the authors' own list: BCFtools, BEDTools, BWA-MEM, BWA-MEM2, BWA-MEME, CADD<sup>1</sup>, DeepVariant, Chromograph, Ensembl VEP, ExpansionHunter, FastQC, Fastp, GATK, Genmod, Gens, GLnexus, Manta, Mitosalt, Mosdepth, ngs-bits-samplegender, MultiQC, Peddy, Picard, RetroSeq, rhocall, RTG Tools (vcfeval), saltshaker, Sambamba, Sentieon DNAscope, Sentieon DNASeq, SMNCopyNumberCaller, Spring, stranger, svdb, Tabix, TIDDIT, UPD, UCSC Bigwig and Bigbed, vcf2cytosure, Vcfanno, VerifyBamID2.
 
 Full list with references: https://github.com/nf-core/raredisease/blob/3.1.2/CITATIONS.md
 

@@ -42,7 +42,7 @@ nf-core/cutandrun pipeline parameters. Every parameter from the pinned `nextflow
 | `--multiqc-logo` | string |  | yes |  |  |  | Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file |
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--singularity-pull-docker-container` | boolean |  |  |  |  |  | Pull Docker container. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--validationFailUnrecognisedParams` | boolean |  | yes |  |  |  | Validation of parameters fails when an unrecognised parameter is found. |
@@ -90,7 +90,7 @@ nf-core/cutandrun pipeline parameters. Every parameter from the pinned `nextflow
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--aligner` | string |  | yes |  |  | bowtie2 | Select aligner |
-| `--consensus-peak-mode` | string |  |  | group, all |  | group | Specifies what samples to group together for consensus peaks. Options are [group, all] |
+| `--consensus-peak-mode` | string |  |  | `group`, `all` |  | group | Specifies what samples to group together for consensus peaks. Options are [group, all] |
 | `--dedup-target-reads` | boolean |  |  |  |  |  | De-duplicate target reads AND control reads (default is control only) |
 | `--end-to-end` | boolean |  |  |  |  | true | Use --end-to-end mode of Bowtie2 during alignment |
 | `--extend-fragments` | boolean |  |  |  |  | true | Specifies whether to extend paired-end fragments between the read mates when calculating coveage tracks |
@@ -105,14 +105,14 @@ nf-core/cutandrun pipeline parameters. Every parameter from the pinned `nextflow
 | `--mito-name` | string |  |  |  |  |  | Name of mitochondrial reads in reference genome. Only necessary when using a custom (non-igenomes) reference genome. |
 | `--normalisation-binsize` | integer |  |  |  |  | 50 | If normsalisation option is one of "RPKM", "CPM", "BPM" - then the binsize that the reads count is calculated on is used. |
 | `--normalisation-c` | integer |  | yes |  |  | 10000 | Normalisation constant for spike-in read normalisation |
-| `--normalisation-mode` | string |  |  | Spikein, RPKM, CPM, BPM, None |  | Spikein | Sets the target read normalisation mode. Options are: ["Spikein", "RPKM", "CPM", "BPM", "None" ] |
+| `--normalisation-mode` | string |  |  | `Spikein`, `RPKM`, `CPM`, `BPM`, `None` |  | Spikein | Sets the target read normalisation mode. Options are: ["Spikein", "RPKM", "CPM", "BPM", "None" ] |
 | `--peakcaller` | string |  |  |  |  | seacr | Selects the peak caller for the pipeline. Options are: [seacr, macs2]. More than one peak caller can be chosen and the order specifies which is a primary peak called (the first) that will be used downstream. Any secondary peak callers will be run and outputed to the results folder. |
 | `--remove-linear-duplicates` | boolean |  |  |  |  |  | De-duplicate reads based on read 1 5' start position. Relevant for assays using linear amplification with tagmentation (default is false). |
 | `--remove-mitochondrial-reads` | boolean |  |  |  |  |  | Filter mitochondrial reads |
 | `--replicate-threshold` | number |  |  |  |  | 1 | Minimum number of overlapping replicates needed for a consensus peak |
-| `--seacr-norm` | string |  |  | non, norm |  | non | SEACR normalization. |
+| `--seacr-norm` | string |  |  | `non`, `norm` |  | non | SEACR normalization. |
 | `--seacr-peak-threshold` | number |  |  |  |  | 0.05 | SEACR specifies returns the top n fraction (between 0 and 1) of peaks based on total signal within peaks. This is only used if there are no controls included with the samples and if `--use_control` is `false` |
-| `--seacr-stringent` | string |  |  | stringent, relaxed |  | stringent | SEACR stringency. |
+| `--seacr-stringent` | string |  |  | `stringent`, `relaxed` |  | stringent | SEACR stringency. |
 | `--use-control` | boolean |  |  |  |  | true | Specifies whether to use a control to normalise peak calls against (e.g. IgG) |
 
 ## reference_data_options

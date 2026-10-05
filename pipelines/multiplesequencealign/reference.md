@@ -38,7 +38,7 @@ nf-core/multiplesequencealign pipeline parameters. Every parameter from the pinn
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--version` | boolean |  | yes |  |  |  | Display version and exit. |
@@ -69,11 +69,11 @@ nf-core/multiplesequencealign pipeline parameters. Every parameter from the pinn
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--aligner` | string |  |  | CLUSTALO, FAMSA, KALIGN, LEARNMSA, MAFFT, MAGUS, MUSCLE5, TCOFFEE, REGRESSIVE, UPP, 3DCOFFEE, MTMALIGN, FOLDMASON |  |  | The aligner to be used. |
+| `--aligner` | string |  |  | `CLUSTALO`, `FAMSA`, `KALIGN`, `LEARNMSA`, `MAFFT`, `MAGUS`, `MUSCLE5`, `TCOFFEE`, `REGRESSIVE`, `UPP`, `3DCOFFEE`, `MTMALIGN`, `FOLDMASON` |  |  | The aligner to be used. |
 | `--args-aligner` | string |  |  |  |  |  | Extra arguments for the aligner tool. |
 | `--args-tree` | string |  |  |  |  |  | Extra arguments for the tree building tool. |
 | `--tools` | string (file path) |  |  |  | matches ^\S+\.(csv\|tsv\|yaml\|yml\|json)$ |  | Path to the file containing information about the tools to be deployed (toolsheet). |
-| `--tree` | string |  |  | FAMSA, CLUSTALO, MAFFT |  |  | Tool to use for tree building. |
+| `--tree` | string |  |  | `FAMSA`, `CLUSTALO`, `MAFFT` |  |  | Tool to use for tree building. |
 
 ## institutional_config_options
 

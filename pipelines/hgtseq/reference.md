@@ -21,7 +21,7 @@ nf-core/hgtseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--multiqc-logo` | string |  | yes |  |  |  | Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file |
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden-params` | boolean |  | yes |  |  |  | Show all params when using `--help` |
 | `--tracedir` | string |  | yes |  |  | ${params.outdir}/pipeline_info | Directory to keep pipeline Nextflow logs and reports. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -76,7 +76,7 @@ nf-core/hgtseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--aligner` | string |  |  | bwa-mem, bwa-mem2 |  | bwa-mem | Choose if aligner should be bwa-mem or bwa-mem2 |
+| `--aligner` | string |  |  | `bwa-mem`, `bwa-mem2` |  | bwa-mem | Choose if aligner should be bwa-mem or bwa-mem2 |
 | `--multiqc-runkraken` | boolean |  | yes |  |  | true | Choose if multiqc has data to add kraken to report |
 
 <!-- Generated from nf-core/hgtseq@683daaf41bb396839445e603152b45daa141ced4. Do not edit by hand. -->

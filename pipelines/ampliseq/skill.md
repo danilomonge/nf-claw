@@ -8,7 +8,7 @@ summary: nfcore/ampliseq is a bioinformatics analysis pipeline used for amplicon
 has_samplesheet: true
 input: samplesheet (sampleID, forwardReads, reverseReads, sample, fastq_1, fastq_2, run, control, quant_reading)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FastQC, Cutadapt, Barrnap, DADA2, Greengenes2, PR2 - Protist Reference Ribosomal Database, GTDB - Genome Taxonomy Database, SBDI-GTDB, RDP - Ribosomal Database Project, UNITE - eukaryotic nuclear ribosomal ITS region, MIDORI2 - a collection of reference databases, COIDB - CO1 Taxonomy Database, PhytoRef plastid 16S rRNA database for photosynthetic eukaryotes, Zehr lab nifH database, BOLD Plantae, nf-core/phyloplace, HMMER, MAFFT, EPA-NG, Gappa, q2-sidle, SMURF, RESCRIPt, SEPP, QIIME2, ANCOM, ANCOM-BC, ANCOM-BC2, Adonis, Phyloseq, TreeSummarizedExperiment, ITSx, ITSxRust, PICRUSt2, VSEARCH, decontam, Kraken2, MultiQC
+tools: ["FastQC", "Cutadapt", "Barrnap", "DADA2", "Greengenes2", "PR2 - Protist Reference Ribosomal Database", "GTDB - Genome Taxonomy Database", "SBDI-GTDB", "RDP - Ribosomal Database Project", "UNITE - eukaryotic nuclear ribosomal ITS region", "MIDORI2 - a collection of reference databases", "COIDB - CO1 Taxonomy Database", "PhytoRef plastid 16S rRNA database for photosynthetic eukaryotes", "Zehr lab nifH database", "BOLD Plantae", "nf-core/phyloplace", "HMMER", "MAFFT", "EPA-NG", "Gappa", "q2-sidle", "SMURF", "RESCRIPt", "SEPP", "QIIME2", "ANCOM", "ANCOM-BC", "ANCOM-BC2", "Adonis", "Phyloseq", "TreeSummarizedExperiment", "ITSx", "ITSxRust", "PICRUSt2", "VSEARCH", "decontam", "Kraken2", "MultiQC"]
 ---
 # ampliseq
 
@@ -34,7 +34,7 @@ This is the pinned latest release. To run a different one, list the available re
 | `fastq_1` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
 | `fastq_2` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
 | `run` | string or integer | no |  | matches ^\S+$ |
-| `control` | string | no | control, sample |  |
+| `control` | string | no | `control`, `sample` |  |
 | `quant_reading` | number | no |  |  |
 
 `--input` must match `^\S+\.(tsv|csv|yml|yaml|txt)$`.

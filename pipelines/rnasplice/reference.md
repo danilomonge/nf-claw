@@ -14,7 +14,7 @@ nf-core/rnasplice pipeline parameters. Every parameter from the pinned `nextflow
 |---|---|---|---|---|---|---|---|
 | `--aligner` | string |  |  |  |  | star | Specifies the alignment algorithm to use - available options are 'star_salmon', or 'star'. |
 | `--bam-csi-index` | boolean |  |  |  |  |  | Create a CSI index for BAM files instead of the traditional BAI index. This will be required for genomes with larger chromosome sizes. |
-| `--pseudo-aligner` | string |  |  | salmon |  | salmon | Specifies the pseudo aligner to use - available options are 'salmon'. Runs in addition to '--aligner'. |
+| `--pseudo-aligner` | string |  |  | `salmon` |  | salmon | Specifies the pseudo aligner to use - available options are 'salmon'. Runs in addition to '--aligner'. |
 | `--salmon-quant-libtype` | string |  |  |  |  |  | Override Salmon library type inferred based on strandedness defined in meta object. |
 | `--save-align-intermeds` | boolean |  |  |  |  |  | Save the intermediate BAM files from the alignment step. |
 | `--save-unaligned` | boolean |  |  |  |  |  | Where possible, save unaligned reads from either STAR or Salmon to the results directory. |
@@ -39,7 +39,7 @@ nf-core/rnasplice pipeline parameters. Every parameter from the pinned `nextflow
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--dexseq-dtu` | boolean |  |  |  |  |  | Run DEXSeq differential transcript usage workflow. |
-| `--dtu-txi` | string |  |  | dtuScaledTPM, scaledTPM |  | dtuScaledTPM | Generate estimated counts using dtuScaledTPM or scaledTPM abundance estimates. |
+| `--dtu-txi` | string |  |  | `dtuScaledTPM`, `scaledTPM` |  | dtuScaledTPM | Generate estimated counts using dtuScaledTPM or scaledTPM abundance estimates. |
 | `--min-feature-expr` | integer |  |  |  |  | 10 | Minimal feature expression. |
 | `--min-feature-prop` | number |  |  |  |  | 0.1 | Minimal proportion for feature expression. This value should be between 0 and 1. |
 | `--min-gene-expr` | integer |  |  |  |  | 10 | Minimal gene expression. |
@@ -68,7 +68,7 @@ nf-core/rnasplice pipeline parameters. Every parameter from the pinned `nextflow
 | `--multiqc-logo` | string |  | yes |  |  |  | Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file |
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--validationFailUnrecognisedParams` | boolean |  | yes |  |  |  | Validation of parameters fails when an unrecognised parameter is found. |
 | `--validationLenientMode` | boolean |  | yes |  |  |  | Validation of parameters in lenient more. |
@@ -85,7 +85,7 @@ nf-core/rnasplice pipeline parameters. Every parameter from the pinned `nextflow
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 | `--save-merged-fastq` | boolean |  |  |  |  |  | Save FastQ files after merging re-sequenced libraries in the results directory. |
-| `--source` | string | yes |  | fastq, genome_bam, transcriptome_bam, salmon_results |  | fastq | Source of input files. |
+| `--source` | string | yes |  | `fastq`, `genome_bam`, `transcriptome_bam`, `salmon_results` |  | fastq | Source of input files. |
 
 ## institutional_config_options
 
@@ -176,8 +176,8 @@ nf-core/rnasplice pipeline parameters. Every parameter from the pinned `nextflow
 | `--clusterevents-eps` | number |  |  |  |  | 0.05 | Maximum distance (between 0 and 1) to consider two events as members of the same cluster. |
 | `--clusterevents-isoform` | boolean |  |  |  |  | true | Cluster transcripts according to PSI values across conditions |
 | `--clusterevents-local-event` | boolean |  |  |  |  | true | Cluster events according to PSI values across conditions |
-| `--clusterevents-method` | string |  |  | OPTICS, DBSCAN |  | DBSCAN | Clustering method to use (DBSCAN, OPTICS). |
-| `--clusterevents-metric` | string |  |  | euclidean, manhattan, cosine |  | euclidean | Distance metric. |
+| `--clusterevents-method` | string |  |  | `OPTICS`, `DBSCAN` |  | DBSCAN | Clustering method to use (DBSCAN, OPTICS). |
+| `--clusterevents-metric` | string |  |  | `euclidean`, `manhattan`, `cosine` |  | euclidean | Distance metric. |
 | `--clusterevents-min-pts` | integer |  |  |  |  | 20 | Minimum number of events required per cluster. |
 | `--clusterevents-separation` | integer |  |  |  |  |  | Maximum distance in PSI space of an event to a cluster. |
 | `--clusterevents-sigthreshold` | number |  |  |  |  |  | P-value threshold to consider an event significant from the dpsi file. |
@@ -188,11 +188,11 @@ nf-core/rnasplice pipeline parameters. Every parameter from the pinned `nextflow
 | `--diffsplice-local-event` | boolean |  |  |  |  | true | Calculate differential splicing for AS events across multiple conditions with replicates. |
 | `--diffsplice-lower-bound` | integer |  |  |  |  | 0 | Lower-bound for the absolute delta PSI value to test for significance. |
 | `--diffsplice-median` | boolean |  |  |  |  |  | Use the median to calculate the Delta PSI, instead of the mean. |
-| `--diffsplice-method` | string |  |  | empirical, classical |  | empirical | The method to use to calculate the significance. |
+| `--diffsplice-method` | string |  |  | `empirical`, `classical` |  | empirical | The method to use to calculate the significance. |
 | `--diffsplice-nan-threshold` | integer |  |  |  |  | 0 | Proportion of samples with nan values allowed per condition to calculate a DeltaPSI . |
 | `--diffsplice-paired` | boolean |  |  |  |  | true | Indicates if replicates across conditions are paired. |
 | `--diffsplice-tpm-threshold` | integer |  |  |  |  | 0 | Minimum expression (calculated as average TPM value within-replicates and between-conditions) to be included in the analysis. |
-| `--generateevents-boundary` | string |  |  | S, V |  | S | Boundary type (only used for local AS events). |
+| `--generateevents-boundary` | string |  |  | `S`, `V` |  | S | Boundary type (only used for local AS events). |
 | `--generateevents-event-type` | string |  |  |  |  | SE SS MX RI FL | Space separated list of events to generate. |
 | `--generateevents-exon-length` | integer |  |  |  |  | 100 | Defines the number of nucleotides to display in the output GTF. |
 | `--generateevents-pool-genes` | boolean |  |  |  |  | true | Redefine genes by clustering together transcripts by genomic stranded overlap and sharing at least one exon. |

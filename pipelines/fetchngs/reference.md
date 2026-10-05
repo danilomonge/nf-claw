@@ -12,7 +12,7 @@ nf-core/fetchngs pipeline parameters. Every parameter from the pinned `nextflow_
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--force-sratools-download` | boolean |  | yes | false |  |  | This parameter has been deprecated. Please use '--download_method sratools' instead. |
+| `--force-sratools-download` | boolean |  | yes | `false` |  |  | This parameter has been deprecated. Please use '--download_method sratools' instead. |
 | `--help` | boolean or string |  |  |  |  |  | Display the help message. |
 | `--help-full` | boolean |  |  |  |  |  | Display the full detailed help message. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
@@ -27,7 +27,7 @@ nf-core/fetchngs pipeline parameters. Every parameter from the pinned `nextflow_
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | s3://ngi-igenomes/testdata/nf-core/pipelines/fetchngs/1.15.0/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--version` | boolean |  | yes |  |  |  | Display version and exit. |
 
@@ -36,11 +36,11 @@ nf-core/fetchngs pipeline parameters. Every parameter from the pinned `nextflow_
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--dbgap-key` | string (file path) |  |  |  |  |  | dbGaP repository key. |
-| `--download-method` | string |  |  | aspera, fastq-dl, ftp, sratools |  | ftp | Method to download FastQ files. Available options are 'aspera', 'fastq-dl', 'ftp' or 'sratools'. Default is 'ftp'. |
+| `--download-method` | string |  |  | `aspera`, `fastq-dl`, `ftp`, `sratools` |  | ftp | Method to download FastQ files. Available options are 'aspera', 'fastq-dl', 'ftp' or 'sratools'. Default is 'ftp'. |
 | `--email` | string |  |  |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary. |
 | `--ena-metadata-fields` | string |  |  |  |  |  | Comma-separated list of ENA metadata fields to fetch before downloading data. |
 | `--input` | string (file path) | yes |  |  | matches ^\S+\.(csv\|tsv\|txt)$ |  | File containing SRA/ENA/GEO/DDBJ identifiers one per line to download their associated metadata and FastQ files. |
-| `--nf-core-pipeline` | string |  |  | ampliseq, atacseq, mag, metatdenovo, rnaseq, sarek, taxprofiler, viralrecon |  |  | Name of supported nf-core pipeline e.g. 'rnaseq'. A samplesheet for direct use with the pipeline will be created with the appropriate columns. |
+| `--nf-core-pipeline` | string |  |  | `ampliseq`, `atacseq`, `mag`, `metatdenovo`, `rnaseq`, `sarek`, `taxprofiler`, `viralrecon` |  |  | Name of supported nf-core pipeline e.g. 'rnaseq'. A samplesheet for direct use with the pipeline will be created with the appropriate columns. |
 | `--nf-core-rnaseq-strandedness` | string |  |  |  |  | auto | Value for 'strandedness' entry added to samplesheet created when using '--nf_core_pipeline rnaseq'. |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 | `--sample-mapping-fields` | string |  |  |  |  | experiment_accession,run_accession,sample_accession,experiment_alias,run_alias,sample_alias,experiment_title,sample_title,sample_description | Comma-separated list of ENA metadata fields used to create a separate 'id_mappings.csv' and 'multiqc_config.yml' with selected fields that can be used to rename samples in general and in MultiQC. |

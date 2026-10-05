@@ -8,7 +8,7 @@ summary: nf-core/sarek is a workflow designed to detect variants on whole genome
 has_samplesheet: true
 input: samplesheet (patient, sample, sex, status, lane, fastq_1, fastq_2, spring_1, spring_2, table, cram, crai, bam, bai, contamination, vcf, variantcaller)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: ASCAT, alleleCount, BCFTools, BGZip, BWA-MEM, BWA-MEM2, CNVKIT, Condel, Control-FREEC, dbNSFP, DeepVariant, DragMap, EnsemblVEP, FastP, FastQC, FGBio, FreeBayes, GATK, GNU sed, goleft indexcov, HaplotypeCaller Joint Germline, LOFTEE, Manta, Mastermind, Mosdepth, MSIsensor2, MSISensorPro, MultiQC, NGSCheckMate, NVIDIA Clara Parabricks, Phenotypes, PIGZ, P7Zip, SAMtools, snpEff, SpliceAI, SpliceRegion, SPRING, Strelka2, SVDB, Tabix, TIDDIT, Varlociraptor, VCFTools, vcflib, Lofreq, MuSE, R, RColorBrewer
+tools: ["ASCAT", "alleleCount", "BCFTools", "BGZip", "BWA-MEM", "BWA-MEM2", "CNVKIT", "Condel", "Control-FREEC", "dbNSFP", "DeepVariant", "DragMap", "EnsemblVEP", "FastP", "FastQC", "FGBio", "FreeBayes", "GATK", "GNU sed", "goleft indexcov", "HaplotypeCaller Joint Germline", "LOFTEE", "Manta", "Mastermind", "Mosdepth", "MSIsensor2", "MSISensorPro", "MultiQC", "NGSCheckMate", "NVIDIA Clara Parabricks", "Phenotypes", "PIGZ", "P7Zip", "SAMtools", "snpEff", "SpliceAI", "SpliceRegion", "SPRING", "Strelka2", "SVDB", "Tabix", "TIDDIT", "Varlociraptor", "VCFTools", "vcflib", "Lofreq", "MuSE", "R", "RColorBrewer"]
 ---
 # sarek
 
@@ -29,8 +29,8 @@ This is the pinned latest release. To run a different one, list the available re
 |---|---|---|---|---|
 | `patient` | string | yes |  | matches ^\S+$ |
 | `sample` | string | yes |  | matches ^\S+$ |
-| `sex` | string | no | XX, XY, NA |  |
-| `status` | integer | no | 0, 1 |  |
+| `sex` | string | no | `XX`, `XY`, `NA` |  |
+| `status` | integer | no | `0`, `1` |  |
 | `lane` | integer or string | no |  | matches ^\S+$ |
 | `fastq_1` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
 | `fastq_2` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
@@ -62,11 +62,11 @@ Any of the optional columns above may be appended to the header when your data n
 ## Required parameters
 | parameter | type | default | allowed values | constraints | description |
 |---|---|---|---|---|---|
-| `--step` | string | mapping | mapping, markduplicates, prepare_recalibration, recalibrate, variant_calling, annotate |  | Starting step |
+| `--step` | string | mapping | `mapping`, `markduplicates`, `prepare_recalibration`, `recalibrate`, `variant_calling`, `annotate` |  | Starting step |
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Reference genome
-**This release resolves a reference genome remotely by default.** `--genome` defaults to `GATK.GRCh38`, which is looked up in AWS iGenomes at `s3://ngi-igenomes/igenomes/`. A run that passes no reference of its own therefore reads its references over S3 — that fails on a host without access to the bucket, and downloads tens of gigabytes on one that has it. For a self-contained run, pass your own reference instead (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Set `--igenomes-ignore true` to disable the lookup entirely.
+**This release resolves a reference genome remotely by default.** `--genome` defaults to `GATK.GRCh38`, which is looked up in AWS iGenomes at `s3://ngi-igenomes/igenomes/`. A run that passes no reference of its own therefore reads its references over S3 — that fails on a host without access to the bucket, and downloads tens of gigabytes on one that has it. For a self-contained run, pass your own reference instead (e.g. `--fasta`; the `reference_genome_options` group in [reference.md](reference.md) lists every reference option). Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

@@ -38,7 +38,7 @@ nf-core/mhcquant pipeline parameters. Every parameter from the pinned `nextflow_
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  | false | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -100,31 +100,31 @@ nf-core/mhcquant pipeline parameters. Every parameter from the pinned `nextflow_
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--deeplc-calibration-set-size` | number |  | yes |  |  | 0.15 | Specify the number or percentage of PSMs that should be used for calibration of the DeepLC model. |
-| `--fdr-level` | string |  |  | peptide_level_fdrs, psm_level_fdrs, protein_level_fdrs |  | peptide_level_fdrs | Specify the level at which the false discovery rate should be computed. |
+| `--fdr-level` | string |  |  | `peptide_level_fdrs`, `psm_level_fdrs`, `protein_level_fdrs` |  | peptide_level_fdrs | Specify the level at which the false discovery rate should be computed. |
 | `--fdr-threshold` | number |  |  |  |  | 0.01 | Specify the false discovery rate threshold at which peptide hits should be selected. |
 | `--feature-generators` | string |  |  |  |  | deeplc,ms2pip | Specify the feature generator that should be used for rescoring. One or multiple of basic,ms2pip,deeplc,ionmob |
 | `--global-fdr` | boolean |  |  |  |  | false | Compute global FDR and backfilter sample-specific FDRs |
-| `--ms2pip-model` | string |  |  | Immuno-HCD, timsTOF, timsTOF2023, CID, CIDch2, CID-TMT, TMT, HCD, HCDch2, TTOF5600, iTRAQ, iTRAQphospho |  | Immuno-HCD | Specify the MS²PIP model that should be used for rescoring. Checkout the MS²PIP documentation for available models. |
+| `--ms2pip-model` | string |  |  | `Immuno-HCD`, `timsTOF`, `timsTOF2023`, `CID`, `CIDch2`, `CID-TMT`, `TMT`, `HCD`, `HCDch2`, `TTOF5600`, `iTRAQ`, `iTRAQphospho` |  | Immuno-HCD | Specify the MS²PIP model that should be used for rescoring. Checkout the MS²PIP documentation for available models. |
 | `--ms2pip-model-dir` | string (directory path) |  | yes |  |  |  | Specify a local directory holding at least the MS²PIP models specified in `ms2pip_model`. |
-| `--rescoring-engine` | string |  |  | percolator, mokapot |  | percolator | Specify the rescoring engine that should be used for rescoring. Either percolator or mokapot |
+| `--rescoring-engine` | string |  |  | `percolator`, `mokapot` |  | percolator | Specify the rescoring engine that should be used for rescoring. Either percolator or mokapot |
 | `--subset-max-train` | integer |  | yes |  |  | 0 | Maximum subset for Percolator training iterations |
 
 ## search_settings
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--activation-method` | string |  |  | ALL, CID, ECD, ETD, PQD, HCD, IRMPD |  | ALL | Specify which fragmentation method was used in the MS acquisition |
+| `--activation-method` | string |  |  | `ALL`, `CID`, `ECD`, `ETD`, `PQD`, `HCD`, `IRMPD` |  | ALL | Specify which fragmentation method was used in the MS acquisition |
 | `--default-params-file-comet` | string |  | yes |  |  |  | Specify custom Comet params file. All parameters of this take precedence. |
 | `--digest-mass-range` | string |  |  |  |  | 800:2500 | Specify the mass range in Dalton that peptides should fulfill to be considered for peptide spectrum matching. |
-| `--enzyme` | string |  | yes | unspecific cleavage, no cleavage, Arg-C/P, Asp-N, Lys-C, Lys-N, Chymotrypsin, CNBr, Trypsin, Arg-C, PepsinA, Trypsin/P, glutamyl endopeptidase |  | unspecific cleavage | Specify which enzymatic restriction should be applied |
+| `--enzyme` | string |  | yes | `unspecific cleavage`, `no cleavage`, `Arg-C/P`, `Asp-N`, `Lys-C`, `Lys-N`, `Chymotrypsin`, `CNBr`, `Trypsin`, `Arg-C`, `PepsinA`, `Trypsin/P`, `glutamyl endopeptidase` |  | unspecific cleavage | Specify which enzymatic restriction should be applied |
 | `--fixed-mods` | string |  |  |  |  |  | Specify which fixed modifications should be applied to the database search |
 | `--fragment-bin-offset` | number |  |  |  |  | 0.0 | Specify the fragment bin offset to be used for the comet database search. |
 | `--fragment-mass-tolerance` | number |  |  |  |  | 0.01 | Specify the fragment mass tolerance to be used for the comet database search. |
-| `--instrument` | string |  |  | high_res, low_res |  | high_res | Comets theoretical_fragment_ions parameter: theoretical fragment ion peak representation, high_res: sum of intensities plus flanking bins, ion trap (low_res) ms/ms: sum of intensities of central M bin only |
+| `--instrument` | string |  |  | `high_res`, `low_res` |  | high_res | Comets theoretical_fragment_ions parameter: theoretical fragment ion peak representation, high_res: sum of intensities plus flanking bins, ion trap (low_res) ms/ms: sum of intensities of central M bin only |
 | `--num-hits` | integer |  |  |  |  | 1 | Specify the number of hits that should be reported for each spectrum. |
 | `--number-mods` | integer |  |  |  |  | 3 | Specify the maximum number of modifications that should be contained in a peptide sequence match. |
 | `--prec-charge` | string |  |  |  |  | 2:3 | Specify the precursor charge range that peptides should fulfill to be considered for peptide spectrum matching. |
-| `--precursor-error-units` | string |  |  | ppm, Da, amu |  | ppm | Specify the unit of the precursor mass tolerance to be used for the Comet database search. |
+| `--precursor-error-units` | string |  |  | `ppm`, `Da`, `amu` |  | ppm | Specify the unit of the precursor mass tolerance to be used for the Comet database search. |
 | `--precursor-mass-tolerance` | integer |  |  |  |  | 5 | Specify the precursor mass tolerance to be used for the Comet database search. |
 | `--remove-precursor-peak` | boolean |  |  |  |  | false | Include if you want to remove all peaks around precursor m/z |
 | `--search-presets` | string (file path) |  |  |  | matches ^\S+\.tsv$ |  | TSV file with search parameter presets. Users can supply a custom file to define their own presets. |

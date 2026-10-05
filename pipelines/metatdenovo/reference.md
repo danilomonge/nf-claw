@@ -12,10 +12,10 @@ nf-core/metatdenovo pipeline parameters. Every parameter from the pinned `nextfl
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--assembler` | string |  |  | megahit, spades |  |  | Specify the assembler to run. Possible alternatives: megahit, spades. |
+| `--assembler` | string |  |  | `megahit`, `spades` |  |  | Specify the assembler to run. Possible alternatives: megahit, spades. |
 | `--min-contig-length` | integer |  |  |  |  | 0 | Filter out contigs shorter than this. |
 | `--save-formatspades` | boolean |  |  |  |  |  | Save the formatted spades fasta file |
-| `--spades-flavor` | string |  |  | rna, isolate, sc, meta, plasmid, metaplasmid, metaviral, rnaviral |  | rna | Select which type of assembly you want to make. Default: rna |
+| `--spades-flavor` | string |  |  | `rna`, `isolate`, `sc`, `meta`, `plasmid`, `metaplasmid`, `metaviral`, `rnaviral` |  | rna | Select which type of assembly you want to make. Default: rna |
 | `--user-assembly` | string (file path) |  |  |  |  |  | Path to a fasta file with a finished assembly. Assembly will be skipped by the pipeline. |
 | `--user-assembly-name` | string |  |  |  |  | user_assembly | Name to give to the user-provided assembly. |
 
@@ -61,7 +61,7 @@ nf-core/metatdenovo pipeline parameters. Every parameter from the pinned `nextfl
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -99,7 +99,7 @@ nf-core/metatdenovo pipeline parameters. Every parameter from the pinned `nextfl
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--orf-caller` | string |  |  | prodigal, prokka, transdecoder |  |  | Specify which ORF caller to run. Possible alternatives: prodigal, prokka, transdecoder. This needs to be set unless the `--user_orfs_*` params are set. |
+| `--orf-caller` | string |  |  | `prodigal`, `prokka`, `transdecoder` |  |  | Specify which ORF caller to run. Possible alternatives: prodigal, prokka, transdecoder. This needs to be set unless the `--user_orfs_*` params are set. |
 | `--prodigal-trainingfile` | string |  |  |  |  |  | Specify a training file for prodigal. By default prodigal will learn from the input sequences |
 | `--prokka-batchsize` | integer |  | yes |  | matches ^\d+(\.\d+)?\.?\s*(K\|M\|G\|T)?B$ | 10485760 | Size of individual files annotated by Prokka in one batch. |
 | `--user-orfs-faa` | string (file path) |  |  |  |  |  | Path to a protein fasta file for user-provided ORFs. |
@@ -119,9 +119,9 @@ nf-core/metatdenovo pipeline parameters. Every parameter from the pinned `nextfl
 |---|---|---|---|---|---|---|---|
 | `--diamond-dbs` | string (file path) |  |  |  | matches ^\S+\.(csv\|tsv\|json\|yaml\|yml)$ |  | Path to comma-separated file containing information about Diamond database files you want to use for taxonomy assignment. |
 | `--diamond-top` | integer |  |  |  |  | 10 | Argument to Diamond's `--top` that controls the percentage of hits to include in the LCA. |
-| `--eukulele-db` | string |  |  | gtdb, phylodb, marmmetsp, mmetsp, eukprot |  |  | EUKulele database. |
+| `--eukulele-db` | string |  |  | `gtdb`, `phylodb`, `marmmetsp`, `mmetsp`, `eukprot` |  |  | EUKulele database. |
 | `--eukulele-dbpath` | string |  |  |  |  | ./eukulele/ | EUKulele database folder. |
-| `--eukulele-method` | string |  |  | mets, mags |  | mets | Specify which method to use for EUKulele. the alternatives are: mets (metatranscriptomics) or mags (Metagenome Assembled Genomes). default: mets |
+| `--eukulele-method` | string |  |  | `mets`, `mags` |  | mets | Specify which method to use for EUKulele. the alternatives are: mets (metatranscriptomics) or mags (Metagenome Assembled Genomes). default: mets |
 | `--skip-eukulele` | boolean |  |  |  |  |  | If enabled, skips the run of EUKulele |
 
 ## trimming_options

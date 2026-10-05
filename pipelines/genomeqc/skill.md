@@ -8,7 +8,7 @@ summary: nf-core/genomeqc is a bioinformatics pipeline that compares the quality
 has_samplesheet: true
 input: samplesheet (assembly, ncbi, fasta, gff, fastq, taxid)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: AGAT, ape, BUSCO, FastQC, FCS-GX / FCS-adaptor, GenomicRanges, GffRead, ggplot2, ggtree, Merqury, MultiQC, ncbi-genome-download, OrthoFinder, pandas, QUAST, RIdeogram, SeqKit, Shiny, tidk, tidyverse, Tiara
+tools: ["AGAT", "ape", "BUSCO", "FastQC", "FCS-GX / FCS-adaptor", "GenomicRanges", "GffRead", "ggplot2", "ggtree", "Merqury", "MultiQC", "ncbi-genome-download", "OrthoFinder", "pandas", "QUAST", "RIdeogram", "SeqKit", "Shiny", "tidk", "tidyverse", "Tiara"]
 ---
 # genomeqc
 

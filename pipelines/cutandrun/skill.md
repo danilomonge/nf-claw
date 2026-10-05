@@ -8,7 +8,7 @@ summary: nf-core/cutandrun is a best-practice bioinformatic analysis pipeline fo
 has_samplesheet: true
 input: samplesheet (group, replicate, fastq_1, fastq_2, control)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FastQC, MultiQC, bedtools, samtools, bowtie2, deeptools, seacr, macs2, picard
+tools: ["FastQC", "MultiQC", "bedtools", "samtools", "bowtie2", "deeptools", "seacr", "macs2", "picard"]
 ---
 # cutandrun
 
@@ -47,7 +47,7 @@ group,replicate,fastq_1,fastq_2,control
 | `--outdir` | string (directory path) | ./results |  |  | The output directory where the results will be saved. You have to use absolute paths to store on Cloud infrastructure. |
 
 ## Reference genome
-No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
+No reference genome is set by default: supply your own (e.g. `--fasta`; the `reference_data_options` group in [reference.md](reference.md) lists every reference option). Passing `--genome <id>` instead resolves the references from AWS iGenomes, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

@@ -8,7 +8,7 @@ summary: nf-core/bacass is a bioinformatics best-practice analysis pipeline for 
 has_samplesheet: true
 input: samplesheet (ID, R1, R2, LongFastQ, Fast5, GenomeSize)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FastQC, FastP, Porechop, NanoPlot, ToulligQC, pycoQC, Unicycler, MEGAHIT, Miniasm, Canu, Flye, Raven, Autocycler, QUAST, Prokka, DFAST, Liftoff, Medaka, Nanopolish, SAMtools, Kraken2, Rasusa, MultiQC
+tools: ["FastQC", "FastP", "Porechop", "NanoPlot", "ToulligQC", "pycoQC", "Unicycler", "MEGAHIT", "Miniasm", "Canu", "Flye", "Raven", "Autocycler", "QUAST", "Prokka", "DFAST", "Liftoff", "Medaka", "Nanopolish", "SAMtools", "Kraken2", "Rasusa", "MultiQC"]
 ---
 # bacass
 

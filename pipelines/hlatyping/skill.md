@@ -8,7 +8,7 @@ summary: nf-core/hlatyping is a bioinformatics pipeline that can be used to perf
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, bam, seq_type)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FastQC, SAMtools, Yara, OptiType, HLA-HD, MultiQC
+tools: ["FastQC", "SAMtools", "Yara", "OptiType", "HLA-HD", "MultiQC"]
 ---
 # hlatyping
 
@@ -31,7 +31,7 @@ This is the pinned latest release. To run a different one, list the available re
 | `fastq_1` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
 | `fastq_2` | string (file path) | no |  | matches ^([\S\s]*\/)?[^\s\/]+\.f(ast)?q\.gz$ |
 | `bam` | string (file path) | no |  | matches ^\S+\.bam$ |
-| `seq_type` | string | yes | dna, rna |  |
+| `seq_type` | string | yes | `dna`, `rna` |  |
 
 `--input` must match `^\S+\.csv$`.
 
@@ -49,7 +49,7 @@ Any of the optional columns above may be appended to the header when your data n
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Reference genome
-No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
+No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists the reference options). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

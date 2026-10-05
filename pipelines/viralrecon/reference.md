@@ -22,7 +22,7 @@ nf-core/viralrecon pipeline parameters. Every parameter from the pinned `nextflo
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -44,7 +44,7 @@ nf-core/viralrecon pipeline parameters. Every parameter from the pinned `nextflo
 | `--skip-noninternal-primers` | boolean |  |  |  |  |  | Set this parameter to false to add an X at the begining or end of the primer's fasta sequence to specify cutadapt that they are non-internal 5' or 3' adapters, respectively. |
 | `--skip-plasmidid` | boolean |  |  |  |  | true | Skip assembly report generation by PlasmidID. |
 | `--spades-hmm` | string (file path) |  |  |  |  |  | Path to profile HMMs specific for gene/organism to enhance SPAdes assembly. |
-| `--spades-mode` | string |  |  | rnaviral, corona, metaviral, meta, metaplasmid, plasmid, isolate, rna, bio |  | rnaviral | Specify the SPAdes mode you would like to run (default: 'rnaviral'). |
+| `--spades-mode` | string |  |  | `rnaviral`, `corona`, `metaviral`, `meta`, `metaplasmid`, `plasmid`, `isolate`, `rna`, `bio` |  | rnaviral | Specify the SPAdes mode you would like to run (default: 'rnaviral'). |
 | `--threeprime-adapters` | boolean |  |  |  |  |  | Set this parameter to true when the primer's for cutadapt are 3' adapters. Default value is false, as default primers are 5' adapters. |
 
 ## illumina_qc_read_trimming_and_filtering_options
@@ -65,7 +65,7 @@ nf-core/viralrecon pipeline parameters. Every parameter from the pinned `nextflo
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--consensus-caller` | string |  |  | ivar, bcftools |  | bcftools | Specify which consensus calling algorithm you would like to use. Available options are 'bcftools' and 'ivar' (default: 'bcftools'). |
+| `--consensus-caller` | string |  |  | `ivar`, `bcftools` |  | bcftools | Specify which consensus calling algorithm you would like to use. Available options are 'bcftools' and 'ivar' (default: 'bcftools'). |
 | `--filter-duplicates` | boolean |  |  |  |  |  | Filtered duplicates reads detected by Picard MarkDuplicates from alignments. |
 | `--ivar-trim-noprimer` | boolean |  |  |  |  |  | This option unsets the '-e' parameter in 'ivar trim' to discard reads without primers. |
 | `--ivar-trim-offset` | integer |  |  |  |  |  | This option sets the '-x' parameter in 'ivar trim' so that reads that occur at the specified offset positions relative to primer positions will also be trimmed. |
@@ -80,7 +80,7 @@ nf-core/viralrecon pipeline parameters. Every parameter from the pinned `nextflo
 | `--skip-picard-metrics` | boolean |  |  |  |  |  | Skip Picard CollectMultipleMetrics steps. |
 | `--skip-snpeff` | boolean |  |  |  |  |  | Skip SnpEff and SnpSift annotation of variants. |
 | `--skip-variants` | boolean |  |  |  |  |  | Specify this parameter to skip all of the variant calling and mapping steps in the pipeline. |
-| `--variant-caller` | string |  |  | ivar, bcftools |  |  | Specify which variant calling algorithm you would like to use. Available options are 'ivar' (default for '--protocol amplicon') and 'bcftools' (default for '--protocol metagenomic'). |
+| `--variant-caller` | string |  |  | `ivar`, `bcftools` |  |  | Specify which variant calling algorithm you would like to use. Available options are 'ivar' (default for '--protocol amplicon') and 'bcftools' (default for '--protocol metagenomic'). |
 
 ## input_output_options
 
@@ -90,8 +90,8 @@ nf-core/viralrecon pipeline parameters. Every parameter from the pinned `nextflo
 | `--input` | string (file path) |  |  |  | matches ^\S+\.csv$ |  | Path to comma-separated file containing information about the samples you would like to analyse. |
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--platform` | string |  |  | illumina, nanopore |  |  | NGS platform used to sequence the samples. |
-| `--protocol` | string |  |  | metagenomic, amplicon |  |  | Specifies the type of protocol used for sequencing. |
+| `--platform` | string |  |  | `illumina`, `nanopore` |  |  | NGS platform used to sequence the samples. |
+| `--protocol` | string |  |  | `metagenomic`, `amplicon` |  |  | Specifies the type of protocol used for sequencing. |
 
 ## institutional_config_options
 

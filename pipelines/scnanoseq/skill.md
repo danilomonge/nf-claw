@@ -8,7 +8,7 @@ summary: nf-core/scnanoseq is a bioinformatics best-practice analysis pipeline f
 has_samplesheet: true
 input: samplesheet (sample, fastq, cell_count)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: BLAZE, FastQC, IsoQuant, Minimap2, MultiQC, NanoComp, Chopper, NanoPlot, oarfish, pigz, SAMtools, ToulligQC, UMI-tools, Picard, UCSC tools, R, ggplot2, optparse, Seurat, Biopython, NumPy, Pandas, Pysam
+tools: ["BLAZE", "FastQC", "IsoQuant", "Minimap2", "MultiQC", "NanoComp", "Chopper", "NanoPlot", "oarfish", "pigz", "SAMtools", "ToulligQC", "UMI-tools", "Picard", "UCSC tools", "R", "ggplot2", "optparse", "Seurat", "Biopython", "NumPy", "Pandas", "Pysam"]
 ---
 # scnanoseq
 
@@ -44,12 +44,12 @@ sample,fastq,cell_count
 | `--input` | string (file path) |  |  | matches ^\S+\.csv$ | Path to comma-separated file containing information about the samples in the experiment. |
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 | `--gtf` | string (file path) |  |  | matches ^\S+\.gtf(\.gz\|\.zip)?$ | Path to GTF file. |
-| `--barcode-format` | string |  | 10X_3v3, 10X_3v4, 10X_5v2, 10X_5v3 |  | Specify the format for the barcode+umi. This parameter also defines a default barcode whitelist for the pipeline to use for barcode calling, this can be overridden with the 'whitelist' parameter. |
-| `--dedup-tool` | string | umitools | umitools, picard |  | Specify which tool to be used for deduplication (Options: picard, umitools) |
+| `--barcode-format` | string |  | `10X_3v3`, `10X_3v4`, `10X_5v2`, `10X_5v3` |  | Specify the format for the barcode+umi. This parameter also defines a default barcode whitelist for the pipeline to use for barcode calling, this can be overridden with the 'whitelist' parameter. |
+| `--dedup-tool` | string | umitools | `umitools`, `picard` |  | Specify which tool to be used for deduplication (Options: picard, umitools) |
 | `--quantifier` | string |  |  | matches ^(oarfish\|isoquant)(,(oarfish\|isoquant))*$ | Provide a comma-delimited options of quantifiers for the pipeline to use. Available tools: isoquant, oarfish |
 
 ## Reference genome
-No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
+No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists the reference options). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

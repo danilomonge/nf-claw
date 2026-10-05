@@ -12,7 +12,7 @@ nf-core/proteinfamilies pipeline parameters. Every parameter from the pinned `ne
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--alignment-tool` | string |  |  | famsa, mafft |  | famsa | Choose alignment tool. FAMSA is recommended as best time-memory-accuracy combination option. |
+| `--alignment-tool` | string |  |  | `famsa`, `mafft` |  | famsa | Choose alignment tool. FAMSA is recommended as best time-memory-accuracy combination option. |
 | `--clipkit-out-format` | string |  |  |  |  | clipkit | Choose the output format of the clipped alignment. |
 | `--gap-threshold` | number |  |  |  | ≥ 0.0; ≤ 1.0 | 0.5 | Multiple Sequence Alignment (MSA) positions with gappiness greater than this threshold will be trimmed |
 | `--hmmsearch-evalue-cutoff` | number |  |  |  |  | 0.001 | hmmsearch e-value cutoff threshold for reported results |
@@ -33,7 +33,7 @@ nf-core/proteinfamilies pipeline parameters. Every parameter from the pinned `ne
 | `--cluster-coverage` | number |  |  |  | ≥ 0.0; ≤ 1.0 | 0.5 | mmseqs parameter for minimum sequence coverage ratio |
 | `--cluster-seq-identity` | number |  |  |  | ≥ 0.0; ≤ 1.0 | 0.3 | mmseqs parameter for minimum sequence identity |
 | `--cluster-size-threshold` | integer |  |  |  |  | 25 | Minimum clustering chunk size threshold to create seed Multiple Sequence Alignments upon. |
-| `--clustering-tool` | string |  |  | linclust, cluster |  | cluster | Choose clustering algorithm. Either simple 'cluster' for medium size inputs, or 'linclust' for less sensitive clustering of larger datasets. |
+| `--clustering-tool` | string |  |  | `linclust`, `cluster` |  | cluster | Choose clustering algorithm. Either simple 'cluster' for medium size inputs, or 'linclust' for less sensitive clustering of larger datasets. |
 | `--save-mmseqs-chunked-fasta` | boolean |  |  |  |  |  | Save membership-filtered initial mmseqs clusters in fasta format |
 | `--save-mmseqs-clustering` | boolean |  |  |  |  |  | Save the clustering output folder of mmseqs cluster or linclust |
 | `--save-mmseqs-db` | boolean |  |  |  |  |  | Save the db output folder of mmseqs createdb |
@@ -50,7 +50,7 @@ nf-core/proteinfamilies pipeline parameters. Every parameter from the pinned `ne
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--clusters-per-chunk` | integer |  |  |  |  | 1000 | Number of clusters handed to each family generation task by the 'iterative' algorithm. |
-| `--family-generation-algorithm` | string |  |  | standard, iterative |  | standard | Choose the algorithm that turns clusters into family models. Either 'standard', aligning each cluster and building one HMM per task, or 'iterative', letting mgnifam loop HMM building, recruitment and realignment per cluster. |
+| `--family-generation-algorithm` | string |  |  | `standard`, `iterative` |  | standard | Choose the algorithm that turns clusters into family models. Either 'standard', aligning each cluster and building one HMM per task, or 'iterative', letting mgnifam loop HMM building, recruitment and realignment per cluster. |
 | `--save-iterative-family-metadata` | boolean |  |  |  |  |  | Save the family rosters and diagnostics reported by the 'iterative' algorithm |
 
 ## generic_options
@@ -67,7 +67,7 @@ nf-core/proteinfamilies pipeline parameters. Every parameter from the pinned `ne
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/proteinfamilies/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |

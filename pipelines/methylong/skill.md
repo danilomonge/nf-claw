@@ -8,7 +8,7 @@ summary: nf-core/methylong is a bioinformatics pipeline that is tailored for lon
 has_samplesheet: true
 input: samplesheet (group, sample, path, ref, method)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: FastQC, MultiQC, samtools, gunzip, pigz, minimap2, pbmm2, dorado, porechop, modkit, pb-CpG-tools, Clair3, WhatsHap, gawk, DSS, jasmine, ccsmeth, fibertools
+tools: ["FastQC", "MultiQC", "samtools", "gunzip", "pigz", "minimap2", "pbmm2", "dorado", "porechop", "modkit", "pb-CpG-tools", "Clair3", "WhatsHap", "gawk", "DSS", "jasmine", "ccsmeth", "fibertools"]
 ---
 # methylong
 
@@ -31,7 +31,7 @@ This is the pinned latest release. To run a different one, list the available re
 | `sample` | string | yes |  | matches ^\S+$ |
 | `path` | string | yes |  |  |
 | `ref` | string (file path) | yes |  | matches ^\S+\.(fa\|fasta\|fna)(\.gz)?$ |
-| `method` | string | yes | ont, pacbio |  |
+| `method` | string | yes | `ont`, `pacbio` |  |
 
 The samplesheet is a CSV with this header (the columns the schema requires); fill each value per the table above and `reference.md` (no example value is invented here):
 ```csv

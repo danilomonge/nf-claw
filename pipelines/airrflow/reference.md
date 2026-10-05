@@ -36,7 +36,7 @@ nf-core/airrflow pipeline parameters. Every parameter from the pinned `nextflow_
 | `--clonal-threshold` | string or number |  |  |  |  | auto | Set the clustering threshold Hamming distance value. Default: 'auto' |
 | `--cloneby` | string |  |  |  |  | subject_id | Name of the field used to group data files to identify clones. |
 | `--crossby` | string |  |  |  |  | subject_id | Name of the field used to identify external groups used to identify a clonal threshold. |
-| `--lineage-tree-builder` | string |  |  | raxml, igphyml |  | raxml | Lineage tree software to use to build trees within Dowser. If you change the default, also set the `lineage_tree_exec` parameter. |
+| `--lineage-tree-builder` | string |  |  | `raxml`, `igphyml` |  | raxml | Lineage tree software to use to build trees within Dowser. If you change the default, also set the `lineage_tree_exec` parameter. |
 | `--lineage-tree-exec` | string |  |  |  |  | /usr/local/bin/raxml-ng | Path to lineage tree building executable. |
 | `--lineage-trees` | boolean |  |  |  |  |  | Perform clonal lineage tree analysis. |
 | `--singlecell` | string |  |  |  |  | single_cell | Name of the field used to determine if a sample is single cell sequencing or not. |
@@ -59,7 +59,7 @@ nf-core/airrflow pipeline parameters. Every parameter from the pinned `nextflow_
 | `--multiqc-title` | string |  | yes |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/airrflow/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -82,7 +82,7 @@ nf-core/airrflow pipeline parameters. Every parameter from the pinned `nextflow_
 | `--email` | string |  |  |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary. |
 | `--input` | string (file path) | yes |  |  | matches ^\S+\.tsv$ |  | Path to comma-separated file containing information about the samples in the experiment. |
 | `--miairr` | string |  |  |  |  | ${projectDir}/assets/reveal/mapping_MiAIRR_BioSample_v1.3.1.tsv | Path to MiAIRR-BioSample mapping |
-| `--mode` | string |  |  | fastq, assembled |  | fastq | Specify the processing mode for the pipeline. Available options are "fastq" and "assembled". |
+| `--mode` | string |  |  | `fastq`, `assembled` |  | fastq | Specify the processing mode for the pipeline. Available options are "fastq" and "assembled". |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## institutional_config_options
@@ -100,7 +100,7 @@ nf-core/airrflow pipeline parameters. Every parameter from the pinned `nextflow_
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--cprimer-position` | string |  |  | R1, R2 |  | R1 | Indicate if C region primers are in the R1 or R2 reads. |
+| `--cprimer-position` | string |  |  | `R1`, `R2` |  | R1 | Indicate if C region primers are in the R1 or R2 reads. |
 | `--cprimer-start` | integer |  |  |  |  | 0 | Start position of C region primers (without counting the UMI barcode). |
 | `--cprimers` | string |  |  |  |  |  | Path to a fasta file containing the C-region primer sequences. |
 | `--primer-revpr` | boolean |  |  |  |  |  | Specify to match the tail-end of the sequence against the reverse complement of the primers. This also reverses the behavior of the --start argument, such that start position is relative to the tail-end of the sequence. (default: False)Maximum scoring error for the Presto MaxPrimer process for the C and/or V region primers identification. |
@@ -111,7 +111,7 @@ nf-core/airrflow pipeline parameters. Every parameter from the pinned `nextflow_
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--library-generation-method` | string |  |  | specific_pcr_umi, specific_pcr, dt_5p_race, dt_5p_race_umi, sc_10x_genomics, trust4 |  |  | Protocol used for the V(D)J amplicon sequencing library generation. |
+| `--library-generation-method` | string |  |  | `specific_pcr_umi`, `specific_pcr`, `dt_5p_race`, `dt_5p_race_umi`, `sc_10x_genomics`, `trust4` |  |  | Protocol used for the V(D)J amplicon sequencing library generation. |
 | `--race-linker` | string |  |  |  |  |  | Path to fasta file containing the linker sequence, if no V-region primers were used but a linker sequence is present (e.g. 5' RACE SMARTer TAKARA protocol). |
 
 ## reference_genome_options
@@ -137,9 +137,9 @@ nf-core/airrflow pipeline parameters. Every parameter from the pinned `nextflow_
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--trust4-barcode-whitelist` | string |  |  |  |  |  | path to the barcode whitelist. |
-| `--trust4-cell-barcode-read` | string |  |  | R1, R2 |  |  | Specifies which read holds the barcodes |
+| `--trust4-cell-barcode-read` | string |  |  | `R1`, `R2` |  |  | Specifies which read holds the barcodes |
 | `--trust4-read-format` | string |  |  |  |  |  | Specifies where in the read the barcodes and UMIs can be found. |
-| `--trust4-umi-read` | string |  |  | R1, R2 |  |  | Indicate if UMI indices are recorded in the R1 (default) or R2 fastq file. |
+| `--trust4-umi-read` | string |  |  | `R1`, `R2` |  |  | Indicate if UMI indices are recorded in the R1 (default) or R2 fastq file. |
 
 ## sequence_assembly_options
 
@@ -161,10 +161,10 @@ nf-core/airrflow pipeline parameters. Every parameter from the pinned `nextflow_
 | `--primer-consensus` | number |  |  |  |  | 0.6 | Maximum error for building the primer consensus in the pRESTO Buildconsensus step. |
 | `--primer-maxlen` | integer |  |  |  |  | 50 | Maximum allowed primer length when aligning the primers. |
 | `--primer-r1-extract-len` | integer |  |  |  |  | 0 | R1 primer extract length when using `--maskprimers_extract`. |
-| `--primer-r1-mask-mode` | string |  |  | cut, mask, trim, tag |  | cut | Masking mode for R1 primers. |
+| `--primer-r1-mask-mode` | string |  |  | `cut`, `mask`, `trim`, `tag` |  | cut | Masking mode for R1 primers. |
 | `--primer-r1-maxerror` | number |  |  |  |  | 0.2 | Maximum allowed error for R1 primer alignment. |
 | `--primer-r2-extract-len` | integer |  |  |  |  | 0 | R2 primer extract length when using `--maskprimers_extract`. |
-| `--primer-r2-mask-mode` | string |  |  | cut, mask, trim, tag |  | cut | Masking mode for R2 primers. |
+| `--primer-r2-mask-mode` | string |  |  | `cut`, `mask`, `trim`, `tag` |  | cut | Masking mode for R2 primers. |
 | `--primer-r2-maxerror` | number |  |  |  |  | 0.2 | Maximum allowed error for R2 primer alignment. |
 | `--skip-alignment-filter` | boolean |  |  |  |  |  | Skip filter step after alignment that ensures that locus should match the v_call chain, the sequence alignment should have at least 200 informative positions (excluding N or gaps), and maximum 10% N nucleotides in the alignment. |
 
@@ -189,14 +189,14 @@ nf-core/airrflow pipeline parameters. Every parameter from the pinned `nextflow_
 |---|---|---|---|---|---|---|---|
 | `--index-file` | boolean |  |  |  |  |  | Indicate if UMI indices are recorded in a separate index file. |
 | `--umi-length` | integer |  |  |  |  | -1 | UMI barcode length in nucleotides. Set to 0 if no UMIs present. |
-| `--umi-position` | string |  |  | R1, R2 |  | R1 | Indicate if UMI indices are recorded in the R1 (default) or R1 fastq file. |
+| `--umi-position` | string |  |  | `R1`, `R2` |  | R1 | Indicate if UMI indices are recorded in the R1 (default) or R1 fastq file. |
 | `--umi-start` | integer |  |  |  |  | 0 | UMI barcode start position in the index read. |
 
 ## vdj_annotation_options
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--fetch-germlines` | string |  |  | none, imgt, airrc-imgt |  | none | Fetch the selected germline reference bundle at runtime instead of using cached reference inputs. |
+| `--fetch-germlines` | string |  |  | `none`, `imgt`, `airrc-imgt` |  | none | Fetch the selected germline reference bundle at runtime instead of using cached reference inputs. |
 | `--productive-only` | boolean |  |  |  |  | true | Subset to productive sequences. |
 | `--reassign` | boolean |  |  |  |  | true | Whether to reassign genes if the input file is an AIRR formatted tabulated file. |
 | `--reference-fasta` | string |  |  |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/airrflow/database-cache/imgtdb_base.zip | Path to the germline reference fasta. |

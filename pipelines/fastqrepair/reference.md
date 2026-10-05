@@ -26,7 +26,7 @@ nf-core/fastqrepair pipeline parameters. Every parameter from the pinned `nextfl
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -41,7 +41,7 @@ nf-core/fastqrepair pipeline parameters. Every parameter from the pinned `nextfl
 | `--num-splits` | integer |  |  |  | ≥ 1 | 2 | FASTQ chunk numbers for parallel processing. |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. |
 | `--publish-all-tools` | boolean |  |  |  |  | false | Publish intermediate results. |
-| `--qin` | integer |  |  | 33, 64 |  | 33 | the ASCII offset for BBMap (33=Sanger, 64=old Solexa). |
+| `--qin` | integer |  |  | `33`, `64` |  | 33 | the ASCII offset for BBMap (33=Sanger, 64=old Solexa). |
 | `--skip-bbmap-repair` | boolean |  |  |  |  | false | This option tells the pipeline to skip the BBMap re-pair step. |
 
 ## institutional_config_options

@@ -8,7 +8,7 @@ summary: nf-core/metapep is a bioinformatics best-practice analysis pipeline for
 has_samplesheet: true
 input: samplesheet (condition, type, microbiome_path, alleles, weights_path)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: Entrez, Epytope, MHCflurry, MHCnuggets, MultiQC, pigz, Prodigal, SYFPEITHI, Python, biopython, numpy, pandas, R, data.table, dplyr, ggplot2, ggpubr, optparse, stringr
+tools: ["Entrez", "Epytope", "MHCflurry", "MHCnuggets", "MultiQC", "pigz", "Prodigal", "SYFPEITHI", "Python", "biopython", "numpy", "pandas", "R", "data.table", "dplyr", "ggplot2", "ggpubr", "optparse", "stringr"]
 ---
 # metapep
 
@@ -28,7 +28,7 @@ This is the pinned latest release. To run a different one, list the available re
 | column | type | required | allowed values | constraints |
 |---|---|---|---|---|
 | `condition` | string | yes |  | matches ^\S+$ |
-| `type` | string | yes | bins, assembly, taxa |  |
+| `type` | string | yes | `bins`, `assembly`, `taxa` |  |
 | `microbiome_path` | string (file path) | yes |  | matches ^\S+$ |
 | `alleles` | string | yes |  |  |
 | `weights_path` | string (file path) | no |  | matches ^\S+$ |

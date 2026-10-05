@@ -8,7 +8,7 @@ summary: QC pipeline that monitors mass spectrometer performance in ribonucleosi
 has_samplesheet: true
 input: samplesheet (id, raw_file)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: ThermoRawFileParser, MSnbase - Bioconductor package, MultiQC
+tools: ["ThermoRawFileParser", "MSnbase - Bioconductor package", "MultiQC"]
 ---
 # ribomsqc
 

@@ -12,7 +12,7 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--aligner` | string |  |  | star_salmon, star_rsem, hisat2, bowtie2_salmon |  | star_salmon | Specifies the alignment algorithm to use - available options are 'star_salmon', 'star_rsem', 'hisat2', and 'bowtie2_salmon'. |
+| `--aligner` | string |  |  | `star_salmon`, `star_rsem`, `hisat2`, `bowtie2_salmon` |  | star_salmon | Specifies the alignment algorithm to use - available options are 'star_salmon', 'star_rsem', 'hisat2', and 'bowtie2_salmon'. |
 | `--bam-csi-index` | boolean |  |  |  |  |  | Create a CSI index for BAM files instead of the traditional BAI index. This will be required for genomes with larger chromosome sizes. |
 | `--extra-bowtie2-align-args` | string |  |  |  | length ≥ 1 |  | Extra arguments to pass to Bowtie2 alignment command in addition to defaults defined by the pipeline. Only available when using --aligner bowtie2_salmon. |
 | `--extra-hisat2-align-args` | string |  |  |  | length ≥ 1 |  | Extra arguments to pass to HISAT2 alignment command in addition to defaults defined by the pipeline. Only available when using --aligner hisat2. |
@@ -24,9 +24,9 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--kallisto-quant-fraglen` | integer |  |  |  |  | 200 | In single-end mode Kallisto requires an estimated fragment length (in base pairs). Specify a default value for that here. |
 | `--kallisto-quant-fraglen-sd` | integer |  |  |  |  | 200 | In single-end mode, Kallisto requires an estimated standard error for fragment length (in base pairs). Specify a default value for that here. |
 | `--min-mapped-reads` | number |  |  |  |  | 5 | Minimum percentage of uniquely mapped reads below which samples are removed from further processing. |
-| `--pseudo-aligner` | string |  |  | salmon, kallisto |  |  | Specifies the pseudo aligner to use - available options are 'salmon'. Runs in addition to '--aligner'. |
+| `--pseudo-aligner` | string |  |  | `salmon`, `kallisto` |  |  | Specifies the pseudo aligner to use - available options are 'salmon'. Runs in addition to '--aligner'. |
 | `--pseudo-aligner-kmer-size` | integer |  |  |  |  | 31 | Kmer length passed to indexing step of pseudoaligners |
-| `--salmon-quant-libtype` | string |  |  | A, IS, ISF, ISR, IU, MS, MSF, MSR, MU, OS, OSF, OSR, OU, SF, SR, U |  |  | Override Salmon library type inferred based on strandedness defined in meta object. |
+| `--salmon-quant-libtype` | string |  |  | `A`, `IS`, `ISF`, `ISR`, `IU`, `MS`, `MSF`, `MSR`, `MU`, `OS`, `OSF`, `OSR`, `OU`, `SF`, `SR`, `U` |  |  | Override Salmon library type inferred based on strandedness defined in meta object. |
 | `--seq-center` | string |  |  |  | length ≥ 1 |  | Sequencing center information to be added to read group of BAM files. |
 | `--seq-platform` | string |  |  |  | length ≥ 1 |  | Sequencing platform information to be added to read group of BAM files. |
 | `--star-ignore-sjdbgtf` | boolean |  |  |  |  |  | When using pre-built STAR indices do not re-extract and use splice junctions from the GTF file. |
@@ -50,7 +50,7 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--multiqc-methods-description` | string (file path) |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string (directory path) |  | yes |  | length ≥ 1 | https://raw.githubusercontent.com/nf-core/test-datasets/7f1614baeb0ddf66e60be78c3d9fa55440465ac8/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  | matches ^[a-zA-Z0-9_\-\.{}]+$ |  | Suffix to add to the trace report filename. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -122,9 +122,9 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--bracken-precision` | string |  |  | D, P, C, O, F, G, S |  | S | Taxonomic level for Bracken abundance estimations. |
-| `--contaminant-screening` | string |  |  | kraken2, kraken2_bracken, sylph |  |  | Tool to use for detecting contaminants in the selected screening reads - available options are 'sylph', 'kraken2', or 'kraken2_bracken' |
-| `--contaminant-screening-input` | string |  |  | trimmed, unmapped, trim_only, raw |  | unmapped | Read set to screen for contaminants: aligner-unmapped reads (default), trimmed reads (post-BBSplit/rRNA), post-trim pre-BBSplit reads, or raw reads. |
+| `--bracken-precision` | string |  |  | `D`, `P`, `C`, `O`, `F`, `G`, `S` |  | S | Taxonomic level for Bracken abundance estimations. |
+| `--contaminant-screening` | string |  |  | `kraken2`, `kraken2_bracken`, `sylph` |  |  | Tool to use for detecting contaminants in the selected screening reads - available options are 'sylph', 'kraken2', or 'kraken2_bracken' |
+| `--contaminant-screening-input` | string |  |  | `trimmed`, `unmapped`, `trim_only`, `raw` |  | unmapped | Read set to screen for contaminants: aligner-unmapped reads (default), trimmed reads (post-BBSplit/rRNA), post-trim pre-BBSplit reads, or raw reads. |
 | `--deseq2-vst` | boolean |  |  |  |  | true | Use vst transformation instead of rlog with DESeq2. |
 | `--extra-fqlint-args` | string |  |  |  | length ≥ 1 | --disable-validator P001 | Extra arguments to pass to the fq lint command. |
 | `--kraken-db` | string |  |  |  |  |  | Database when using Kraken2/Bracken for contaminant screening. |
@@ -141,7 +141,7 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--bowtie2-rrna-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built Bowtie2 index for rRNA removal. |
 | `--remove-ribo-rna` | boolean |  |  |  |  |  | Enable the removal of reads derived from ribosomal RNA. |
 | `--ribo-database-manifest` | string (file path) |  |  |  |  | ${projectDir}/assets/rrna-db-defaults.txt | Text file containing paths to fasta files (one per line) that will be used to create the database for SortMeRNA. |
-| `--ribo-removal-tool` | string |  |  | sortmerna, ribodetector, bowtie2 |  | sortmerna | Tool to use for rRNA removal. |
+| `--ribo-removal-tool` | string |  |  | `sortmerna`, `ribodetector`, `bowtie2` |  | sortmerna | Tool to use for rRNA removal. |
 | `--sortmerna-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built sortmerna index. |
 | `--use-gpu-ribodetector` | boolean |  |  |  |  |  | Enable GPU acceleration for ribodetector. |
 
@@ -152,7 +152,7 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--extra-fastp-args` | string |  |  |  | length ≥ 1 |  | Extra arguments to pass to fastp command in addition to defaults defined by the pipeline. |
 | `--extra-trimgalore-args` | string |  |  |  | length ≥ 1 |  | Extra arguments to pass to Trim Galore! command in addition to defaults defined by the pipeline. |
 | `--min-trimmed-reads` | integer |  |  |  |  | 10000 | Minimum number of trimmed reads below which samples are removed from further processing. Some downstream steps in the pipeline will fail if this threshold is too low. |
-| `--trimmer` | string |  |  | trimgalore, fastp |  | trimgalore | Specifies the trimming tool to use - available options are 'trimgalore' and 'fastp'. |
+| `--trimmer` | string |  |  | `trimgalore`, `fastp` |  | trimgalore | Specifies the trimming tool to use - available options are 'trimgalore' and 'fastp'. |
 
 ## reference_genome_options
 
@@ -188,14 +188,14 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--umi-dedup-tool` | string |  |  | umitools, umicollapse |  | umitools | Specifies the tool to use for UMI deduplication - available options are 'umitools' and 'umicollapse'. |
+| `--umi-dedup-tool` | string |  |  | `umitools`, `umicollapse` |  | umitools | Specifies the tool to use for UMI deduplication - available options are 'umitools' and 'umicollapse'. |
 | `--umi-discard-read` | integer |  |  |  |  |  | After UMI barcode extraction discard either R1 or R2 by setting this parameter to 1 or 2, respectively. |
 | `--umitools-bc-pattern` | string |  |  |  | length ≥ 1 |  | The UMI barcode pattern to use e.g. 'NNNNNN' indicates that the first 6 nucleotides of the read are from the UMI. |
 | `--umitools-bc-pattern2` | string |  |  |  | length ≥ 1 |  | The UMI barcode pattern to use if the UMI is located in read 2. |
 | `--umitools-dedup-primary-only` | boolean |  |  |  |  |  | Filter to primary alignments before UMI-tools dedup. |
 | `--umitools-dedup-stats` | boolean |  |  |  |  |  | Generate output stats when running "umi_tools dedup". |
 | `--umitools-extract-method` | string |  |  |  |  | string | UMI pattern to use. Can be either 'string' (default) or 'regex'. |
-| `--umitools-grouping-method` | string |  |  | unique, percentile, cluster, adjacency, directional |  | directional | Method to use to determine read groups by subsuming those with similar UMIs. All methods start by identifying the reads with the same mapping position, but treat similar yet nonidentical UMIs differently. |
+| `--umitools-grouping-method` | string |  |  | `unique`, `percentile`, `cluster`, `adjacency`, `directional` |  | directional | Method to use to determine read groups by subsuming those with similar UMIs. All methods start by identifying the reads with the same mapping position, but treat similar yet nonidentical UMIs differently. |
 | `--umitools-umi-separator` | string |  |  |  | matches ^\S+$; length ≥ 1; length ≤ 1 |  | The character that separates the UMI in the read name. Most likely a colon if you skipped the extraction with UMI-tools and used other software. |
 | `--with-umi` | boolean |  |  |  |  |  | Enable UMI-based read deduplication. |
 

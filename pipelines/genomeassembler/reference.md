@@ -18,14 +18,14 @@ nf-core/genomeassembler pipeline parameters. Every parameter from the pinned `ne
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--assembler` | string |  |  | flye, hifiasm, flye_hifiasm, hifiasm_hifiasm, flye_flye, hifiasm_flye |  | hifiasm | Assembler to use. Valid choices depend on strategy; for single either `'flye'` or `'hifiasm'`, hybrid can be done with `'hifiasm'` and for scaffolded assembly provide the names of the assemblers separated with an underscore. The first assembler will be used for ONT reads, the second for HiFi reads see below: `asembler_ont` and `assembler_hifi`. |
+| `--assembler` | string |  |  | `flye`, `hifiasm`, `flye_hifiasm`, `hifiasm_hifiasm`, `flye_flye`, `hifiasm_flye` |  | hifiasm | Assembler to use. Valid choices depend on strategy; for single either `'flye'` or `'hifiasm'`, hybrid can be done with `'hifiasm'` and for scaffolded assembly provide the names of the assemblers separated with an underscore. The first assembler will be used for ONT reads, the second for HiFi reads see below: `asembler_ont` and `assembler_hifi`. |
 | `--assembler-hifi` | string |  |  |  |  |  | `assembler_hifi` assembles HiFi reads. This option is mainly useful when building more complex samplesheets. |
 | `--assembler-hifi-args` | string |  |  |  |  |  | Arguments to be passed to `assembler_hifi` (HiFi). |
 | `--assembler-ont` | string |  |  |  |  |  | `assembler_ont` assembles ONT reads. This option is mainly useful when building more complex samplesheets. |
 | `--assembler-ont-args` | string |  |  |  |  |  | Arguments to be passed to `assembler_ont` (ONT) |
-| `--assembly-scaffolding-order` | string |  |  | ont_on_hifi, hifi_on_ont |  | ont_on_hifi | When `strategy` is 'scaffold', which assembly should be scaffolded onto which? |
+| `--assembly-scaffolding-order` | string |  |  | `ont_on_hifi`, `hifi_on_ont` |  | ont_on_hifi | When `strategy` is 'scaffold', which assembly should be scaffolded onto which? |
 | `--flye-args` | string |  |  |  |  |  | Additional args for `flye`. |
-| `--flye-mode` | string |  |  | --pacbio-raw, --pacbio-corr, --pacbio-hifi, --nano-raw, --nano-corr, --nano-hq |  | --nano-hq | Flye assembly mode. |
+| `--flye-mode` | string |  |  | `--pacbio-raw`, `--pacbio-corr`, `--pacbio-hifi`, `--nano-raw`, `--nano-corr`, `--nano-hq` |  | --nano-hq | Flye assembly mode. |
 | `--genome-size` | string |  |  |  |  |  | Expected genome size, optional. |
 | `--hifiasm-args` | string |  |  |  |  |  | Extra arguments passed to `hifiasm` |
 | `--strategy` | string |  |  |  |  | single | Assembly strategy to use. Valid choices are `'single'`, `'hybrid'` and `'scaffold'`. |
@@ -39,7 +39,7 @@ nf-core/genomeassembler pipeline parameters. Every parameter from the pinned `ne
 | `--monochrome-logs` | boolean |  | yes |  |  |  | Do not use coloured log outputs. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/refs/heads/genomeassembler/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
 | `--version` | boolean |  | yes |  |  |  | Display version and exit. |
@@ -91,7 +91,7 @@ nf-core/genomeassembler pipeline parameters. Every parameter from the pinned `ne
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--medaka-model` | string |  |  |  |  |  | Model to use with `medaka`. |
-| `--polish` | string |  |  | pilon, dorado, medaka, dorado+pilon, medaka+pilon |  |  | String describing the polishing strategy. Takes priority over boolean selectors. If missing will be created from boolean selectors. |
+| `--polish` | string |  |  | `pilon`, `dorado`, `medaka`, `dorado+pilon`, `medaka+pilon` |  |  | String describing the polishing strategy. Takes priority over boolean selectors. If missing will be created from boolean selectors. |
 | `--polish-dorado` | boolean |  |  |  |  |  | Polish assembly with `dorado` (ONT only). |
 | `--polish-medaka` | boolean |  |  |  |  |  | Polish assembly with `medaka` (ONT only). |
 | `--polish-pilon` | boolean |  |  |  |  |  | Polish assembly with `pilon`. Requires short reads. |
@@ -107,7 +107,7 @@ nf-core/genomeassembler pipeline parameters. Every parameter from the pinned `ne
 | `--busco-lineage` | string |  |  |  |  | auto_euk | `BUSCO` lineage to use. |
 | `--csi-index-size` | integer |  |  |  |  | 14 | Index size to use for csi index (default: 14), creating and index of size 2^csi_index_size. See [samtools index documentation](https://www.htslib.org/doc/samtools-index.html) for details. |
 | `--merqury` | boolean |  |  |  |  | false | Run `merqury` if short reads are provided. |
-| `--qc-reads` | string |  |  | ont, hifi |  | ont | Long reads that should be used for QC when both ONT and HiFi reads are provided. Options are `'ont'` or `'hifi'`. |
+| `--qc-reads` | string |  |  | `ont`, `hifi` |  | ont | Long reads that should be used for QC when both ONT and HiFi reads are provided. Options are `'ont'` or `'hifi'`. |
 | `--quast` | boolean |  |  |  |  |  | Run `QUAST`. |
 | `--ref-map-bam` | string |  |  |  |  |  | A mapping (bam) of reads mapped to the reference can be provided for QC. If provided, alignment to reference fasta will not run. |
 
@@ -123,7 +123,7 @@ nf-core/genomeassembler pipeline parameters. Every parameter from the pinned `ne
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--hic-aligner` | string |  |  | bwa-mem2, minimap2 |  | bwa-mem2 | Aligner to use for HiC reads; default: `'bwa-mem2'`. |
+| `--hic-aligner` | string |  |  | `bwa-mem2`, `minimap2` |  | bwa-mem2 | Aligner to use for HiC reads; default: `'bwa-mem2'`. |
 | `--scaffold-hic` | boolean |  |  |  |  |  | Scaffold using HiC reads using `yahs` (requires reads). |
 | `--scaffold-links` | boolean |  |  |  |  |  | Scaffolding with `links`. |
 | `--scaffold-longstitch` | boolean |  |  |  |  |  | Scaffold with `longstitch`. |

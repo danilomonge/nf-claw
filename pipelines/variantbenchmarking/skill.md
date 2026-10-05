@@ -8,7 +8,7 @@ summary: nf-core/variantbenchmarking is designed to evaluate and validate the ac
 has_samplesheet: true
 input: samplesheet (test_vcf, test_regions, id, caller, subsample, normshift, normdist, normsizediff, maxdist, pctsize, pctseq, pctovl, refdist, chunksize, dup_to_ins, typeignore, bpDistance, percentThreshold, absoluteThreshold, maxMatches, evaluationmode, liftover, fix_prefix)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: Bcftools, BEDTools, bedops, gatk4-concordance, datavzrd, hap.py, manta, MultiQC, picard, RTG Tools, SURVIVOR, som.py, SVanalyzer, svtk, svync, tabix, truvari, UCSC, variant-extractor, witty.er, ggplot2, reshape2, pysam
+tools: ["Bcftools", "BEDTools", "bedops", "gatk4-concordance", "datavzrd", "hap.py", "manta", "MultiQC", "picard", "RTG Tools", "SURVIVOR", "som.py", "SVanalyzer", "svtk", "svync", "tabix", "truvari", "UCSC", "variant-extractor", "witty.er", "ggplot2", "reshape2", "pysam"]
 ---
 # variantbenchmarking
 
@@ -47,7 +47,7 @@ This is the pinned latest release. To run a different one, list the available re
 | `percentThreshold` | number | no |  | ≥ 0 |
 | `absoluteThreshold` | integer | no |  | ≥ 0 |
 | `maxMatches` | integer | no |  |  |
-| `evaluationmode` | string | no | sc, cts, d | length ≥ 1 |
+| `evaluationmode` | string | no | `sc`, `cts`, `d` | length ≥ 1 |
 | `liftover` | boolean | no |  |  |
 | `fix_prefix` | boolean | no |  |  |
 
@@ -68,14 +68,14 @@ Any of the optional columns above may be appended to the header when your data n
 |---|---|---|---|---|---|
 | `--input` | string (file path) |  |  | matches ^\S+\.(csv\|tsv\|yaml\|yml\|json)$ | Path to comma-separated file containing information about the samples in the experiment. |
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
-| `--analysis` | string |  | germline, somatic |  | The analysis type used by the input files |
-| `--variant-type` | string |  | small, snv, indel, structural, copynumber |  | Variant types to benchmark |
+| `--analysis` | string |  | `germline`, `somatic` |  | The analysis type used by the input files |
+| `--variant-type` | string |  | `small`, `snv`, `indel`, `structural`, `copynumber` |  | Variant types to benchmark |
 | `--method` | string |  |  | matches ^((truvari\|svanalyzer\|happy\|sompy\|rtgtools\|wittyer\|intersect\|bndeval\|concordance)?,?)*(?<!,)$ | The benchmarking methods to use. For germline small variants (SNV and INDEL) use happy and/or rtgtools, for somatic small variants (SNV and INDEL) use sompy and/or rtgtools, for structural variants use wittyer, truvari and/or svanalyzer, for copy number variations use wittyer and/or truvari. Use intersect to intersect BED files. Should be a comma-separate list of one or more of the following options: truvari, svanalyzer, happy, sompy, rtgtools, wittyer, intersect |
 | `--fasta` | string (file path) |  |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ | Path to FASTA genome file. |
 | `--fai` | string (file path) |  |  | matches ^\S+\.fai$ | Path to FAI genome file. |
 
 ## Reference genome
-No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists every accepted file, e.g. `--fasta`). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
+No reference genome is set by default: supply your own (e.g. `--fasta`; the `reference_genome_options` group in [reference.md](reference.md) lists every reference option). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):

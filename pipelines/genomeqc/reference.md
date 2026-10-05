@@ -12,7 +12,7 @@ nf-core/genomeqc pipeline parameters. Every parameter from the pinned `nextflow_
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--val-tool` | string |  |  | agat, gffread |  | agat | Tool for gxf validation. |
+| `--val-tool` | string |  |  | `agat`, `gffread` |  | agat | Tool for gxf validation. |
 
 ## busco_options
 
@@ -50,7 +50,7 @@ nf-core/genomeqc pipeline parameters. Every parameter from the pinned `nextflow_
 | `--multiqc-methods-description` | string |  |  |  |  |  | Custom MultiQC yaml file containing HTML including a methods description. |
 | `--pipelines-testdata-base-path` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/test-datasets/ | Base URL or local path to location of pipeline test dataset files |
 | `--plaintext-email` | boolean |  | yes |  |  |  | Send plain-text email instead of HTML. |
-| `--publish-dir-mode` | string |  | yes | symlink, rellink, link, copy, copyNoFollow, move |  | copy | Method used to save pipeline results to output directory. |
+| `--publish-dir-mode` | string |  | yes | `symlink`, `rellink`, `link`, `copy`, `copyNoFollow`, `move` |  | copy | Method used to save pipeline results to output directory. |
 | `--show-hidden` | boolean |  |  |  |  |  | Display hidden parameters in the help message (only works when --help or --help_full are provided). |
 | `--trace-report-suffix` | string |  | yes |  |  |  | Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss. |
 | `--validate-params` | boolean |  | yes |  |  | true | Boolean whether to validate parameters against the schema at runtime |
@@ -80,7 +80,7 @@ nf-core/genomeqc pipeline parameters. Every parameter from the pinned `nextflow_
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--ortho-version` | string |  |  | v2, v3 |  | v3 | OrthoFinder major version to run. |
+| `--ortho-version` | string |  |  | `v2`, `v3` |  | v3 | OrthoFinder major version to run. |
 | `--save-longest-isoform` | boolean |  |  |  |  |  | Publish longest protein isoform fasta files. |
 | `--save-orthofinder-results` | boolean |  |  |  |  | true | Publish orthofinder results. |
 
@@ -88,7 +88,7 @@ nf-core/genomeqc pipeline parameters. Every parameter from the pinned `nextflow_
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--container-engine` | string |  |  | docker, podman |  | docker | Container engine used to launch the interactive Shiny app. Only 'docker' and 'podman' are supported - Singularity/Apptainer does not work. |
+| `--container-engine` | string |  |  | `docker`, `podman` |  | docker | Container engine used to launch the interactive Shiny app. Only 'docker' and 'podman' are supported - Singularity/Apptainer does not work. |
 | `--genome-only` | boolean |  | yes |  |  |  | Run genomeqc on genomes only. |
 | `--kvalue` | integer |  |  |  |  | 21 | k-mer size for meryl (merqury). |
 
@@ -112,12 +112,12 @@ nf-core/genomeqc pipeline parameters. Every parameter from the pinned `nextflow_
 | `--famdb-library` | string |  |  |  |  |  | Path to pre-staged famdb h5 partition file(s). Accepts a single file path or a glob pattern (e.g. '/path/FamDB*'). Alternative to downloading via RM_db. |
 | `--famdb-lineage` | string |  |  |  |  |  | Taxonomic lineage to filter repeat families from famdb (e.g. 'hymenoptera'). Omit to export all families. |
 | `--is-plant` | boolean |  |  |  |  |  | Set to true for plant genomes (passed to HiTE). |
-| `--repeatmasker-speed` | string |  |  | default, q, qq |  | qq | RepeatMasker sensitivity/speed mode. 'default' is most sensitive; 'q' (quick) is ~5x faster; 'qq' (rush) is fastest with lowest sensitivity. |
+| `--repeatmasker-speed` | string |  |  | `default`, `q`, `qq` |  | qq | RepeatMasker sensitivity/speed mode. 'default' is most sensitive; 'q' (quick) is ~5x faster; 'qq' (rush) is fastest with lowest sensitivity. |
 | `--run-repeatmodeler` | boolean |  |  |  |  |  | Run de novo repeat discovery with RepeatModeler before masking. Disabled by default — RepeatModeler typically requires 24 CPUs and 24–48 h per genome. When false, only the curated famdb library is used. |
-| `--te` | string |  |  | hite, repeatmasker |  |  | TE annotation method to run. Use 'hite' for HiTE or 'repeatmasker' for the full RepeatMasker pipeline. Omit to skip TE annotation. 'hite' does not support -profile conda/mamba - use `-profile docker`, `-profile singularity`, or `-profile podman` instead. |
+| `--te` | string |  |  | `hite`, `repeatmasker` |  |  | TE annotation method to run. Use 'hite' for HiTE or 'repeatmasker' for the full RepeatMasker pipeline. Omit to skip TE annotation. 'hite' does not support -profile conda/mamba - use `-profile docker`, `-profile singularity`, or `-profile podman` instead. |
 | `--te-cluster-coverage` | number |  |  |  | ≥ 0; ≤ 1 | 0.8 | Minimum alignment coverage threshold (0.0–1.0) for repeat library clustering. Passed as -aS to CD-HIT-EST and -c (with --cov-mode 1) to MMseqs2. |
 | `--te-cluster-identity` | number |  |  |  | ≥ 0; ≤ 1 | 0.8 | Minimum sequence identity threshold (0.0–1.0) for repeat library clustering. Passed as -c to CD-HIT-EST and --min-seq-id to MMseqs2. |
-| `--te-clusterer` | string |  |  | mmseqs, linclust, cdhit |  | linclust | Clustering tool used to dereplicate the repeat library before RepeatMasker. 'mmseqs' uses MMseqs2 easy-cluster; 'linclust' (default) uses MMseqs2 easy-linclust (linear time, less sensitive); 'cdhit' uses CD-HIT-EST. |
+| `--te-clusterer` | string |  |  | `mmseqs`, `linclust`, `cdhit` |  | linclust | Clustering tool used to dereplicate the repeat library before RepeatMasker. 'mmseqs' uses MMseqs2 easy-cluster; 'linclust' (default) uses MMseqs2 easy-linclust (linear time, less sensitive); 'cdhit' uses CD-HIT-EST. |
 
 ## tidk_options
 
@@ -131,13 +131,13 @@ nf-core/genomeqc pipeline parameters. Every parameter from the pinned `nextflow_
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--circular-rings` | string |  |  |  |  |  | Circular layout only: which summary stats to draw as rings. |
-| `--quality-preset` | string |  |  | generic, vertebrate, insect, plant, fungi, bacteria |  |  | Circular layout only: phylogenetic-group thresholds used to score the quality (traffic-light) rings. |
+| `--quality-preset` | string |  |  | `generic`, `vertebrate`, `insect`, `plant`, `fungi`, `bacteria` |  |  | Circular layout only: phylogenetic-group thresholds used to score the quality (traffic-light) rings. |
 | `--quality-thresholds` | string |  |  |  |  |  | Circular layout only: override individual --quality_preset cut-offs. |
 | `--show-ring-values` | boolean |  |  |  |  | false | Circular layout only: print each value on its ring. |
 | `--skip-plots-genome-anno` | string |  |  |  | matches ^(ch_plot\|nseqs_plot\|ortho_plot\|len_plot\|gene_plot\|n50_plot\|busco_gen_plot\|busco_prot_plot\|te_plot\|fcs_plot)(,(ch_plot\|nseqs_plot\|ortho_plot\|len_plot\|gene_plot\|n50_plot\|busco_gen_plot\|busco_prot_plot\|te_plot\|fcs_plot))*$ | nseqs_plot | Skip these stat plots in the genome and annotation tree plot. |
 | `--skip-plots-genome-only` | string |  |  |  | matches ^(ch_plot\|nseqs_plot\|ortho_plot\|len_plot\|n50_plot\|busco_gen_plot\|te_plot\|fcs_plot)(,(ch_plot\|nseqs_plot\|ortho_plot\|len_plot\|n50_plot\|busco_gen_plot\|te_plot\|fcs_plot))*$ | nseqs_plot | Skip these stat plots in the genome only tree plot. |
 | `--tree-margin` | string |  | yes |  |  |  | Tree's right margin size for the non-circular layouts. |
 | `--tree-scale` | integer |  |  |  |  |  | Modifies scale of the tree plot in the tree summary, default value is '0.0005'. Useful if tree tips overlap with the concatenated plots. Very sensitive, increase/decrease by two-fold. |
-| `--tree-style` | string |  |  | roundrect, ellipse, rectangular, circular |  | roundrect | Tree layout style for the tree summary plot. |
+| `--tree-style` | string |  |  | `roundrect`, `ellipse`, `rectangular`, `circular` |  | roundrect | Tree layout style for the tree summary plot. |
 
 <!-- Generated from nf-core/genomeqc@bce44e5b558e21b38d4dd2b6521302246b4dae6d. Do not edit by hand. -->
