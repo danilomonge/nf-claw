@@ -178,6 +178,8 @@ def main(argv: list[str] | None = None) -> int:
             if args.pipeline_version:
                 st = versions.ensure(args.name, args.pipeline_version,
                                      pipelines_dir=pdir, repo_root=root)
+                for note in st.notes:                          # e.g. `dev` is unreleased code
+                    print(f"warning: {note}", file=sys.stderr)
                 if versions.is_cached(st):                     # a non-pinned version → generate on demand
                     skill_path, ref_path = versions.generate_docs(st, dest_dir=st.path.parent)
                     print(skill_path.read_text(encoding="utf-8"))
@@ -194,15 +196,22 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "versions":
         try:
             avail = versions.available(args.name, pipelines_dir=pdir, repo_root=root)
+            dev_commit, dev_fresh = versions.dev_head(args.name, pipelines_dir=pdir,
+                                                      repo_root=root)
         except NfclawError as exc:
             print(str(exc), file=sys.stderr)
             return 1
         if not avail:
             print(f"No releases found for {args.name} (check network connectivity).",
                   file=sys.stderr)
-            return 0
         for tag, is_pin in avail:
             print(f"{tag}\tlatest (pinned)" if is_pin else tag)
+        # The unreleased development branch goes last, after every release: it is not one, and a
+        # caller reading the first line still gets the newest release.
+        if dev_commit:
+            when = "" if dev_fresh else ", last fetched — remote unreachable"
+            print(f"{versions.DEV_BRANCH}\tdevelopment branch, unreleased "
+                  f"(head {dev_commit[:12]}{when})")
         return 0
 
     if args.cmd == "verify":
@@ -218,6 +227,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if cmp.structurally_equal else 1
 
     if args.cmd == "run":
+        shown: list[str] = []
+
+        def warn(message: str) -> None:                       # advisory, non-blocking
+            shown.append(message)
+            print(f"warning: {message}", file=sys.stderr, flush=True)
+
         try:
             res = orchestration.run_pipeline(
                 args.name, repo_root=root,
@@ -231,12 +246,14 @@ def main(argv: list[str] | None = None) -> int:
                 pipeline_version=args.pipeline_version,
                 nxf_ver=args.nxf_ver, nxf_env=_parse_nxf_env(args.nxf_env),
                 allow_spaces=args.allow_spaces, configs=args.config,
-                limits=resources.parse(args.limit_cpus, args.limit_memory, args.limit_time))
+                limits=resources.parse(args.limit_cpus, args.limit_memory, args.limit_time),
+                on_warning=warn)
         except NfclawError as exc:
             print(str(exc), file=sys.stderr)
             return 1
-        for w in res.warnings:                                # advisory, non-blocking
-            print(f"warning: {w}", file=sys.stderr)
+        for w in res.warnings:                                # any not already said before launch
+            if w not in shown:
+                warn(w)
         print(res.command)
         rep = res.outputs_report
         if rep is not None:                                   # real run — surface where results landed

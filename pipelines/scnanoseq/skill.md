@@ -22,7 +22,7 @@ nfclaw run scnanoseq --input samplesheet.csv --outdir results --gtf <gtf> --barc
 nextflow run pipelines/scnanoseq/upstream -profile docker --input samplesheet.csv --outdir results --gtf <gtf> --barcode-format <barcode_format> --quantifier <quantifier>
 ```
 
-This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions scnanoseq` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show scnanoseq --pipeline-version X.Y.Z` prints that release's docs).
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions scnanoseq` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show scnanoseq --pipeline-version X.Y.Z` prints that release's docs). To run unreleased development code instead, add `--pipeline-version dev`: nfclaw resolves nf-core's `dev` branch to its current head commit at run time and records that commit in provenance (`nfclaw show scnanoseq --pipeline-version dev` prints the docs generated from it). Use it only for changes not yet released.
 
 ## Inputs
 | column | type | required | allowed values | constraints |

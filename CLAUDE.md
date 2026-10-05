@@ -45,8 +45,27 @@ The default is always the pinned latest release. To run any other published rele
    generated from *that* release's schema (a `reference.md` is written alongside it). The params, flags
    and validation all come from X.Y.Z, not from latest.
 3. Run it: `nfclaw run <name> --pipeline-version X.Y.Z --input samplesheet.csv --outdir results -profile docker`.
-Only real release tags are accepted (semver, with or without a leading `v`); an unknown version fails fast
-and lists what is available. Provenance records the exact version that ran.
+Only real release tags are accepted (semver, with or without a leading `v`) — plus `dev`, below; an
+unknown version fails fast and lists what is available. Provenance records the exact version that ran.
+
+## To run unreleased development code (`dev`)
+Every nf-core pipeline develops on a `dev` branch and releases from it, so `dev` holds the changes
+that are not in any release yet. To run it (the `nextflow run nf-core/<name> -r dev` equivalent):
+`nfclaw run <name> --pipeline-version dev --input samplesheet.csv --outdir results -profile docker`
+— every other flag works as for a release, e.g.
+`nfclaw run fetchngs --pipeline-version dev --input ids.csv --outdir /path/to/out -profile binac2 --nxf-ver 25.10.4`.
+- `dev` moves, so each run resolves it to the branch's **current head commit** and materializes that
+  commit under `pipelines/<name>/.versions/dev-<commit12>/` (git-ignored, one immutable tree per commit,
+  so a replay or a concurrent run never sees the code change). The run prints a warning naming the
+  commit; provenance records `version: dev` plus that exact commit, and `commands.sh` replays it.
+- Read its docs first — params can differ from the release: `nfclaw show <name> --pipeline-version dev`
+  prints the `skill.md` generated from that commit (`reference.md` is written beside it).
+- `nfclaw versions <name>` lists `dev` (with its head commit) after the releases.
+- Offline, nfclaw falls back to the last `dev` head it fetched and says so; a pipeline with no `dev`
+  branch fails fast. `--resume` warns when `dev` moved since the run it continues (Nextflow then
+  re-runs only the tasks the change touched).
+Prefer a release for results you need to reproduce from a version number; use `dev` for fixes or
+features that are not released yet.
 
 ## Tuning the Nextflow engine / environment
 `nfclaw run` inherits your shell environment and passes it through to Nextflow. Two run flags make the

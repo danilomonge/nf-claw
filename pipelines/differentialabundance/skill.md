@@ -22,7 +22,7 @@ nfclaw run differentialabundance --input samplesheet.csv --outdir results --filt
 nextflow run pipelines/differentialabundance/upstream -profile docker --input samplesheet.csv --outdir results --filtering-min-abundance <filtering_min_abundance>
 ```
 
-This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions differentialabundance` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show differentialabundance --pipeline-version X.Y.Z` prints that release's docs).
+This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions differentialabundance` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show differentialabundance --pipeline-version X.Y.Z` prints that release's docs). To run unreleased development code instead, add `--pipeline-version dev`: nfclaw resolves nf-core's `dev` branch to its current head commit at run time and records that commit in provenance (`nfclaw show differentialabundance --pipeline-version dev` prints the docs generated from it). Use it only for changes not yet released.
 
 ## Inputs
 | column | type | required | allowed values | constraints |
