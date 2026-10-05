@@ -173,7 +173,7 @@ def _failure(code: int, run_log: runlog.RunLog) -> NfclawError:
         message += ("\n  and on stderr:\n" if on_stdout else " Nextflow reported on stderr:\n") + \
             _quote(on_stderr)
     causes = (runlog.nextflow_log_causes(run_log.nextflow_log)
-              if "nextflow_log" in details else [])
+              if "nextflow_log" in details and run_log.nextflow_log is not None else [])
     if causes:
         message += "\n  The underlying cause, from the Nextflow log:\n" + _quote(causes)
     task_hint = (" The failing task's complete output is in .command.err and .command.log beside "

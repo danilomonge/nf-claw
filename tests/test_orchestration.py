@@ -430,11 +430,13 @@ def test_run_log_never_claims_success_when_nfclaw_fails_after_nextflow(tmp_path,
         raise OSError("No space left on device")
 
     monkeypatch.setattr(orchestration.provenance, "write", disk_full)
-    with pytest.raises(OSError):
+    from runner.errors import NfclawError
+    with pytest.raises(NfclawError) as exc:                  # a clear error, not a raw OSError
         orchestration.run_pipeline(
             "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
             profile="docker", params_file=None, cli_overrides={}, resume=False,
             demo=True, check_only=False, write_provenance=True, timeout_seconds=10)
+    assert "run succeeded" in str(exc.value) and isinstance(exc.value.__cause__, OSError)
     log = (tmp_path / "out" / "provenance" / "logs" / "run.log").read_text()
     assert "No space left on device" in log
     last = log.rstrip().splitlines()[-1]
@@ -1074,3 +1076,46 @@ def test_params_file_non_string_input_is_reported_not_crashed(tmp_path, monkeypa
     with pytest.raises(NfclawError) as exc:
         _check_with_params_file(root, tmp_path, {"input": 42})
     assert exc.value.code == ErrorCode.PARAMS_INVALID and "expects a string" in str(exc.value)
+
+
+def test_provenance_failure_after_a_successful_run_is_a_clear_error(tmp_path, monkeypatch):
+    # A full disk (or an unreadable result) while the bundle is written escaped as a raw OSError
+    # traceback, so a run that had succeeded read as a crash with no word about its results.
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    root = _make_pipeline(tmp_path, "mini")
+    out = tmp_path / "out"
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.setattr(orchestration.execution, "run",
+                        lambda *a, **k: (out / "result.txt").write_text("r"))
+    monkeypatch.setattr(orchestration.provenance, "_nextflow_version", lambda *a, **k: "")
+
+    def disk_full(path):
+        raise OSError(28, "No space left on device", str(path))
+
+    monkeypatch.setattr(orchestration.provenance, "_sha256", disk_full)
+    with pytest.raises(NfclawError) as exc:
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=out,
+            profile="docker", params_file=None, cli_overrides={}, resume=False,
+            demo=True, check_only=False, write_provenance=True, timeout_seconds=10)
+    msg = str(exc.value)
+    assert exc.value.code == ErrorCode.ENVIRONMENT
+    assert "run succeeded" in msg and "No space left on device" in msg and "--resume" in msg
+    assert (out / "result.txt").exists()
+
+
+def test_outdir_that_cannot_be_created_is_a_clear_error(tmp_path, monkeypatch):
+    # Preflight's writability check is advisory (root, ACLs, /proc); mkdir is the authority, and its
+    # failure was a raw traceback.
+    import pytest
+    from runner.errors import ErrorCode, NfclawError
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    (tmp_path / "notes.txt").write_text("x")
+    with pytest.raises(NfclawError) as exc:
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "notes.txt" / "out",
+            profile="docker", params_file=None, cli_overrides={}, resume=False,
+            demo=True, check_only=False, write_provenance=True, timeout_seconds=10)
+    assert exc.value.code == ErrorCode.ENVIRONMENT and "could not be created" in str(exc.value)

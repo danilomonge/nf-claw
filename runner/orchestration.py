@@ -180,7 +180,13 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     if check_only:
         staging = Path(tempfile.mkdtemp(prefix="nfclaw-check-"))
     else:
-        outdir.mkdir(parents=True, exist_ok=True)
+        try:
+            outdir.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:            # preflight judged writability; this is the authority
+            raise NfclawError(ErrorCode.ENVIRONMENT,
+                              f"--outdir could not be created: {exc.strerror or exc} "
+                              f"({exc.filename or outdir})",
+                              fix="Pass an --outdir in a directory you can write to.") from exc
         staging = outdir / "provenance"
     resolved = parameters.resolve_path_params(merged, param_schema)
     params_file_out = parameters.write_params_file(resolved, staging / "params.json")
@@ -264,6 +270,17 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
             what = "interrupted" if isinstance(exc, KeyboardInterrupt) else "failed"
             run_log.fail(f"{what} after Nextflow succeeded ({type(exc).__name__}: {exc})",
                          f"nfclaw: {type(exc).__name__}: {exc}")
+            if isinstance(exc, OSError):
+                # Summarising the outputs and writing the bundle reads every result and writes
+                # beside them: a full disk or an unreadable file is a clear error that says the
+                # results exist, not a traceback that reads like the run itself crashed.
+                raise NfclawError(
+                    ErrorCode.ENVIRONMENT,
+                    f"The run succeeded, but its provenance bundle could not be written: "
+                    f"{exc.strerror or exc}" + (f" ({exc.filename})" if exc.filename else ""),
+                    fix=f"The results are in {outdir}. Free disk space or fix the permission, then "
+                        "rerun the same command with --resume: every task is reused from the cache "
+                        "and the bundle is written.") from exc
             raise
     finally:
         run_log.finish()

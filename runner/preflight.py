@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -49,6 +50,8 @@ def check_environment(*, profile: str, output_dir: Path, submodule: SubmoduleSta
     # `iterdir()`/`mkdir()` raise NotADirectoryError/FileExistsError as an uncaught traceback.
     if output_dir.exists() and not output_dir.is_dir():
         issues.append(f"--outdir exists but is not a directory: {output_dir}")
+    elif (unwritable := _unwritable_outdir(output_dir)) is not None:
+        issues.append(unwritable)
     # A non-empty outdir is a guard for an actual run — it would clobber a previous run's results.
     # `--check` only validates params and prints the command without launching, so this guard must
     # not block it: a dry run against an existing results directory is legitimate.
@@ -58,6 +61,24 @@ def check_environment(*, profile: str, output_dir: Path, submodule: SubmoduleSta
     issues += _space_issues(repo_root=repo_root, output_dir=output_dir,
                             work_dir=work_dir, allow_spaces=allow_spaces)
     return issues
+
+
+def _unwritable_outdir(output_dir: Path) -> str | None:
+    """Why the run could not write `--outdir` (or create it), or None.
+
+    nfclaw creates the directory and writes its provenance bundle there before Nextflow starts, so a
+    path under a directory the caller cannot write (`--outdir /data/results` with a root-owned /data)
+    failed with a raw PermissionError. Judged on the directory itself, or on its nearest existing
+    ancestor when it does not exist yet — the one `mkdir` would have to write into."""
+    target = output_dir
+    while not target.exists() and target != target.parent:
+        target = target.parent
+    if target != output_dir and not target.is_dir():
+        return f"--outdir cannot be created: {target} is not a directory"
+    if not os.access(target, os.W_OK | os.X_OK):
+        return (f"--outdir is not writable: {output_dir}" if target == output_dir else
+                f"--outdir cannot be created: {target} is not writable ({output_dir})")
+    return None
 
 
 def _space_issues(*, repo_root: Path, output_dir: Path, work_dir: Path | None,

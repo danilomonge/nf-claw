@@ -133,3 +133,36 @@ def test_no_spaces_no_block(tmp_path, monkeypatch):
                                          submodule=_st(tmp_path / "up"), repo_root=tmp_path,
                                          resume=False, work_dir=tmp_path / "work")
     assert not any("space" in i for i in issues)
+
+
+def test_outdir_that_cannot_be_written_is_flagged(tmp_path, monkeypatch):
+    # `--outdir /data/results` under a directory the caller cannot write failed with a raw
+    # PermissionError once nfclaw tried to create it. (os.access is stubbed: tests may run as root.)
+    import os
+    monkeypatch.setattr(preflight.shutil, "which", lambda x: "/usr/bin/" + x)
+    locked = tmp_path / "data"
+    locked.mkdir()
+    real_access = os.access
+    monkeypatch.setattr(preflight.os, "access",
+                        lambda p, mode: False if Path(p) == locked else real_access(p, mode))
+
+    def issues_for(out):
+        return preflight.check_environment(profile="singularity", output_dir=out,
+                                           submodule=_st(tmp_path / "up"),
+                                           repo_root=tmp_path / "repo", resume=False,
+                                           check_only=True)
+    # Not yet created: judged on the nearest existing ancestor, however deep the new path is.
+    assert any(f"cannot be created: {locked} is not writable" in i
+               for i in issues_for(locked / "results" / "run1"))
+    assert any(f"--outdir is not writable: {locked}" in i for i in issues_for(locked))
+    assert not any("writ" in i for i in issues_for(tmp_path / "fine" / "results"))
+
+
+def test_outdir_under_a_file_is_flagged(tmp_path, monkeypatch):
+    monkeypatch.setattr(preflight.shutil, "which", lambda x: "/usr/bin/" + x)
+    (tmp_path / "notes.txt").write_text("x")
+    issues = preflight.check_environment(profile="singularity",
+                                         output_dir=tmp_path / "notes.txt" / "results",
+                                         submodule=_st(tmp_path / "up"),
+                                         repo_root=tmp_path / "repo", resume=False)
+    assert any("notes.txt is not a directory" in i for i in issues)
