@@ -1,0 +1,16 @@
+{
+  "title": "nf-core/mini_up",
+  "description": "Synthetic upstream pipeline for chain tests.",
+  "definitions": {
+    "input_output_options": {
+      "title": "Input/output options",
+      "properties": {
+        "input": {"type": "string", "format": "file-path", "description": "Id list."},
+        "outdir": {"type": "string", "format": "directory-path", "description": "Output directory."},
+        "nf_core_pipeline": {"type": "string", "enum": ["mini", "other"], "description": "Downstream samplesheet format."},
+        "gtf": {"type": "string", "format": "file-path", "description": "Annotation."}
+      },
+      "required": ["input", "outdir"]
+    }
+  }
+}
