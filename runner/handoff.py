@@ -111,9 +111,13 @@ def parse_rule(data: Any, *, upstream: str, downstream: str, origin: str) -> Rul
             raise bad(f"'{target}': unknown keys for a {kind} source: {', '.join(extra)}")
         if "optional" in src and not isinstance(src["optional"], bool):
             raise bad(f"'{target}': 'optional' must be true or false")
-        if kind in ("samplesheet", "file") and not _relative(src[kind]):
+        if kind == "samplesheet" and not _relative(src[kind]):
             raise bad(f"'{target}': {src[kind]!r} must be a relative path inside the upstream "
                       "outdir")
+        if kind == "file" and not (_relative(src[kind]) or (
+                isinstance(src[kind], list) and src[kind] and all(map(_relative, src[kind])))):
+            raise bad(f"'{target}': {src[kind]!r} must be a relative path inside the upstream "
+                      "outdir, or a list of them (tried in order)")
         if kind == "upstream_param" and not (isinstance(src[kind], str) and src[kind]):
             raise bad(f"'{target}': 'upstream_param' must name an upstream parameter")
         if kind == "samplesheet":
@@ -221,6 +225,10 @@ class _Unresolved(Exception):
     """A source that cannot be produced from this upstream run (the message says why)."""
 
 
+class _NoMatch(_Unresolved):
+    """Nothing in the upstream outdir matches a pattern (as opposed to several files matching)."""
+
+
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as fh:
@@ -279,12 +287,27 @@ def _one_match(root: Path, pattern: str) -> Path:
     found = sorted(p for p in root.glob(pattern)
                    if p.is_file() and is_result(p.relative_to(root)))
     if not found:
-        raise _Unresolved(f"nothing in {root} matches {pattern!r}")
+        raise _NoMatch(f"nothing in {root} matches {pattern!r}")
     if len(found) > 1:
         shown = ", ".join(p.relative_to(root).as_posix() for p in found[:5])
         raise _Unresolved(f"{len(found)} files match {pattern!r} ({shown}); a handoff needs exactly "
                           "one — give the stage an inline handoff with a narrower pattern")
     return found[0]
+
+
+def _first_match(root: Path, patterns: str | list[str]) -> Path:
+    """The file the first pattern that matches anything names (it must name exactly one). An ordered
+    list says which output to prefer when a pipeline can write it in several places — rnaseq's
+    merged counts sit under whichever quantifier ran, and its test profile runs two."""
+    if isinstance(patterns, str):
+        return _one_match(root, patterns)
+    for pattern in patterns:
+        try:
+            return _one_match(root, pattern)
+        except _NoMatch:
+            continue                                      # several files matching is not skipped
+    raise _NoMatch(f"nothing in {root} matches any of "
+                      + ", ".join(repr(p) for p in patterns))
 
 
 def _fill(template: str, values: Mapping[str, str]) -> str:
@@ -413,7 +436,7 @@ def _resolve(rule: Rule, target: str, src: Source, *, upstream_outdir: Path,
                 details={"issues": issues, "snapshot": str(path)})
         return str(path), derived, {"sha256": sha256_file(path)}
     if src.kind == "file":
-        found = _one_match(upstream_outdir, src.spec["file"])
+        found = _first_match(upstream_outdir, src.spec["file"])
         return str(found), [found.relative_to(upstream_outdir).as_posix()], {}
     params, recorded_in = used
     value = params.get(src.spec["upstream_param"])

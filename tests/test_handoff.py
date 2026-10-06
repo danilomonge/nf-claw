@@ -268,3 +268,28 @@ def test_upstream_param_prefers_the_pipelines_own_resolved_params(library, finis
     assert hand.params == {"fasta": "/refs/test.gtf"}                  # the latest launch's
     assert list(hand.record["params"]["fasta"]["derived_from"]) == [
         "pipeline_info/params_2026-01-02_10-00-00.json"]
+
+
+def test_file_source_takes_the_first_candidate_that_matches(library, finished_run, tmp_path):
+    # rnaseq writes its merged counts under the quantifier's directory, and its test profile runs a
+    # pseudo-aligner beside the aligner: an ordered list of candidates picks one deterministically.
+    _, down = _trees(library("mini_up", "mini"))
+    up = finished_run(tmp_path / "up", {"star_salmon/counts.tsv": "a", "salmon/counts.tsv": "b"})
+    rule = _rule({"params": {"fasta": {"file": ["star_rsem/counts.tsv", "star_salmon/counts.tsv",
+                                                "salmon/counts.tsv"]}}})
+    hand = handoff.materialize(rule, upstream_outdir=up, downstream_tree=down, dest=tmp_path / "h")
+    assert hand.params == {"fasta": str(up / "star_salmon" / "counts.tsv")}
+
+
+def test_file_source_candidates_none_matching(library, finished_run, tmp_path):
+    _, down = _trees(library("mini_up", "mini"))
+    up = finished_run(tmp_path / "up", {"other.tsv": "x"})
+    rule = _rule({"params": {"fasta": {"file": ["a/x.tsv", "b/x.tsv"]}}})
+    with pytest.raises(NfclawError, match="nothing in .* matches any of 'a/x.tsv', 'b/x.tsv'"):
+        handoff.materialize(rule, upstream_outdir=up, downstream_tree=down, dest=tmp_path / "h")
+
+
+@pytest.mark.parametrize("bad", [[], ["ok.tsv", "../escape.tsv"], ["ok.tsv", 3]])
+def test_file_source_candidates_must_be_relative_paths(bad):
+    with pytest.raises(NfclawError, match="relative path"):
+        _rule({"params": {"fasta": {"file": bad}}})

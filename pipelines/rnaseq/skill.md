@@ -98,7 +98,7 @@ The exact output files and directory layout for this release are documented upst
 Run rnaseq as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges rnaseq`.
 
 Feeds into:
-- `differentialabundance` — rnaseq's merged Salmon gene counts become differentialabundance's --matrix, with the GTF the rnaseq run used; the experimental design (--input, sample names as in rnaseq) and --contrasts describe your study and go in the stage's own params.
+- `differentialabundance` — rnaseq's merged gene counts (and gene lengths) become differentialabundance's --matrix and --feature-length-matrix — from the alignment-based quantification when rnaseq ran one, otherwise its pseudo-aligner — with the GTF the rnaseq run used. The experimental design (--input, sample names as in rnaseq) and --contrasts describe your study and go in the stage's own params.
 
 Fed by:
 - `bamtofastq` — bamtofastq publishes converted paired-end reads as reads/<sample>_1.merged.fastq.gz and _2; one rnaseq row per sample, strandedness detected by rnaseq (auto). Single-end conversions (reads/<sample>.merged.fastq.gz) need an inline handoff.
