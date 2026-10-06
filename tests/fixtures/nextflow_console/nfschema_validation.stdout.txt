@@ -1,0 +1,48 @@
+
+ N E X T F L O W   ~  version 26.04.3
+
+Launching `../nf-claw/pipelines/demo/upstream/main.nf` [determined_faraday] revision: f6f57a9eb7
+
+
+------------------------------------------------------
+                                        ,--./,-.
+        ___     __   __   __   ___     /,-._.--~'
+  |\ | |__  __ /  ` /  \ |__) |__         }  {
+  | \| |       \__, \__/ |  \ |___     \`-._,-`-,
+                                        `._,._,'
+  nf-core/demo 1.2.0
+------------------------------------------------------
+
+Input/output options
+  input              : ../data/good.csv
+  outdir             : out
+
+Generic options
+  publish_dir_mode   : bogus
+  trace_report_suffix: 2026-10-05_22-30-43
+
+Core Nextflow options
+  runName            : determined_faraday
+  containerEngine    : docker
+  launchDir          : /mnt/volume/drafts/draft-7/probe-schema
+  workDir            : /mnt/volume/drafts/draft-7/probe-schema/work
+  projectDir         : /mnt/volume/drafts/draft-7/nf-claw/pipelines/demo/upstream
+  userName           : ubuntu
+  profile            : docker
+  configFiles        : /mnt/volume/drafts/draft-7/nf-claw/pipelines/demo/upstream/nextflow.config
+
+!! Only displaying parameters that differ from the pipeline defaults !!
+------------------------------------------------------
+
+* The pipeline
+    https://doi.org/10.5281/zenodo.12192442
+
+* The nf-core framework
+    https://doi.org/10.1038/s41587-020-0439-x
+
+* Software dependencies
+    https://github.com/nf-core/demo/blob/master/CITATIONS.md
+
+ERROR ~ Validation of pipeline parameters failed!
+
+ -- Check '.nextflow.log' file for details

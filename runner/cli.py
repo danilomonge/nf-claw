@@ -256,5 +256,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"outputs: {len(rep.files)} files in {res.outdir}")
             if rep.multiqc_report is not None:
                 print(f"multiqc: {rep.multiqc_report}")
+        if res.log_path is not None:
+            print(f"log: {res.log_path}")
         return 0
     return 2

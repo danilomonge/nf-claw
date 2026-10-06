@@ -1,0 +1,7 @@
+Nextflow 26.04.6 is available - Please consider updating your version to it
+
+ N E X T F L O W   ~  version 26.04.3
+
+Launching `../fail_script.nf` [condescending_fermi] revision: 2c713c8780
+
+pipeline-level failure: missing --fasta

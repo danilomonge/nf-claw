@@ -106,6 +106,19 @@ def test_run_prints_command_and_outputs_summary(tmp_path, monkeypatch, capsys):
     assert "CMD" in out and "2 files" in out and "multiqc" in out
 
 
+def test_run_summary_names_the_run_log(tmp_path, monkeypatch, capsys):
+    from runner import orchestration
+    from runner.outputs import OutputsReport
+    rep = OutputsReport(pipeline_info=None, multiqc_report=None, files=("a.txt",))
+    monkeypatch.setattr(orchestration, "run_pipeline",
+                        lambda *a, **k: orchestration.RunResult(
+                            "CMD", Path("/o"), False, rep,
+                            log_path=Path("/o/provenance/logs/run.log")))
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 0
+    assert "log: /o/provenance/logs/run.log" in capsys.readouterr().out
+
+
 def test_versions_command_lists_tags_and_marks_pin(tmp_path, monkeypatch, capsys):
     from runner import versions
     root = _seed(tmp_path)

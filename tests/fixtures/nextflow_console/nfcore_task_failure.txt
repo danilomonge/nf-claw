@@ -1,0 +1,230 @@
+
+ N E X T F L O W   ~  version 26.04.3
+
+Launching `/mnt/volume/drafts/draft-7/nf-claw/pipelines/demo/upstream/main.nf` [kickass_watson] revision: f6f57a9eb7
+
+
+------------------------------------------------------
+                                        ,--./,-.
+        ___     __   __   __   ___     /,-._.--~'
+  |\ | |__  __ /  ` /  \ |__) |__         }  {
+  | \| |       \__, \__/ |  \ |___     \`-._,-`-,
+                                        `._,._,'
+  nf-core/demo 1.2.0
+------------------------------------------------------
+
+Input/output options
+  input              : /mnt/volume/drafts/draft-7/data/broken.csv
+  outdir             : /mnt/volume/drafts/draft-7/runs/s3-fail
+
+Generic options
+  trace_report_suffix: 2026-10-05_22-00-19
+
+Core Nextflow options
+  runName            : kickass_watson
+  containerEngine    : docker
+  launchDir          : /mnt/volume/drafts/draft-7/runs/s3-fail
+  workDir            : /mnt/volume/drafts/draft-7/nf-claw/work
+  projectDir         : /mnt/volume/drafts/draft-7/nf-claw/pipelines/demo/upstream
+  userName           : ubuntu
+  profile            : docker
+  configFiles        : /mnt/volume/drafts/draft-7/nf-claw/pipelines/demo/upstream/nextflow.config
+
+!! Only displaying parameters that differ from the pipeline defaults !!
+------------------------------------------------------
+
+* The pipeline
+    https://doi.org/10.5281/zenodo.12192442
+
+* The nf-core framework
+    https://doi.org/10.1038/s41587-020-0439-x
+
+* Software dependencies
+    https://github.com/nf-core/demo/blob/master/CITATIONS.md
+
+[-        ] NFCORE_DEMO:DEMO:FASTQC     -
+[-        ] NFCORE_DEMO:DEMO:SEQTK_TRIM -
+[-        ] NFCORE_DEMO:DEMO:COWPY      -
+
+[-        ] NFCORE_DEMO:DEMO:FASTQC     | 0 of 1
+[-        ] NFCORE_DEMO:DEMO:SEQTK_TRIM | 0 of 1
+[-        ] NFCORE_DEMO:DEMO:COWPY      | 0 of 1
+[-        ] NFCORE_DEMO:DEMO:MULTIQC    -
+
+executor >  local (3)
+[67/506aab] NFC…_DEMO:DEMO:FASTQC (BROKEN) | 0 of 1
+[41/9e9648] NFC…O:DEMO:SEQTK_TRIM (BROKEN) | 0 of 1
+[18/5d18c0] NFCORE_DEMO:DEMO:COWPY         | 0 of 1
+[-        ] NFCORE_DEMO:DEMO:MULTIQC       -
+
+executor >  local (3)
+[67/506aab] NFC…_DEMO:DEMO:FASTQC (BROKEN) | 0 of 1
+[41/9e9648] NFC…O:DEMO:SEQTK_TRIM (BROKEN) | 0 of 1
+[18/5d18c0] NFCORE_DEMO:DEMO:COWPY         | 0 of 1
+[-        ] NFCORE_DEMO:DEMO:MULTIQC       -
+ERROR ~ Error executing process > 'NFCORE_DEMO:DEMO:FASTQC (BROKEN)'
+
+Caused by:
+  Process `NFCORE_DEMO:DEMO:FASTQC (BROKEN)` terminated with an error exit status (1)
+
+
+Command executed:
+
+  printf "%s %s\n" 1/broken_R1.fastq.gz BROKEN.gz | while read old_name new_name; do
+      [ -f "${new_name}" ] || ln -s $old_name $new_name
+  done
+  
+  fastqc \
+      --quiet \
+      --threads 2 \
+      --memory 6144 \
+      BROKEN.gz
+
+Command exit status:
+  1
+
+Command output:
+  application/gzip
+
+Command error:
+  application/gzip
+  Failed to process BROKEN.gz
+  java.util.zip.ZipException: Not in GZIP format
+  	at java.base/java.util.zip.GZIPInputStream.readHeader(GZIPInputStream.java:165)
+  	at java.base/java.util.zip.GZIPInputStream.<init>(GZIPInputStream.java:79)
+  	at java.base/java.util.zip.GZIPInputStream.<init>(GZIPInputStream.java:91)
+  	at uk.ac.babraham.FastQC.Utilities.MultiMemberGZIPInputStream.<init>(MultiMemberGZIPInputStream.java:37)
+  	at uk.ac.babraham.FastQC.Sequence.FastQFile.<init>(FastQFile.java:84)
+  	at uk.ac.babraham.FastQC.Sequence.SequenceFactory.getSequenceFile(SequenceFactory.java:106)
+  	at uk.ac.babraham.FastQC.Sequence.SequenceFactory.getSequenceFile(SequenceFactory.java:62)
+  	at uk.ac.babraham.FastQC.Analysis.OfflineRunner.processFile(OfflineRunner.java:163)
+  	at uk.ac.babraham.FastQC.Analysis.OfflineRunner.<init>(OfflineRunner.java:125)
+  	at uk.ac.babraham.FastQC.FastQCApplication.main(FastQCApplication.java:316)
+
+Work dir:
+  /mnt/volume/drafts/draft-7/nf-claw/work/67/506aabdbd84ecedb67949041e7e5f2
+
+Container:
+  quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0
+
+Tip: when you have fixed the problem you can continue the execution adding the option `-resume` to the run command line
+
+ -- Check '.nextflow.log' file for details
+
+executor >  local (3)
+[67/506aab] NFC…_DEMO:DEMO:FASTQC (BROKEN) | 0 of 1 ✘
+[41/9e9648] NFC…O:DEMO:SEQTK_TRIM (BROKEN) | 1 of 1 ✔
+[18/5d18c0] NFCORE_DEMO:DEMO:COWPY         | 1 of 1 ✔
+[-        ] NFCORE_DEMO:DEMO:MULTIQC       -
+Execution cancelled -- Finishing pending tasks before exit
+ERROR ~ Error executing process > 'NFCORE_DEMO:DEMO:FASTQC (BROKEN)'
+
+Caused by:
+  Process `NFCORE_DEMO:DEMO:FASTQC (BROKEN)` terminated with an error exit status (1)
+
+
+Command executed:
+
+  printf "%s %s\n" 1/broken_R1.fastq.gz BROKEN.gz | while read old_name new_name; do
+      [ -f "${new_name}" ] || ln -s $old_name $new_name
+  done
+  
+  fastqc \
+      --quiet \
+      --threads 2 \
+      --memory 6144 \
+      BROKEN.gz
+
+Command exit status:
+  1
+
+Command output:
+  application/gzip
+
+Command error:
+  application/gzip
+  Failed to process BROKEN.gz
+  java.util.zip.ZipException: Not in GZIP format
+  	at java.base/java.util.zip.GZIPInputStream.readHeader(GZIPInputStream.java:165)
+  	at java.base/java.util.zip.GZIPInputStream.<init>(GZIPInputStream.java:79)
+  	at java.base/java.util.zip.GZIPInputStream.<init>(GZIPInputStream.java:91)
+  	at uk.ac.babraham.FastQC.Utilities.MultiMemberGZIPInputStream.<init>(MultiMemberGZIPInputStream.java:37)
+  	at uk.ac.babraham.FastQC.Sequence.FastQFile.<init>(FastQFile.java:84)
+  	at uk.ac.babraham.FastQC.Sequence.SequenceFactory.getSequenceFile(SequenceFactory.java:106)
+  	at uk.ac.babraham.FastQC.Sequence.SequenceFactory.getSequenceFile(SequenceFactory.java:62)
+  	at uk.ac.babraham.FastQC.Analysis.OfflineRunner.processFile(OfflineRunner.java:163)
+  	at uk.ac.babraham.FastQC.Analysis.OfflineRunner.<init>(OfflineRunner.java:125)
+  	at uk.ac.babraham.FastQC.FastQCApplication.main(FastQCApplication.java:316)
+
+Work dir:
+  /mnt/volume/drafts/draft-7/nf-claw/work/67/506aabdbd84ecedb67949041e7e5f2
+
+Container:
+  quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0
+
+Tip: when you have fixed the problem you can continue the execution adding the option `-resume` to the run command line
+
+ -- Check '.nextflow.log' file for details
+ERROR ~ Pipeline failed. Please refer to troubleshooting docs for common issues: https://nf-co.re/docs/running/troubleshooting
+
+ -- Check '.nextflow.log' file for details
+
+executor >  local (3)
+[67/506aab] NFC…_DEMO:DEMO:FASTQC (BROKEN) | 0 of 1 ✘
+[41/9e9648] NFC…O:DEMO:SEQTK_TRIM (BROKEN) | 1 of 1 ✔
+[18/5d18c0] NFCORE_DEMO:DEMO:COWPY         | 1 of 1 ✔
+[-        ] NFCORE_DEMO:DEMO:MULTIQC       -
+Execution cancelled -- Finishing pending tasks before exit
+-[nf-core/demo] Pipeline completed with errors-
+ERROR ~ Error executing process > 'NFCORE_DEMO:DEMO:FASTQC (BROKEN)'
+
+Caused by:
+  Process `NFCORE_DEMO:DEMO:FASTQC (BROKEN)` terminated with an error exit status (1)
+
+
+Command executed:
+
+  printf "%s %s\n" 1/broken_R1.fastq.gz BROKEN.gz | while read old_name new_name; do
+      [ -f "${new_name}" ] || ln -s $old_name $new_name
+  done
+  
+  fastqc \
+      --quiet \
+      --threads 2 \
+      --memory 6144 \
+      BROKEN.gz
+
+Command exit status:
+  1
+
+Command output:
+  application/gzip
+
+Command error:
+  application/gzip
+  Failed to process BROKEN.gz
+  java.util.zip.ZipException: Not in GZIP format
+  	at java.base/java.util.zip.GZIPInputStream.readHeader(GZIPInputStream.java:165)
+  	at java.base/java.util.zip.GZIPInputStream.<init>(GZIPInputStream.java:79)
+  	at java.base/java.util.zip.GZIPInputStream.<init>(GZIPInputStream.java:91)
+  	at uk.ac.babraham.FastQC.Utilities.MultiMemberGZIPInputStream.<init>(MultiMemberGZIPInputStream.java:37)
+  	at uk.ac.babraham.FastQC.Sequence.FastQFile.<init>(FastQFile.java:84)
+  	at uk.ac.babraham.FastQC.Sequence.SequenceFactory.getSequenceFile(SequenceFactory.java:106)
+  	at uk.ac.babraham.FastQC.Sequence.SequenceFactory.getSequenceFile(SequenceFactory.java:62)
+  	at uk.ac.babraham.FastQC.Analysis.OfflineRunner.processFile(OfflineRunner.java:163)
+  	at uk.ac.babraham.FastQC.Analysis.OfflineRunner.<init>(OfflineRunner.java:125)
+  	at uk.ac.babraham.FastQC.FastQCApplication.main(FastQCApplication.java:316)
+
+Work dir:
+  /mnt/volume/drafts/draft-7/nf-claw/work/67/506aabdbd84ecedb67949041e7e5f2
+
+Container:
+  quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0
+
+Tip: when you have fixed the problem you can continue the execution adding the option `-resume` to the run command line
+
+ -- Check '.nextflow.log' file for details
+ERROR ~ Pipeline failed. Please refer to troubleshooting docs for common issues: https://nf-co.re/docs/running/troubleshooting
+
+ -- Check '.nextflow.log' file for details
+

@@ -10,7 +10,11 @@ Three zones:
 - **`runner/`** — the runtime invoked as `nfclaw`. Discovers pipelines, runs deterministic
   pre-checks against the pipeline's own schema (samplesheet columns, unknown flags, scalar types,
   enum values and compatible value constraints — failing fast before Nextflow starts), composes a
-  `-params-file`, runs `nextflow run`, and writes a provenance bundle. Nextflow's `nf-schema`
+  `-params-file`, runs `nextflow run` from `--outdir`, records the launch in
+  `<outdir>/provenance/logs/run.log` (`runner/runlog.py`: nfclaw's header, Nextflow's console in
+  order, and a final outcome line; appended on `--resume`; on failure the error quotes Nextflow's
+  report and the `Caused by:` chain of its log's last error, and names `run.log`, `.nextflow.log` and the failing task's `.command.err` by absolute
+  path), and writes a provenance bundle. Nextflow's `nf-schema`
   plugin remains authoritative at runtime, including for conditional requirements and any schema
   constraints the lightweight pre-check cannot interpret safely.
   The bundle is written whether the run succeeds or fails — a failed run is precisely when the

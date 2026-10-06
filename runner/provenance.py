@@ -182,7 +182,24 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         "  exit 1\n"
         "fi\n"
         "cd -- \"$target\"\n"
-        f"{env_exports}{command_str} --outdir \"$target\"\n",
+        f"{env_exports}"
+        # The replay logs itself exactly as `nfclaw run` does: everything it prints, in order, in
+        # <target>/provenance/logs/run.log, ending with its outcome — so it needs no redirect of its
+        # own. `provenance/` is not a result, so the log never shows up in `nfclaw verify`.
+        f"original={shlex.quote(str(outdir))}\n"
+        "log=\"$target/provenance/logs/run.log\"\n"
+        "mkdir -p -- \"$target/provenance/logs\"\n"
+        "echo \"nfclaw replay: logging this replay to $log\" >&2\n"
+        "echo \"==> nfclaw replay started $(date -u +%Y-%m-%dT%H:%M:%S+00:00) "
+        "(replay of $original)\" >>\"$log\"\n"
+        "set +e\n"
+        f"{command_str} --outdir \"$target\" 2>&1 | tee -a \"$log\"\n"
+        "status=${PIPESTATUS[0]}\n"
+        "set -e\n"
+        "if [ \"$status\" -eq 0 ]; then outcome=success; else outcome=\"failed (exit status $status)\"; fi\n"
+        "echo \"==> nfclaw replay finished $(date -u +%Y-%m-%dT%H:%M:%S+00:00): $outcome\" >>\"$log\"\n"
+        "echo \"nfclaw replay: $outcome (log: $log)\" >&2\n"
+        "exit \"$status\"\n",
         encoding="utf-8")
     commands.chmod(0o755)                             # so the documented replay works as `./commands.sh`
     return prov
