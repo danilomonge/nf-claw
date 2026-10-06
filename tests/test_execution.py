@@ -320,3 +320,12 @@ def test_a_second_interrupt_during_teardown_still_kills_the_group(monkeypatch):
     with pytest.raises(KeyboardInterrupt):
         execution._terminate(proc, grace=5)
     assert sent == [signal.SIGTERM, signal.SIGKILL]
+
+
+def test_run_log_header_command_carries_the_nxf_overlay(tmp_path):
+    # `--nxf-ver`/`--nxf-env` are part of how the command runs: the header's command line must say
+    # so, or a copy of it runs a different Nextflow engine than the run did.
+    execution.run([PY, "-c", "print('x')"], cwd=tmp_path, logs_dir=tmp_path / "logs",
+                  timeout_seconds=30, env_extra={"NXF_VER": "25.10.4"})
+    log = (tmp_path / "logs" / "run.log").read_text()
+    assert f"    command: NXF_VER=25.10.4 {PY}" in log

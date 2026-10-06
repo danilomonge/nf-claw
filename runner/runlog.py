@@ -23,6 +23,8 @@ import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
+from runner import nextflow_command
+
 RUN_LOG_NAME = "run.log"
 
 # The tail of a launch's console kept in memory for quoting its error. Nextflow ends a failed run
@@ -255,12 +257,14 @@ class RunLog:
 
     @classmethod
     def open(cls, logs_dir: Path, *, command: list[str], launch_dir: Path,
-             nextflow_log: Path | None = None, notes: list[str] | tuple[str, ...] = ()) -> "RunLog":
+             nextflow_log: Path | None = None, notes: list[str] | tuple[str, ...] = (),
+             env: dict[str, str] | None = None) -> "RunLog":
         """Start the record of a launch: its header, and one line on the terminal saying where it
-        is — before anything else prints, since a long run's own output soon buries it."""
+        is — before anything else prints, since a long run's own output soon buries it. `env` is
+        the overlay the command runs under (NXF_VER, …); the header's command line carries it."""
         log = cls(logs_dir / RUN_LOG_NAME, nextflow_log=nextflow_log)
         log.note(f"==> nfclaw run started {now()}")
-        log.note(f"    command: {shlex.join(command)}")
+        log.note(f"    command: {nextflow_command.shell_line(shlex.join(command), env)}")
         log.note(f"    launch dir: {launch_dir}")
         if nextflow_log is not None:
             log.note(f"    nextflow log: {nextflow_log}")

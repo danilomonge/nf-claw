@@ -72,7 +72,7 @@ def run(command: list[str], *, cwd: Path, logs_dir: Path,
     own = run_log is None
     if run_log is None:
         run_log = runlog.RunLog.open(logs_dir, command=command, launch_dir=cwd,
-                                     nextflow_log=nextflow_log, notes=notes)
+                                     nextflow_log=nextflow_log, notes=notes, env=env_extra)
     try:
         return _run(command, cwd=cwd, logs_dir=logs_dir, timeout_seconds=timeout_seconds,
                     env_extra=env_extra, run_log=run_log)

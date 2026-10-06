@@ -49,7 +49,7 @@ def _sensitive_env(key: str, value: str) -> bool:
     )
 
 
-def _safe_env(env: dict[str, str] | None) -> tuple[dict[str, str], list[str]]:
+def safe_env(env: dict[str, str] | None) -> tuple[dict[str, str], list[str]]:
     """Return provenance-safe values and the names whose values were redacted."""
     recorded: dict[str, str] = {}
     redacted: list[str] = []
@@ -97,7 +97,7 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
     prov.mkdir(parents=True, exist_ok=True)
 
     nxf_env = effective_nxf_env(env_extra)
-    recorded_env, redacted_env = _safe_env(nxf_env)
+    recorded_env, redacted_env = safe_env(nxf_env)
     manifest = {
         "pipeline": pipeline,
         "version": submodule.version,

@@ -254,7 +254,8 @@ def _reference_section(ps: ParamSchema) -> str:
     )
 
 
-def _engine_section(name: str, st: SubmoduleStatus, what: str = "release") -> str:
+def _engine_section(name: str, st: SubmoduleStatus, what: str = "release",
+                    repo_up: str = "../..") -> str:
     """The Nextflow version this release declares, and how to run exactly that one.
 
     The engine is not a neutral detail: a release is written against the Nextflow line it declares,
@@ -262,7 +263,8 @@ def _engine_section(name: str, st: SubmoduleStatus, what: str = "release") -> st
     `!>=25.10.4`) on Nextflow 26.04.6 adds `Unrecognized config option 'validation.*'` warnings that
     the same run on 25.10.4 does not produce — verified by running both. The declared version is a
     fact in the pinned manifest, so it is surfaced here with the flag that pins it. `what` names
-    the tree in the prose: a `release`, or the `commit` of unreleased `dev` code."""
+    the tree in the prose: a `release`, or the `commit` of unreleased `dev` code. `repo_up` is the
+    relative path from where the skill.md is written back to the repository root."""
     spec = engine_version.required_spec(st.path / "nextflow.config")
     if not spec:
         return ""
@@ -273,7 +275,7 @@ def _engine_section(name: str, st: SubmoduleStatus, what: str = "release") -> st
                     f"emits config-parser warnings the {what} never saw:\n```bash\n"
                     f"nfclaw run {name} ... --nxf-ver {pin}\n```\n"
                     "`--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same "
-                    "engine. See [known-issues](../../docs/known-issues.md).")
+                    f"engine. See [known-issues]({repo_up}/docs/known-issues.md).")
     return f"This {what} declares `nextflowVersion = '{spec}'`.{pin_line}\n"
 
 
@@ -567,7 +569,9 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
                         "released.\n\n")
     reference = _reference_section(ps)
     reference_block = f"## Reference genome\n{reference}\n" if reference else ""
-    engine = _engine_section(name, st, what)
+    # The committed skill.md is pipelines/<name>/skill.md; a version's docs are written beside its
+    # tree, pipelines/<name>/.versions/<label>/skill.md, so their links climb two levels further.
+    engine = _engine_section(name, st, what, "../.." if pipeline_version is None else "../../../..")
     engine_block = f"## Nextflow engine\n{engine}\n" if engine else ""
     mandatory = _mandatory_params(ps)
     mandatory_block = f"## Mandatory arguments\n{mandatory}\n" if mandatory else ""

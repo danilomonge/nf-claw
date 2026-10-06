@@ -6,7 +6,7 @@ import re
 import sys
 from pathlib import Path
 
-from runner import discovery, orchestration, resources, verify, versions
+from runner import discovery, nextflow_command, orchestration, resources, verify, versions
 from runner.errors import ErrorCode, NfclawError
 
 
@@ -272,7 +272,7 @@ def _main(argv: list[str] | None = None) -> int:
         for w in res.warnings:                                # any not already said before launch
             if w not in shown:
                 warn(w)
-        print(res.command)
+        print(nextflow_command.shell_line(res.command, res.env))
         rep = res.outputs_report
         if rep is not None:                                   # real run — surface where results landed
             print(f"outputs: {len(rep.files)} files in {res.outdir}")

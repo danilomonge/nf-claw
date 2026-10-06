@@ -220,6 +220,19 @@ def test_run_threads_nxf_ver_and_env(tmp_path, monkeypatch):
                                    "NXF_OFFLINE": "true"}
 
 
+def test_run_prints_the_command_with_the_nxf_env_it_runs_under(tmp_path, monkeypatch, capsys):
+    # `--check` promises the exact command that would run; under `--nxf-ver 25.10.4` that command
+    # runs with NXF_VER=25.10.4, and a copy without it would run whatever engine the shell defaults to.
+    from runner import orchestration
+    monkeypatch.setattr(orchestration, "run_pipeline", lambda *a, **k: orchestration.RunResult(
+        "nextflow run /t -profile binac2", Path("/o"), True, None,
+        env={"NXF_VER": "25.10.4", "NXF_JVM_ARGS": "-Da=b -Dc=d"}))
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out"), "--check"]) == 0
+    assert capsys.readouterr().out.splitlines()[0] == (
+        "NXF_JVM_ARGS='-Da=b -Dc=d' NXF_VER=25.10.4 nextflow run /t -profile binac2")
+
+
 def test_run_rejects_non_nxf_env_var(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
     rc = cli.main(["run", "x", "--outdir", str(tmp_path / "out"), "--nxf-env", "FOO=bar"])
