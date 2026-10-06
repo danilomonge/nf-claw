@@ -1,7 +1,7 @@
 ---
 name: datasync
-version: 1.0.0
-commit: e453795d4545665d274737d693b8a16cb228799f
+version: 1.0.1
+commit: d652a3cac0ba3a47cb74a2162cee3b628289921f
 ---
 
 # datasync — full parameter reference
@@ -52,4 +52,4 @@ nf-core/datasync pipeline parameters. Every parameter from the pinned `nextflow_
 | `--custom-config-base` | string |  | yes |  |  | https://raw.githubusercontent.com/nf-core/configs/master | Base directory for Institutional configs. |
 | `--custom-config-version` | string |  | yes |  |  | master | Git commit id for Institutional configs. |
 
-<!-- Generated from nf-core/datasync@e453795d4545665d274737d693b8a16cb228799f. Do not edit by hand. -->
+<!-- Generated from nf-core/datasync@d652a3cac0ba3a47cb74a2162cee3b628289921f. Do not edit by hand. -->
