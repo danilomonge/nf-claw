@@ -253,3 +253,18 @@ def test_lineage_follows_absolute_paths_in_any_column(library, finished_run, tmp
                                        "provides": ["sample", "fastq_1"]}}})
     hand = handoff.materialize(rule, upstream_outdir=up, downstream_tree=down, dest=tmp_path / "h")
     assert set(hand.record["params"]["input"]["derived_from"]) == {"s.csv", *FASTQS}
+
+
+def test_upstream_param_prefers_the_pipelines_own_resolved_params(library, finished_run, tmp_path):
+    # A value a profile set (a --demo run's --gtf) is not in nfclaw's provenance/params.json, but the
+    # nf-core template dumps every resolved parameter to pipeline_info/params_<timestamp>.json.
+    import json
+    _, down = _trees(library("mini_up", "mini"))
+    up = finished_run(tmp_path / "up", {
+        "pipeline_info/params_2026-01-01_10-00-00.json": json.dumps({"gtf": "/old.gtf"}),
+        "pipeline_info/params_2026-01-02_10-00-00.json": json.dumps({"gtf": "/refs/test.gtf"})})
+    hand = handoff.materialize(_rule({"params": {"fasta": {"upstream_param": "gtf"}}}),
+                               upstream_outdir=up, downstream_tree=down, dest=tmp_path / "h")
+    assert hand.params == {"fasta": "/refs/test.gtf"}                  # the latest launch's
+    assert list(hand.record["params"]["fasta"]["derived_from"]) == [
+        "pipeline_info/params_2026-01-02_10-00-00.json"]

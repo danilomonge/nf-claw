@@ -246,12 +246,26 @@ def recorded_outputs(outdir: Path) -> dict[str, str]:
     return out
 
 
-def _recorded_params(outdir: Path) -> dict[str, Any]:
+def _recorded_params(outdir: Path) -> tuple[dict[str, Any], str | None]:
+    """The parameters a run used, and the result file that recorded them (None for the bundle's).
+
+    The nf-core template dumps every *resolved* parameter — including those a profile set, such as
+    a `--demo` run's references — to `pipeline_info/params_<timestamp>.json`, one per launch; the
+    latest is what the finished run used. Without one (a release on an older template), nfclaw's
+    own `provenance/params.json`: what the run was given, before any profile."""
+    dumps = sorted((outdir / "pipeline_info").glob("params_*.json"))
+    for path in reversed(dumps):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if isinstance(data, dict):
+            return data, path.relative_to(outdir).as_posix()
     try:
         data = json.loads(_bundle_text(outdir, "params.json") or "{}")
     except ValueError:
-        return {}
-    return data if isinstance(data, dict) else {}
+        return {}, None
+    return (data, None) if isinstance(data, dict) else ({}, None)
 
 
 def _under(path: Path, root: Path) -> str | None:
@@ -379,8 +393,8 @@ def _build(src: Source, root: Path, sheet_schema, dest: Path) -> tuple[Path, lis
 
 
 def _resolve(rule: Rule, target: str, src: Source, *, upstream_outdir: Path,
-             downstream_tree: Path, dest: Path, used: Mapping[str, Any]
-             ) -> tuple[Any, list[str], dict[str, Any]]:
+             downstream_tree: Path, dest: Path,
+             used: tuple[Mapping[str, Any], str | None]) -> tuple[Any, list[str], dict[str, Any]]:
     """One source's value, the upstream files it was derived from, and extra record fields."""
     if src.kind in ("samplesheet", "build"):
         ref = inputs.samplesheet_schema(downstream_tree, param=target)
@@ -401,12 +415,14 @@ def _resolve(rule: Rule, target: str, src: Source, *, upstream_outdir: Path,
     if src.kind == "file":
         found = _one_match(upstream_outdir, src.spec["file"])
         return str(found), [found.relative_to(upstream_outdir).as_posix()], {}
-    value = used.get(src.spec["upstream_param"])
-    if value is None or value == "":
+    params, recorded_in = used
+    value = params.get(src.spec["upstream_param"])
+    if value is None or value == "" or value is False:
         raise _Unresolved(f"the {rule.upstream} run did not set "
                           f"{_flag(src.spec['upstream_param'])}")
     rel = _under(Path(value), upstream_outdir) if isinstance(value, str) else None
-    return value, [rel] if rel else [], {}
+    derived = [r for r in (recorded_in, rel) if r]
+    return value, derived, {}
 
 
 def materialize(rule: Rule, *, upstream_outdir: Path, downstream_tree: Path,
