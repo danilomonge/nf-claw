@@ -140,6 +140,13 @@ use the current `emit: …, optional: true`).
 version gate (the symptom can read as a parameter/validation failure); use `--nxf-ver 25.10.4`.
 (`bactmap` 1.0.0 hits the parser issue *and* further bugs and can't run in demo here — see the
 upstream table.)
+**In a chain** (`nfclaw chain run`), pin the engine on that stage only — `"nxf_ver": "25.10.4"` in its
+spec entry — since the other stages may need a newer one (fetchngs 1.13.0 requires `>=25.10.4`, mag
+5.5.0 `>=26.04.0`). The chain parses every stage's config with its own engine (`nextflow config`)
+before the first stage launches, so this fails up front, not after the stages before it have run.
+Seen in chains on Nextflow 26.04.3: `atacseq` 2.1.2 (`def check_max`) and `viralrecon` 3.0.0
+(`Invalid include source: conf/test_full_sispa.config`, a profile file missing at the pinned
+commit) — both parse with `"nxf_ver": "25.10.4"`.
 
 ### Docker bridge network has no DNS (IPv6-only host)
 **Symptom:** containers can't resolve hostnames; downloads inside a container fail even though the
@@ -251,6 +258,24 @@ content merely changed has a different line in each bundle and shows up as *both
 "extra" — one changed report is counted twice, and a run whose reports simply carry a new timestamp
 reads as hundreds of missing and extra files. That is an artefact of the comparison, not a defect in
 the replay; `nfclaw verify` keys on the path precisely to separate the two questions.
+
+### Chains: `[handoff_failed]` — the next stage's input could not be prepared
+**Symptom:** `nfclaw chain run` stops after a stage succeeded, with `[handoff_failed]` and the chain
+log ending `failed at stage NN-<stage>: handoff`.
+**Why:** the rule (`handoffs/<upstream>/<downstream>.json`, or the stage's inline `handoff`) expected
+an output the upstream run did not produce — a file a pattern matches 0 or several times (rnaseq's
+merged counts sit under whichever quantifier ran), a column the upstream sheet lacks — or the
+samplesheet it prepared would be rejected by the next pipeline (the error lists the rows and names
+the snapshot under `<outdir>/chain/handoffs/`).
+**Fix:** inspect the snapshot and the upstream's results; set the parameter in the stage's own
+`params` (it wins over the handed-over value), give the stage an inline `handoff`, or change the
+upstream stage's options — then `nfclaw chain run spec.json --outdir DIR --resume` (the upstream is
+not re-run). See [`chaining.md`](chaining.md).
+
+### Chains: `another nfclaw chain is running in …`
+One `nfclaw chain` process per `--outdir`: a second would race on the same stages and state. Wait for
+the first (`tail -n 1 <outdir>/chain/logs/chain.log`) or stop it with `kill <pid>`; the lock is
+released when that process exits, however it exits.
 
 ## Warnings a run prints that are not faults
 
