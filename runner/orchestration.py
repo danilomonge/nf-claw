@@ -44,6 +44,8 @@ class RunResult:
     outputs_report: "outputs.OutputsReport | None"
     warnings: list[str] = field(default_factory=list)
     log_path: Path | None = None            # the run log; None for --check, which launches nothing
+    # The NXF_* overlay `command` runs under (--nxf-ver, --nxf-env): part of the command as shown.
+    env: dict[str, str] = field(default_factory=dict)
 
 
 def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
@@ -223,7 +225,7 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                                           work_dir=work_dir, extra_configs=tuple(extra_configs))
     if check_only:
         return RunResult(command=cmd_str, outdir=outdir, checked_only=True,
-                         outputs_report=None, warnings=warnings)
+                         outputs_report=None, warnings=warnings, env=nxf_overlay)
 
     refs = param_schema.reference_path_params()
     prov_inputs = [Path(v) for k, v in resolved.items()
@@ -246,7 +248,7 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     logs_dir = outdir / "provenance" / "logs"
     run_log = runlog.RunLog.open(logs_dir, command=cmd, launch_dir=outdir,
                                  nextflow_log=runlog.nextflow_log_path(outdir, nxf_overlay),
-                                 notes=warnings)
+                                 notes=warnings, env=nxf_overlay)
     try:
         try:
             execution.run(cmd, cwd=outdir, logs_dir=logs_dir,
@@ -271,7 +273,8 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
         except BaseException as exc:
             # Nextflow succeeded but nfclaw could not finish (a full disk while hashing outputs, an
             # interrupt): the log's last line must not claim a success the bundle does not back.
-            what = "interrupted" if isinstance(exc, KeyboardInterrupt) else "failed"
+            what = (execution.stop_outcome(exc)
+                    if isinstance(exc, (KeyboardInterrupt, execution.Terminated)) else "failed")
             run_log.fail(f"{what} after Nextflow succeeded ({type(exc).__name__}: {exc})",
                          f"nfclaw: {type(exc).__name__}: {exc}")
             if isinstance(exc, OSError):
@@ -290,4 +293,4 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
         run_log.finish()
     return RunResult(command=cmd_str, outdir=outdir, checked_only=False,
                      outputs_report=report, warnings=warnings,
-                     log_path=logs_dir / runlog.RUN_LOG_NAME)
+                     log_path=logs_dir / runlog.RUN_LOG_NAME, env=nxf_overlay)

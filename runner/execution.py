@@ -6,12 +6,62 @@ import subprocess
 import sys
 import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from runner import runlog
 from runner.errors import ErrorCode, NfclawError
+
+
+class Terminated(BaseException):
+    """nfclaw was told to stop by a signal — `kill <pid>` (SIGTERM), or the terminal it ran in
+    closing (SIGHUP). A BaseException like KeyboardInterrupt, so it takes the same teardown path and
+    is never mistaken for a failure of the run itself."""
+
+    def __init__(self, signum: int):
+        super().__init__(signum)
+        self.signum = signum
+
+    @property
+    def name(self) -> str:
+        return signal.Signals(self.signum).name
+
+    def __str__(self) -> str:
+        return self.name
+
+
+_STOP_SIGNALS = tuple(getattr(signal, n) for n in ("SIGTERM", "SIGHUP") if hasattr(signal, n))
+
+
+def _raise_terminated(signum, _frame) -> None:
+    raise Terminated(signum)
+
+
+@contextmanager
+def stop_on_signals() -> Iterator[None]:
+    """While active, SIGTERM and SIGHUP raise `Terminated` in the main thread, so a stopped run tears
+    Nextflow's process group down and records its outcome. Python's default for both is to die on the
+    spot: Nextflow, in its own session, went on running orphaned, and run.log never got its last line.
+    A signal the caller ignores stays ignored (`nohup` ignores SIGHUP so a run survives its terminal),
+    and the previous handlers come back on exit. Outside the main thread it changes nothing."""
+    previous: dict[int, Any] = {}
+    if threading.current_thread() is threading.main_thread():
+        for sig in _STOP_SIGNALS:
+            if signal.getsignal(sig) is not signal.SIG_IGN:
+                previous[sig] = signal.signal(sig, _raise_terminated)
+    try:
+        yield
+    finally:
+        for sig, handler in previous.items():
+            signal.signal(sig, handler if handler is not None else signal.SIG_DFL)
+
+
+def stop_outcome(exc: BaseException) -> str:
+    """How a run that was stopped ended, for the run log's last line."""
+    return f"terminated by {exc.name}" if isinstance(exc, Terminated) else "interrupted"
 
 
 @dataclass(frozen=True)
@@ -72,7 +122,7 @@ def run(command: list[str], *, cwd: Path, logs_dir: Path,
     own = run_log is None
     if run_log is None:
         run_log = runlog.RunLog.open(logs_dir, command=command, launch_dir=cwd,
-                                     nextflow_log=nextflow_log, notes=notes)
+                                     nextflow_log=nextflow_log, notes=notes, env=env_extra)
     try:
         return _run(command, cwd=cwd, logs_dir=logs_dir, timeout_seconds=timeout_seconds,
                     env_extra=env_extra, run_log=run_log)
@@ -128,13 +178,15 @@ def _run(command: list[str], *, cwd: Path, logs_dir: Path, timeout_seconds: int 
                                        **_log_details(run_log)})
             run_log.fail(f"timed out after {timeout_seconds} s", str(err))
             raise err from exc
-        except BaseException:
-            # Ctrl-C (KeyboardInterrupt) or any other interruption of the wait: tear down the child
-            # group so Nextflow — and every task process, container or JVM it launched — is stopped,
-            # never left running in the background. Then re-raise so the interrupt is not swallowed.
+        except BaseException as exc:
+            # Ctrl-C (KeyboardInterrupt), `kill` (Terminated) or any other interruption of the wait:
+            # tear down the child group so Nextflow — and every task process, container or JVM it
+            # launched — is stopped, never left running in the background. Then re-raise so the
+            # interrupt is not swallowed. The outcome is recorded first: a second signal during the
+            # teardown's grace period must not cost the log its last line.
+            run_log.fail(stop_outcome(exc))
             _terminate(proc)
             _join(readers)
-            run_log.fail("interrupted")
             raise
         _join(readers)
     if code != 0:

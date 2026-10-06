@@ -17,8 +17,9 @@ anywhere this doc shows `nfclaw <cmd>`.
 
 `nfclaw run` executes the pipeline for real — there is no preview/dry-run default. To see the exact
 `nextflow` command that *would* run without launching it, add `--check` (it validates inputs and
-parameters, prints the command, and exits; it writes nothing into `--outdir`, so you can still use
-that directory for the real run). Add `--demo` to run the pinned release's bundled test profile end
+parameters, prints the command — prefixed with the `NXF_*` variables `--nxf-ver`/`--nxf-env` set
+for it, e.g. `NXF_VER=25.10.4 nextflow run …` — and exits; it writes nothing into `--outdir`, so you
+can still use that directory for the real run). Add `--demo` to run the pinned release's bundled test profile end
 to end. A run has no overall time limit unless you pass `--timeout SECONDS`.
 
 Write **absolute paths inside a samplesheet**: Nextflow resolves them against its launch directory,
@@ -35,8 +36,10 @@ nothing to look up:
   directory, Nextflow log path, advisories), everything Nextflow printed, and on failure nfclaw's
   error. Once nfclaw is done — the provenance bundle included — its **last line** is
   `==> nfclaw run finished <time>: <outcome>` (`success`, `failed (exit status N)`,
-  `timed out after N s`, `interrupted`), so a run started in the background
-  (`nohup nfclaw run ... &`) is checked with `tail -n 1 <outdir>/provenance/logs/run.log`.
+  `timed out after N s`, `interrupted`, `terminated by SIGTERM`), so a run started in the
+  background (`nohup nfclaw run ... &`) is checked with
+  `tail -n 1 <outdir>/provenance/logs/run.log`, and stopped with `kill <nfclaw pid>` — nfclaw then
+  shuts Nextflow and its tasks down, writes the bundle and closes the log, as on Ctrl-C.
   `--resume` appends: a failed attempt is never overwritten by the retry.
 - `<outdir>/.nextflow.log` — Nextflow's own detailed log. Nextflow runs from `--outdir`, so its
   console hint "Check '.nextflow.log'" means this file, not one in your working directory.
@@ -75,7 +78,8 @@ The default is always the pinned latest release. To run any other published rele
    generated from *that* release's schema (a `reference.md` is written alongside it). The params, flags
    and validation all come from X.Y.Z, not from latest.
 3. Run it: `nfclaw run <name> --pipeline-version X.Y.Z --input samplesheet.csv --outdir results -profile docker`.
-Only real release tags are accepted (semver, with or without a leading `v`) — plus `dev`, below; an
+Only real release tags are accepted (`X.Y.Z`, or the `X.Y` of older nf-core releases such as
+fetchngs `1.9`; with or without a leading `v`) — plus `dev`, below; an
 unknown version fails fast and lists what is available. Provenance records the exact version that ran.
 
 ## To run unreleased development code (`dev`)

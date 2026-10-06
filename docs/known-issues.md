@@ -453,9 +453,12 @@ These are not bugs — just a flag or samplesheet value that a constrained envir
 schema requires:
 
 - **`fetchngs`** — if accessions have no ENA FTP URL, the pipeline falls back to `SRATOOLS_PREFETCH`
-  (needs NCBI SRA Cloud). With no such access, run metadata-only: `--skip_fastq_download`. (The
-  accession list may be `.csv`, `.tsv` **or `.txt`** at the pinned 1.12.0 — pattern
-  `^\S+\.(csv|tsv|txt)$`; a plain `.txt` id list is accepted.)
+  (needs NCBI SRA Cloud). With no such access, run metadata-only: `--skip_fastq_download`. On an
+  IPv6-only (NAT64) host, `prefetch` inside Docker failed with `cannot resolve remote location of
+  'SRR…'` (five attempts) for the pinned release and `dev` alike, while the ENA FTP downloads worked;
+  the `--demo` accession list includes runs that take this path. (The accession list may be `.csv`,
+  `.tsv` **or `.txt`** at the pinned 1.13.0 and at `dev` — pattern `^\S+\.(csv|tsv|txt)$`; a plain
+  `.txt` id list is accepted.)
 - **`coproid`** — needs **two** samplesheets: `--input` (the fastq sheet documented in `skill.md`)
   and a separate, required `--genome_sheet`. Each `--genome_sheet` row needs
   `genome_name,taxid,genome_size` plus **exactly one** of `igenome` or `fasta` — these are mutually

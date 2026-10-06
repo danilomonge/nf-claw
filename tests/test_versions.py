@@ -49,6 +49,20 @@ def test_release_tags_semver_only_newest_first(tmp_path, monkeypatch):
         "2.0.0", "v1.10.0", "1.2.0", "1.1.0"]
 
 
+def test_release_tags_include_two_part_nfcore_releases(tmp_path, monkeypatch):
+    # nf-core released as `X.Y` before settling on `X.Y.Z` — fetchngs 1.0–1.9, sarek 2.5–2.7,
+    # rnaseq 1.0–3.9 and others. They are real releases, so they are listed and runnable.
+    monkeypatch.setattr(versions, "_url_for", lambda *a, **k: "url")
+    monkeypatch.setattr(versions, "remote_tags",
+                        lambda url: ["1.9", "1.10.0", "1.0", "2.0", "dev", "1.4.2", "1.2-rc"])
+    monkeypatch.setattr(versions, "_local_tags", lambda up: [])
+    tags = versions.release_tags("p", pipelines_dir=tmp_path, repo_root=tmp_path)
+    assert tags == ["2.0", "1.10.0", "1.9", "1.4.2", "1.0"]
+    monkeypatch.setattr(versions, "release_tags", lambda *a, **k: tags)
+    assert versions.resolve("p", "1.9", pipelines_dir=tmp_path, repo_root=tmp_path) == "1.9"
+    assert versions.resolve("p", "v1.9", pipelines_dir=tmp_path, repo_root=tmp_path) == "1.9"
+
+
 def test_release_tags_offline_falls_back_to_local(tmp_path, monkeypatch):
     monkeypatch.setattr(versions, "_url_for", lambda *a, **k: "url")
     monkeypatch.setattr(versions, "remote_tags", lambda url: [])   # network down
@@ -510,3 +524,46 @@ def test_materialize_refuses_a_tree_that_is_not_its_own_clone(tmp_path):
     out = subprocess.run(["git", "-C", str(tmp_path), "worktree", "list"], capture_output=True,
                          text=True, check=True).stdout
     assert len(out.splitlines()) == 1                        # no worktree registered against nf-claw
+
+
+def test_materialize_dev_refuses_a_tree_that_is_not_its_own_clone(tmp_path):
+    # The `dev` path needs the same guard as a release: with copied files in place of the clone,
+    # `git -C upstream fetch origin dev` and `worktree add` act on the nf-claw checkout itself. Here
+    # nf-claw's own `origin` even has a `dev` branch, so the fetch would succeed — shallowing
+    # nf-claw, writing its `origin/dev`, and registering the cache as a worktree of nf-claw.
+    url, _, _ = _nfcore_remote(tmp_path)
+    root = tmp_path / "lib"
+    _outer_repo_with_tag(root, "v0.1.0")
+    _git(root, "remote", "add", "origin", url)
+    (root / ".gitmodules").write_text(f'[submodule "pipelines/p/upstream"]\n\turl = {url}\n')
+    up = root / "pipelines" / "p" / "upstream"
+    up.mkdir(parents=True)
+    for f in ("main.nf", "nextflow.config", "nextflow_schema.json"):
+        (up / f).write_text("x")
+    with pytest.raises(NfclawError) as exc:
+        versions.materialize_dev("p", pipelines_dir=root / "pipelines", repo_root=root)
+    assert exc.value.code == ErrorCode.SUBMODULE_INCOMPLETE and "not a git checkout" in str(exc.value)
+    assert "git submodule update --init pipelines/p/upstream" in exc.value.fix
+    worktrees = subprocess.run(["git", "-C", str(root), "worktree", "list"], capture_output=True,
+                               text=True, check=True).stdout
+    assert len(worktrees.splitlines()) == 1
+    refs = subprocess.run(["git", "-C", str(root), "for-each-ref", "refs/remotes"],
+                          capture_output=True, text=True, check=True).stdout
+    assert refs == ""                                        # nothing fetched into nf-claw
+    assert not (root / ".git" / "shallow").exists()
+
+
+def test_release_git_calls_never_wait_on_a_credential_prompt(tmp_path, monkeypatch):
+    # A wrong or renamed remote makes git ask for a username on the terminal; `nfclaw versions` and
+    # a release fetch must fail instead of hanging until their timeout — as the `dev` calls already do.
+    seen = []
+
+    def fake_run(cmd, **kw):
+        seen.append((cmd, kw.get("env") or {}))
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(versions.subprocess, "run", fake_run)
+    versions.remote_tags("https://example.invalid/x")
+    versions._fetch_tag(tmp_path, "1.0.0")
+    assert [c[1] for c, _ in seen] == ["ls-remote", "-C"]
+    assert all(env.get("GIT_TERMINAL_PROMPT") == "0" for _, env in seen)

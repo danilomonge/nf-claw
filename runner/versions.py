@@ -32,7 +32,9 @@ DEV_BRANCH = "dev"
 # Where the submodule clone remembers the last `dev` head nfclaw resolved: the conventional
 # remote-tracking ref, so `git log origin/dev` works there too. It is the offline fallback.
 _DEV_TRACKING_REF = f"refs/remotes/origin/{DEV_BRANCH}"
-_SEMVER = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
+# A release tag: `X.Y.Z`, or the `X.Y` nf-core used before settling on three parts (fetchngs 1.0–1.9,
+# sarek 2.5–2.7, rnaseq 1.0–3.9, …). `dev`, release candidates and other refs are not releases.
+_RELEASE_TAG = re.compile(r"^v?(\d+)\.(\d+)(?:\.(\d+))?$")
 _COMMIT = re.compile(r"^[0-9a-f]{40}$")
 _GIT_TIMEOUT = 120
 
@@ -69,7 +71,7 @@ def remote_tags(url: str) -> list[str]:
     """Tag names published by the upstream remote (empty on any failure — caller falls back)."""
     try:
         r = subprocess.run(["git", "ls-remote", "--tags", "--refs", "--", url],
-                           capture_output=True, text=True, timeout=60)
+                           capture_output=True, text=True, timeout=60, env=_git_env())
     except (subprocess.SubprocessError, FileNotFoundError, OSError):
         return []
     if r.returncode != 0:
@@ -86,23 +88,23 @@ def _local_tags(upstream: Path) -> list[str]:
     return out.splitlines() if out else []
 
 
-def _semver_key(tag: str) -> tuple[int, ...]:
-    m = _SEMVER.match(tag)
-    return tuple(int(x) for x in m.groups()) if m else (0, 0, 0)
+def _release_key(tag: str) -> tuple[int, ...]:
+    m = _RELEASE_TAG.match(tag)
+    return tuple(int(x) for x in m.groups(default="0")) if m else (0, 0, 0)
 
 
 def release_tags(name: str, *, pipelines_dir: Path, repo_root: Path) -> list[str]:
-    """Every semver release tag for the pipeline, newest first.
+    """Every release tag (`X.Y.Z` or `X.Y`) for the pipeline, newest first.
 
     Union of the remote's tags and any already fetched locally, so it still returns
-    a useful list when the network is unavailable. Non-semver refs (dev, rc, …) are
-    dropped — only immutable releases are runnable.
+    a useful list when the network is unavailable. Other refs (dev, rc, …) are
+    dropped — only immutable releases are runnable as a tag.
     """
     url = _url_for(name, repo_root)
     tags = list(remote_tags(url)) if url else []
     tags += _local_tags(pipelines_dir / name / "upstream")
-    semver = {t for t in tags if _SEMVER.match(t)}
-    return sorted(semver, key=_semver_key, reverse=True)
+    releases = {t for t in tags if _RELEASE_TAG.match(t)}
+    return sorted(releases, key=_release_key, reverse=True)
 
 
 def available(name: str, *, pipelines_dir: Path, repo_root: Path) -> list[tuple[str, bool]]:
@@ -187,7 +189,7 @@ def _local_dev_head(upstream: Path) -> str:
 
     Only asked of an initialized clone: in an empty submodule directory git would walk up and
     answer for the enclosing nf-claw repository, whose `origin/dev` is not the pipeline's."""
-    if not (upstream / ".git").exists():
+    if not submod.is_git_tree(upstream):
         return ""
     sha = submod._git(upstream, "rev-parse", "-q", "--verify", f"{_DEV_TRACKING_REF}^{{commit}}")
     return sha if _COMMIT.match(sha) else ""
@@ -240,6 +242,7 @@ def materialize_dev(name: str, *, pipelines_dir: Path, repo_root: Path) -> Submo
     `cache_dir(name, dev_label(commit))/upstream`. Returns its status, labelled `dev`, with the
     advisories a caller must surface (unreleased code; stale head when offline)."""
     upstream = pipelines_dir / name / "upstream"
+    _require_own_clone(name, upstream, f"nf-core/{name}@{DEV_BRANCH}")
     commit, fresh = dev_head(name, pipelines_dir=pipelines_dir, repo_root=repo_root)
     if commit is None:
         if fresh:
@@ -297,6 +300,18 @@ def materialize_dev(name: str, *, pipelines_dir: Path, repo_root: Path) -> Submo
 
 # --- materializing a version into the per-version cache ---------------------
 
+def _require_own_clone(name: str, upstream: Path, what: str) -> None:
+    """Refuse a pinned tree that is not its own git clone. Every version cache — a release or a
+    `dev` commit — is a worktree of that clone, and in a tree that is not one (copied files) every
+    git command would act on the enclosing nf-claw checkout: fetch into it, shallow it, and
+    register the cache as a worktree of it."""
+    if not submod.is_git_tree(upstream):
+        raise NfclawError(
+            ErrorCode.SUBMODULE_INCOMPLETE,
+            f"pipelines/{name}/upstream is not a git checkout, so {what} cannot be fetched from it.",
+            fix=f"Re-initialise it: git submodule update --init pipelines/{name}/upstream")
+
+
 def cache_dir(name: str, tag: str, pipelines_dir: Path) -> Path:
     return pipelines_dir / name / CACHE_DIRNAME / tag
 
@@ -314,7 +329,7 @@ def _fetch_tag(upstream: Path, tag: str) -> None:
     subprocess.run(
         ["git", "-C", str(upstream), "fetch", "--depth", "1", "origin",
          f"refs/tags/{tag}:refs/tags/{tag}"],
-        check=True, capture_output=True, text=True, timeout=_GIT_TIMEOUT)
+        check=True, capture_output=True, text=True, timeout=_GIT_TIMEOUT, env=_git_env())
 
 
 def _add_worktree(upstream: Path, dest: Path, rev: str) -> None:
@@ -335,15 +350,7 @@ def materialize(name: str, tag: str, *, pipelines_dir: Path, repo_root: Path) ->
     Reuses the submodule's object store; fetches the tag only if it isn't present yet."""
     upstream = pipelines_dir / name / "upstream"
     dest = cache_dir(name, tag, pipelines_dir) / "upstream"
-    # The cache is a worktree of the submodule's own clone. A tree that is not one (copied files)
-    # would make every git command below act on nf-claw itself: fetch a tag into it, shallow it,
-    # and register the worktree against it.
-    if not submod.is_git_tree(upstream):
-        raise NfclawError(
-            ErrorCode.SUBMODULE_INCOMPLETE,
-            f"pipelines/{name}/upstream is not a git checkout, so nf-core/{name}@{tag} cannot be "
-            "fetched from it.",
-            fix=f"Re-initialise it: git submodule update --init pipelines/{name}/upstream")
+    _require_own_clone(name, upstream, f"nf-core/{name}@{tag}")
     # Reuse the repository-wide git mutation lock: parallel agents may ask for the same release,
     # and git worktree registration plus cache replacement are not safe to race. Rebuild any
     # partial cache rather than treating the presence of main.nf alone as proof it is complete.

@@ -2,6 +2,7 @@ import shutil
 from pathlib import Path
 
 from librarian import write_skill
+from runner import versions
 from runner.schema import Param, ParamSchema
 from runner.submodule import SubmoduleStatus
 
@@ -604,6 +605,29 @@ def test_dev_render_runs_and_links_the_exact_commit(tmp_path):
     assert f"blob/{_DEV_SHA}/docs/usage.md" in skill
     assert "blob/dev/" not in skill
     assert "This commit declares `nextflowVersion = '!>=25.10.4'`" in skill
+
+
+def test_known_issues_link_resolves_from_where_each_skill_is_written(tmp_path):
+    # The committed skill.md sits at pipelines/<name>/skill.md; a version's docs are written beside
+    # its tree, at pipelines/<name>/.versions/<label>/skill.md — two directories deeper.
+    import re
+
+    root = tmp_path / "repo"
+    (root / "docs").mkdir(parents=True)
+    (root / "docs" / "known-issues.md").write_text("# known issues\n")
+    pipelines = root / "pipelines"
+    pdir = _seed(pipelines, "mini")
+    (pdir / "mini" / "upstream" / "nextflow.config").write_text(
+        "manifest {\n    nextflowVersion = '!>=25.10.4'\n}\n")
+    pinned, _ = write_skill.generate("mini", pipelines_dir=pdir)
+    st = _dev_status(pipelines / "mini")
+    dev_skill, _ = versions.generate_docs(st, dest_dir=st.path.parent)
+    assert dev_skill.parent == pipelines / "mini" / ".versions" / f"dev-{_DEV_SHA[:12]}"
+    for skill in (pinned, dev_skill):
+        links = re.findall(r"\[known-issues\]\(([^)]+)\)", skill.read_text())
+        assert links, skill
+        for link in links:
+            assert (skill.parent / link).resolve() == (root / "docs" / "known-issues.md").resolve()
 
 
 def test_dev_render_warns_that_the_code_is_unreleased(tmp_path):

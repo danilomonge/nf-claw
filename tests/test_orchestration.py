@@ -925,6 +925,8 @@ def test_dev_check_targets_the_materialized_commit_and_warns(tmp_path, monkeypat
     assert (tree / "main.nf").read_text() == "x // dev\n"
     assert any("unreleased development code" in w and dev in w for w in res.warnings)
     assert not (tmp_path / "out").exists()                     # --check still leaves --outdir alone
+    # the engine pin is part of the command that would run, so it is reported with it
+    assert res.env == {"NXF_VER": "25.10.4"}
 
 
 def test_dev_run_records_the_commit_and_replays_exactly_it(tmp_path, monkeypatch, dev_library):

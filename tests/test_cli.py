@@ -220,6 +220,19 @@ def test_run_threads_nxf_ver_and_env(tmp_path, monkeypatch):
                                    "NXF_OFFLINE": "true"}
 
 
+def test_run_prints_the_command_with_the_nxf_env_it_runs_under(tmp_path, monkeypatch, capsys):
+    # `--check` promises the exact command that would run; under `--nxf-ver 25.10.4` that command
+    # runs with NXF_VER=25.10.4, and a copy without it would run whatever engine the shell defaults to.
+    from runner import orchestration
+    monkeypatch.setattr(orchestration, "run_pipeline", lambda *a, **k: orchestration.RunResult(
+        "nextflow run /t -profile binac2", Path("/o"), True, None,
+        env={"NXF_VER": "25.10.4", "NXF_JVM_ARGS": "-Da=b -Dc=d"}))
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out"), "--check"]) == 0
+    assert capsys.readouterr().out.splitlines()[0] == (
+        "NXF_JVM_ARGS='-Da=b -Dc=d' NXF_VER=25.10.4 nextflow run /t -profile binac2")
+
+
 def test_run_rejects_non_nxf_env_var(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
     rc = cli.main(["run", "x", "--outdir", str(tmp_path / "out"), "--nxf-env", "FOO=bar"])
@@ -446,3 +459,38 @@ def test_output_into_a_closed_pipe_ends_quietly(tmp_path):
     stderr = proc.stderr.read().decode()
     assert proc.wait(timeout=60) == cli._EXIT_BROKEN_PIPE
     assert "Traceback" not in stderr and "BrokenPipeError" not in stderr, stderr
+
+
+def test_run_stopped_by_sigterm_exits_cleanly(tmp_path, monkeypatch, capsys):
+    # A background run is stopped with `kill`: nfclaw shuts Nextflow down (execution) and exits with
+    # the conventional 128+15, naming the run log — not a traceback, and not left running.
+    import os
+    import signal
+    import time
+
+    from runner import orchestration
+
+    def stopped(*a, **k):
+        os.kill(os.getpid(), signal.SIGTERM)
+        time.sleep(5)                                   # the handler interrupts this
+        raise AssertionError("SIGTERM was not handled")
+
+    before = signal.getsignal(signal.SIGTERM)
+    monkeypatch.setattr(orchestration, "run_pipeline", stopped)
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 128 + signal.SIGTERM
+    err = capsys.readouterr().err
+    assert "nfclaw: stopped by SIGTERM" in err and "Traceback" not in err
+    assert signal.getsignal(signal.SIGTERM) is before          # handler restored
+
+
+def test_run_interrupted_by_ctrl_c_exits_cleanly(tmp_path, monkeypatch, capsys):
+    from runner import orchestration
+
+    def interrupted(*a, **k):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(orchestration, "run_pipeline", interrupted)
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 130
+    assert "nfclaw: interrupted" in capsys.readouterr().err
