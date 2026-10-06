@@ -1151,3 +1151,52 @@ def test_outdir_that_cannot_be_created_is_a_clear_error(tmp_path, monkeypatch):
             profile="docker", params_file=None, cli_overrides={}, resume=False,
             demo=True, check_only=False, write_provenance=True, timeout_seconds=10)
     assert exc.value.code == ErrorCode.ENVIRONMENT and "could not be created" in str(exc.value)
+
+
+# --- chain hooks: a stage's link to its chain, and parameters a handoff will supply later ---
+
+def test_check_defers_parameters_a_handoff_will_supply(tmp_path, monkeypatch):
+    # A chain's --check validates a later stage before the stage feeding it has produced anything:
+    # its --input does not exist yet, and must count neither as missing nor as a bad samplesheet.
+    root = _make_pipeline(tmp_path, "mini")          # mini requires --input
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    res = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out", profile="docker",
+        params_file=None, cli_overrides={}, resume=False, demo=False, check_only=True,
+        write_provenance=False, timeout_seconds=None, deferred_params=frozenset({"input"}))
+    assert res.checked_only and "input" not in _staged_params(res)
+
+
+def test_without_deferral_a_missing_input_is_still_reported(tmp_path, monkeypatch):
+    from runner.errors import NfclawError
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    with pytest.raises(NfclawError, match="missing required parameter '--input'"):
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "out", profile="docker",
+            params_file=None, cli_overrides={}, resume=False, demo=False, check_only=True,
+            write_provenance=False, timeout_seconds=None)
+
+
+def test_deferred_params_are_only_for_check(tmp_path, monkeypatch):
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    with pytest.raises(ValueError):
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "out", profile="docker",
+            params_file=None, cli_overrides={}, resume=False, demo=True, check_only=False,
+            write_provenance=True, timeout_seconds=None, deferred_params=frozenset({"input"}))
+
+
+def test_chain_link_lands_in_the_run_manifest(tmp_path, monkeypatch):
+    import json
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: None)
+    link = {"id": "c1", "record": "/x/chain", "stage": "mini", "index": 1, "upstream": None}
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out", profile="docker",
+        params_file=None, cli_overrides={}, resume=False, demo=True, check_only=False,
+        write_provenance=True, timeout_seconds=None, chain_link=link)
+    manifest = json.loads((tmp_path / "out/provenance/run_manifest.json").read_text())
+    assert manifest["chain"] == link
