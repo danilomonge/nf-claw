@@ -6,7 +6,8 @@ import re
 import sys
 from pathlib import Path
 
-from runner import discovery, nextflow_command, orchestration, resources, verify, versions
+from runner import (discovery, execution, nextflow_command, orchestration, resources, runlog,
+                    verify, versions)
 from runner.errors import ErrorCode, NfclawError
 
 
@@ -252,23 +253,35 @@ def _main(argv: list[str] | None = None) -> int:
             print(f"warning: {message}", file=sys.stderr, flush=True)
 
         try:
-            res = orchestration.run_pipeline(
-                args.name, repo_root=root,
-                input_path=args.input or None,         # interpreted against the pipeline schema
-                outdir=Path(args.outdir).expanduser().resolve(),
-                profile=args.profile,
-                params_file=Path(args.params_file) if args.params_file else None,
-                cli_overrides=_collect_overrides(extras),
-                resume=args.resume, demo=args.demo, check_only=args.check,
-                write_provenance=not args.no_provenance, timeout_seconds=args.timeout,
-                pipeline_version=args.pipeline_version,
-                nxf_ver=args.nxf_ver, nxf_env=_parse_nxf_env(args.nxf_env),
-                allow_spaces=args.allow_spaces, configs=args.config,
-                limits=resources.parse(args.limit_cpus, args.limit_memory, args.limit_time),
-                on_warning=warn)
+            # `kill` (SIGTERM) or a closing terminal (SIGHUP) stop the run the way Ctrl-C does —
+            # Nextflow shut down, the run log closed with the outcome — instead of killing nfclaw on
+            # the spot and leaving Nextflow running orphaned.
+            with execution.stop_on_signals():
+                res = orchestration.run_pipeline(
+                    args.name, repo_root=root,
+                    input_path=args.input or None,         # interpreted against the pipeline schema
+                    outdir=Path(args.outdir).expanduser().resolve(),
+                    profile=args.profile,
+                    params_file=Path(args.params_file) if args.params_file else None,
+                    cli_overrides=_collect_overrides(extras),
+                    resume=args.resume, demo=args.demo, check_only=args.check,
+                    write_provenance=not args.no_provenance, timeout_seconds=args.timeout,
+                    pipeline_version=args.pipeline_version,
+                    nxf_ver=args.nxf_ver, nxf_env=_parse_nxf_env(args.nxf_env),
+                    allow_spaces=args.allow_spaces, configs=args.config,
+                    limits=resources.parse(args.limit_cpus, args.limit_memory, args.limit_time),
+                    on_warning=warn)
         except NfclawError as exc:
             print(str(exc), file=sys.stderr)
             return 1
+        except (execution.Terminated, KeyboardInterrupt) as exc:
+            log = (Path(args.outdir).expanduser().resolve() / "provenance" / "logs"
+                   / runlog.RUN_LOG_NAME)
+            stopped = (f"stopped by {exc.name}" if isinstance(exc, execution.Terminated)
+                       else "interrupted")
+            print(f"nfclaw: {stopped}; any Nextflow run it had started was shut down."
+                  + (f" Log: {log}" if log.is_file() else ""), file=sys.stderr)
+            return 128 + exc.signum if isinstance(exc, execution.Terminated) else 130
         for w in res.warnings:                                # any not already said before launch
             if w not in shown:
                 warn(w)

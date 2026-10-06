@@ -229,6 +229,11 @@ def test_keyboard_interrupt_tears_down_the_child_and_its_children(tmp_path):
         "sys.stdout.flush();"
         "time.sleep(60)"
     )
+    import signal
+
+    # interrupt_main() does nothing when SIGINT is ignored — as it is for a job a shell started in the
+    # background (`nohup … &`) — so give this test the handler an interactive Ctrl-C would reach.
+    previous = signal.signal(signal.SIGINT, signal.default_int_handler)
     timer = threading.Timer(1.5, _thread.interrupt_main)
     timer.start()
     try:
@@ -237,6 +242,7 @@ def test_keyboard_interrupt_tears_down_the_child_and_its_children(tmp_path):
                           logs_dir=tmp_path / "logs", timeout_seconds=60)
     finally:
         timer.cancel()
+        signal.signal(signal.SIGINT, previous)
     log = (tmp_path / "logs" / "run.log").read_text()
     assert log.rstrip().splitlines()[-1].endswith(": interrupted")   # the log says how it ended
 
@@ -251,6 +257,72 @@ def test_keyboard_interrupt_tears_down_the_child_and_its_children(tmp_path):
                 break                                    # gone, as required
         else:
             raise AssertionError(f"process {pid} survived the interrupt")
+
+
+def _gone(pids, within=5.0):
+    import time
+    deadline = time.time() + within
+    for pid in pids:
+        while time.time() < deadline:
+            try:
+                os.kill(pid, 0)
+                time.sleep(0.1)
+            except ProcessLookupError:
+                break
+        else:
+            return False
+    return True
+
+
+@pytest.mark.skipif(not hasattr(os, "killpg"), reason="needs POSIX process groups")
+def test_sigterm_stops_the_run_cleanly_and_is_logged(tmp_path):
+    # `kill <pid>` is how a run started in the background is stopped. It used to kill nfclaw on the
+    # spot: Nextflow went on running orphaned and run.log never got its outcome line, so polling
+    # `tail -n 1 run.log` waited forever.
+    import signal
+    import threading
+
+    pids = tmp_path / "pids.txt"
+    script = (
+        "import os, sys, subprocess, time;"
+        "g = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)']);"
+        f"open(r'{pids}', 'w').write(f'{{os.getpid()}} {{g.pid}}');"
+        "sys.stdout.flush();"
+        "time.sleep(60)"
+    )
+    timer = threading.Timer(1.5, os.kill, args=(os.getpid(), signal.SIGTERM))
+    timer.start()
+    try:
+        with execution.stop_on_signals():
+            with pytest.raises(execution.Terminated) as exc:
+                execution.run([PY, "-c", script], cwd=tmp_path,
+                              logs_dir=tmp_path / "logs", timeout_seconds=60)
+    finally:
+        timer.cancel()
+    assert exc.value.signum == signal.SIGTERM
+    log = (tmp_path / "logs" / "run.log").read_text()
+    assert log.rstrip().splitlines()[-1].endswith(": terminated by SIGTERM")
+    assert _gone(int(x) for x in pids.read_text().split()), "Nextflow outlived nfclaw"
+
+
+def test_stop_on_signals_restores_the_previous_handlers():
+    import signal
+    before = signal.getsignal(signal.SIGTERM)
+    with execution.stop_on_signals():
+        assert signal.getsignal(signal.SIGTERM) is not before
+    assert signal.getsignal(signal.SIGTERM) is before
+
+
+@pytest.mark.skipif(not hasattr(__import__("signal"), "SIGHUP"), reason="needs SIGHUP")
+def test_a_signal_the_caller_ignores_stays_ignored():
+    # `nohup` ignores SIGHUP so a run survives its terminal closing; nfclaw must not undo that.
+    import signal
+    previous = signal.signal(signal.SIGHUP, signal.SIG_IGN)
+    try:
+        with execution.stop_on_signals():
+            assert signal.getsignal(signal.SIGHUP) is signal.SIG_IGN
+    finally:
+        signal.signal(signal.SIGHUP, previous)
 
 
 def test_no_timeout_waits_for_the_run_to_finish(tmp_path):

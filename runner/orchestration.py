@@ -273,7 +273,8 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
         except BaseException as exc:
             # Nextflow succeeded but nfclaw could not finish (a full disk while hashing outputs, an
             # interrupt): the log's last line must not claim a success the bundle does not back.
-            what = "interrupted" if isinstance(exc, KeyboardInterrupt) else "failed"
+            what = (execution.stop_outcome(exc)
+                    if isinstance(exc, (KeyboardInterrupt, execution.Terminated)) else "failed")
             run_log.fail(f"{what} after Nextflow succeeded ({type(exc).__name__}: {exc})",
                          f"nfclaw: {type(exc).__name__}: {exc}")
             if isinstance(exc, OSError):

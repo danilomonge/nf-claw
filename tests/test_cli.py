@@ -459,3 +459,38 @@ def test_output_into_a_closed_pipe_ends_quietly(tmp_path):
     stderr = proc.stderr.read().decode()
     assert proc.wait(timeout=60) == cli._EXIT_BROKEN_PIPE
     assert "Traceback" not in stderr and "BrokenPipeError" not in stderr, stderr
+
+
+def test_run_stopped_by_sigterm_exits_cleanly(tmp_path, monkeypatch, capsys):
+    # A background run is stopped with `kill`: nfclaw shuts Nextflow down (execution) and exits with
+    # the conventional 128+15, naming the run log — not a traceback, and not left running.
+    import os
+    import signal
+    import time
+
+    from runner import orchestration
+
+    def stopped(*a, **k):
+        os.kill(os.getpid(), signal.SIGTERM)
+        time.sleep(5)                                   # the handler interrupts this
+        raise AssertionError("SIGTERM was not handled")
+
+    before = signal.getsignal(signal.SIGTERM)
+    monkeypatch.setattr(orchestration, "run_pipeline", stopped)
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 128 + signal.SIGTERM
+    err = capsys.readouterr().err
+    assert "nfclaw: stopped by SIGTERM" in err and "Traceback" not in err
+    assert signal.getsignal(signal.SIGTERM) is before          # handler restored
+
+
+def test_run_interrupted_by_ctrl_c_exits_cleanly(tmp_path, monkeypatch, capsys):
+    from runner import orchestration
+
+    def interrupted(*a, **k):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(orchestration, "run_pipeline", interrupted)
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 130
+    assert "nfclaw: interrupted" in capsys.readouterr().err

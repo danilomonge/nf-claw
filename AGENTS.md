@@ -36,8 +36,10 @@ nothing to look up:
   directory, Nextflow log path, advisories), everything Nextflow printed, and on failure nfclaw's
   error. Once nfclaw is done — the provenance bundle included — its **last line** is
   `==> nfclaw run finished <time>: <outcome>` (`success`, `failed (exit status N)`,
-  `timed out after N s`, `interrupted`), so a run started in the background
-  (`nohup nfclaw run ... &`) is checked with `tail -n 1 <outdir>/provenance/logs/run.log`.
+  `timed out after N s`, `interrupted`, `terminated by SIGTERM`), so a run started in the
+  background (`nohup nfclaw run ... &`) is checked with
+  `tail -n 1 <outdir>/provenance/logs/run.log`, and stopped with `kill <nfclaw pid>` — nfclaw then
+  shuts Nextflow and its tasks down, writes the bundle and closes the log, as on Ctrl-C.
   `--resume` appends: a failed attempt is never overwritten by the retry.
 - `<outdir>/.nextflow.log` — Nextflow's own detailed log. Nextflow runs from `--outdir`, so its
   console hint "Check '.nextflow.log'" means this file, not one in your working directory.
