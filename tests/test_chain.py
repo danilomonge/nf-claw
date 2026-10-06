@@ -265,6 +265,19 @@ def test_the_probe_parses_each_stage_config_with_its_own_engine(library, monkeyp
     assert "NXF_VER" not in seen[0][1]                 # the first stage keeps the default engine
 
 
+def test_the_probe_suggests_the_engine_the_release_declares(library, monkeypatch):
+    import subprocess
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
+    (root / "pipelines" / "mini" / "upstream" / "nextflow.config").write_text(
+        "manifest {\n    nextflowVersion = '!>=23.04.0'\n}\n")
+    planned = chain.plan(_spec(), repo_root=root)
+    monkeypatch.setattr(chain.shutil, "which", lambda name: "/usr/bin/nextflow")
+    monkeypatch.setattr(chain.subprocess, "run", lambda cmd, **kw: subprocess.CompletedProcess(
+        cmd, 1, stdout="ERROR ~ Config parsing failed\n", stderr=""))
+    [issue] = chain._probe_config(_spec(), planned[1])
+    assert 'the release declares Nextflow 23.04.0: try "nxf_ver": "23.04.0"' in issue
+
+
 def test_a_probe_that_cannot_run_is_no_verdict(library, monkeypatch):
     import subprocess
     root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})

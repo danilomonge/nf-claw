@@ -63,3 +63,45 @@ jobs:
             fi
           done
           exit $fail
+      # Every chain the registry defines (handoffs/), with both stages on their test profile, is
+      # validated the way `nfclaw chain run --check` does before a real chain: both stages'
+      # parameters, the handoff against both pinned schemas, and that each stage's config parses.
+      # Nothing executes.
+      - name: Check every registry chain
+        run: |
+          fail=0
+          {
+            echo "## Chain check"
+            echo "| chain | result |"
+            echo "|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          # Each stage runs on the engine its release declares (as nextflow_accept.sh does): a chain
+          # pins it per stage, and an older release's config does not parse on Nextflow 26.
+          declared() {
+            ver=$(grep -hoE "nextflowVersion[[:space:]]*=[[:space:]]*'[^']+'" \
+                  "pipelines/$1/upstream/nextflow.config" 2>/dev/null \
+                  | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | head -1)
+            ver="${ver:-25.10.4}"
+            if [ "$(printf '%s\n22.10.0\n' "$ver" | sort -V | head -1)" = "$ver" ] && [ "$ver" != "22.10.0" ]; then
+              ver="24.10.5"
+            fi
+            echo "$ver"
+          }
+          # not `nfclaw chain edges | while`: the pipe's subshell would lose fail=1
+          while IFS=$'\t' read -r up down _; do
+            spec="$RUNNER_TEMP/chain-$up-$down.json"
+            # submodules are initialised on demand by nfclaw; the declared engine needs the tree
+            git submodule update --init --depth 1 "pipelines/$up/upstream" "pipelines/$down/upstream" >/dev/null 2>&1 || true
+            printf '{"stages": [{"pipeline": "%s", "demo": true, "nxf_ver": "%s"}, {"pipeline": "%s", "demo": true, "nxf_ver": "%s"}]}\n' \
+              "$up" "$(declared "$up")" "$down" "$(declared "$down")" > "$spec"
+            if nfclaw chain run "$spec" --outdir "$RUNNER_TEMP/chain-$up-$down" --check \
+                > "$RUNNER_TEMP/chain-$up-$down.log" 2>&1; then
+              echo "| \`$up\` → \`$down\` | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::error::chain $up -> $down failed its check"
+              cat "$RUNNER_TEMP/chain-$up-$down.log"
+              echo "| \`$up\` → \`$down\` | ❌ |" >> "$GITHUB_STEP_SUMMARY"
+              fail=1
+            fi
+          done < <(nfclaw chain edges)
+          exit $fail

@@ -26,8 +26,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from runner import (discovery, execution, handoff, inputs, nextflow_command, orchestration,
-                    parameters, preflight, resources, runlog, versions)
+from runner import (discovery, engine_version, execution, handoff, inputs, nextflow_command,
+                    orchestration, parameters, preflight, resources, runlog, versions)
 from runner import schema as schema_mod
 from runner.errors import ErrorCode, NfclawError
 from runner.submodule import SubmoduleStatus
@@ -456,8 +456,13 @@ def _probe_config(spec: ChainSpec, p: Planned) -> list[str]:
     engine = f"Nextflow {opts.nxf_ver}" if opts.nxf_ver else "the installed Nextflow"
     report = (runlog.error_excerpt(r.stdout or "")
               + runlog.stderr_excerpt(r.stderr or "")) or [f"exit status {r.returncode}"]
-    return [f"{p.stage.dirname} ({p.stage.pipeline}): {engine} cannot parse its configuration:\n"
-            + "\n".join(f"      {line}" for line in report)]
+    # The engine the release was written for is the one it declares (docs/compatibility.md).
+    declared = engine_version.minimum_version(
+        engine_version.required_spec(p.tree.path / "nextflow.config"))
+    hint = (f" — the release declares Nextflow {declared}: try \"nxf_ver\": \"{declared}\""
+            if declared and declared != opts.nxf_ver else "")
+    return [f"{p.stage.dirname} ({p.stage.pipeline}): {engine} cannot parse its "
+            f"configuration{hint}:\n" + "\n".join(f"      {line}" for line in report)]
 
 
 def _check_frozen(state: dict, planned: list[Planned]) -> None:
@@ -515,9 +520,9 @@ def run_chain(spec: ChainSpec | None, *, repo_root: Path, outdir: Path, check_on
     if unparsable := [issue for p in todo for issue in _probe_config(spec, p)]:
         raise NfclawError(
             ErrorCode.ENVIRONMENT, "A stage could not start: Nextflow cannot parse its configuration.",
-            fix=("Nothing was launched. Give that stage an engine its release parses — e.g. "
-                 "\"nxf_ver\": \"25.10.4\" in its spec entry (see 'Nextflow too new for an older "
-                 f"release' in {runlog.known_issues_path()}) — and run the chain again."),
+            fix=("Nothing was launched. Give that stage an engine its release parses — its "
+                 "\"nxf_ver\" in the spec entry (see 'Nextflow too new for an older release' in "
+                 f"{runlog.known_issues_path()}) — and run the chain again."),
             details={"issues": unparsable})
     if check_only:
         return ChainResult(outdir=outdir, outcome="checked", stages=[], commands=commands)
