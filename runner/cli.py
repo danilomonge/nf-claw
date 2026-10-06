@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -11,8 +10,6 @@ from runner import (discovery, execution, nextflow_command, orchestration, resou
 from runner.errors import ErrorCode, NfclawError
 
 
-_ENV_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-_NXF_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:-edge)?$")
 
 
 def _repo_root() -> Path:
@@ -27,26 +24,8 @@ def _repo_root() -> Path:
 
 
 def _parse_nxf_env(items: list[str]) -> dict[str, str]:
-    """Parse repeatable `--nxf-env KEY=VALUE` into a dict, restricted to `NXF_*` variables.
-
-    Restricting to NXF_* keeps the knob focused on Nextflow's own runtime (and the provenance
-    record meaningful); any other environment a run needs is still inherited from the shell."""
-    env: dict[str, str] = {}
-    for item in items:
-        key, sep, value = item.partition("=")
-        key = key.strip()
-        if not sep:
-            raise NfclawError(ErrorCode.PARAMS_INVALID,
-                              f"--nxf-env must be KEY=VALUE (got {item!r}).")
-        if not key.startswith("NXF_"):
-            raise NfclawError(ErrorCode.PARAMS_INVALID,
-                              f"--nxf-env only accepts NXF_* variables (got {key!r}); "
-                              "other environment is inherited from the shell.")
-        if not _ENV_NAME_RE.fullmatch(key):
-            raise NfclawError(ErrorCode.PARAMS_INVALID,
-                              f"--nxf-env has an invalid environment variable name: {key!r}.")
-        env[key] = value
-    return env
+    """Repeatable `--nxf-env KEY=VALUE` into a dict of `NXF_*` variables (see resources)."""
+    return resources.parse_nxf_env(items)
 
 
 def _positive_int(raw: str) -> int:
@@ -57,11 +36,10 @@ def _positive_int(raw: str) -> int:
 
 
 def _nxf_version(raw: str) -> str:
-    if not _NXF_VERSION_RE.fullmatch(raw):
-        raise argparse.ArgumentTypeError(
-            "must be a full Nextflow version such as 25.10.2 or 25.10.2-edge"
-        )
-    return raw
+    try:
+        return resources.check_nxf_version(raw)
+    except NfclawError as exc:
+        raise argparse.ArgumentTypeError(exc.message) from None
 
 
 def _collect_overrides(extras: list[str]) -> dict:

@@ -46,6 +46,9 @@ class RunResult:
     log_path: Path | None = None            # the run log; None for --check, which launches nothing
     # The NXF_* overlay `command` runs under (--nxf-ver, --nxf-env): part of the command as shown.
     env: dict[str, str] = field(default_factory=dict)
+    # --check only: the temp directory holding the files the printed command names. It outlives the
+    # process so the command stays runnable; a caller that only validates (a chain) removes it.
+    staging: Path | None = None
 
 
 def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
@@ -240,7 +243,7 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                                           work_dir=work_dir, extra_configs=tuple(extra_configs))
     if check_only:
         return RunResult(command=cmd_str, outdir=outdir, checked_only=True,
-                         outputs_report=None, warnings=warnings, env=nxf_overlay)
+                         outputs_report=None, warnings=warnings, env=nxf_overlay, staging=staging)
 
     refs = param_schema.reference_path_params()
     prov_inputs = [Path(v) for k, v in resolved.items()
