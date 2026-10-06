@@ -65,7 +65,19 @@ export default async function PipelinePage({
   const accent = colorForCategory(category);
   const schema = schemaUrl(pipeline.url, pipeline.version);
   const upstream = repoUrl(pipeline.url, pipeline.version);
-  const csvHeader = pipeline.samplesheet.map((c) => c.column).join(",");
+  // The header(s) exactly as skill.md gives them; the intro states the rule that goes with them.
+  const headers = pipeline.samplesheetHeaders;
+  const sheetFormat = (headers[0]?.format ?? "csv").toUpperCase();
+  const inAHeader = new Set(
+    headers.flatMap((h) => h.header.split(h.format === "tsv" ? "\t" : ",").map((c) => c.trim())),
+  );
+  const appendable = pipeline.samplesheet.some((c) => !inAHeader.has(c.column));
+  const sheetIntro =
+    headers.length > 1
+      ? `A ${sheetFormat}. Each row uses exactly one of these column groups (columns from more than one fail validation) — pick the header that matches your data.`
+      : headers.length === 1
+        ? `A ${sheetFormat} with this header (the columns the schema requires).`
+        : "The columns the samplesheet accepts.";
 
   const facts = [
     { icon: SlidersHorizontal, label: "Parameters", value: String(pipeline.parameterCount) },
@@ -168,7 +180,7 @@ export default async function PipelinePage({
         </h2>
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           <CodeBlock code={pipeline.runCommand} label="nfclaw" />
-          <CodeBlock code={pipeline.rawCommand} label="raw nextflow" />
+          {pipeline.rawCommand && <CodeBlock code={pipeline.rawCommand} label="raw nextflow" />}
         </div>
         {pipeline.demoCommand && (
           <div className="mt-4">
@@ -184,11 +196,14 @@ export default async function PipelinePage({
             <Table2 className="h-5 w-5 text-claw-400" /> Samplesheet
           </h2>
           <p className="mt-2 text-sm text-fog-muted">
-            A CSV with this exact header. Fill each value per the constraints below.
+            {sheetIntro} Fill each value per the constraints below
+            {appendable ? "; optional columns from the table may be appended." : "."}
           </p>
-          <div className="mt-5">
-            <CodeBlock code={csvHeader} label="samplesheet.csv header" />
-          </div>
+          {headers.map((h) => (
+            <div key={h.header} className="mt-5">
+              <CodeBlock code={h.header} label={`samplesheet.${h.format} header`} />
+            </div>
+          ))}
           <div className="glass mt-4 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

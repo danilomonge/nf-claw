@@ -14,6 +14,10 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
         # samplesheet would otherwise raise FileNotFoundError/IsADirectoryError as a raw traceback.
         return [f"samplesheet not found or not a file: {path}"]
     named = [c for c in input_schema.columns if c.name]
+    # nf-schema picks the parser from the file extension; mirror that exactly so a `.tsv`
+    # (e.g. nf-core/airrflow, which mandates `.tsv`) is split on TAB, not read as one CSV column.
+    delimiter = "\t" if path.suffix.lower() == ".tsv" else ","
+    kind = "TSV" if delimiter == "\t" else "CSV"
     # Read as utf-8-sig so a leading UTF-8 BOM (common in spreadsheet-exported CSVs) is stripped:
     # otherwise a leading BOM stays glued to the first header (it reads as `\ufeffsample`) and a
     # required column looks missing.
@@ -33,9 +37,6 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
             # tabular schema_input.json. We cannot parse those formats with DictReader, so only the
             # existence check above is local; nf-schema performs the format-specific validation.
             return []
-        # nf-schema picks the parser from the file extension; mirror that exactly so a `.tsv`
-        # (e.g. nf-core/airrflow, which mandates `.tsv`) is split on TAB, not read as one CSV column.
-        delimiter = "\t" if path.suffix.lower() == ".tsv" else ","
         with path.open(newline="", encoding="utf-8-sig") as fh:
             reader = csv.DictReader(fh, delimiter=delimiter)
             header = set(reader.fieldnames or [])
@@ -46,6 +47,14 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
     except UnicodeDecodeError:
         return [f"samplesheet is not valid UTF-8 text: {path} "
                 "(is it a real .csv/.tsv, not a binary file such as .xlsx?)"]
+    except OSError as exc:
+        # It exists and is a file (checked above) but cannot be read — e.g. another user's sheet.
+        return [f"samplesheet cannot be read: {exc.strerror or exc}: {path}"]
+    except csv.Error as exc:
+        # The parser gave up on the file's structure — in practice an unbalanced quote, which makes
+        # the rest of the file one field until it exceeds the csv module's field size limit.
+        return [f"samplesheet is not parseable as {kind}: {exc} "
+                f"(check for an unbalanced quote): {path}"]
     if not rows:
         issues.append("samplesheet has no data rows")
     for i, row in enumerate(rows, start=2):

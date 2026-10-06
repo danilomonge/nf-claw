@@ -30,7 +30,7 @@ nf-core/proteinfold pipeline parameters. Every parameter from the pinned `nextfl
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--alphafold2-bfd-path` | string |  |  |  |  | null/bfd/* | Path to BFD dababase |
-| `--alphafold2-db` | string |  |  |  |  |  | Specifies the DB and PARAMS path used by 'AlphaFold2' mode |
+| `--alphafold2-db` | string (file or directory path) |  |  |  |  |  | Specifies the DB and PARAMS path used by 'AlphaFold2' mode |
 | `--alphafold2-mgnify-path` | string |  |  |  |  | null/mgnify/* | Path to the MGnify database |
 | `--alphafold2-params-path` | string |  |  |  |  | null/params/alphafold_params_2022-12-06/* | Path to the AlphaFold2 parameters |
 | `--alphafold2-pdb70-path` | string |  |  |  |  | null/pdb70/** | Path to the PDB70 database |
@@ -57,7 +57,7 @@ nf-core/proteinfold pipeline parameters. Every parameter from the pinned `nextfl
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--alphafold3-db` | string |  |  |  |  |  | Specifies the DB and PARAMS path used by 'AlphaFold3' mode |
+| `--alphafold3-db` | string (file or directory path) |  |  |  |  |  | Specifies the DB and PARAMS path used by 'AlphaFold3' mode |
 | `--alphafold3-mgnify-link` | string |  |  |  |  | https://storage.googleapis.com/alphafold-databases/v3.0/mgy_clusters_2022_05.fa.zst | Link to the MGnify database |
 | `--alphafold3-nt-rna-link` | string |  |  |  |  | https://storage.googleapis.com/alphafold-databases/v3.0/nt_rna_2023_02_23_clust_seq_id_90_cov_80_rep_seq.fasta.zst | Link to the nt_rna database |
 | `--alphafold3-pdb-mmcif-link` | string |  |  |  |  | https://storage.googleapis.com/alphafold-databases/v3.0/pdb_2022_09_28_mmcif_files.tar.zst | Link to the PDB mmCIF database |
@@ -126,7 +126,7 @@ nf-core/proteinfold pipeline parameters. Every parameter from the pinned `nextfl
 |---|---|---|---|---|---|---|---|
 | `--colabfold-alphafold2-params-path` | string |  |  |  |  |  | Link to the Alphafold2 parameters for Colabfold |
 | `--colabfold-alphafold2-params-tags` | object |  |  |  |  |  | Dictionary with Alphafold2 parameters tags |
-| `--colabfold-db` | string |  |  |  |  |  | Specifies the PARAMS and DB path used by 'colabfold' mode |
+| `--colabfold-db` | string (file or directory path) |  |  |  |  |  | Specifies the PARAMS and DB path used by 'colabfold' mode |
 | `--colabfold-envdb-path` | string |  |  |  |  | null/colabfold_envdb/* | Link to the ColabFold database |
 | `--colabfold-uniref30-path` | string |  |  |  |  | null/colabfold_uniref30/* | Link to the UniRef30 database |
 
@@ -161,7 +161,7 @@ nf-core/proteinfold pipeline parameters. Every parameter from the pinned `nextfl
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--esmfold-db` | string |  |  |  |  |  | Specifies the PARAMS path used by 'esmfold' mode |
+| `--esmfold-db` | string (file or directory path) |  |  |  |  |  | Specifies the PARAMS path used by 'esmfold' mode |
 | `--esmfold-params-path` | string |  |  |  |  | null/params/* | Link to the ESMFold parameters |
 
 ## foldseek_options
@@ -169,7 +169,7 @@ nf-core/proteinfold pipeline parameters. Every parameter from the pinned `nextfl
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--foldseek-db` | string |  |  |  |  |  | The ID of Foldseek databases |
-| `--foldseek-db-path` | string |  |  |  |  |  | Specifies the path to foldseek databases used by 'foldseek'. |
+| `--foldseek-db-path` | string (file or directory path) |  |  |  |  |  | Specifies the path to foldseek databases used by 'foldseek'. |
 | `--foldseek-easysearch-arg` | string |  |  |  |  |  | Specifies the arguments to be passed to foldseek easysearch command |
 | `--skip-foldseek` | boolean |  |  |  |  | true | Skip foldseek structural similarity search. |
 
@@ -304,7 +304,7 @@ nf-core/proteinfold pipeline parameters. Every parameter from the pinned `nextfl
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--rosettafold2na-db` | string |  |  |  |  |  | Specifies the DB and PARAMS path used by 'RosettaFold2NA' mode |
+| `--rosettafold2na-db` | string (file or directory path) |  |  |  |  |  | Specifies the DB and PARAMS path used by 'RosettaFold2NA' mode |
 
 ## rosettafold_all_atom_dbs_and_parameters_links_options
 

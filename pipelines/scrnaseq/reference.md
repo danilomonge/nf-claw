@@ -13,7 +13,7 @@ nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--cellranger-multi-barcodes` | string (file path) |  |  |  |  |  | Additional samplesheet to provide information about multiplexed samples. See the 'Usage' section for more details. |
-| `--cellranger-vdj-index` | string |  |  |  |  |  | Specify a pre-built Cell Ranger index for VDJ analysis. |
+| `--cellranger-vdj-index` | string (file or directory path) |  |  |  |  |  | Specify a pre-built Cell Ranger index for VDJ analysis. |
 | `--fb-reference` | string (file path) |  |  |  |  |  | Provide a reference file for feature barcoding (e.g. antibody measurements). Please refer to the [Cell Ranger Feature Reference documentation](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/inputs/cr-feature-ref-csv) for more details. |
 | `--gex-barcode-sample-assignment` | string (file path) |  |  |  |  |  | This is only necessary to override Cell Ranger's default cell calling and tag calling steps. In most cases, you need to only use the `cellranger_multi_barcodes` parameter. Please refer to the [10x documentation](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/running-pipelines/cr-3p-multi#barcode-asst) for more information about this file. |
 | `--gex-cmo-set` | string (file path) |  |  |  |  |  | Provide a Cell Multiplexing Oligo (CMO) description file when working with multiplexed samples. This is only necessary if you with to override Cell Ranger's default CMO-set. Please refer to the [10x documentation](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/running-pipelines/cr-3p-multi#cmo-ref) about CMO references for more details. |
@@ -27,7 +27,7 @@ nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--cellranger-index` | string |  |  |  |  |  | Specify a pre-calculated cellranger index. Readily prepared indexes can be obtained from the 10x Genomics website. Provide the base directory of the index (e.g., '/PATH/TO/10X_REF/refdata-gex-GRCh38-2024-A/') |
+| `--cellranger-index` | string (file or directory path) |  |  |  |  |  | Specify a pre-calculated cellranger index. Readily prepared indexes can be obtained from the 10x Genomics website. Provide the base directory of the index (e.g., '/PATH/TO/10X_REF/refdata-gex-GRCh38-2024-A/') |
 | `--skip-cellranger-renaming` | boolean |  |  |  |  |  | Should it skip the automatic renaming included in cellranger-related modules? |
 
 ## cellrangerarc_options
@@ -82,7 +82,7 @@ nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--kallisto-index` | string |  |  |  |  |  | Specify a path to the precomputed Kallisto index. |
+| `--kallisto-index` | string (file or directory path) |  |  |  |  |  | Specify a path to the precomputed Kallisto index. |
 | `--kb-t1c` | string (file path) |  |  |  |  |  | Specify a path to the cDNA transcripts-to-capture. |
 | `--kb-t2c` | string (file path) |  |  |  |  |  | Specify a path to the intron transcripts-to-capture. |
 | `--kb-workflow` | string |  |  | `standard`, `lamanno`, `nac` |  | standard | Type of workflow. Use `nac` for an index type that can quantify nascent and mature RNA. Use `lamanno` for RNA velocity based on La Manno et al. 2018 logic. (default: standard) |
@@ -115,7 +115,7 @@ nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_
 |---|---|---|---|---|---|---|---|
 | `--qcatch-n-partitions` | integer |  |  |  |  |  | Number of partitions (max barcodes) for QCatch's empty_drops step. |
 | `--remove-doublets` | boolean |  |  |  |  |  | Enable doublet detection and removal using Scrublet via QCatch. |
-| `--simpleaf-index` | string |  |  |  |  |  | Path to pre-built Simpleaf index. |
+| `--simpleaf-index` | string (file or directory path) |  |  |  |  |  | Path to pre-built Simpleaf index. |
 | `--simpleaf-umi-resolution` | string |  |  | `cr-like`, `cr-like-em`, `parsimony`, `parsimony-em`, `parsimony-gene`, `parsimony-gene-em` |  | cr-like | UMI resolution strategy to deduplicate UMIs. |
 
 ## skip_tools
@@ -135,6 +135,6 @@ nf-core/scrnaseq pipeline parameters. Every parameter from the pinned `nextflow_
 | `--seq-center` | string |  |  |  |  |  | Name of sequencing center for BAM read group tag. |
 | `--star-feature` | string |  |  | `Gene`, `GeneFull`, `Gene Velocyto` |  | Gene | Quantification type of different transcriptomic feature. Use `GeneFull` on pre-mRNA count for single-nucleus RNA-seq reads. Use `Gene Velocyto` to generate RNA velocity matrix. |
 | `--star-ignore-sjdbgtf` | string |  |  |  |  |  | Ignore the SJDB GTF file. |
-| `--star-index` | string |  |  |  |  |  | Specify a path to the precomputed STAR index. |
+| `--star-index` | string (file or directory path) |  |  |  |  |  | Specify a path to the precomputed STAR index. |
 
 <!-- Generated from nf-core/scrnaseq@3fc17b4f971a89e47c88337de71d0e777ffad8cc. Do not edit by hand. -->

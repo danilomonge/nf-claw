@@ -133,3 +133,76 @@ def test_no_spaces_no_block(tmp_path, monkeypatch):
                                          submodule=_st(tmp_path / "up"), repo_root=tmp_path,
                                          resume=False, work_dir=tmp_path / "work")
     assert not any("space" in i for i in issues)
+
+
+def test_outdir_that_cannot_be_written_is_flagged(tmp_path, monkeypatch):
+    # `--outdir /data/results` under a directory the caller cannot write failed with a raw
+    # PermissionError once nfclaw tried to create it. (os.access is stubbed: tests may run as root.)
+    import os
+    monkeypatch.setattr(preflight.shutil, "which", lambda x: "/usr/bin/" + x)
+    locked = tmp_path / "data"
+    locked.mkdir()
+    real_access = os.access
+    monkeypatch.setattr(preflight.os, "access",
+                        lambda p, mode: False if Path(p) == locked else real_access(p, mode))
+
+    def issues_for(out):
+        return preflight.check_environment(profile="singularity", output_dir=out,
+                                           submodule=_st(tmp_path / "up"),
+                                           repo_root=tmp_path / "repo", resume=False,
+                                           check_only=True)
+    # Not yet created: judged on the nearest existing ancestor, however deep the new path is.
+    assert any(f"cannot be created: {locked} is not writable" in i
+               for i in issues_for(locked / "results" / "run1"))
+    assert any(f"--outdir is not writable: {locked}" in i for i in issues_for(locked))
+    assert not any("writ" in i for i in issues_for(tmp_path / "fine" / "results"))
+
+
+def test_outdir_under_a_file_is_flagged(tmp_path, monkeypatch):
+    monkeypatch.setattr(preflight.shutil, "which", lambda x: "/usr/bin/" + x)
+    (tmp_path / "notes.txt").write_text("x")
+    issues = preflight.check_environment(profile="singularity",
+                                         output_dir=tmp_path / "notes.txt" / "results",
+                                         submodule=_st(tmp_path / "up"),
+                                         repo_root=tmp_path / "repo", resume=False)
+    assert any("notes.txt is not a directory" in i for i in issues)
+
+
+def test_outdir_under_an_unsearchable_directory_is_flagged_not_crashed(tmp_path, monkeypatch):
+    # `--outdir /root/x` as another user: Path.exists()/is_dir() raise PermissionError there rather
+    # than answer, which escaped preflight as a traceback.
+    import pathlib
+    monkeypatch.setattr(preflight.shutil, "which", lambda x: "/usr/bin/" + x)
+    locked = tmp_path / "locked"
+    real_stat = pathlib.Path.stat
+
+    def stat(self, *a, **k):
+        if self.is_relative_to(locked) and self != locked:
+            raise PermissionError(13, "Permission denied", str(self))
+        return real_stat(self, *a, **k)
+
+    monkeypatch.setattr(pathlib.Path, "stat", stat)
+    issues = preflight.check_environment(profile="singularity", output_dir=locked / "x" / "out",
+                                         submodule=_st(tmp_path / "up"),
+                                         repo_root=tmp_path / "repo", resume=False)
+    assert any("--outdir cannot be reached: Permission denied" in i for i in issues), issues
+
+
+def test_unwritable_work_dir_is_flagged_with_the_nxf_work_fix(tmp_path, monkeypatch):
+    # The default work dir, <repo>/work, belongs to whoever ran first: on a shared clone the next
+    # user's run failed inside Nextflow. (os.access is stubbed: tests may run as root.)
+    import os
+    monkeypatch.setattr(preflight.shutil, "which", lambda x: "/usr/bin/" + x)
+    work = tmp_path / "repo" / "work"
+    work.mkdir(parents=True)
+    real_access = os.access
+    monkeypatch.setattr(preflight.os, "access",
+                        lambda p, mode: False if Path(p) == work else real_access(p, mode))
+    issues = preflight.check_environment(profile="singularity", output_dir=tmp_path / "out",
+                                         submodule=_st(tmp_path / "up"), repo_root=tmp_path / "repo",
+                                         resume=False, work_dir=work)
+    assert any("work directory is not writable" in i and "NXF_WORK" in i for i in issues), issues
+    fine = preflight.check_environment(profile="singularity", output_dir=tmp_path / "out",
+                                       submodule=_st(tmp_path / "up"), repo_root=tmp_path / "repo",
+                                       resume=False, work_dir=tmp_path / "elsewhere" / "work")
+    assert not any("work directory" in i for i in fine), fine

@@ -5,8 +5,10 @@ import signal
 import subprocess
 import sys
 import threading
+import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from runner import runlog
 from runner.errors import ErrorCode, NfclawError
@@ -86,7 +88,7 @@ def _run(command: list[str], *, cwd: Path, logs_dir: Path, timeout_seconds: int 
     # start_new_session puts the child in its own process group, so nfclaw owns its shutdown: the
     # terminal's Ctrl-C reaches nfclaw as a KeyboardInterrupt (not the child), and nfclaw then tears
     # down the whole group below. Without this the child kept running in the background after Ctrl-C.
-    popen_kwargs = {} if sys.platform == "win32" else {"start_new_session": True}
+    popen_kwargs: dict[str, Any] = {} if sys.platform == "win32" else {"start_new_session": True}
     # Inherit the full environment, then overlay the caller's NXF_* overrides (engine version,
     # JVM args, …). Inheriting keeps shell-set vars (proxies, JAVA_HOME) working as before.
     env = {**os.environ, **env_extra} if env_extra else None
@@ -172,7 +174,7 @@ def _failure(code: int, run_log: runlog.RunLog) -> NfclawError:
         message += ("\n  and on stderr:\n" if on_stdout else " Nextflow reported on stderr:\n") + \
             _quote(on_stderr)
     causes = (runlog.nextflow_log_causes(run_log.nextflow_log)
-              if "nextflow_log" in details else [])
+              if "nextflow_log" in details and run_log.nextflow_log is not None else [])
     if causes:
         message += "\n  The underlying cause, from the Nextflow log:\n" + _quote(causes)
     task_hint = (" The failing task's complete output is in .command.err and .command.log beside "
@@ -189,19 +191,50 @@ def _quote(lines: list[str]) -> str:
     return "\n".join(f"    {line}" if line else "" for line in lines)
 
 
-def _terminate(proc: subprocess.Popen) -> None:
+_GRACE_SECONDS = 10
+
+
+def _group_alive(pgid: int) -> bool:
+    try:
+        os.killpg(pgid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:                       # members exist that we may not signal: still not gone
+        return True
+    return True
+
+
+def _terminate(proc: subprocess.Popen, grace: float = _GRACE_SECONDS) -> None:
     """Stop the child and everything it launched.
 
-    Signals the whole process group (SIGTERM first, so Nextflow runs its JVM shutdown hooks and
-    cleans up its own tasks; SIGKILL only if it does not exit), because killing just the child would
-    orphan the task processes it spawned.
+    Signals the whole process group, because killing just the child would orphan the task processes
+    it spawned: SIGTERM first, so Nextflow runs its JVM shutdown hooks and cleans up its own tasks, then
+    SIGKILL for whatever is still running once the grace period is over. The group is waited on, not
+    just its leader — Nextflow exiting does not mean its tasks did, and a task that ignores or is
+    still handling SIGTERM would otherwise be left running in the background.
     """
-    if hasattr(os, "killpg"):
-        for sig in (signal.SIGTERM, signal.SIGKILL):
-            try:
-                os.killpg(os.getpgid(proc.pid), sig)
-                proc.wait(timeout=10)
-                return
-            except (OSError, ProcessLookupError, subprocess.TimeoutExpired):
-                continue
-    proc.kill()
+    if not hasattr(os, "killpg"):                     # Windows: no process groups to signal
+        proc.kill()
+        proc.wait()
+        return
+    pgid = proc.pid                                   # start_new_session: the child leads its group
+    deadline = time.monotonic() + grace
+    try:
+        os.killpg(pgid, signal.SIGTERM)
+    except OSError:
+        pass
+    try:
+        try:
+            proc.wait(timeout=grace)
+        except subprocess.TimeoutExpired:
+            pass
+        while _group_alive(pgid) and time.monotonic() < deadline:
+            time.sleep(0.1)
+    finally:
+        # Also on a second Ctrl-C during the grace period: that asks to stop now, not to leave the
+        # group running — skip the rest of the wait, but still kill it.
+        try:
+            os.killpg(pgid, signal.SIGKILL)
+        except OSError:
+            pass                                      # the group is already gone
+        proc.wait()

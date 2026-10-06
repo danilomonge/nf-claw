@@ -166,7 +166,7 @@ nf-core/sopa pipeline parameters. Every parameter from the pinned `nextflow_sche
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--spaceranger-probeset` | string (file path) |  |  |  | matches ^\S+\.csv$ |  | Location of Space Ranger probeset file. |
-| `--spaceranger-reference` | string |  |  |  |  | https://cf.10xgenomics.com/supp/spatial-exp/refdata-gex-GRCh38-2020-A.tar.gz | Location of Space Ranger reference directory. May be packed as `tar.gz` file. |
+| `--spaceranger-reference` | string (file or directory path) |  |  |  |  | https://cf.10xgenomics.com/supp/spatial-exp/refdata-gex-GRCh38-2020-A.tar.gz | Location of Space Ranger reference directory. May be packed as `tar.gz` file. |
 
 ## stardist
 

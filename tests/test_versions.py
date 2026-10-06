@@ -174,6 +174,7 @@ def test_materialize_failure_is_a_structured_error(tmp_path, monkeypatch):
     upstream.mkdir(parents=True)
     incomplete = SubmoduleStatus("p", upstream, False, False, "", "", ("main.nf",))
     monkeypatch.setattr(versions.submod, "resolve_at", lambda *a, **k: incomplete)
+    monkeypatch.setattr(versions.submod, "is_git_tree", lambda *a, **k: True)
     monkeypatch.setattr(versions, "_has_tag", lambda *a, **k: False)
     monkeypatch.setattr(
         versions, "_fetch_tag",
@@ -474,3 +475,38 @@ def test_generate_docs_for_dev_commit(tmp_path):
     assert "version: dev" in text and f"commit: {sha}" in text
     assert "--pipeline-version dev" in text
     assert f"pipelines/mini/.versions/dev-{sha[:12]}/upstream" in text
+
+
+def _outer_repo_with_tag(root, tag):
+    """The nf-claw checkout itself, carrying a semver tag of its own."""
+    root.mkdir(parents=True, exist_ok=True)
+    _git(root, "init", "-q", "-b", "main")
+    _git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "--allow-empty",
+         "-m", "init")
+    _git(root, "tag", tag)
+
+
+def test_uninitialised_submodule_never_lists_nf_claws_own_tags(tmp_path):
+    # `git tag --list` in an uninitialised submodule's (empty) directory lists the enclosing nf-claw
+    # repository's tags, which `nfclaw versions` then offered as releases of the pipeline.
+    _outer_repo_with_tag(tmp_path, "v9.9.9")
+    up = tmp_path / "pipelines" / "p" / "upstream"
+    up.mkdir(parents=True)
+    assert versions._local_tags(up) == []
+    assert versions.release_tags("p", pipelines_dir=tmp_path / "pipelines", repo_root=tmp_path) == []
+
+
+def test_materialize_refuses_a_tree_that_is_not_its_own_clone(tmp_path):
+    # Copied files inside the nf-claw checkout: fetching/adding a worktree "there" would act on
+    # nf-claw itself (fetch the tag into it, shallow it, register a worktree of it).
+    _outer_repo_with_tag(tmp_path, "1.2.0")
+    up = tmp_path / "pipelines" / "p" / "upstream"
+    up.mkdir(parents=True)
+    for f in ("main.nf", "nextflow.config", "nextflow_schema.json"):
+        (up / f).write_text("x")
+    with pytest.raises(NfclawError) as exc:
+        versions.materialize("p", "1.2.0", pipelines_dir=tmp_path / "pipelines", repo_root=tmp_path)
+    assert exc.value.code == ErrorCode.SUBMODULE_INCOMPLETE and "not a git checkout" in str(exc.value)
+    out = subprocess.run(["git", "-C", str(tmp_path), "worktree", "list"], capture_output=True,
+                         text=True, check=True).stdout
+    assert len(out.splitlines()) == 1                        # no worktree registered against nf-claw

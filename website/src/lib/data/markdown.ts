@@ -69,25 +69,40 @@ export function parseTableAt(lines: string[], from: number): MarkdownTable | nul
   return { headers, rows };
 }
 
+const FENCE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
+
+/**
+ * For each line, the heading text if it is a heading, else null. A line inside a fenced code block is
+ * content, never a heading: the "Run it" block's `# raw equivalent …` shell comment otherwise ended the
+ * section there, and the raw `nextflow run` command after it was never found.
+ */
+function headings(lines: string[]): (string | null)[] {
+  let fence: string | null = null; // the opening marker of the block we are in, if any
+  return lines.map((line) => {
+    const f = line.match(FENCE);
+    if (fence !== null) {
+      // A closing fence: the same character, at least as long as the opener, nothing after it.
+      if (f && f[1][0] === fence[0] && f[1].length >= fence.length && !f[2].trim()) fence = null;
+      return null;
+    }
+    if (f) {
+      fence = f[1];
+      return null;
+    }
+    const m = line.match(/^#{1,6}\s+(.*)$/);
+    return m ? m[1].trim() : null;
+  });
+}
+
 /** Find a section heading (## Title) and return the lines until the next heading. */
 export function sectionLines(md: string, heading: string): string[] {
   const lines = md.split("\n");
+  const heads = headings(lines);
   const wanted = heading.trim().toLowerCase();
-  let start = -1;
-  for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(/^#{1,6}\s+(.*)$/);
-    if (m && m[1].trim().toLowerCase().startsWith(wanted)) {
-      start = i + 1;
-      break;
-    }
-  }
+  const start = heads.findIndex((h) => h !== null && h.toLowerCase().startsWith(wanted));
   if (start === -1) return [];
-  const out: string[] = [];
-  for (let i = start; i < lines.length; i++) {
-    if (/^#{1,6}\s+/.test(lines[i])) break;
-    out.push(lines[i]);
-  }
-  return out;
+  const end = heads.findIndex((h, i) => i > start && h !== null);
+  return lines.slice(start + 1, end === -1 ? lines.length : end);
 }
 
 /** Parse the table under a given "## Heading" section. */
@@ -96,20 +111,36 @@ export function tableUnder(md: string, heading: string): MarkdownTable | null {
   return parseTableAt(lines, 0);
 }
 
-/** Extract the first fenced code block under a "## Heading" section. */
-export function codeBlockUnder(md: string, heading: string): string | null {
-  const lines = sectionLines(md, heading);
-  const out: string[] = [];
-  let inBlock = false;
-  for (const line of lines) {
-    if (line.trim().startsWith("```")) {
-      if (inBlock) break;
-      inBlock = true;
+export interface CodeBlockText {
+  /** The fence's info string, e.g. "bash", "csv", "tsv" ("" when there is none). */
+  lang: string;
+  code: string;
+}
+
+/** Every fenced code block under a "## Heading" section, in order. */
+export function codeBlocksUnder(md: string, heading: string): CodeBlockText[] {
+  const blocks: CodeBlockText[] = [];
+  let open: { fence: string; lang: string; lines: string[] } | null = null;
+  for (const line of sectionLines(md, heading)) {
+    const f = line.match(FENCE);
+    if (open === null) {
+      if (f) open = { fence: f[1], lang: f[2].trim().split(/\s+/)[0] ?? "", lines: [] };
       continue;
     }
-    if (inBlock) out.push(line);
+    if (f && f[1][0] === open.fence[0] && f[1].length >= open.fence.length && !f[2].trim()) {
+      blocks.push({ lang: open.lang, code: open.lines.join("\n") });
+      open = null;
+      continue;
+    }
+    open.lines.push(line);
   }
-  return out.length ? out.join("\n") : null;
+  return blocks;
+}
+
+/** The first fenced code block under a "## Heading" section. */
+export function codeBlockUnder(md: string, heading: string): string | null {
+  const block = codeBlocksUnder(md, heading)[0];
+  return block && block.code ? block.code : null;
 }
 
 /** Plain prose under a "## Heading" (collapsed whitespace). */

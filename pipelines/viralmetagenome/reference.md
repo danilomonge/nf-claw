@@ -67,7 +67,7 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--arguments-mmseqs-search` | string |  | yes |  |  | --search-type 4 --rescore-mode 3 | Arguments for MMseqs2 search |
 | `--arguments-prokka` | string |  | yes |  |  | --centre X --compliant --force --kingdom Viruses | Arguments for Prokka tool |
 | `--arguments-quast-qc` | string |  |  |  |  |  | Arguments for QUAST quality control |
-| `--checkv-db` | string |  |  |  |  |  | Reference database used by checkv for consensus quality control |
+| `--checkv-db` | string (file or directory path) |  |  |  |  |  | Reference database used by checkv for consensus quality control |
 | `--mmseqs-searchtype` | integer |  | yes |  |  | 4 | Specify the search algorithm to use for mmseqs. 0: auto 1: amino acid, 2: translated, 3: nucleotide, 4: translated nucleotide alignment |
 | `--prokka-db` | string |  |  |  |  |  | Define a prokka `--protein` database for protein annotation |
 | `--skip-alignment-qc` | boolean |  |  |  |  | true | Skip creating an alignment of each the collapsed clusters and each iterative step |
@@ -123,10 +123,10 @@ nf-core/viralmetagenome pipeline parameters. Every parameter from the pinned `ne
 | `--arguments-kraken2` | string |  | yes |  |  | --report-minimizer-data | Arguments for Kraken2 tool |
 | `--arguments-kreport2krona` | string |  |  |  |  |  | Arguments for Kreport2Krona tool |
 | `--arguments-krona` | string |  | yes |  |  |  | Arguments for Krona tool |
-| `--bracken-db` | string |  |  |  |  | https://genome-idx.s3.amazonaws.com/kraken/k2_viral_20230314.tar.gz | Location of bracken database |
-| `--kaiju-db` | string |  |  |  |  | https://kaiju-idx.s3.eu-central-1.amazonaws.com/2023/kaiju_db_rvdb_2023-05-26.tgz | Location of Kaiju database |
+| `--bracken-db` | string (file or directory path) |  |  |  |  | https://genome-idx.s3.amazonaws.com/kraken/k2_viral_20230314.tar.gz | Location of bracken database |
+| `--kaiju-db` | string (file or directory path) |  |  |  |  | https://kaiju-idx.s3.eu-central-1.amazonaws.com/2023/kaiju_db_rvdb_2023-05-26.tgz | Location of Kaiju database |
 | `--kaiju-taxon-rank` | string |  | yes | `superkingdom`, `phylum`, `class`, `order`, `family`, `genus`, `species` |  | species | Level of taxa rank that needs to be determined |
-| `--kraken2-db` | string |  |  |  |  | https://genome-idx.s3.amazonaws.com/kraken/k2_viral_20230314.tar.gz | Location of the Kraken2 database |
+| `--kraken2-db` | string (file or directory path) |  |  |  |  | https://genome-idx.s3.amazonaws.com/kraken/k2_viral_20230314.tar.gz | Location of the Kraken2 database |
 | `--kraken2-save-minimizers` | boolean |  |  |  |  |  | Save kraken2's used minimizers |
 | `--kraken2-save-readclassification` | boolean |  |  |  |  |  | Save summary overview of read classifications in a txt file |
 | `--kraken2-save-reads` | boolean |  |  |  |  |  | Save classified and unclassified reads as fastq files |

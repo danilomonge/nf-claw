@@ -203,3 +203,31 @@ def test_path_format_columns_are_checked_too(tmp_path):
     issues = samplesheet.validate(ss, sch)
     assert any("row 2" in i and "relative path" in i for i in issues)
     assert any("row 3" in i and "file not found" in i for i in issues)
+
+
+def test_unbalanced_quote_in_a_large_sheet_is_flagged_not_crashed(tmp_path):
+    # One stray quote turns the rest of the file into a single field; past the csv module's field
+    # size limit that raised a raw csv.Error traceback instead of a samplesheet issue.
+    p = tmp_path / "ss.csv"
+    p.write_text('sample\n"A\n' + "B\n" * 70000)
+    issues = samplesheet.validate(p, SCH)
+    assert len(issues) == 1 and "not parseable as CSV" in issues[0] and "quote" in issues[0]
+    t = tmp_path / "ss.tsv"
+    t.write_text('sample\n"A\n' + "B\n" * 70000)
+    assert "not parseable as TSV" in samplesheet.validate(t, SCH)[0]
+
+
+def test_unreadable_sheet_is_flagged_not_crashed(tmp_path, monkeypatch):
+    # A sheet that exists but cannot be read (another user's file) raised a raw PermissionError.
+    import pathlib
+    ss = tmp_path / "ss.csv"
+    ss.write_text("sample,fastq_1\n")
+    real_open = pathlib.Path.open
+
+    def deny(self, *a, **k):
+        if self == ss:
+            raise PermissionError(13, "Permission denied", str(self))
+        return real_open(self, *a, **k)
+
+    monkeypatch.setattr(pathlib.Path, "open", deny)
+    assert samplesheet.validate(ss, SCH) == [f"samplesheet cannot be read: Permission denied: {ss}"]

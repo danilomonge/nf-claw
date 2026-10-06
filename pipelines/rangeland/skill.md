@@ -30,9 +30,9 @@ This release publishes no samplesheet schema for `--input`, so nfclaw does not p
 ## Required parameters
 | parameter | type | default | allowed values | constraints | description |
 |---|---|---|---|---|---|
-| `--input` | string |  |  |  | Root directory or tarball of all satellite imagery. |
-| `--dem` | string |  |  |  | Digital elevation model. |
-| `--wvdb` | string |  |  |  | Water vapor dataset. |
+| `--input` | string (file or directory path) |  |  |  | Root directory or tarball of all satellite imagery. |
+| `--dem` | string (file or directory path) |  |  |  | Digital elevation model. |
+| `--wvdb` | string (file or directory path) |  |  |  | Water vapor dataset. |
 | `--data-cube` | string (file path) |  |  | matches ^\S+\.prj$ | Datacube definition. |
 | `--aoi` | string (file path) |  |  | matches ^\S+\.(gpkg\|shp)$ | Area of interest. |
 | `--endmember` | string (file path) |  |  | matches ^\S+\.txt$ | Endmember definition. |

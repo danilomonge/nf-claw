@@ -13,7 +13,7 @@ nf-core/createpanelrefs pipeline parameters. Every parameter from the pinned `ne
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--cnvkit-pon-name` | string |  |  |  |  | cnvkit | Name for panel of normals. |
-| `--cnvkit-targets` | string |  |  |  |  |  | Path to directory for target file. |
+| `--cnvkit-targets` | string (file or directory path) |  |  |  |  |  | Path to directory for target file. |
 
 ## generic_options
 
@@ -98,13 +98,13 @@ nf-core/createpanelrefs pipeline parameters. Every parameter from the pinned `ne
 | `--dict` | string (file path) |  |  |  | matches ^\S+\.dict$ |  | Path to sequence dictionary file |
 | `--fai` | string (file path) |  |  |  | matches ^\S+\.fn?a(sta)?\.fai$ |  | Path to fasta index file |
 | `--fasta` | string (file path) |  |  |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ |  | Path to FASTA genome file. |
-| `--gcnv-exclude-bed` | string |  |  |  | matches ^\S+\.bed$ |  | Path to directory for a bed file containing regions to be exluded from the analysis. |
-| `--gcnv-exclude-interval-list` | string |  |  |  | matches ^\S+\.interval_list$ |  | Path to directory for exclude_interval_list file. |
+| `--gcnv-exclude-bed` | string (file or directory path) |  |  |  | matches ^\S+\.bed$ |  | Path to directory for a bed file containing regions to be exluded from the analysis. |
+| `--gcnv-exclude-interval-list` | string (file or directory path) |  |  |  | matches ^\S+\.interval_list$ |  | Path to directory for exclude_interval_list file. |
 | `--gcnv-mappable-regions` | string (file path) |  |  |  |  |  | Path to Umap single-read mappability track in .bed or .bed.gz format. Overlapping intervals must be merged. |
 | `--gcnv-ploidy-priors` | string (file path) |  |  |  |  |  | Path to a file containing ploidy priors table. |
 | `--gcnv-segmental-duplications` | string (file path) |  |  |  |  |  | Path to segmental-duplication track in .bed or .bed.gz format. Overlapping intervals must be merged. |
-| `--gcnv-target-bed` | string |  |  |  | matches ^\S+\.bed$ |  | Path to directory for target bed file. |
-| `--gcnv-target-interval-list` | string |  |  |  | matches ^\S+\.interval_list$ |  | Path to directory for target interval_list file. |
+| `--gcnv-target-bed` | string (file or directory path) |  |  |  | matches ^\S+\.bed$ |  | Path to directory for target bed file. |
+| `--gcnv-target-interval-list` | string (file or directory path) |  |  |  | matches ^\S+\.interval_list$ |  | Path to directory for target interval_list file. |
 | `--genome` | string |  |  |  |  |  | Name of iGenomes reference. |
 | `--gens-interval-list` | string (file path) |  |  |  | matches ^\S+\.interval_list$ |  | Path to GENS interval list file |
 | `--igenomes-base` | string |  | yes |  |  | s3://ngi-igenomes/igenomes/ | The base path to the igenomes reference files |

@@ -93,11 +93,18 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                     or repo_root / "work").expanduser().resolve()
     param_schema = schema_mod.load_param_schema(st.path)
 
+    # Read the params file once; it is merged below, and it may be what supplies `input`.
+    file_params = parameters.load_params_file(params_file) if params_file is not None else {}
+
     # What --input is comes from the pipeline's own schema, not an assumption: a samplesheet, another
     # local path (a directory, an SDRF file), or a plain value (a PRIDE accession, a URL, `false`).
     # Only a local samplesheet gets the deterministic pre-check; a remote one is staged by Nextflow and
-    # validated by nf-schema at runtime, and a plain value is forwarded unchanged.
-    resolved_input = inputs.resolve(input_path, st.path)
+    # validated by nf-schema at runtime, and a plain value is forwarded unchanged. The flag wins over
+    # the params file's `input` (as in the merge below), and whichever supplies the value, it is
+    # interpreted the same way — a params-file `input: false` or relative samplesheet means exactly
+    # what `--input false` or `--input sheet.csv` does.
+    raw_input = input_path if input_path is not None else file_params.get("input")
+    resolved_input = inputs.resolve(raw_input, st.path)
     if resolved_input is not None and resolved_input.local_path is not None:
         input_schema = (schema_mod.load_input_schema(st.path, resolved_input.samplesheet_schema)
                         if resolved_input.samplesheet_schema else None)
@@ -114,7 +121,7 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
 
     # Merge params-file + --input/--outdir + CLI first, then validate the WHOLE map — a typo
     # or bad enum in the params-file must fail fast too, not only CLI flags.
-    merged = parameters.merge(cli_overrides=cli_overrides, params_file=params_file,
+    merged = parameters.merge(cli_overrides=cli_overrides, params_file=file_params,
                               input_path=resolved_input.value if resolved_input else None,
                               outdir=outdir)
     # Coerce CLI strings to their schema scalar type (e.g. `--skip-busco true` → real boolean)
@@ -125,7 +132,12 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # rather than writing a second, differently-named set of reports beside them.
     merged = parameters.pin_report_suffix(merged, param_schema)
     param_errors = parameters.validate_params(merged, param_schema)
-    if not demo:
+    composed_profile = nextflow_command.compose_profile(profile, demo=demo)
+    # A missing required parameter can only be judged up front when nothing but the values merged
+    # above can supply one. A `test` or institutional profile, or a --config file, can assign params
+    # that nf-schema then sees — nf-core's own `-profile test,docker` sets --input — so then (and for
+    # --demo, which adds `test`) nf-schema judges required-ness at launch instead.
+    if not extra_configs and not nextflow_command.may_set_params(composed_profile):
         param_errors.extend(parameters.missing_required_params(merged, param_schema))
     if param_errors:
         raise NfclawError(ErrorCode.PARAMS_INVALID,
@@ -133,7 +145,6 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                           fix="Use parameter names and allowed values from reference.md.",
                           details={"issues": param_errors})
 
-    composed_profile = nextflow_command.compose_profile(profile, demo=demo)
     issues = preflight.check_environment(profile=composed_profile, output_dir=outdir,
                                          submodule=st, repo_root=repo_root, resume=resume,
                                          work_dir=work_dir, allow_spaces=allow_spaces,
@@ -173,7 +184,13 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     if check_only:
         staging = Path(tempfile.mkdtemp(prefix="nfclaw-check-"))
     else:
-        outdir.mkdir(parents=True, exist_ok=True)
+        try:
+            outdir.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:            # preflight judged writability; this is the authority
+            raise NfclawError(ErrorCode.ENVIRONMENT,
+                              f"--outdir could not be created: {exc.strerror or exc} "
+                              f"({exc.filename or outdir})",
+                              fix="Pass an --outdir in a directory you can write to.") from exc
         staging = outdir / "provenance"
     resolved = parameters.resolve_path_params(merged, param_schema)
     params_file_out = parameters.write_params_file(resolved, staging / "params.json")
@@ -257,6 +274,17 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
             what = "interrupted" if isinstance(exc, KeyboardInterrupt) else "failed"
             run_log.fail(f"{what} after Nextflow succeeded ({type(exc).__name__}: {exc})",
                          f"nfclaw: {type(exc).__name__}: {exc}")
+            if isinstance(exc, OSError):
+                # Summarising the outputs and writing the bundle reads every result and writes
+                # beside them: a full disk or an unreadable file is a clear error that says the
+                # results exist, not a traceback that reads like the run itself crashed.
+                raise NfclawError(
+                    ErrorCode.ENVIRONMENT,
+                    f"The run succeeded, but its provenance bundle could not be written: "
+                    f"{exc.strerror or exc}" + (f" ({exc.filename})" if exc.filename else ""),
+                    fix=f"The results are in {outdir}. Free disk space or fix the permission, then "
+                        "rerun the same command with --resume: every task is reused from the cache "
+                        "and the bundle is written.") from exc
             raise
     finally:
         run_log.finish()

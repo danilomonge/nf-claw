@@ -30,8 +30,8 @@ This is the pinned latest release. To run a different one, list the available re
 | `ID` | integer | yes |  |  |
 | `Sample` | string or integer | yes |  |  |
 | `Condition` | string or integer | yes |  |  |
-| `ReplicateFileName` | string | yes |  | matches ^\S+\.(raw\|RAW\|mzML\|mzML.gz\|d\|d.tar\|d.tar.gz\|d.zip)$ |
-| `Fasta` | string | no |  | matches ^\S+\.(fasta\|fa\|fas\|fna\|faa\|ffn)$ |
+| `ReplicateFileName` | string (file or directory path) | yes |  | matches ^\S+\.(raw\|RAW\|mzML\|mzML.gz\|d\|d.tar\|d.tar.gz\|d.zip)$ |
+| `Fasta` | string (file or directory path) | no |  | matches ^\S+\.(fasta\|fa\|fas\|fna\|faa\|ffn)$ |
 | `SearchPreset` | string | no |  | matches ^[a-zA-Z0-9_]+$ |
 
 `--input` must match `^(PXD\d{6,}|\S+\.sdrf\.tsv|\S+\.tsv)$`.

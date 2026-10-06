@@ -8,6 +8,7 @@ from pathlib import Path
 
 from librarian import write_skill
 from librarian.add_pipeline import read_sources, validate_pipeline_name
+from runner import submodule as submod
 
 _SEMVER = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
 
@@ -30,6 +31,11 @@ def bump(name: str, url: str, repo_root: Path) -> str | None:
     if latest is None:
         return None
     up = repo_root / "pipelines" / name / "upstream"
+    # Run in an uninitialised submodule's directory, the fetch and checkout below would act on the
+    # nf-claw repository itself — fetching (shallowly) into it and checking the tag out over it.
+    if not submod.is_git_tree(up):
+        raise RuntimeError(f"pipelines/{name}/upstream is not initialised; run "
+                           f"`git submodule update --init pipelines/{name}/upstream` first")
     subprocess.run(["git", "-C", str(up), "fetch", "--tags", "--depth", "1",
                     "origin", f"refs/tags/{latest}:refs/tags/{latest}"], check=True)
     subprocess.run(["git", "-C", str(up), "checkout", f"tags/{latest}"], check=True)

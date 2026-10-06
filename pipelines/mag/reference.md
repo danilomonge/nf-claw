@@ -45,7 +45,7 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--busco-clean` | boolean |  |  |  |  |  | Enable clean-up of temporary files created during BUSCO runs. |
-| `--busco-db` | string |  |  |  |  |  | Download URL, local tar.gz archive, or local uncompressed directory for an *_odb10 or *_odb12 BUSCO lineage dataset. |
+| `--busco-db` | string (file or directory path) |  |  |  |  |  | Download URL, local tar.gz archive, or local uncompressed directory for an *_odb10 or *_odb12 BUSCO lineage dataset. |
 | `--busco-db-lineage` | string |  |  |  | matches (.*_odb(10\|12))\|auto(_prok\|_euk)?$ | auto | Name of the BUSCO *_odb10 or *_odb12 lineage to check against. Additionally supports 'auto', 'auto_prok' and 'auto_euk' for automatic lineage selection mode. |
 | `--checkm2-db` | string (file path) |  |  |  |  |  | Path to local file of an already downloaded and uncompressed CheckM2 database file (.dmnd file). |
 | `--checkm2-db-version` | integer |  |  |  |  | 14897628 | CheckM2 database version number to download (Zenodo record ID, for reference check the canonical reference https://zenodo.org/records/5571251, and pick the Zenodo ID of the database version of your choice). |
@@ -105,7 +105,7 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--metaeuk-db` | string |  |  |  |  |  | Path to either a local fasta file of protein sequences, or to a directory containing an MMseqs2-formatted database, for annotation of eukaryotic genomes. |
+| `--metaeuk-db` | string (file or directory path) |  |  |  |  |  | Path to either a local fasta file of protein sequences, or to a directory containing an MMseqs2-formatted database, for annotation of eukaryotic genomes. |
 | `--metaeuk-mmseqs-db` | string |  |  | `UniRef100`, `UniRef90`, `UniRef50`, `UniProtKB`, `UniProtKB/TrEMBL`, `UniProtKB/Swiss-Prot`, `NR`, `NT`, `GTDB`, `PDB`, `PDB70`, `Pfam-A.full`, `Pfam-A.seed`, `Pfam-B`, `CDD`, `eggNOG`, `VOGDB`, `dbCAN2`, `SILVA`, `Resfinder`, `Kalamari` |  |  | A string containing the name of one of the databases listed in the [mmseqs2 documentation](https://github.com/soedinglab/MMseqs2/wiki#downloading-databases). This database will be downloaded and formatted for eukaryotic genome annotation. Incompatible with --metaeuk_db. |
 | `--prokka-compliance-centre` | string |  |  |  |  |  | Specify sequencing centre name required for Prokka's compliance mode. |
 | `--prokka-fast-mode` | boolean |  |  |  |  |  | Specify to skip CDS/product searching in Prokka runs |
@@ -231,10 +231,10 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 |---|---|---|---|---|---|---|---|
 | `--cat-allow-unofficial-lineages` | boolean |  |  |  |  |  | Allow unofficial lineages in CAT classification. |
 | `--cat-classify-unbinned` | boolean |  |  |  |  |  | Classify unbinned contigs with CAT (contig mode). |
-| `--cat-db` | string |  |  |  |  |  | Database for taxonomic classification of metagenome assembled genomes. Can be either a zipped file or a directory containing the extracted output of such. |
+| `--cat-db` | string (file or directory path) |  |  |  |  |  | Database for taxonomic classification of metagenome assembled genomes. Can be either a zipped file or a directory containing the extracted output of such. |
 | `--cat-db-generate` | boolean |  |  |  |  |  | Generate CAT database. |
 | `--cat-no-suggestive-asterisks` | boolean |  |  |  |  |  | Specify to turn off CAT marking in output files most probable hits (when multiple) with an asterix. |
-| `--gtdb-db` | string |  |  |  |  | https://data.gtdb.aau.ecogenomic.org/releases/release232/232.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r232_data.tar.gz | Specify the location of a GTDBTK database. Can be either an uncompressed directory or a `.tar.gz` archive. If not specified will be downloaded for you when GTDBTK or binning QC is not skipped. |
+| `--gtdb-db` | string (file or directory path) |  |  |  |  | https://data.gtdb.aau.ecogenomic.org/releases/release232/232.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r232_data.tar.gz | Specify the location of a GTDBTK database. Can be either an uncompressed directory or a `.tar.gz` archive. If not specified will be downloaded for you when GTDBTK or binning QC is not skipped. |
 | `--gtdbtk-max-contamination` | number |  |  |  | ≥ 0; ≤ 100 | 10.0 | Max. bin contamination (in %) allowed to apply GTDB-tk classification. |
 | `--gtdbtk-min-af` | number |  |  |  | ≥ 0; ≤ 1 | 0.65 | Min. alignment fraction to consider closest genome. |
 | `--gtdbtk-min-completeness` | number |  |  |  | ≥ 0.01; ≤ 100 | 50.0 | Min. bin completeness (in %) required to apply GTDB-tk classification. |
@@ -252,7 +252,7 @@ nf-core/mag pipeline parameters. Every parameter from the pinned `nextflow_schem
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--genomad-db` | string |  |  |  |  |  | Database for virus classification with geNomad |
+| `--genomad-db` | string (file or directory path) |  |  |  |  |  | Database for virus classification with geNomad |
 | `--genomad-min-score` | number |  |  |  |  | 0.7 | Minimum geNomad score for a sequence to be considered viral |
 | `--genomad-splits` | integer |  |  |  |  | 1 | Number of groups that geNomad's MMSeqs2 databse should be split into (reduced memory requirements) |
 | `--run-virus-identification` | boolean |  |  |  |  |  | Run virus identification. |

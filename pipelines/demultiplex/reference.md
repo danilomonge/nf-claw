@@ -54,7 +54,7 @@ nf-core/demultiplex pipeline parameters. Every parameter from the pinned `nextfl
 | `--email` | string |  |  |  | matches ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$ |  | Email address for completion summary. |
 | `--flowcell-id` | string |  |  |  |  |  | Flowcell ID for single-flowcell runs. |
 | `--flowcell-lane` | integer |  |  |  | ≥ 1; ≤ 8 |  | Lane number for single-flowcell runs. |
-| `--flowcell-path` | string |  |  |  |  |  | Run directory (or tar.gz) for single-flowcell runs. |
+| `--flowcell-path` | string (file or directory path) |  |  |  |  |  | Run directory (or tar.gz) for single-flowcell runs. |
 | `--flowcell-per-flowcell-manifest` | string (file path) |  |  |  | matches ^\S+\.csv$ |  | Per-flowcell manifest file for fqtk single-flowcell runs. |
 | `--flowcell-samplesheet` | string (file path) |  |  |  | matches ^\S+\.csv$ |  | Path to the flowcell SampleSheet.csv for single-flowcell runs. |
 | `--input` | string (file path) |  |  |  | matches ^\S+\.csv$ |  | Path to comma-separated file containing information about the samples in the experiment. |
@@ -79,7 +79,7 @@ nf-core/demultiplex pipeline parameters. Every parameter from the pinned `nextfl
 |---|---|---|---|---|---|---|---|
 | `--file-schema-validator` | string (file path) |  |  |  |  |  | Local JSON file to be passed to samshee module for samplesheet validation |
 | `--json-schema-validator` | string |  |  |  |  |  | String in JSON format to be passed to samshee module for samplesheet validation |
-| `--kraken-db` | string |  |  |  |  |  | Path to Kraken2 DB to use for screening |
+| `--kraken-db` | string (file or directory path) |  |  |  |  |  | Path to Kraken2 DB to use for screening |
 | `--name-schema-validator` | string |  |  |  |  |  | Schema name to be passed to samshee module for samplesheet validation |
 | `--publish-raw-fastq` | boolean |  |  |  |  | false | Whether or not to publish raw (untrimmed) FASTQ files alongside trimmed FASTQs. When false, only trimmed FASTQs are published. |
 | `--sample-size` | integer |  |  |  |  | 100000 | Number of reads to subsample for contamination detection. |

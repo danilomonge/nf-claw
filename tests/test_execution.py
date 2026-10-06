@@ -259,3 +259,64 @@ def test_no_timeout_waits_for_the_run_to_finish(tmp_path):
                         logs_dir=tmp_path / "logs", timeout_seconds=None)
     assert res.exit_code == 0
     assert (tmp_path / "logs" / "stdout.txt").read_text().strip() == "done"
+
+
+def test_teardown_kills_a_task_that_outlives_sigterm(tmp_path):
+    # Nextflow exiting on SIGTERM does not mean its tasks did: one that ignores (or is still handling)
+    # SIGTERM was left running in the background once the leader had exited.
+    import os
+    import subprocess
+    import sys
+    import time
+
+    import pytest
+    if sys.platform != "linux":
+        pytest.skip("reads process state from /proc")
+    pid_file = tmp_path / "task.pid"
+    leader = tmp_path / "leader.sh"
+    leader.write_text(
+        "#!/bin/bash\n"
+        f"bash -c 'trap \"\" TERM; echo $$ > {pid_file}; exec sleep 300' "
+        ">/dev/null 2>&1 </dev/null &\n"
+        "sleep 300\n")
+    leader.chmod(0o755)
+    proc = subprocess.Popen([str(leader)], start_new_session=True)
+    deadline = time.monotonic() + 10
+    while not pid_file.exists() or not pid_file.read_text().strip():
+        assert time.monotonic() < deadline
+        time.sleep(0.05)
+    task = int(pid_file.read_text())
+
+    def state():
+        try:
+            return open(f"/proc/{task}/stat").read().split()[2]
+        except FileNotFoundError:
+            return "gone"
+
+    try:
+        execution._terminate(proc, grace=1)
+        time.sleep(0.2)
+        assert state() in ("gone", "Z", "X"), state()      # dead (a zombie until init reaps it)
+    finally:
+        if state() not in ("gone", "Z", "X"):
+            os.kill(task, 9)
+
+
+def test_a_second_interrupt_during_teardown_still_kills_the_group(monkeypatch):
+    # A second Ctrl-C while waiting out the grace period aborted the teardown before SIGKILL.
+    import signal
+    import types
+
+    import pytest
+    sent = []
+    monkeypatch.setattr(execution.os, "killpg", lambda pgid, sig: sent.append(sig))
+
+    def interrupted_wait(timeout=None):
+        if timeout is not None:
+            raise KeyboardInterrupt
+        return 0
+
+    proc = types.SimpleNamespace(pid=4242, wait=interrupted_wait)
+    with pytest.raises(KeyboardInterrupt):
+        execution._terminate(proc, grace=5)
+    assert sent == [signal.SIGTERM, signal.SIGKILL]

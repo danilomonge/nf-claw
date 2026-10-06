@@ -7,6 +7,7 @@ import {
   tableUnder,
   parseTableAt,
   codeBlockUnder,
+  codeBlocksUnder,
   proseUnder,
   splitAllowed,
   isYes,
@@ -18,6 +19,7 @@ import type {
   Parameter,
   ParameterGroup,
   SamplesheetColumn,
+  SamplesheetHeader,
   RequiredParam,
 } from "../types";
 
@@ -117,6 +119,18 @@ function parseSamplesheet(skill: string): SamplesheetColumn[] {
   }));
 }
 
+/**
+ * The samplesheet header(s) skill.md gives — its own fenced `csv`/`tsv` blocks under "Inputs", never
+ * rebuilt here. The librarian decides what a valid header is (the required columns; one header per
+ * mutually-exclusive column group; TAB-separated for a TSV), so joining every column with commas
+ * produced a header that is wrong for TSV pipelines and invalid where column groups exclude each other.
+ */
+function parseSamplesheetHeaders(skill: string): SamplesheetHeader[] {
+  return codeBlocksUnder(skill, "Inputs")
+    .filter((b) => (b.lang === "csv" || b.lang === "tsv") && b.code.trim())
+    .map((b) => ({ format: b.lang as SamplesheetHeader["format"], header: b.code.trim() }));
+}
+
 function parseRequired(skill: string): RequiredParam[] {
   const table = tableUnder(skill, "Required parameters");
   if (!table) return [];
@@ -165,13 +179,17 @@ function extractUsageUrl(skill: string): string | null {
   return m ? m[0] : null;
 }
 
-function runCommands(skill: string, name: string): { run: string; raw: string } {
+/**
+ * The commands skill.md's "Run it" block gives. They are generated per pipeline (its `--input`, its
+ * required parameters), so none is invented here: a missing raw command is shown as absent, and the
+ * nfclaw fallback names no input it cannot know.
+ */
+function runCommands(skill: string, name: string): { run: string; raw: string | null } {
   const block = codeBlockUnder(skill, "Run it") ?? "";
   const lines = block.split("\n").map((l) => l.trim());
-  const run = lines.find((l) => l.startsWith("nfclaw run")) ?? `nfclaw run ${name} --input samplesheet.csv --outdir results -profile docker`;
-  const raw =
-    lines.find((l) => l.startsWith("nextflow run")) ??
-    `nextflow run pipelines/${name}/upstream -profile docker --input samplesheet.csv --outdir results`;
+  const run =
+    lines.find((l) => l.startsWith("nfclaw run")) ?? `nfclaw run ${name} --outdir results -profile docker`;
+  const raw = lines.find((l) => l.startsWith("nextflow run")) ?? null;
   return { run, raw };
 }
 
@@ -218,6 +236,7 @@ export function getPipelines(): Pipeline[] {
         rawCommand: raw,
         demoCommand: demoCommand(skillBody),
         samplesheet: parseSamplesheet(skillBody),
+        samplesheetHeaders: parseSamplesheetHeaders(skillBody),
         requiredParams: parseRequired(skillBody),
         groups,
         parameterCount,

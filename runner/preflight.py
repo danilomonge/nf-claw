@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -44,20 +45,71 @@ def check_environment(*, profile: str, output_dir: Path, submodule: SubmoduleSta
             ignored = False
         if not ignored:
             issues.append(f"--outdir must be outside the repo or a gitignored path (got {output_dir})")
-    # An --outdir that exists but is a file (not a directory) can never work — nfclaw creates it and
-    # writes the provenance bundle under it. Catch it here with a clear message instead of letting
-    # `iterdir()`/`mkdir()` raise NotADirectoryError/FileExistsError as an uncaught traceback.
-    if output_dir.exists() and not output_dir.is_dir():
-        issues.append(f"--outdir exists but is not a directory: {output_dir}")
-    # A non-empty outdir is a guard for an actual run — it would clobber a previous run's results.
-    # `--check` only validates params and prints the command without launching, so this guard must
-    # not block it: a dry run against an existing results directory is legitimate.
-    elif output_dir.is_dir() and any(output_dir.iterdir()) and not resume and not check_only:
-        issues.append(f"--outdir is not empty: {output_dir} (pass --resume to continue that run, "
-                      "or use a fresh --outdir)")
+    if (outdir_issue := _outdir_issue(output_dir, resume=resume, check_only=check_only)):
+        issues.append(outdir_issue)
+    if work_dir is not None and (work_issue := _work_dir_issue(work_dir)):
+        issues.append(work_issue)
     issues += _space_issues(repo_root=repo_root, output_dir=output_dir,
                             work_dir=work_dir, allow_spaces=allow_spaces)
     return issues
+
+
+def _outdir_issue(output_dir: Path, *, resume: bool, check_only: bool) -> str | None:
+    """Why `--outdir` cannot take this run, or None.
+
+    Every probe here can meet a directory the caller may not search (`--outdir /root/x` as another
+    user), where Path.exists()/is_dir() raise PermissionError instead of answering; that is reported
+    as an issue like the others, never a traceback."""
+    try:
+        is_dir = output_dir.is_dir()
+        # An --outdir that exists but is a file can never work — nfclaw creates it and writes the
+        # provenance bundle under it.
+        if not is_dir and output_dir.exists():
+            return f"--outdir exists but is not a directory: {output_dir}"
+        if (unwritable := _unwritable(output_dir, "--outdir")) is not None:
+            return unwritable
+        # A non-empty outdir is a guard for an actual run — it would clobber a previous run's
+        # results. `--check` only validates params and prints the command without launching, so
+        # this guard must not block it: a dry run against an existing results directory is legitimate.
+        if is_dir and not resume and not check_only and any(output_dir.iterdir()):
+            return (f"--outdir is not empty: {output_dir} (pass --resume to continue that run, "
+                    "or use a fresh --outdir)")
+    except OSError as exc:
+        return f"--outdir cannot be reached: {exc.strerror or exc} ({exc.filename or output_dir})"
+    return None
+
+
+def _unwritable(path: Path, label: str) -> str | None:
+    """Why the run could not write the directory `path` (or create it), or None.
+
+    nfclaw creates --outdir and writes its provenance bundle there before Nextflow starts, so a path
+    under a directory the caller cannot write (`--outdir /data/results` with a root-owned /data)
+    failed with a raw PermissionError. Judged on the directory itself, or on its nearest existing
+    ancestor when it does not exist yet — the one `mkdir` would have to write into. May raise
+    OSError for a path whose ancestors cannot be searched; callers report that."""
+    target = path
+    while not target.exists() and target != target.parent:
+        target = target.parent
+    if target != path and not target.is_dir():
+        return f"{label} cannot be created: {target} is not a directory"
+    if not os.access(target, os.W_OK | os.X_OK):
+        return (f"{label} is not writable: {path}" if target == path else
+                f"{label} cannot be created: {target} is not writable ({path})")
+    return None
+
+
+def _work_dir_issue(work_dir: Path) -> str | None:
+    """Why Nextflow could not use its work directory, or None. The default, `<repo>/work`, belongs
+    to whoever ran first, so on a clone shared by several users the others cannot write it."""
+    fix = "set a writable one with --nxf-env NXF_WORK=/a/writable/dir"
+    try:
+        if work_dir.exists() and not work_dir.is_dir():
+            return f"the Nextflow work directory is not a directory: {work_dir} — {fix}"
+        issue = _unwritable(work_dir, "the Nextflow work directory")
+    except OSError as exc:
+        issue = (f"the Nextflow work directory cannot be reached: {exc.strerror or exc} "
+                 f"({exc.filename or work_dir})")
+    return f"{issue} — {fix}" if issue else None
 
 
 def _space_issues(*, repo_root: Path, output_dir: Path, work_dir: Path | None,

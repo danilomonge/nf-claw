@@ -38,18 +38,26 @@ def _read(outdir: Path) -> dict[str, str]:
     Requiring one would have made this command unusable for exactly the comparison it exists for.
     """
     checksums = outdir / "provenance" / "outputs.sha256"
-    if checksums.is_file():
-        out: dict[str, str] = {}
-        for line in checksums.read_text(encoding="utf-8").splitlines():
-            digest, _, path = line.partition("  ")
-            if digest and path:
-                out[path] = digest
-        return out
-    if not outdir.is_dir():
+    try:
+        if checksums.is_file():
+            out: dict[str, str] = {}
+            for line in checksums.read_text(encoding="utf-8").splitlines():
+                digest, _, path = line.partition("  ")
+                if digest and path:
+                    out[path] = digest
+            return out
+        if not outdir.is_dir():
+            raise NfclawError(
+                ErrorCode.ENVIRONMENT, f"not a run directory: {outdir}",
+                fix="Pass the --outdir of a run (the replay's target, and the original it "
+                    "reproduces).")
+        return provenance.output_checksums(outdir)
+    except (OSError, UnicodeDecodeError) as exc:
+        where = getattr(exc, "filename", None) or checksums
+        reason = getattr(exc, "strerror", None) or exc
         raise NfclawError(
-            ErrorCode.ENVIRONMENT, f"not a run directory: {outdir}",
-            fix="Pass the --outdir of a run (the replay's target, and the original it reproduces).")
-    return provenance.output_checksums(outdir)
+            ErrorCode.ENVIRONMENT, f"cannot read the run in {outdir}: {reason} ({where})",
+            fix="Make every file of both runs readable, then retry.") from exc
 
 
 # `yyyy-MM-dd_HH-mm-ss`, the format nf-core stamps into the names of its run-metadata files.

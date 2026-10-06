@@ -102,13 +102,37 @@ def _git(path: Path, *args: str) -> str:
     return out.stdout.strip()
 
 
+def _own_head(path: Path) -> str | None:
+    """HEAD of the git repository whose working tree is exactly `path`, or None if there is none.
+
+    An uninitialised submodule is a directory inside the nf-claw checkout, and git run there acts on
+    nf-claw itself: its HEAD, its tags, its object store. Any git command aimed at a pipeline tree must
+    first confirm the tree is its own repository (a cloned submodule or a version worktree)."""
+    if not path.is_dir():
+        return None
+    out = _git(path, "rev-parse", "--show-toplevel", "HEAD").splitlines()
+    if len(out) != 2:
+        return None
+    try:
+        own = Path(out[0]).resolve() == path.resolve()
+    except OSError:
+        return None
+    return out[1] if own else None
+
+
+def is_git_tree(path: Path) -> bool:
+    """Whether `path` is the top of its own git working tree (see `_own_head`)."""
+    return _own_head(path) is not None
+
+
 def resolve_at(name: str, path: Path) -> SubmoduleStatus:
     """Status of a checked-out pipeline tree at an explicit path — works for the pinned
-    submodule and for any materialized version worktree alike."""
+    submodule and for any materialized version worktree alike. The commit and version come only
+    from the tree's own repository: a tree that is not one has neither (never nf-claw's)."""
     initialized = path.is_dir() and any(path.iterdir())
     missing = tuple(f for f in REQUIRED_FILES if not (path / f).exists())
-    commit = _git(path, "rev-parse", "HEAD") if initialized else ""
-    version = _git(path, "describe", "--tags", "--always") if initialized else ""
+    commit = (_own_head(path) or "") if initialized else ""
+    version = _git(path, "describe", "--tags", "--always") if commit else ""
     return SubmoduleStatus(
         name=name, path=path, initialized=initialized,
         complete=initialized and not missing,

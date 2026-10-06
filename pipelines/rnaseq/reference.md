@@ -127,7 +127,7 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--contaminant-screening-input` | string |  |  | `trimmed`, `unmapped`, `trim_only`, `raw` |  | unmapped | Read set to screen for contaminants: aligner-unmapped reads (default), trimmed reads (post-BBSplit/rRNA), post-trim pre-BBSplit reads, or raw reads. |
 | `--deseq2-vst` | boolean |  |  |  |  | true | Use vst transformation instead of rlog with DESeq2. |
 | `--extra-fqlint-args` | string |  |  |  | length ≥ 1 | --disable-validator P001 | Extra arguments to pass to the fq lint command. |
-| `--kraken-db` | string |  |  |  |  |  | Database when using Kraken2/Bracken for contaminant screening. |
+| `--kraken-db` | string (file or directory path) |  |  |  |  |  | Database when using Kraken2/Bracken for contaminant screening. |
 | `--rseqc-modules` | string |  |  |  | length ≥ 1 | bam_stat,inner_distance,infer_experiment,junction_annotation,junction_saturation,read_distribution,read_duplication | Comma-separated list of RSeQC modules to run. |
 | `--sylph-db` | string (file path) |  |  |  |  |  | Comma separated list of databases to profile against when using Sylph for contamination detection |
 | `--sylph-taxonomy` | string (file path) |  |  |  |  |  | Comma separated list of taxonomies when using Sylph for contamination detection |
@@ -137,12 +137,12 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--bbsplit-fasta-list` | string (file path) |  |  |  |  |  | Path to comma-separated file containing a list of reference genomes to filter reads against with BBSplit. You have to also explicitly set `--skip_bbsplit false` if you want to use BBSplit. |
-| `--bbsplit-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built BBSplit index. |
-| `--bowtie2-rrna-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built Bowtie2 index for rRNA removal. |
+| `--bbsplit-index` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built BBSplit index. |
+| `--bowtie2-rrna-index` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built Bowtie2 index for rRNA removal. |
 | `--remove-ribo-rna` | boolean |  |  |  |  |  | Enable the removal of reads derived from ribosomal RNA. |
 | `--ribo-database-manifest` | string (file path) |  |  |  |  | ${projectDir}/assets/rrna-db-defaults.txt | Text file containing paths to fasta files (one per line) that will be used to create the database for SortMeRNA. |
 | `--ribo-removal-tool` | string |  |  | `sortmerna`, `ribodetector`, `bowtie2` |  | sortmerna | Tool to use for rRNA removal. |
-| `--sortmerna-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built sortmerna index. |
+| `--sortmerna-index` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built sortmerna index. |
 | `--use-gpu-ribodetector` | boolean |  |  |  |  |  | Enable GPU acceleration for ribodetector. |
 
 ## read_trimming_options
@@ -160,7 +160,7 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 |---|---|---|---|---|---|---|---|
 | `--additional-fasta` | string (file path) |  |  |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ |  | FASTA file to concatenate to genome FASTA file e.g. containing spike-in sequences. |
 | `--arm` | boolean |  | yes |  |  |  | Use ARM architecture containers. |
-| `--bowtie2-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built Bowtie2 index. |
+| `--bowtie2-index` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built Bowtie2 index. |
 | `--fasta` | string (file path) |  |  |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ |  | Path to FASTA genome file. |
 | `--featurecounts-feature-type` | string |  |  |  |  | exon | By default, the pipeline assigns reads based on the 'exon' attribute within the GTF file. |
 | `--featurecounts-group-type` | string |  |  |  |  | gene_biotype | The attribute type used to group feature types in the GTF file when generating the biotype plot with featureCounts. |
@@ -173,15 +173,15 @@ nf-core/rnaseq pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--gtf-extra-attributes` | string |  |  |  |  | gene_name | By default, the pipeline uses the `gene_name` field to obtain additional gene identifiers from the input GTF file when running Salmon. |
 | `--gtf-group-features` | string |  |  |  |  | gene_id | Define the attribute type used to group features in the GTF file when running Salmon. |
 | `--hisat2-build-memory` | string |  |  |  | matches ^\d+(\.\d+)?\.?\s*(K\|M\|G\|T)?B$ | 200.GB | Minimum memory required to use splice sites and exons in the HiSAT2 index build process. |
-| `--hisat2-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built HISAT2 index. |
+| `--hisat2-index` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built HISAT2 index. |
 | `--igenomes-base` | string |  | yes |  |  | s3://ngi-igenomes/igenomes/ | The base path to the igenomes reference files |
 | `--igenomes-ignore` | boolean |  | yes |  |  |  | Do not load the iGenomes reference config. |
-| `--kallisto-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built Kallisto index. |
+| `--kallisto-index` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built Kallisto index. |
 | `--prokaryotic` | boolean |  | yes |  |  |  | Enable prokaryotic mode for bacterial/archaeal RNA-seq data. |
-| `--rsem-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built RSEM index. |
-| `--salmon-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built Salmon index. |
+| `--rsem-index` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built RSEM index. |
+| `--salmon-index` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built Salmon index. |
 | `--splicesites` | string (file path) |  |  |  |  |  | Splice sites file required for HISAT2. |
-| `--star-index` | string |  |  |  |  |  | Path to directory or tar.gz archive for pre-built STAR index. |
+| `--star-index` | string (file or directory path) |  |  |  |  |  | Path to directory or tar.gz archive for pre-built STAR index. |
 | `--transcript-fasta` | string (file path) |  |  |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ |  | Path to FASTA transcriptome file. |
 
 ## umi_options

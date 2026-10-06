@@ -61,8 +61,8 @@ Any of the optional columns above may be appended to the header when your data n
 |---|---|---|---|---|---|
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 | `--fasta` | string (file path) |  |  | matches ^\S+\.fn?a(sta)?(\.gz)?$ | Path to FASTA genome file. |
-| `--intervals-wgs` | string |  |  | matches ^\S+\.intervals?(_list)?$ | Path to the interval list of the genome (autosomes, sex chromosomes, and mitochondria). |
-| `--intervals-y` | string |  |  | matches ^\S+\.intervals?(_list)?$ | Path to the interval list of the Y chromosome. |
+| `--intervals-wgs` | string (file or directory path) |  |  | matches ^\S+\.intervals?(_list)?$ | Path to the interval list of the genome (autosomes, sex chromosomes, and mitochondria). |
+| `--intervals-y` | string (file or directory path) |  |  | matches ^\S+\.intervals?(_list)?$ | Path to the interval list of the Y chromosome. |
 
 ## Reference genome
 **This release resolves a reference genome remotely by default.** `--genome` defaults to `GRCh38`, which is looked up in AWS iGenomes at `s3://ngi-igenomes/igenomes/`. A run that passes no reference of its own therefore reads its references over S3 — that fails on a host without access to the bucket, and downloads tens of gigabytes on one that has it. For a self-contained run, pass your own reference instead (e.g. `--fasta`; the `reference_file_options` group in [reference.md](reference.md) lists every reference option). Set `--igenomes-ignore true` to disable the lookup entirely.
