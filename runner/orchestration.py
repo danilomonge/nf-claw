@@ -157,8 +157,9 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # --demo, which adds `test`) nf-schema judges required-ness at launch instead.
     if not extra_configs and not nextflow_command.may_set_params(composed_profile):
         supplied_later = {n: "<from handoff>" for n in deferred_params if n not in merged}
-        param_errors.extend(parameters.missing_required_params({**merged, **supplied_later},
-                                                               param_schema))
+        param_errors.extend(parameters.missing_required_params(
+            {**merged, **supplied_later}, param_schema,
+            configured=schema_mod.config_param_defaults(st.path)))
     if param_errors:
         raise NfclawError(ErrorCode.PARAMS_INVALID,
                           "Parameters failed validation (fix before running).",

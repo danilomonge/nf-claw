@@ -47,15 +47,23 @@ def validate_params(cli_overrides: dict[str, Any], schema: ParamSchema) -> list[
     return errors
 
 
-def missing_required_params(merged: dict[str, Any], schema: ParamSchema) -> list[str]:
+_UNSET = ("null", "''", '""')
+
+
+def missing_required_params(merged: dict[str, Any], schema: ParamSchema,
+                            configured: Mapping[str, str] | None = None) -> list[str]:
     """Schema-required params without defaults must be supplied before launching Nextflow.
 
-    Required params that carry a schema default are intentionally not flagged: nf-schema applies the
-    default, and generated docs surface it so agents do not need to invent a value.
+    Required params that carry a default are intentionally not flagged — in the schema, or in the
+    pipeline's own `nextflow.config` (`configured`, from `schema.config_param_defaults`): nf-schema
+    validates the value a parameter ends up with, and generated docs surface the schema's default so
+    agents do not need to invent a value. A config assignment to null or "" supplies nothing.
     """
     errors: list[str] = []
     for name, param in schema.params.items():
         if not param.required or param.default is not None:
+            continue
+        if (configured or {}).get(name, "null") not in _UNSET:
             continue
         value = merged.get(name)
         if value is None or value == "":
