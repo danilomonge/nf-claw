@@ -170,12 +170,12 @@ def _main(argv: list[str] | None = None) -> int:
     p_show.add_argument("--pipeline-version", dest="pipeline_version")
     p_versions = sub.add_parser("versions")
     p_versions.add_argument("name")
-    # Compare a replay against the run it reproduces. Keyed on path, because comparing the raw
-    # `outputs.sha256` lines counts one changed file as both a missing and an extra one.
     # The state of a run from its log alone — running, finished and how, or stopped without an
     # outcome (nfclaw killed outright) — so nobody has to read or interpret the log to know.
     p_status = sub.add_parser("status")
     p_status.add_argument("outdir", help="--outdir of the run (or replay target) to report on")
+    # Compare a replay against the run it reproduces. Keyed on path, because comparing the raw
+    # `outputs.sha256` lines counts one changed file as both a missing and an extra one.
     p_verify = sub.add_parser("verify")
     p_verify.add_argument("replay", help="--outdir of the replayed run")
     p_verify.add_argument("--against", dest="against", required=True,
