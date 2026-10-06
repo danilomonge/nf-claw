@@ -89,6 +89,64 @@ def output_checksums(outdir: Path) -> dict[str, str]:
     }
 
 
+# The replay logs itself exactly as `nfclaw run` does: everything it prints, in order, in
+# <target>/provenance/logs/run.log, ending with its outcome — so it needs no redirect of its own, and
+# `nfclaw status <target>` reads it. `provenance/` is not a result, so the log never shows up in
+# `nfclaw verify`. Nextflow runs in the background while the script waits for it: a trap set on a
+# command running in the foreground only fires once that command has finished, so `kill <replay>`
+# used to leave Nextflow running and the log without an outcome. Its output reaches the terminal
+# and the log through a FIFO, and the last line is written after the last of that output.
+# Portable to bash 3.2 (macOS's /bin/bash).
+_REPLAY_TAIL = r"""original=__ORIGINAL__
+log="$target/provenance/logs/run.log"
+mkdir -p -- "$target/provenance/logs"
+echo "nfclaw replay: logging this replay to $log" >&2
+{
+  echo "==> nfclaw replay started $(date -u +%Y-%m-%dT%H:%M:%S+00:00)"
+  echo "    replay of: $original"
+  echo "    host: $(hostname)"
+  echo "    pid: $$"
+} >>"$log"
+console="$target/provenance/logs/.replay-console"
+rm -f -- "$console"
+mkfifo -- "$console"
+tee -a "$log" <"$console" &
+tee_pid=$!
+stopped_by=""
+nextflow_pid=""
+stop() {
+  stopped_by="$1"
+  if [ -n "$nextflow_pid" ]; then kill -TERM "$nextflow_pid" 2>/dev/null; fi
+}
+trap 'stop "terminated by SIGTERM"' TERM
+trap 'stop "terminated by SIGHUP"' HUP
+trap 'stop "interrupted"' INT
+set +e
+__COMMAND__ --outdir "$target" >"$console" 2>&1 &
+nextflow_pid=$!
+echo "    nextflow pid: $nextflow_pid" >>"$log"
+if [ -n "$stopped_by" ]; then kill -TERM "$nextflow_pid" 2>/dev/null; fi
+while :; do
+  wait "$nextflow_pid"
+  status=$?
+  kill -0 "$nextflow_pid" 2>/dev/null || break
+done
+wait "$tee_pid"
+rm -f -- "$console"
+set -e
+if [ -n "$stopped_by" ]; then
+  outcome="$stopped_by"
+elif [ "$status" -eq 0 ]; then
+  outcome=success
+else
+  outcome="failed (exit status $status)"
+fi
+echo "==> nfclaw replay finished $(date -u +%Y-%m-%dT%H:%M:%S+00:00): $outcome" >>"$log"
+echo "nfclaw replay: $outcome (log: $log)" >&2
+exit "$status"
+"""
+
+
 def write(*, outdir: Path, pipeline: str, command_str: str,
           submodule: SubmoduleStatus, input_paths: list[Path],
           env_extra: dict[str, str] | None = None,
@@ -183,23 +241,8 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         "fi\n"
         "cd -- \"$target\"\n"
         f"{env_exports}"
-        # The replay logs itself exactly as `nfclaw run` does: everything it prints, in order, in
-        # <target>/provenance/logs/run.log, ending with its outcome — so it needs no redirect of its
-        # own. `provenance/` is not a result, so the log never shows up in `nfclaw verify`.
-        f"original={shlex.quote(str(outdir))}\n"
-        "log=\"$target/provenance/logs/run.log\"\n"
-        "mkdir -p -- \"$target/provenance/logs\"\n"
-        "echo \"nfclaw replay: logging this replay to $log\" >&2\n"
-        "echo \"==> nfclaw replay started $(date -u +%Y-%m-%dT%H:%M:%S+00:00) "
-        "(replay of $original)\" >>\"$log\"\n"
-        "set +e\n"
-        f"{command_str} --outdir \"$target\" 2>&1 | tee -a \"$log\"\n"
-        "status=${PIPESTATUS[0]}\n"
-        "set -e\n"
-        "if [ \"$status\" -eq 0 ]; then outcome=success; else outcome=\"failed (exit status $status)\"; fi\n"
-        "echo \"==> nfclaw replay finished $(date -u +%Y-%m-%dT%H:%M:%S+00:00): $outcome\" >>\"$log\"\n"
-        "echo \"nfclaw replay: $outcome (log: $log)\" >&2\n"
-        "exit \"$status\"\n",
+        + _REPLAY_TAIL.replace("__ORIGINAL__", shlex.quote(str(outdir)))
+                      .replace("__COMMAND__", command_str),
         encoding="utf-8")
     commands.chmod(0o755)                             # so the documented replay works as `./commands.sh`
     return prov

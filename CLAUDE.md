@@ -29,23 +29,34 @@ not always a samplesheet: the pipeline's schema decides — a directory or tarba
 file or PRIDE accession (mhcquant), or `--input false` where a pipeline documents running without
 one (sarek — nfclaw then leaves `input` unset). The `Inputs` section of `skill.md` says which.
 
-## Where a run is logged
+## Where a run is logged — and how to check one
 Every `nfclaw run` records itself at a fixed place — there is no need to redirect its output, and
-nothing to look up:
+nothing to look up. To know how a run stands, ask nfclaw:
+
+`nfclaw status <outdir>` — prints `status: success`, `running (…)`, the outcome it ended with
+(`failed (exit status N)`, `timed out after N s`, `interrupted`, `terminated by SIGTERM`,
+`refused before launch`), or `stopped without an outcome` (nfclaw itself was killed with SIGKILL,
+ran out of memory, or the machine restarted); then the log, and the recorded error or the run's
+last output. Exit code: 0 success, 3 running, 1 anything else. It works for replays too.
+
 - `<outdir>/provenance/logs/run.log` — the whole launch in order: nfclaw's header (command, launch
-  directory, Nextflow log path, advisories), everything Nextflow printed, and on failure nfclaw's
-  error. Once nfclaw is done — the provenance bundle included — its **last line** is
-  `==> nfclaw run finished <time>: <outcome>` (`success`, `failed (exit status N)`,
-  `timed out after N s`, `interrupted`, `terminated by SIGTERM`), so a run started in the
-  background (`nohup nfclaw run ... &`) is checked with
-  `tail -n 1 <outdir>/provenance/logs/run.log`, and stopped with `kill <nfclaw pid>` — nfclaw then
-  shuts Nextflow and its tasks down, writes the bundle and closes the log, as on Ctrl-C.
-  `--resume` appends: a failed attempt is never overwritten by the retry.
+  directory, Nextflow log path, host and pids, advisories), everything Nextflow printed, and on
+  failure nfclaw's error. Once nfclaw is done — the provenance bundle included — its **last line**
+  is `==> nfclaw run finished <time>: <outcome>`. `--resume` appends, so a failed attempt is never
+  overwritten by the retry; a relaunch nfclaw refuses before starting (invalid parameters, a
+  non-empty `--outdir` without `--resume`) is appended too, so the last line is always the latest
+  attempt's. A refused first attempt leaves a fresh `--outdir` untouched: no run log means nfclaw
+  never launched there — run the command in the foreground to see why.
 - `<outdir>/.nextflow.log` — Nextflow's own detailed log. Nextflow runs from `--outdir`, so its
   console hint "Check '.nextflow.log'" means this file, not one in your working directory.
 - `stdout.txt` / `stderr.txt` beside `run.log` — Nextflow's two streams kept apart. Nextflow prints
   its error reports on stdout; stderr holds the launcher's update notice and, on a failure, the
   details some errors write there (nf-schema's list of invalid values).
+
+Start a long run in the background with `nohup nfclaw run ... &` and stop it with
+`kill <nfclaw pid>` (the `pid:` line of the run log): nfclaw then shuts Nextflow and its tasks down,
+writes the bundle and closes the log, as on Ctrl-C. Even `kill -9` cannot orphan Nextflow on Linux —
+the kernel stops it with nfclaw.
 
 When a run fails, nfclaw's error quotes what Nextflow reported on stdout and stderr — plus the
 `Caused by:` chain from `.nextflow.log` when the console alone hides the reason (e.g. "Unable to
@@ -61,7 +72,8 @@ and cannot re-publish over a previous run's files, so replaying in place fails i
 `pipeline_info/execution_trace_*.txt` (and on sarek's `manifest_*.bco.json`). A replay re-executes
 the pipeline — it is a reproduction, not a `--resume` — and the result can be compared against the
 original bundle's `outputs.sha256`. It logs itself the same way, to
-`<target>/provenance/logs/run.log`, ending with its outcome.
+`<target>/provenance/logs/run.log`, ending with its outcome: `nfclaw status <target>` reads it, and
+`kill <replay pid>` stops Nextflow with it.
 
 Trust `skill.md` / `reference.md` over your own memory — they are generated from the pinned commit.
 To set any parameter beyond the essentials, look it up in `pipelines/<name>/reference.md` (the complete
@@ -171,5 +183,5 @@ directory and `--outdir` **before** launching and **fails fast** naming the offe
 `--allow-spaces` to override) — a deterministic check, not a guess. For other failures (IPv6 host,
 no-network database downloads, a too-new Nextflow config parser, known upstream-pipeline bugs) the
 error quotes Nextflow's own report and names the run log, `.nextflow.log` and the failing task's
-files by absolute path (see "Where a run is logged"); the symptom→fix map is in
+files by absolute path (see "Where a run is logged — and how to check one"); the symptom→fix map is in
 [`docs/known-issues.md`](docs/known-issues.md).

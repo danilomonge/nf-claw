@@ -321,3 +321,57 @@ def test_replay_log_is_not_counted_as_a_replayed_output(tmp_path):
     target = tmp_path / "fresh"
     subprocess.run([str(prov / "commands.sh"), str(target)], capture_output=True, check=True)
     assert provenance.output_checksums(target) == {}
+
+
+def test_replay_header_records_who_runs_it(tmp_path):
+    import socket
+    import subprocess
+
+    out = tmp_path / "out"
+    out.mkdir()
+    prov = provenance.write(outdir=out, pipeline="mini", command_str="echo",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    target = tmp_path / "fresh"
+    subprocess.run([str(prov / "commands.sh"), str(target)], capture_output=True, check=True)
+    log = (target / "provenance" / "logs" / "run.log").read_text()
+    assert f"    host: {socket.gethostname()}\n" in log and "    pid: " in log
+
+
+def test_a_stopped_replay_stops_nextflow_and_logs_the_outcome(tmp_path):
+    # Like `nfclaw run`: `kill <replay pid>` must not leave Nextflow running with the log open-ended.
+    import os
+    import signal
+    import subprocess
+    import time
+
+    pidfile = tmp_path / "child.pid"
+    out = tmp_path / "out"
+    out.mkdir()
+    prov = provenance.write(outdir=out, pipeline="mini",
+                            command_str=f"sh -c 'echo started; echo $$ > {pidfile}; exec sleep 30'",
+                            submodule=_st(tmp_path / "up"), input_paths=[])
+    target = tmp_path / "fresh"
+    for bash in ("/bin/bash", "bash"):                       # macOS ships bash 3.2 as /bin/bash
+        if target.exists():
+            import shutil
+            shutil.rmtree(target)
+        pidfile.unlink(missing_ok=True)
+        replay = subprocess.Popen([bash, str(prov / "commands.sh"), str(target)],
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        deadline = time.time() + 10
+        while not pidfile.exists() and time.time() < deadline:
+            time.sleep(0.1)
+        child = int(pidfile.read_text())
+        replay.send_signal(signal.SIGTERM)
+        _, err = replay.communicate(timeout=20)
+        assert replay.returncode != 0
+        try:
+            os.kill(child, 0)
+            alive = True
+        except ProcessLookupError:
+            alive = False
+        assert not alive, f"{bash}: the replayed command outlived the replay"
+        log = (target / "provenance" / "logs" / "run.log").read_text()
+        assert "started" in log
+        assert log.rstrip().splitlines()[-1].endswith(": terminated by SIGTERM"), bash
+        assert not (target / "provenance" / "logs" / ".replay-console").exists()
