@@ -491,8 +491,9 @@ def run_chain(spec: ChainSpec | None, *, repo_root: Path, outdir: Path, check_on
     """Run (or `check_only`: validate) a chain into `outdir`.
 
     Everything that can be judged before a pipeline runs is judged first — every stage's pipeline
-    and version, every handoff against both schemas, every stage's own parameters — so a mistake in
-    the last stage never surfaces after the first has run for hours. `resume` continues the chain
+    and version, every handoff against both schemas, every stage's own parameters, every stage's
+    config parsed by its own engine — so a mistake in the last stage never surfaces after the first
+    has run for hours. `resume` continues the chain
     recorded in `outdir` (with `spec`, or the recorded one when it is None)."""
     record = outdir / RECORD_DIRNAME
     state = _read_json(record / "state.json") if resume else None
