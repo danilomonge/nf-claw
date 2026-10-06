@@ -293,3 +293,61 @@ def test_file_source_candidates_none_matching(library, finished_run, tmp_path):
 def test_file_source_candidates_must_be_relative_paths(bad):
     with pytest.raises(NfclawError, match="relative path"):
         _rule({"params": {"fasta": {"file": bad}}})
+
+
+# --- dropping rows the downstream does not accept ---------------------------------------------
+
+def _enum_sheet_library(library):
+    """mini, with a samplesheet column that only allows some values (taxprofiler's `tool`)."""
+    import json
+    root = library("mini_up", "mini")
+    sheet = root / "pipelines" / "mini" / "upstream" / "assets" / "schema_input.json"
+    data = json.loads(sheet.read_text())
+    data["items"]["properties"]["tool"] = {"type": "string", "enum": ["kraken2", "bracken"]}
+    sheet.write_text(json.dumps(data))
+    return root
+
+
+def test_rows_with_a_value_the_downstream_does_not_allow_can_be_dropped(library, finished_run,
+                                                                        tmp_path):
+    # createtaxdb builds databases for more tools than the pinned taxprofiler accepts (sourmash).
+    root = _enum_sheet_library(library)
+    up = finished_run(tmp_path / "up", {
+        "s.csv": "sample,fastq_1,tool\nA,{outdir}/a.fq.gz,kraken2\nB,{outdir}/b.fq.gz,sourmash\n",
+        "a.fq.gz": "a", "b.fq.gz": "b"})
+    rule = _rule({"params": {"input": {"samplesheet": "s.csv", "provides": ["sample", "fastq_1",
+                                                                             "tool"],
+                                       "drop_rows_not_allowed": ["tool"]}}})
+    hand = handoff.materialize(rule, upstream_outdir=up,
+                               downstream_tree=root / "pipelines" / "mini" / "upstream",
+                               dest=tmp_path / "h")
+    assert [r["tool"] for r in _rows(tmp_path / "h" / "input.csv")] == ["kraken2"]
+    assert hand.record["params"]["input"]["dropped_rows"] == [
+        {"sample": "B", "fastq_1": f"{up}/b.fq.gz", "tool": "sourmash"}]
+    assert "b.fq.gz" not in hand.record["params"]["input"]["derived_from"]
+
+
+def test_dropping_every_row_fails_the_handoff(library, finished_run, tmp_path):
+    root = _enum_sheet_library(library)
+    up = finished_run(tmp_path / "up", {"s.csv": "sample,fastq_1,tool\nB,{outdir}/b.fq.gz,x\n",
+                                        "b.fq.gz": "b"})
+    rule = _rule({"params": {"input": {"samplesheet": "s.csv", "provides": ["sample", "fastq_1"],
+                                       "drop_rows_not_allowed": ["tool"]}}})
+    with pytest.raises(NfclawError, match="no row of s.csv is left"):
+        handoff.materialize(rule, upstream_outdir=up,
+                            downstream_tree=root / "pipelines" / "mini" / "upstream",
+                            dest=tmp_path / "h")
+
+
+def test_drop_rows_needs_columns_with_allowed_values(library):
+    root = _enum_sheet_library(library)
+    up, down = _trees(root)
+    rule = _rule({"params": {"input": {"samplesheet": "s.csv", "provides": ["sample", "fastq_1"],
+                                       "drop_rows_not_allowed": ["tool", "sample", "nope"]}}})
+    issues = "\n".join(handoff.check_rule(rule, up, down))
+    assert "'sample' has no allowed values to drop rows by" in issues
+    assert "'nope' is not a column of the mini samplesheet" in issues
+    assert "'tool'" not in issues
+    with pytest.raises(NfclawError, match="'drop_rows_not_allowed' must list column names"):
+        _rule({"params": {"input": {"samplesheet": "s.csv", "provides": ["sample"],
+                                    "drop_rows_not_allowed": "tool"}}})

@@ -34,8 +34,8 @@ from runner.outputs import is_result
 REGISTRY_DIRNAME = "handoffs"
 KINDS = ("samplesheet", "build", "file", "upstream_param")
 _RULE_KEYS = {"description", "upstream_params", "params"}
-_EXTRA_KEYS = {"samplesheet": {"provides", "rename", "set"}, "build": set(), "file": set(),
-               "upstream_param": set()}
+_EXTRA_KEYS = {"samplesheet": {"provides", "rename", "set", "drop_rows_not_allowed"},
+               "build": set(), "file": set(), "upstream_param": set()}
 _BUILD_KEYS = {"rows", "columns", "format"}
 PLACEHOLDER = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
@@ -128,6 +128,9 @@ def parse_rule(data: Any, *, upstream: str, downstream: str, origin: str) -> Rul
             for key in ("rename", "set"):
                 if key in src and not _str_map(src[key]):
                     raise bad(f"'{target}': '{key}' must map column names to strings")
+            drop = src.get("drop_rows_not_allowed", [])
+            if not (isinstance(drop, list) and all(isinstance(c, str) and c for c in drop)):
+                raise bad(f"'{target}': 'drop_rows_not_allowed' must list column names")
         if kind == "build":
             _check_build(src["build"], target, bad)
         sources[target] = Source(kind, src, bool(src.get("optional", False)))
@@ -210,6 +213,14 @@ def check_rule(rule: Rule, upstream_tree: Path, downstream_tree: Path) -> list[s
             if sheet is not None:
                 issues += [f"{rule.downstream} samplesheet: {i}"
                            for i in samplesheet.header_issues(provided_columns(src), sheet)]
+                columns = {c.name: c for c in sheet.columns}
+                for col in src.spec.get("drop_rows_not_allowed", []):
+                    if col not in columns:
+                        issues.append(f"'{col}' is not a column of the {rule.downstream} "
+                                      "samplesheet (drop_rows_not_allowed)")
+                    elif not columns[col].enum:
+                        issues.append(f"'{col}' has no allowed values to drop rows by "
+                                      f"(the {rule.downstream} samplesheet does not restrict it)")
     return [f"{rule.origin}: {i}" for i in issues]
 
 
@@ -347,7 +358,8 @@ def _absolute(value: str, root: Path) -> str:
     return os.path.normpath(root / value)
 
 
-def _direct(src: Source, root: Path, sheet_schema, dest: Path) -> tuple[Path, list[str]]:
+def _direct(src: Source, root: Path, sheet_schema, dest: Path
+            ) -> tuple[Path, list[str], dict[str, Any]]:
     sheet = _one_match(root, src.spec["samplesheet"])
     try:
         with sheet.open(newline="", encoding="utf-8-sig") as fh:
@@ -368,6 +380,20 @@ def _direct(src: Source, root: Path, sheet_schema, dest: Path) -> tuple[Path, li
             header.append(col)
         for r in rows:
             r[col] = _fill(template, r)
+    # Rows the downstream would reject for a value its schema does not allow (createtaxdb builds a
+    # sourmash database the pinned taxprofiler cannot use) — dropped only where the rule says so.
+    allowed = {c.name: set(c.enum) for c in sheet_schema.columns
+               if c.enum and c.name in src.spec.get("drop_rows_not_allowed", [])}
+    def rejected(row: dict) -> bool:
+        return any((value := (row.get(col) or "").strip()) and value not in values
+                   for col, values in allowed.items())
+
+    kept = [r for r in rows if not rejected(r)]
+    dropped = [r for r in rows if rejected(r)]
+    if dropped and not kept:
+        raise _Unresolved(f"no row of {sheet.name} is left once rows with values the downstream "
+                          f"does not allow ({', '.join(sorted(allowed))}) are dropped")
+    rows = kept
     derived = [sheet.relative_to(root).as_posix()]
     path_cols = {c.name for c in sheet_schema.columns if c.is_path}
     for r in rows:
@@ -382,10 +408,12 @@ def _direct(src: Source, root: Path, sheet_schema, dest: Path) -> tuple[Path, li
             if rel is not None and (root / rel).is_file():
                 derived.append(rel)
     suffix = sheet.suffix.lower() if sheet.suffix.lower() in (".csv", ".tsv") else ".csv"
-    return _write_sheet(dest.with_suffix(suffix), header, rows), derived
+    extra = {"dropped_rows": dropped} if dropped else {}
+    return _write_sheet(dest.with_suffix(suffix), header, rows), derived, extra
 
 
-def _build(src: Source, root: Path, sheet_schema, dest: Path) -> tuple[Path, list[str]]:
+def _build(src: Source, root: Path, sheet_schema, dest: Path
+           ) -> tuple[Path, list[str], dict[str, Any]]:
     spec = src.spec["build"]
     glob, rx = _pattern(spec["rows"])
     path_cols = {c.name for c in sheet_schema.columns if c.is_path}
@@ -412,7 +440,7 @@ def _build(src: Source, root: Path, sheet_schema, dest: Path) -> tuple[Path, lis
     if not rows:
         raise _Unresolved(f"no file in {root} matches {spec['rows']!r}")
     return _write_sheet(dest.with_suffix("." + spec.get("format", "csv")),
-                        list(spec["columns"]), rows), derived
+                        list(spec["columns"]), rows), derived, {}
 
 
 def _resolve(rule: Rule, target: str, src: Source, *, upstream_outdir: Path,
@@ -425,7 +453,7 @@ def _resolve(rule: Rule, target: str, src: Source, *, upstream_outdir: Path,
         if sheet_schema is None:
             raise _Unresolved(f"'{_flag(target)}' of {rule.downstream} is not a samplesheet")
         make = _direct if src.kind == "samplesheet" else _build
-        path, derived = make(src, upstream_outdir, sheet_schema, dest / target)
+        path, derived, extra = make(src, upstream_outdir, sheet_schema, dest / target)
         if issues := samplesheet.validate(path, sheet_schema):
             raise NfclawError(
                 ErrorCode.HANDOFF_FAILED,
@@ -434,7 +462,7 @@ def _resolve(rule: Rule, target: str, src: Source, *, upstream_outdir: Path,
                 fix=(f"Inspect {path}. Fix the rule, or the {rule.upstream} stage's options, then "
                      "resume the chain."),
                 details={"issues": issues, "snapshot": str(path)})
-        return str(path), derived, {"sha256": sha256_file(path)}
+        return str(path), derived, {"sha256": sha256_file(path), **extra}
     if src.kind == "file":
         found = _first_match(upstream_outdir, src.spec["file"])
         return str(found), [found.relative_to(upstream_outdir).as_posix()], {}

@@ -87,7 +87,7 @@ The exact output files and directory layout for this release are documented upst
 Run createtaxdb as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges createtaxdb`.
 
 Feeds into:
-- `taxprofiler` — createtaxdb, with --generate-downstream-samplesheets, writes downstream_samplesheets/databases-taxprofiler.csv; it becomes taxprofiler's --databases. The reads to profile (--input) and the --run-<tool> switches are the stage's own.
+- `taxprofiler` — createtaxdb, with --generate-downstream-samplesheets, writes downstream_samplesheets/databases-taxprofiler.csv; it becomes taxprofiler's --databases, minus any database for a tool the pinned taxprofiler does not run (createtaxdb 3.1 also builds sourmash). The reads to profile (--input) and the --run-<tool> switches are the stage's own.
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: Bracken, Centrifuge, Centrifuger, DIAMOND, ganon, Kaiju, KMCP, Kraken2, KrakenUniq, MALT, MetaCache, MultiQC, SeqKit2, sourmash, sylph.

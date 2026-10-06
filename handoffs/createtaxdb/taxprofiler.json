@@ -1,5 +1,5 @@
 {
-  "description": "createtaxdb, with --generate-downstream-samplesheets, writes downstream_samplesheets/databases-taxprofiler.csv; it becomes taxprofiler's --databases. The reads to profile (--input) and the --run-<tool> switches are the stage's own.",
+  "description": "createtaxdb, with --generate-downstream-samplesheets, writes downstream_samplesheets/databases-taxprofiler.csv; it becomes taxprofiler's --databases, minus any database for a tool the pinned taxprofiler does not run (createtaxdb 3.1 also builds sourmash). The reads to profile (--input) and the --run-<tool> switches are the stage's own.",
   "upstream_params": {
     "generate_downstream_samplesheets": true,
     "generate_pipeline_samplesheets": "taxprofiler"
@@ -13,6 +13,9 @@
         "db_params",
         "db_type",
         "db_path"
+      ],
+      "drop_rows_not_allowed": [
+        "tool"
       ]
     }
   }

@@ -617,6 +617,11 @@ def _run_stage(p: Planned, prev: Planned | None, entry: dict, state: dict, *, sp
         hand_path = _write_json(dest / "handoff.json",
                                 {**hand.record, "from_stage": prev.stage.id, "to_stage": stage.id})
         entry["handoff"] = str(hand_path)
+        for name, item in hand.record["params"].items():
+            if dropped := item.get("dropped_rows"):
+                _say(log, f"{stage.dirname}: {len(dropped)} row(s) of the {name} samplesheet "
+                          f"{stage.pipeline} does not accept were dropped (recorded in "
+                          f"{hand_path})")
         for name, value in hand.params.items():
             explicit = p.input if name == "input" else p.stage.params.get(name)
             if explicit not in (None, ""):
