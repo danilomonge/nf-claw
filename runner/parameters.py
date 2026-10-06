@@ -164,7 +164,9 @@ def pin_report_suffix(merged: dict[str, Any], schema: ParamSchema,
     return {**merged, _REPORT_SUFFIX: stamp}
 
 
-def load_params_file(path: Path) -> dict:
+def load_params_file(path: Path, *, label: str = "--params-file") -> dict:
+    """A JSON or YAML map of parameters. `label` names the file in errors (a chain spec is
+    read with the same loader)."""
     # utf-8-sig so a leading UTF-8 BOM (e.g. from a Windows editor) is stripped: json.loads rejects
     # a BOM outright, so without this a BOM'd params file fails with a cryptic parse error. No-op
     # without a BOM. A binary file (e.g. an .xlsx by mistake) raises UnicodeDecodeError — report it
@@ -174,12 +176,12 @@ def load_params_file(path: Path) -> dict:
     except UnicodeDecodeError as exc:
         raise NfclawError(
             ErrorCode.PARAMS_INVALID,
-            f"--params-file is not valid UTF-8 text: {path}",
+            f"{label} is not valid UTF-8 text: {path}",
             fix="Pass a plain-text JSON or YAML file, not a binary one.") from exc
     except OSError as exc:
         raise NfclawError(
             ErrorCode.PARAMS_INVALID,
-            f"--params-file cannot be read: {exc.strerror or exc}: {path}",
+            f"{label} cannot be read: {exc.strerror or exc}: {path}",
             fix="Pass a params file you can read.") from exc
     if path.suffix.lower() == ".json":
         try:
@@ -187,7 +189,7 @@ def load_params_file(path: Path) -> dict:
         except json.JSONDecodeError as exc:
             raise NfclawError(
                 ErrorCode.PARAMS_INVALID,
-                f"--params-file is not valid JSON: {path} ({exc})",
+                f"{label} is not valid JSON: {path} ({exc})",
                 fix="Fix the JSON syntax, or use a .yaml params file.") from exc
     else:
         try:
@@ -195,7 +197,7 @@ def load_params_file(path: Path) -> dict:
         except ModuleNotFoundError as exc:
             raise NfclawError(
                 ErrorCode.ENVIRONMENT,
-                f"Reading YAML params file '{path}' requires pyyaml.",
+                f"Reading YAML {label} '{path}' requires pyyaml.",
                 fix="Use a .json params file, or `pip install pyyaml`.",
             ) from exc
         try:
@@ -203,15 +205,16 @@ def load_params_file(path: Path) -> dict:
         except yaml.YAMLError as exc:
             raise NfclawError(
                 ErrorCode.PARAMS_INVALID,
-                f"--params-file is not valid YAML: {path} ({exc})",
+                f"{label} is not valid YAML: {path} ({exc})",
                 fix="Fix the YAML syntax, or use a .json params file.") from exc
     # A params file is a map of parameter -> value (what Nextflow's -params-file expects). A
     # top-level list or scalar is malformed; catch it here with a clear error instead of letting
     # the later `dict.update()` blow up with a cryptic TypeError.
     if not isinstance(data, dict):
+        what = " of parameters" if label == "--params-file" else ""
         raise NfclawError(
             ErrorCode.PARAMS_INVALID,
-            f"--params-file must contain an object of parameters, got {type(data).__name__}: {path}",
+            f"{label} must contain an object{what}, got {type(data).__name__}: {path}",
             fix='Use a top-level object like {"param": value}, not a list or a bare scalar.')
     return data
 

@@ -13,6 +13,7 @@ class ErrorCode(str, Enum):
     SAMPLESHEET_INVALID = "samplesheet_invalid"
     PARAMS_INVALID = "params_invalid"
     EXECUTION_FAILED = "execution_failed"
+    HANDOFF_FAILED = "handoff_failed"
 
 
 @dataclass

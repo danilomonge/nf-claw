@@ -240,3 +240,12 @@ def test_last_paragraph_fallback_reaches_above_a_trailing_check_line():
     excerpt = runlog.error_excerpt(console)
     assert excerpt[0] == "* --genome (GRCh99): not a known genome"
     assert excerpt[-1].startswith(" -- Check script 'main.nf'")
+
+
+def test_run_log_finish_line_carries_its_label(tmp_path):
+    # A chain logs itself the same way as a run; its last line names what finished.
+    log = runlog.RunLog(tmp_path / "chain.log", label="chain")
+    log.outcome = "success"
+    log.finish()
+    assert (tmp_path / "chain.log").read_text().splitlines()[-1].startswith(
+        "==> nfclaw chain finished ")
