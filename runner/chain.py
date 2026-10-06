@@ -16,7 +16,9 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
+import tempfile
 import time
 import uuid
 from collections.abc import Callable, Iterator
@@ -38,10 +40,12 @@ except ImportError:                              # pragma: no cover — Windows 
 RECORD_DIRNAME = "chain"
 LOG_NAME = "chain.log"
 _ID = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
-_CHAIN_KEYS = {"stages", "profile", "nxf_ver", "nxf_env", "config", "limits", "allow_spaces"}
+_OPTION_KEYS = {"profile", "nxf_ver", "nxf_env", "config", "limits"}
+_CHAIN_KEYS = {"stages", "allow_spaces"} | _OPTION_KEYS
 _STAGE_KEYS = {"id", "pipeline", "input", "params", "params_file", "pipeline_version",
-               "retries", "demo", "handoff"}
+               "retries", "demo", "handoff"} | _OPTION_KEYS
 _LIMIT_KEYS = {"cpus", "memory", "time"}
+_PROBE_TIMEOUT = 300
 
 
 # --- the spec --------------------------------------------------------------------------------
@@ -58,10 +62,25 @@ class Stage:
     retries: int                      # relaunches (with -resume) after a pipeline failure
     demo: bool
     handoff: dict | Path | None       # an inline rule, or a rule file, used INTO this stage
+    # How this stage's Nextflow runs, where it differs from the chain's: `profile`, `nxf_ver`,
+    # `nxf_env` (merged over the chain's), `configs`, `limits`. Releases of different ages can need
+    # different engines — fetchngs 1.13 wants Nextflow >= 25.10.4, mag 5.5 >= 26.04, and an older
+    # atacseq a parser before 26.04's strict one.
+    options: dict = field(default_factory=dict)
 
     @property
     def dirname(self) -> str:
         return f"{self.index:02d}-{self.id}"
+
+
+@dataclass(frozen=True)
+class RunOptions:
+    """How one stage's Nextflow runs — what the `nfclaw run` flags of the same names set."""
+    profile: str = "docker"
+    nxf_ver: str | None = None
+    nxf_env: dict[str, str] = field(default_factory=dict)
+    configs: tuple[str, ...] = ()
+    limits: resources.ResourceLimits | None = None
 
 
 @dataclass(frozen=True)
@@ -83,6 +102,65 @@ def _bad(message: str) -> NfclawError:
 def _abs(value: str) -> str:
     """A path in the spec, absolute — relative ones mean what they would on the command line."""
     return str(Path(value).expanduser().resolve())
+
+
+def options(spec: ChainSpec, stage: Stage) -> RunOptions:
+    """The run options of `stage`: the chain's, with the stage's own overrides on top."""
+    o = stage.options
+    return RunOptions(profile=o.get("profile", spec.profile),
+                      nxf_ver=o.get("nxf_ver", spec.nxf_ver),
+                      nxf_env={**spec.nxf_env, **o.get("nxf_env", {})},
+                      configs=o.get("configs", spec.configs),
+                      limits=o.get("limits", spec.limits))
+
+
+def _parse_options(raw: dict, where: str) -> dict:
+    """The run options `raw` sets (chain-wide or for one stage), validated like the `nfclaw run`
+    flags of the same names; only the keys present are returned."""
+    out: dict[str, Any] = {}
+    if "profile" in raw:
+        if not isinstance(raw["profile"], str) or not raw["profile"].strip():
+            raise _bad(f"{where}: 'profile' must be a profile name such as \"docker\"")
+        out["profile"] = raw["profile"]
+    if "limits" in raw:
+        limits = raw["limits"] or {}
+        if not isinstance(limits, dict) or set(limits) - _LIMIT_KEYS:
+            raise _bad(f"{where}: 'limits' takes only: {', '.join(sorted(_LIMIT_KEYS))}")
+        cpus = limits.get("cpus")
+        if cpus is not None and (not isinstance(cpus, int) or isinstance(cpus, bool)):
+            raise _bad(f"{where}: 'limits.cpus' must be a whole number")
+    if "config" in raw:
+        configs = raw["config"] or []
+        if not isinstance(configs, list) or not all(isinstance(c, str) for c in configs):
+            raise _bad(f"{where}: 'config' must list Nextflow config file paths")
+        out["configs"] = tuple(_abs(c) for c in configs)
+    try:
+        if "nxf_env" in raw:
+            out["nxf_env"] = resources.parse_nxf_env(raw["nxf_env"] or {})
+        if raw.get("nxf_ver"):
+            out["nxf_ver"] = resources.check_nxf_version(raw["nxf_ver"])
+        if "limits" in raw:
+            lim = raw["limits"] or {}
+            parsed = resources.parse(lim.get("cpus"), lim.get("memory"), lim.get("time"))
+            out["limits"] = None if parsed.is_empty() else parsed
+    except NfclawError as exc:
+        raise _bad(f"{where}: {exc.message}") from None
+    return out
+
+
+def _options_json(opts: dict) -> dict:
+    """Run options as a spec writes them (for chain.json)."""
+    out: dict[str, Any] = {}
+    for key in ("profile", "nxf_ver", "nxf_env"):
+        if key in opts:
+            out[key] = opts[key]
+    if "configs" in opts:
+        out["config"] = list(opts["configs"])
+    if "limits" in opts:
+        lim = opts["limits"]
+        out["limits"] = ({k: v for k, v in (("cpus", lim.cpus), ("memory", lim.memory),
+                                            ("time", lim.time)) if v is not None} if lim else {})
+    return out
 
 
 def load_spec(path: Path) -> ChainSpec:
@@ -139,25 +217,12 @@ def parse_spec(data: dict) -> ChainSpec:
             params_file=Path(_abs(params_file)) if params_file else None,
             pipeline_version=version or None, retries=retries,
             demo=bool(raw.get("demo", False)),
-            handoff=Path(_abs(hand)) if isinstance(hand, str) else hand))
-    limits = data.get("limits") or {}
-    if not isinstance(limits, dict) or set(limits) - _LIMIT_KEYS:
-        raise _bad(f"'limits' takes only: {', '.join(sorted(_LIMIT_KEYS))}")
-    cpus = limits.get("cpus")
-    if cpus is not None and (not isinstance(cpus, int) or isinstance(cpus, bool)):
-        raise _bad("'limits.cpus' must be a whole number")
-    configs = data.get("config") or []
-    if not isinstance(configs, list) or not all(isinstance(c, str) for c in configs):
-        raise _bad("'config' must list Nextflow config file paths")
-    try:
-        nxf_env = resources.parse_nxf_env(data.get("nxf_env") or {})
-        nxf_ver = resources.check_nxf_version(data["nxf_ver"]) if data.get("nxf_ver") else None
-        parsed = resources.parse(cpus, limits.get("memory"), limits.get("time"))
-    except NfclawError as exc:
-        raise _bad(exc.message) from None
-    return ChainSpec(stages=tuple(stages), profile=str(data.get("profile") or "docker"),
-                     nxf_ver=nxf_ver, nxf_env=nxf_env, configs=tuple(_abs(c) for c in configs),
-                     limits=None if parsed.is_empty() else parsed,
+            handoff=Path(_abs(hand)) if isinstance(hand, str) else hand,
+            options=_parse_options(raw, f"stage '{sid}'")))
+    chain_opts = _parse_options(data, "chain")
+    return ChainSpec(stages=tuple(stages), profile=chain_opts.get("profile", "docker"),
+                     nxf_ver=chain_opts.get("nxf_ver"), nxf_env=chain_opts.get("nxf_env", {}),
+                     configs=chain_opts.get("configs", ()), limits=chain_opts.get("limits"),
                      allow_spaces=bool(data.get("allow_spaces", False)))
 
 
@@ -253,7 +318,8 @@ def normalized(spec: ChainSpec, planned: list[Planned]) -> dict:
                     "pipeline_version": p.stage.pipeline_version, "retries": p.stage.retries,
                     "demo": p.stage.demo,
                     "handoff": (str(p.stage.handoff) if isinstance(p.stage.handoff, Path)
-                                else p.stage.handoff)}
+                                else p.stage.handoff),
+                    **_options_json(p.stage.options)}
                    for p in planned],
     }
 
@@ -341,19 +407,53 @@ def _check(spec: ChainSpec, planned: list[Planned], *, repo_root: Path, outdir: 
     files the printed commands name (for `--check`); the validation before a real run drops them."""
     commands = []
     for p in planned:
+        opts = options(spec, p.stage)
         res = orchestration.run_pipeline(
             p.stage.pipeline, repo_root=repo_root, input_path=p.input,
-            outdir=outdir / p.stage.dirname, profile=spec.profile,
+            outdir=outdir / p.stage.dirname, profile=opts.profile,
             params_file=p.stage.params_file, cli_overrides=dict(p.params), resume=False,
             demo=p.stage.demo, check_only=True, write_provenance=False, timeout_seconds=None,
-            pipeline_version=p.stage.pipeline_version, nxf_ver=spec.nxf_ver,
-            nxf_env=spec.nxf_env, allow_spaces=spec.allow_spaces, configs=spec.configs,
-            limits=spec.limits, on_warning=_warner(on_warning, p.stage),
+            pipeline_version=p.stage.pipeline_version, nxf_ver=opts.nxf_ver,
+            nxf_env=opts.nxf_env, allow_spaces=spec.allow_spaces, configs=opts.configs,
+            limits=opts.limits, on_warning=_warner(on_warning, p.stage),
             deferred_params=_deferred(p))
         if not keep and res.staging is not None:
             shutil.rmtree(res.staging, ignore_errors=True)
         commands.append((p.stage.dirname, nextflow_command.shell_line(res.command, res.env)))
     return commands
+
+
+def _probe_config(spec: ChainSpec, p: Planned) -> list[str]:
+    """Whether the stage's Nextflow configuration parses with the engine it will run under.
+
+    `nextflow config` resolves the pipeline's config and profiles without running anything (a few
+    seconds). It catches the one failure no schema can predict: a release whose config the engine
+    rejects outright — an older release on Nextflow 26's strict parser — which would otherwise
+    surface only when that stage launches, after every stage before it has run. Run from a scratch
+    directory so nothing lands anywhere; a probe that cannot run, or does not finish, is no verdict."""
+    opts = options(spec, p.stage)
+    if shutil.which("nextflow") is None:
+        return []                                         # preflight reports a missing nextflow
+    overlay = dict(opts.nxf_env)
+    if opts.nxf_ver:
+        overlay["NXF_VER"] = opts.nxf_ver
+    cmd = ["nextflow", "config", str(p.tree.path),
+           "-profile", nextflow_command.compose_profile(opts.profile, demo=p.stage.demo)]
+    for cfg in opts.configs:
+        cmd += ["-c", cfg]
+    with tempfile.TemporaryDirectory(prefix="nfclaw-probe-") as scratch:
+        try:
+            r = subprocess.run(cmd, cwd=scratch, env={**os.environ, **overlay},
+                               capture_output=True, text=True, timeout=_PROBE_TIMEOUT)
+        except (OSError, subprocess.SubprocessError):
+            return []
+    if r.returncode == 0:
+        return []
+    engine = f"Nextflow {opts.nxf_ver}" if opts.nxf_ver else "the installed Nextflow"
+    report = (runlog.error_excerpt(r.stdout or "")
+              + runlog.stderr_excerpt(r.stderr or "")) or [f"exit status {r.returncode}"]
+    return [f"{p.stage.dirname} ({p.stage.pipeline}): {engine} cannot parse its configuration:\n"
+            + "\n".join(f"      {line}" for line in report)]
 
 
 def _check_frozen(state: dict, planned: list[Planned]) -> None:
@@ -405,9 +505,16 @@ def run_chain(spec: ChainSpec | None, *, repo_root: Path, outdir: Path, check_on
         _check_frozen(state, planned)
     done = {s.get("id") for s in (state or {}).get("stages", []) if s.get("status") == "success"}
     # A real run says each stage's advisories when that stage launches; only --check says them here.
-    commands = _check(spec, [p for p in planned if p.stage.id not in done], repo_root=repo_root,
-                      outdir=outdir, on_warning=on_warning if check_only else None,
-                      keep=check_only)
+    todo = [p for p in planned if p.stage.id not in done]
+    commands = _check(spec, todo, repo_root=repo_root, outdir=outdir,
+                      on_warning=on_warning if check_only else None, keep=check_only)
+    if unparsable := [issue for p in todo for issue in _probe_config(spec, p)]:
+        raise NfclawError(
+            ErrorCode.ENVIRONMENT, "A stage could not start: Nextflow cannot parse its configuration.",
+            fix=("Nothing was launched. Give that stage an engine its release parses — e.g. "
+                 "\"nxf_ver\": \"25.10.4\" in its spec entry (see 'Nextflow too new for an older "
+                 f"release' in {runlog.known_issues_path()}) — and run the chain again."),
+            details={"issues": unparsable})
     if check_only:
         return ChainResult(outdir=outdir, outcome="checked", stages=[], commands=commands)
     return _execute(spec, planned, state, repo_root=repo_root, outdir=outdir,
@@ -533,14 +640,15 @@ def _run_stage(p: Planned, prev: Planned | None, entry: dict, state: dict, *, sp
         _say(log, f"{stage.dirname}: {stage.pipeline} " + (f"attempt {attempt} " if attempt > 1
                                                            else "") + "started — log "
                   f"{stage_dir / 'provenance' / 'logs' / runlog.RUN_LOG_NAME}")
+        opts = options(spec, stage)
         try:
             orchestration.run_pipeline(
                 stage.pipeline, repo_root=repo_root, input_path=input_path, outdir=stage_dir,
-                profile=spec.profile, params_file=stage.params_file, cli_overrides=overrides,
+                profile=opts.profile, params_file=stage.params_file, cli_overrides=overrides,
                 resume=resume, demo=stage.demo, check_only=False, write_provenance=True,
                 timeout_seconds=remaining, pipeline_version=stage.pipeline_version,
-                nxf_ver=spec.nxf_ver, nxf_env=spec.nxf_env, allow_spaces=spec.allow_spaces,
-                configs=spec.configs, limits=spec.limits, on_warning=warn, chain_link=link)
+                nxf_ver=opts.nxf_ver, nxf_env=opts.nxf_env, allow_spaces=spec.allow_spaces,
+                configs=opts.configs, limits=opts.limits, on_warning=warn, chain_link=link)
         except NfclawError as exc:
             entry["attempts"][-1].update(finished=runlog.now(), outcome=_short(exc))
             if _retryable(exc) and attempt <= stage.retries:

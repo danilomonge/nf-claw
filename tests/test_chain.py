@@ -74,6 +74,7 @@ def fake_runs(monkeypatch, finished_run):
                                        checked_only=False, outputs_report=None)
 
     monkeypatch.setattr(chain.orchestration, "run_pipeline", fake)
+    monkeypatch.setattr(chain, "_probe_config", lambda spec, p: [])   # no Nextflow here
     return runs
 
 
@@ -106,7 +107,33 @@ def test_spec_run_options_are_validated_like_the_run_flags():
     assert spec.limits.cpus == 4 and spec.limits.memory == "15.GB"
 
 
+def test_a_stage_overrides_the_chains_run_options():
+    # Releases of different ages need different engines: fetchngs 1.13 wants >= 25.10.4, an older
+    # atacseq a parser before Nextflow 26's strict one.
+    spec = chain.parse_spec({
+        "nxf_env": {"NXF_JVM_ARGS": "-Dipv6", "NXF_OFFLINE": "false"}, "limits": {"cpus": 8},
+        "stages": [{"pipeline": "a"},
+                   {"pipeline": "b", "nxf_ver": "25.10.4", "nxf_env": {"NXF_OFFLINE": "true"},
+                    "profile": "singularity", "limits": {"memory": "4.GB"}}]})
+    first, second = (chain.options(spec, s) for s in spec.stages)
+    assert first.nxf_ver is None and first.profile == "docker" and first.limits.cpus == 8
+    assert second.nxf_ver == "25.10.4" and second.profile == "singularity"
+    assert second.nxf_env == {"NXF_JVM_ARGS": "-Dipv6", "NXF_OFFLINE": "true"}   # merged
+    assert second.limits.memory == "4.GB" and second.limits.cpus is None         # replaced
+
+
+def test_stage_run_options_round_trip_through_chain_json(library):
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
+    spec = chain.parse_spec({"stages": [{"pipeline": "mini_up", "input": "/data/ids.csv"},
+                                        {"pipeline": "mini", "nxf_ver": "25.10.4",
+                                         "limits": {"cpus": 2}}]})
+    again = chain.parse_spec(chain.normalized(spec, chain.plan(spec, repo_root=root)))
+    assert chain.options(again, again.stages[1]) == chain.options(spec, spec.stages[1])
+
+
 @pytest.mark.parametrize("data, msg", [
+    ({"stages": [{"pipeline": "a", "nxf_ver": "26"}]}, "stage 'a': --nxf-ver must be"),
+    ({"stages": [{"pipeline": "a", "profile": ""}]}, "'profile' must be a profile name"),
     ({"stages": []}, "at least one stage"),
     ({"stages": [{"pipeline": "a"}, {"pipeline": "a"}]}, "duplicate stage id 'a'"),
     ({"stages": [{"pipeline": "a", "retries": -1}]}, "'retries' must be"),
@@ -207,6 +234,62 @@ def test_normalized_spec_round_trips(library):
     assert [chain.fingerprint(p) for p in chain.plan(again, repo_root=root)] == \
         [chain.fingerprint(p) for p in planned]
     assert again.limits.memory == "8.GB"
+
+
+# --- the configuration probe -------------------------------------------------------------------
+
+def test_the_probe_parses_each_stage_config_with_its_own_engine(library, monkeypatch, tmp_path):
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
+    spec = chain.parse_spec({"nxf_env": {"NXF_JVM_ARGS": "-Dipv6"}, "stages": [
+        {"pipeline": "mini_up"}, {"pipeline": "mini", "nxf_ver": "25.10.4", "demo": True}]})
+    planned = chain.plan(spec, repo_root=root)
+    seen = []
+
+    def fake_run(cmd, **kw):
+        seen.append((cmd, kw["env"]))
+        import subprocess
+        bad = "mini/upstream" in cmd[2]
+        return subprocess.CompletedProcess(cmd, 1 if bad else 0, stdout=(
+            "Error nextflow.config:298:14: Unexpected input: '('\n\nERROR ~ Config parsing failed\n"
+            if bad else "process {}\n"), stderr="")
+
+    monkeypatch.setattr(chain.shutil, "which", lambda name: "/usr/bin/nextflow")
+    monkeypatch.setattr(chain.subprocess, "run", fake_run)
+    assert chain._probe_config(spec, planned[0]) == []
+    [issue] = chain._probe_config(spec, planned[1])
+    assert "02-mini (mini): Nextflow 25.10.4 cannot parse its configuration" in issue
+    assert "Unexpected input" in issue
+    cmd, env = seen[1]
+    assert cmd[:2] == ["nextflow", "config"] and cmd[-2:] == ["-profile", "test,docker"]
+    assert env["NXF_VER"] == "25.10.4" and env["NXF_JVM_ARGS"] == "-Dipv6"
+    assert "NXF_VER" not in seen[0][1]                 # the first stage keeps the default engine
+
+
+def test_a_probe_that_cannot_run_is_no_verdict(library, monkeypatch):
+    import subprocess
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
+    planned = chain.plan(_spec(), repo_root=root)
+    monkeypatch.setattr(chain.shutil, "which", lambda name: None)
+    assert chain._probe_config(_spec(), planned[0]) == []
+    monkeypatch.setattr(chain.shutil, "which", lambda name: "/usr/bin/nextflow")
+
+    def slow(cmd, **kw):
+        raise subprocess.TimeoutExpired(cmd, 300)
+
+    monkeypatch.setattr(chain.subprocess, "run", slow)
+    assert chain._probe_config(_spec(), planned[0]) == []
+
+
+def test_an_unparsable_stage_config_stops_the_chain_before_anything_runs(library, fake_runs,
+                                                                         monkeypatch, tmp_path):
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
+    monkeypatch.setattr(chain, "_probe_config",
+                        lambda spec, p: ["02-mini (mini): cannot parse"] if p.stage.index == 2
+                        else [])
+    with pytest.raises(NfclawError, match="Nextflow cannot parse its configuration") as err:
+        chain.run_chain(_spec(), repo_root=root, outdir=tmp_path / "c")
+    assert '"nxf_ver"' in err.value.fix and fake_runs.calls == []
+    assert not (tmp_path / "c").exists()
 
 
 # --- running ---------------------------------------------------------------------------------
