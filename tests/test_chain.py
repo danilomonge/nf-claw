@@ -462,7 +462,8 @@ def test_one_chain_per_outdir(library, fake_runs, tmp_path):
 def test_check_validates_every_stage_and_writes_nothing(library, fake_runs, tmp_path):
     root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
     res = chain.run_chain(_spec(), repo_root=root, outdir=tmp_path / "c", check_only=True)
-    assert res.outcome == "checked" and [d for d, _ in res.commands] == ["01-mini_up", "02-mini"]
+    assert res.outcome == "checked" and [d for d, _ in res.commands] == [
+        "01-mini_up", "02-mini — --input from the stage before it (handoffs/mini_up/mini.json)"]
     assert fake_runs.calls == []
     assert fake_runs.checks[1]["deferred_params"] == frozenset({"input"})
     assert not (tmp_path / "c").exists()

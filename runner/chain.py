@@ -419,7 +419,11 @@ def _check(spec: ChainSpec, planned: list[Planned], *, repo_root: Path, outdir: 
             deferred_params=_deferred(p))
         if not keep and res.staging is not None:
             shutil.rmtree(res.staging, ignore_errors=True)
-        commands.append((p.stage.dirname, nextflow_command.shell_line(res.command, res.env)))
+        label = p.stage.dirname
+        if deferred := _deferred(p):                      # the printed command lacks them: say so
+            flags = ", ".join(f"--{n.replace('_', '-')}" for n in sorted(deferred))
+            label += f" — {flags} from the stage before it ({p.rule.origin})"
+        commands.append((label, nextflow_command.shell_line(res.command, res.env)))
     return commands
 
 
