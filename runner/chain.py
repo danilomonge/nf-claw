@@ -126,10 +126,16 @@ def parse_spec(data: dict) -> ChainSpec:
         params_file = raw.get("params_file")
         if params_file is not None and not isinstance(params_file, str):
             raise _bad(f"stage '{sid}': 'params_file' must be a path")
+        # Keys as on the command line: `--skip-busco` and `skip_busco` name one parameter.
+        params = {str(k).replace("-", "_"): v for k, v in params.items()}
+        stage_input = raw.get("input")
+        if "input" in params:                             # the same --input, written as a param
+            if stage_input is not None:
+                raise _bad(f"stage '{sid}': give its input once — 'input' or 'params.input'")
+            stage_input = params.pop("input")
         stages.append(Stage(
-            index=index, id=sid, pipeline=raw["pipeline"], input=raw.get("input"),
-            # Keys as on the command line: `--skip-busco` and `skip_busco` name one parameter.
-            params={str(k).replace("-", "_"): v for k, v in params.items()},
+            index=index, id=sid, pipeline=raw["pipeline"], input=stage_input,
+            params=params,
             params_file=Path(_abs(params_file)) if params_file else None,
             pipeline_version=version or None, retries=retries,
             demo=bool(raw.get("demo", False)),

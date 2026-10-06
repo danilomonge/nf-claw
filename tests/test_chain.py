@@ -90,6 +90,14 @@ def test_spec_param_keys_mean_what_they_mean_on_the_command_line():
     assert spec.stages[0].params == {"skip_busco": True}
 
 
+def test_an_input_written_as_a_param_is_the_stages_input():
+    # --input gets the samplesheet pre-check and path resolution, wherever the spec puts it.
+    spec = chain.parse_spec({"stages": [{"pipeline": "a", "params": {"input": "/x.csv", "k": 1}}]})
+    assert spec.stages[0].input == "/x.csv" and spec.stages[0].params == {"k": 1}
+    with pytest.raises(NfclawError, match="give its input once"):
+        chain.parse_spec({"stages": [{"pipeline": "a", "input": "/x", "params": {"input": "/y"}}]})
+
+
 def test_spec_run_options_are_validated_like_the_run_flags():
     spec = chain.parse_spec({"stages": [{"pipeline": "a"}], "nxf_ver": "25.10.4",
                              "nxf_env": {"NXF_OFFLINE": "true"},
