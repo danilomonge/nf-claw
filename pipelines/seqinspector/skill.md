@@ -89,6 +89,12 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/seqinspector/blob/1.1.2/docs/output.md
 
+## Chaining
+Run seqinspector as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges seqinspector`.
+
+Fed by:
+- `demultiplex` — demultiplex writes samplesheet/seqinspector_samplesheet.csv for its demultiplexed FastQ files.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: BBMap, BWAMEM2, checkQC, Chelae, FastQC, Kraken2, Krona, Fastp, FastQ Screen, FASTQE, FQ, MultiQC, MultiQC SAV, Riker, Picard Tools, Rundirparser, SAMTOOLS, SeqFu, Seqkit, Seqtk, Sequali, ToulligQC, pigz, Python, PyYAML, GNU tar.
 

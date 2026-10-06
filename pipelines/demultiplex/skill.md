@@ -9,6 +9,7 @@ has_samplesheet: true
 input: samplesheet (id, samplesheet, lane, flowcell, per_flowcell_manifest)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
 tools: ["fastp", "Falco", "MultiQC", "CheckQC", "samshee"]
+feeds: ["atacseq", "methylseq", "rnaseq", "sarek", "seqinspector", "taxprofiler"]
 ---
 # demultiplex
 
@@ -81,6 +82,17 @@ nfclaw run demultiplex ... --nxf-ver 25.10.4
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/demultiplex/blob/1.8.0/docs/output.md
+
+## Chaining
+Run demultiplex as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges demultiplex`.
+
+Feeds into:
+- `atacseq` — demultiplex writes samplesheet/atacseq_samplesheet.csv (every sample as replicate 1) for its demultiplexed FastQ files.
+- `methylseq` — demultiplex writes samplesheet/methylseq_samplesheet.csv for its demultiplexed FastQ files.
+- `rnaseq` — demultiplex writes samplesheet/rnaseq_samplesheet.csv for its demultiplexed FastQ files (strandedness from its --strandedness, default auto).
+- `sarek` — demultiplex writes samplesheet/sarek_samplesheet.csv with an empty patient; each sample is made its own patient (set it per sample yourself if several samples share one).
+- `seqinspector` — demultiplex writes samplesheet/seqinspector_samplesheet.csv for its demultiplexed FastQ files.
+- `taxprofiler` — demultiplex writes samplesheet/taxprofiler_samplesheet.csv without run_accession or instrument_platform; each sample becomes its own run, sequenced on ILLUMINA (bcl2fastq/bclconvert data — use an inline handoff for other platforms).
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: fastp, Falco, MultiQC, CheckQC, samshee.

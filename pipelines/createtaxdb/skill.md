@@ -9,6 +9,7 @@ has_samplesheet: true
 input: samplesheet (id, taxid, fasta_dna, fasta_aa)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
 tools: ["Bracken", "Centrifuge", "Centrifuger", "DIAMOND", "ganon", "Kaiju", "KMCP", "Kraken2", "KrakenUniq", "MALT", "MetaCache", "MultiQC", "SeqKit2", "sourmash", "sylph"]
+feeds: ["taxprofiler"]
 ---
 # createtaxdb
 
@@ -81,6 +82,12 @@ nfclaw run createtaxdb ... --nxf-ver 25.10.4
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/createtaxdb/blob/3.1.0/docs/output.md
+
+## Chaining
+Run createtaxdb as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges createtaxdb`.
+
+Feeds into:
+- `taxprofiler` — createtaxdb, with --generate-downstream-samplesheets, writes downstream_samplesheets/databases-taxprofiler.csv; it becomes taxprofiler's --databases. The reads to profile (--input) and the --run-<tool> switches are the stage's own.
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: Bracken, Centrifuge, Centrifuger, DIAMOND, ganon, Kaiju, KMCP, Kraken2, KrakenUniq, MALT, MetaCache, MultiQC, SeqKit2, sourmash, sylph.

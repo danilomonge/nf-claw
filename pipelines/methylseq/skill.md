@@ -93,6 +93,12 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/methylseq/blob/4.2.0/docs/output.md
 
+## Chaining
+Run methylseq as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges methylseq`.
+
+Fed by:
+- `demultiplex` — demultiplex writes samplesheet/methylseq_samplesheet.csv for its demultiplexed FastQ files.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: FastQC, MultiQC, Trim Galore!, Bismark, BWA-MEM, bwa-meth, Picard, Qualimap, Preseq, rastair, Samtools, Bedtools.
 

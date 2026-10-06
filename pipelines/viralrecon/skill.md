@@ -85,6 +85,12 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/viralrecon/blob/3.0.0/docs/output.md
 
+## Chaining
+Run viralrecon as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges viralrecon`.
+
+Fed by:
+- `fetchngs` — fetchngs writes a viralrecon samplesheet (sample, fastq_1, fastq_2) with --nf-core-pipeline viralrecon.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: ABACAS, ARTIC network, Bandage, BCFtools, BEDTools, BLAST, Bowtie 2, Cutadapt, fastp, FastQC, iVar, Kraken 2, minia, mosdepth, MultiQC, NanoPlot, Nextstrain, pangolin, picard-tools, pycoQC, QUAST, R, SAMtools, SnpEff, SnpSift, SPAdes, Unicycler, Vcflib.
 

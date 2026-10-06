@@ -6,7 +6,7 @@ import json
 import re
 from pathlib import Path
 
-from runner import engine_version, inputs, versions
+from runner import engine_version, handoff, inputs, versions
 from runner import schema as schema_mod
 from runner import submodule as submod
 from runner.schema import InputSchema, Param, ParamSchema, json_scalar
@@ -499,11 +499,34 @@ def _run_invocation(name: str, ps: ParamSchema, insch: InputSchema | None,
     return nfclaw, raw
 
 
+def _chaining_section(name: str, rules) -> str:
+    """Which pipelines this one hands its outputs to, and which hand theirs to it (handoffs/)."""
+    feeds = sorted(d for (u, d) in rules if u == name)
+    fed_by = sorted(u for (u, d) in rules if d == name)
+    if not feeds and not fed_by:
+        return ""
+    lines = [f"Run {name} as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts "
+             "each stage only after the one before it succeeded, and prepares its inputs from that "
+             "stage's outputs. The rules live in `handoffs/` (format and spec in "
+             "[docs/chaining.md](../../docs/chaining.md)); list them with "
+             f"`nfclaw chain edges {name}`."]
+    if feeds:
+        lines += ["", "Feeds into:"] + [f"- `{d}` — {rules[(name, d)].description}" for d in feeds]
+    if fed_by:
+        lines += ["", "Fed by:"] + [f"- `{u}` — {rules[(u, name)].description}" for u in fed_by]
+    return "\n".join(lines) + "\n"
+
+
 def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
-                  insch: InputSchema | None, pipeline_version: str | None = None) -> str:
+                  insch: InputSchema | None, pipeline_version: str | None = None,
+                  rules=None) -> str:
     desc = (ps.description.splitlines() or [name])[0]
     summary = _summary(st.path) or desc
     tools = _pipeline_tools(st.path)
+    # Chaining is documented for the pinned release, the version the handoff rules are checked
+    # against; a version's on-demand docs leave it out.
+    rules = rules if pipeline_version is None and rules else {}
+    feeds = sorted(d for (u, d) in rules if u == name)
     fm = (
         "---\n"
         f"name: {name}\n"
@@ -516,7 +539,8 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"input: {_input_summary(insch, ps)}\n"
         f"output: {_output_summary(st.path)}\n"
         f"tools: {json.dumps(tools, ensure_ascii=False)}\n"
-        "---\n"
+        + (f"feeds: {json.dumps(feeds)}\n" if feeds else "")
+        + "---\n"
     )
     # Unreleased `dev` code is identified by its commit, never by the moving branch name: the docs
     # link to that commit's files and the raw command runs that commit's materialized tree.
@@ -573,6 +597,8 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
     # tree, pipelines/<name>/.versions/<label>/skill.md, so their links climb two levels further.
     engine = _engine_section(name, st, what, "../.." if pipeline_version is None else "../../../..")
     engine_block = f"## Nextflow engine\n{engine}\n" if engine else ""
+    chaining = _chaining_section(name, rules)
+    chaining_block = f"## Chaining\n{chaining}\n" if chaining else ""
     mandatory = _mandatory_params(ps)
     mandatory_block = f"## Mandatory arguments\n{mandatory}\n" if mandatory else ""
     body = (
@@ -591,6 +617,7 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"## Resources\n{_resources_section(name, ps, insch, pipeline_version)}\n"
         f"{engine_block}"
         f"## Outputs\n{_outputs_section(name, st, ref, what)}\n"
+        f"{chaining_block}"
         f"{tools_block}"
         "## Demo\n```bash\n"
         f"{demo_line}\n```\n\n"
@@ -629,7 +656,8 @@ def _render_reference(name: str, st: SubmoduleStatus, ps: ParamSchema,
     return out
 
 
-def render_status(st: SubmoduleStatus, *, pipeline_version: str | None = None) -> tuple[str, str]:
+def render_status(st: SubmoduleStatus, *, pipeline_version: str | None = None,
+                  rules=None) -> tuple[str, str]:
     """Return the (skill.md, reference.md) text for an already-resolved tree — works for the
     pinned submodule and for any materialized version worktree alike. Nothing is written.
     `pipeline_version` makes the skill's run commands target that specific release; leave it
@@ -641,14 +669,15 @@ def render_status(st: SubmoduleStatus, *, pipeline_version: str | None = None) -
     # tarball (rangeland). Documenting that template as the input sent agents the wrong way.
     ref = inputs.samplesheet_schema(st.path)
     samplesheet = schema_mod.load_input_schema(st.path, ref) if ref else None
-    return (_render_skill(st.name, st, ps, samplesheet, pipeline_version),
+    return (_render_skill(st.name, st, ps, samplesheet, pipeline_version, rules),
             _render_reference(st.name, st, ps, samplesheet))
 
 
 def render(name: str, *, pipelines_dir: Path) -> tuple[str, str]:
     """Return the (skill.md, reference.md) text for a pipeline WITHOUT writing anything, so the
     drift gate can compare against the committed files without mutating them."""
-    return render_status(submod.resolve(name, pipelines_dir))
+    return render_status(submod.resolve(name, pipelines_dir),
+                         rules=handoff.load_registry(pipelines_dir.parent))
 
 
 def generate(name: str, *, pipelines_dir: Path) -> tuple[Path, Path]:

@@ -89,6 +89,13 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/atacseq/blob/2.1.2/docs/output.md
 
+## Chaining
+Run atacseq as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges atacseq`.
+
+Fed by:
+- `demultiplex` — demultiplex writes samplesheet/atacseq_samplesheet.csv (every sample as replicate 1) for its demultiplexed FastQ files.
+- `fetchngs` — fetchngs writes an atacseq samplesheet (every run as replicate 1 of its sample) with --nf-core-pipeline atacseq.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: BWA, BEDTools, BamTools, deepTools, FastQC, featureCounts, HOMER, MACS2, MultiQC, picard-tools, preseq, pysam, SAMtools, Trim Galore!, UCSC tools, ataqv, R, DESeq2, UpSetR, ggplot2, reshape2, scales, pheatmap, RColorBrewer, optparse.
 

@@ -118,6 +118,12 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/differentialabundance/blob/2.0.0/docs/output.md
 
+## Chaining
+Run differentialabundance as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges differentialabundance`.
+
+Fed by:
+- `rnaseq` — rnaseq's merged Salmon gene counts become differentialabundance's --matrix, with the GTF the rnaseq run used; the experimental design (--input, sample names as in rnaseq) and --contrasts describe your study and go in the stage's own params.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: decoupler-py, GSEA, affy, DESeq2, GEOQuery, ggplot2, gprofiler2, Limma, optparse, plotly, Proteus, R, RColorBrewer, RMarkdown, shinyngs, SummarizedExperiment, variancePartition, variancePartition::dream.
 

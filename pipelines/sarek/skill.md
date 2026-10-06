@@ -107,6 +107,13 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/sarek/blob/3.10.0/docs/output.md
 
+## Chaining
+Run sarek as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges sarek`.
+
+Fed by:
+- `demultiplex` — demultiplex writes samplesheet/sarek_samplesheet.csv with an empty patient; each sample is made its own patient (set it per sample yourself if several samples share one).
+- `fetchngs` — fetchngs writes a sarek samplesheet (patient = the ENA sample accession) with --nf-core-pipeline sarek; it has no lane, so each run's accession becomes its lane — sarek needs patient, sample and lane to be unique together.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: ASCAT, alleleCount, BCFTools, BGZip, BWA-MEM, BWA-MEM2, CNVKIT, Condel, Control-FREEC, dbNSFP, DeepVariant, DragMap, EnsemblVEP, FastP, FastQC, FGBio, FreeBayes, GATK, GNU sed, goleft indexcov, HaplotypeCaller Joint Germline, LOFTEE, Manta, Mastermind, Mosdepth, MSIsensor2, MSISensorPro, MultiQC, NGSCheckMate, NVIDIA Clara Parabricks, Phenotypes, PIGZ, P7Zip, SAMtools, snpEff, SpliceAI, SpliceRegion, SPRING, Strelka2, SVDB, Tabix, TIDDIT, Varlociraptor, VCFTools, vcflib, Lofreq, MuSE, R, RColorBrewer.
 

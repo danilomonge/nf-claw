@@ -656,3 +656,28 @@ def test_pinned_skill_points_agents_at_dev(tmp_path):
     for line in text.splitlines():                           # the default commands stay on the pin
         if line.startswith("nfclaw run"):
             assert "--pipeline-version" not in line
+
+
+def test_skill_lists_what_a_pipeline_feeds_and_is_fed_by(library):
+    from runner import handoff, submodule
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): {
+        "description": "mini_up writes a mini sheet",
+        "params": {"input": {"samplesheet": "s.csv", "provides": ["sample", "fastq_1"]}}}})
+    rules = handoff.load_registry(root)
+    pdir = root / "pipelines"
+    up_skill, _ = write_skill.render_status(submodule.resolve("mini_up", pdir), rules=rules)
+    down_skill, _ = write_skill.render_status(submodule.resolve("mini", pdir), rules=rules)
+    assert 'feeds: ["mini"]' in up_skill and "## Chaining" in up_skill
+    assert "- `mini` — mini_up writes a mini sheet" in up_skill
+    assert "Fed by:" in down_skill and "feeds:" not in down_skill
+    assert "- `mini_up` — mini_up writes a mini sheet" in down_skill
+    plain, _ = write_skill.render_status(submodule.resolve("mini", pdir))
+    assert "## Chaining" not in plain                      # no rules → no section, docs unchanged
+
+
+def test_generate_reads_the_registry_next_to_the_pipelines(library):
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): {
+        "description": "d", "params": {"input": {"samplesheet": "s.csv",
+                                                 "provides": ["sample", "fastq_1"]}}}})
+    skill, _ = write_skill.generate("mini_up", pipelines_dir=root / "pipelines")
+    assert "## Chaining" in skill.read_text()

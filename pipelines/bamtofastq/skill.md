@@ -9,6 +9,7 @@ has_samplesheet: true
 input: samplesheet (sample_id, mapped, index, file_type)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
 tools: ["FastQC", "fastq_utils", "MultiQC", "SAMtools"]
+feeds: ["rnaseq"]
 ---
 # bamtofastq
 
@@ -81,6 +82,12 @@ nfclaw run bamtofastq ... --nxf-ver 25.10.4
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/bamtofastq/blob/2.2.1/docs/output.md
+
+## Chaining
+Run bamtofastq as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges bamtofastq`.
+
+Feeds into:
+- `rnaseq` — bamtofastq publishes converted paired-end reads as reads/<sample>_1.merged.fastq.gz and _2; one rnaseq row per sample, strandedness detected by rnaseq (auto). Single-end conversions (reads/<sample>.merged.fastq.gz) need an inline handoff.
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: FastQC, fastq_utils, MultiQC, SAMtools.

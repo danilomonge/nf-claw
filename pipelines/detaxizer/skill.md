@@ -9,6 +9,7 @@ has_samplesheet: true
 input: samplesheet (sample, short_reads_fastq_1, short_reads_fastq_2, long_reads_fastq_1)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
 tools: ["bbmap", "blastn", "fastp", "FastQC", "Kraken2", "MultiQC", "seqkit", "dnaio", "Python", "biopython"]
+feeds: ["mag", "taxprofiler"]
 ---
 # detaxizer
 
@@ -84,6 +85,13 @@ nfclaw run detaxizer ... --nxf-ver 25.04.8
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/detaxizer/blob/1.3.0/docs/output.md
+
+## Chaining
+Run detaxizer as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges detaxizer`.
+
+Feeds into:
+- `mag` — detaxizer, with --generate-downstream-samplesheets, writes downstream_samplesheets/mag-pe.csv for its filtered paired-end reads, in the column layout of mag 3.x; every sample goes into co-assembly group 0 and gets the read platforms mag 5 requires (short reads ILLUMINA, long reads OXFORD_NANOPORE, as detaxizer labels them for taxprofiler).
+- `taxprofiler` — detaxizer, with --generate-downstream-samplesheets, writes downstream_samplesheets/taxprofiler.csv for its filtered reads (paths into filter/filtered/).
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: bbmap, blastn, fastp, FastQC, Kraken2, MultiQC, seqkit, dnaio, Python, biopython.

@@ -9,6 +9,7 @@ has_samplesheet: true
 input: id list (one value per line)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
 tools: ["Aspera CLI", "fastq-dl", "Python", "Requests", "sra-tools"]
+feeds: ["ampliseq", "atacseq", "mag", "metatdenovo", "rnaseq", "sarek", "taxprofiler", "viralrecon"]
 ---
 # fetchngs
 
@@ -63,6 +64,19 @@ nfclaw run fetchngs ... --nxf-ver 25.10.4
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/fetchngs/blob/1.13.0/docs/output.md
+
+## Chaining
+Run fetchngs as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges fetchngs`.
+
+Feeds into:
+- `ampliseq` — fetchngs writes an ampliseq samplesheet (sample, fastq_1, fastq_2, run) with --nf-core-pipeline ampliseq.
+- `atacseq` — fetchngs writes an atacseq samplesheet (every run as replicate 1 of its sample) with --nf-core-pipeline atacseq.
+- `mag` — fetchngs writes a mag samplesheet whose read columns predate mag's short_reads_1/short_reads_2; the columns are renamed, every sample goes into co-assembly group 0, and each run keeps its own run id.
+- `metatdenovo` — fetchngs writes a metatdenovo samplesheet (sample, fastq_1, fastq_2) with --nf-core-pipeline metatdenovo.
+- `rnaseq` — fetchngs downloads the FastQ files and, with --nf-core-pipeline rnaseq, writes samplesheet/samplesheet.csv for rnaseq (absolute FastQ paths; strandedness from --nf-core-rnaseq-strandedness, default auto).
+- `sarek` — fetchngs writes a sarek samplesheet (patient = the ENA sample accession) with --nf-core-pipeline sarek; it has no lane, so each run's accession becomes its lane — sarek needs patient, sample and lane to be unique together.
+- `taxprofiler` — fetchngs writes a taxprofiler samplesheet with --nf-core-pipeline taxprofiler; run_accession and instrument_platform come from the ENA metadata. The profiling databases (--databases) are the stage's own.
+- `viralrecon` — fetchngs writes a viralrecon samplesheet (sample, fastq_1, fastq_2) with --nf-core-pipeline viralrecon.
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: Aspera CLI, fastq-dl, Python, Requests, sra-tools.

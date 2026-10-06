@@ -106,6 +106,10 @@ def check(pipelines_dir: Path) -> list[str]:
     pipeline_dirs = sorted(p for p in pipelines_dir.iterdir() if p.is_dir())
     repo = pipelines_dir.parent
     drift.extend(_structure_drift(repo, [d.name for d in pipeline_dirs]))
+    try:
+        rules = handoff.load_registry(repo)          # skill.md documents them
+    except NfclawError:
+        rules = {}                                   # reported by _handoff_drift below
     for d in pipeline_dirs:
         name = d.name
         st = submod.resolve(name, pipelines_dir)
@@ -117,7 +121,7 @@ def check(pipelines_dir: Path) -> list[str]:
             )
             continue
         fresh = dict(zip(("skill.md", "reference.md"),
-                         write_skill.render_status(st), strict=True))
+                         write_skill.render_status(st, rules=rules), strict=True))
         for fname, expected in fresh.items():           # compare in memory; never touch the tree
             committed = d / fname
             if not committed.exists():

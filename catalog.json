@@ -1,6 +1,7 @@
 [
   {
     "description": "B and T cell repertoire analysis pipeline with the Immcantation framework.",
+    "feeds": [],
     "input": "samplesheet (sample_id, subject_id, species, pcr_target_locus, tissue, sex, age, biomaterial_provider, single_cell, filename_R1, filename_R2, filename_I1, filename)",
     "name": "airrflow",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -22,6 +23,7 @@
   },
   {
     "description": "Amplicon sequencing analysis workflow using DADA2 and QIIME2",
+    "feeds": [],
     "input": "samplesheet (sampleID, forwardReads, reverseReads, sample, fastq_1, fastq_2, run, control, quant_reading)",
     "name": "ampliseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -70,6 +72,7 @@
   },
   {
     "description": "ATACSeq peak-calling and differential analysis pipeline.",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2, replicate, control, control_replicate)",
     "name": "atacseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -105,6 +108,7 @@
   },
   {
     "description": "Simple bacterial assembly and annotation",
+    "feeds": [],
     "input": "samplesheet (ID, R1, R2, LongFastQ, Fast5, GenomeSize)",
     "name": "bacass",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -138,6 +142,7 @@
   },
   {
     "description": "A mapping-based pipeline for creating a phylogeny from bacterial whole genome sequences",
+    "feeds": [],
     "input": "--input (no samplesheet schema)",
     "name": "bactmap",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
@@ -162,6 +167,9 @@
   },
   {
     "description": "Workflow converts one or multiple bam/cram files to fastq format",
+    "feeds": [
+      "rnaseq"
+    ],
     "input": "samplesheet (sample_id, mapped, index, file_type)",
     "name": "bamtofastq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -176,6 +184,7 @@
   },
   {
     "description": "An automated processing pipeline for mammalian bulk calling cards experiments",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2, barcode_details)",
     "name": "callingcards",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -201,6 +210,7 @@
   },
   {
     "description": "ChIP-seq peak-calling and differential analysis pipeline.",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2, replicate, antibody, control, control_replicate)",
     "name": "chipseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -239,6 +249,7 @@
   },
   {
     "description": "Pipeline for the identification of circular DNAs",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "circdna",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -264,6 +275,7 @@
   },
   {
     "description": "COPROlite host IDentification",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "coproid",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -286,6 +298,7 @@
   },
   {
     "description": "Generate Panel of Normals, models or other similar references from lots of samples",
+    "feeds": [],
     "input": "samplesheet (sample, bam, bai, cram, crai)",
     "name": "createpanelrefs",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -299,6 +312,9 @@
   },
   {
     "description": "Parallelised and automated creation of metagenomic classifier databases of different tools",
+    "feeds": [
+      "taxprofiler"
+    ],
     "input": "samplesheet (id, taxid, fasta_dna, fasta_aa)",
     "name": "createtaxdb",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -324,6 +340,7 @@
   },
   {
     "description": "Pipeline for the analysis of CRISPR data",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2, condition, reference, protospacer, template)",
     "name": "crisprseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -344,6 +361,7 @@
   },
   {
     "description": "Analysis pipeline for CUT&RUN and CUT&TAG experiments that includes sequencing QC, spike-in normalisation, IgG control normalisation, peak calling and downstream peak analysis.",
+    "feeds": [],
     "input": "samplesheet (group, replicate, fastq_1, fastq_2, control)",
     "name": "cutandrun",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -363,6 +381,7 @@
   },
   {
     "description": "A simple sysops pipeline that can be used to synchronize, integrity check and permanently archive data.",
+    "feeds": [],
     "input": "samplesheet (sample, input, output_path, checksum_md5, checksum_sha)",
     "name": "datasync",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -376,6 +395,7 @@
   },
   {
     "description": "An nf-core demo pipeline",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "demo",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -390,6 +410,14 @@
   },
   {
     "description": "Demultiplexing pipeline for Illumina sequencing data",
+    "feeds": [
+      "atacseq",
+      "methylseq",
+      "rnaseq",
+      "sarek",
+      "seqinspector",
+      "taxprofiler"
+    ],
     "input": "samplesheet (id, samplesheet, lane, flowcell, per_flowcell_manifest)",
     "name": "demultiplex",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -405,6 +433,7 @@
   },
   {
     "description": "A pipeline for de novo transcriptome assembly of short reads from bulk RNA-seq",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "denovotranscript",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -427,6 +456,10 @@
   },
   {
     "description": "A pipeline to identify (and remove) certain sequences from raw genomic data. Default taxon to identify (and remove) is Homo sapiens. Removal is optional.",
+    "feeds": [
+      "mag",
+      "taxprofiler"
+    ],
     "input": "samplesheet (sample, short_reads_fastq_1, short_reads_fastq_2, long_reads_fastq_1)",
     "name": "detaxizer",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -447,6 +480,7 @@
   },
   {
     "description": "Differential abundance analysis",
+    "feeds": [],
     "input": "samplesheet (sample)",
     "name": "differentialabundance",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
@@ -475,6 +509,7 @@
   },
   {
     "description": "The detection of RNA Outliers Pipeline (DROP) is an integrative workflow to detect aberrant expression, aberrant splicing, and mono-allelic expression from raw sequencing files.",
+    "feeds": [],
     "input": "samplesheet (RNA_ID, RNA_BAM_FILE, RNA_BAI_FILE, DNA_ID, DNA_VCF_FILE, DNA_TBI_FILE, DROP_GROUP, PAIRED_END, COUNT_MODE, COUNT_OVERLAPS, STRAND, HPO_TERMS, GENE_COUNTS_FILE, GENE_ANNOTATION, GENOME, SPLICE_COUNTS_DIR, SEX, TISSUE, DISEASE)",
     "name": "drop",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -531,6 +566,7 @@
   },
   {
     "description": "This pipeline evaluates drug response models in various settings on a variety of datasets.",
+    "feeds": [],
     "input": "parameters (no samplesheet)",
     "name": "drugresponseeval",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
@@ -547,6 +583,7 @@
   },
   {
     "description": "A fully reproducible and state of the art epitope prediction pipeline.",
+    "feeds": [],
     "input": "samplesheet (sample, alleles, mhc_class, filename)",
     "name": "epitopeprediction",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -567,6 +604,7 @@
   },
   {
     "description": "A pipeline that can be used to recover corrupted FASTQ.gz files, drop or fix uncompliant reads, remove unpaired reads, and settle reads that became disordered",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "fastqrepair",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -582,6 +620,7 @@
   },
   {
     "description": "fgbio Best Practices FASTQ to Consensus Pipeline",
+    "feeds": [],
     "input": "samplesheet (sample, library_id, lane, flowcell, fastq_1, fastq_2, fastq_3, fastq_4, read_structure, umi_file)",
     "name": "fastquorum",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -597,6 +636,16 @@
   },
   {
     "description": "Pipeline to fetch metadata and raw FastQ files from public databases",
+    "feeds": [
+      "ampliseq",
+      "atacseq",
+      "mag",
+      "metatdenovo",
+      "rnaseq",
+      "sarek",
+      "taxprofiler",
+      "viralrecon"
+    ],
     "input": "id list (one value per line)",
     "name": "fetchngs",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
@@ -612,6 +661,7 @@
   },
   {
     "description": "Read-based functional profiling of microbiome sequencing data",
+    "feeds": [],
     "input": "samplesheet (sample, run_accession, instrument_platform, fastq_1, fastq_2, fasta)",
     "name": "funcprofiler",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -632,6 +682,7 @@
   },
   {
     "description": "Pipeline for screening for functional components of assembled contigs",
+    "feeds": [],
     "input": "samplesheet (sample, fasta, protein, gbk, gff, gff_type)",
     "name": "funcscan",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -668,6 +719,7 @@
   },
   {
     "description": "Assemble genomes from long ONT or pacbio HiFi reads",
+    "feeds": [],
     "input": "samplesheet (sample, group, ref_fasta, ref_gff, use_ref, strategy, assembler, assembly_scaffolding_order, genome_size, flye_mode, flye_args, hifiasm_args, assembler_ont, assembler_ont_args, assembler_hifi, assembler_hifi_args, ontreads, ont_collect, ont_adapters, ont_fastplong_args, hifireads, hifi_adapters, hifi_fastplong_args, jellyfish, jellyfish_k, jellyfish_size, polish, polish_pilon, polish_dorado, polish_medaka, medaka_model, scaffold_longstitch, scaffold_links, scaffold_ragtag, scaffold_hic, hic_aligner, merqury, qc_reads, busco, busco_db, busco_lineage, quast, ref_map_bam, assembly, assembly_map_bam, csi_index_size, lift_annotations, use_short_reads, shortread_trim, meryl_k, shortread_F, shortread_R, paired, hic_trim, hic_F, hic_R)",
     "name": "genomeassembler",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
@@ -698,6 +750,7 @@
   },
   {
     "description": "A pipeline to compare multiple genomes and annotations",
+    "feeds": [],
     "input": "samplesheet (assembly, ncbi, fasta, gff, fastq, taxid)",
     "name": "genomeqc",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -729,6 +782,7 @@
   },
   {
     "description": "Comprehensive pipeline for donor demultiplexing in single cell",
+    "feeds": [],
     "input": "samplesheet (sample, rna_matrix, hto_matrix, bam, barcodes, n_samples, vcf)",
     "name": "hadge",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -752,6 +806,7 @@
   },
   {
     "description": "A pipeline to investigate horizontal gene transfer from NGS data",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "hgtseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -773,6 +828,7 @@
   },
   {
     "description": "Analysis of Chromosome Conformation Capture data (Hi-C)",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "hic",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -785,6 +841,7 @@
   },
   {
     "description": "This pipeline analyses data for HiCAR data, a robust and sensitive multi-omic co-assay for simultaneous measurement of transcriptome, chromatin accessibility and cis-regulatory chromatin contacts.",
+    "feeds": [],
     "input": "samplesheet (group, replicate, fastq_1, fastq_2, md5_1, md5_2)",
     "name": "hicar",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -814,6 +871,7 @@
   },
   {
     "description": "Precision HLA typing from next-generation sequencing data.",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2, bam, seq_type)",
     "name": "hlatyping",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -830,6 +888,7 @@
   },
   {
     "description": "Genes and transcripts annotation with Isoseq using uLTRA and TAMA",
+    "feeds": [],
     "input": "samplesheet (sample, seq_data, pbi, start_from)",
     "name": "isoseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -849,6 +908,7 @@
   },
   {
     "description": "A Nextflow pipeline for rare disease diagnostics from Oxford Nanopore long-read sequencing data. Includes SV, SNV, CNV, and methylation profiling.",
+    "feeds": [],
     "input": "samplesheet (sample, file_path, hpo_terms, sex, phenotype, family_id, maternal_id, paternal_id)",
     "name": "longraredisease",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -861,6 +921,7 @@
   },
   {
     "description": "A pipeline for preprocessing and analysis of large-scale light-sheet microscopy images based on the NuMorph toolbox",
+    "feeds": [],
     "input": "samplesheet (sample_id, img_directory, parameter_file)",
     "name": "lsmquant",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -876,6 +937,7 @@
   },
   {
     "description": "Assembly, binning and annotation of metagenomes",
+    "feeds": [],
     "input": "samplesheet (sample, run, group, short_reads_1, short_reads_2, short_reads_platform, long_reads, long_reads_platform)",
     "name": "mag",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -932,6 +994,7 @@
   },
   {
     "description": "nf-core/magmap is a bioinformatics best-practice analysis pipeline for mapping reads to a (large) collections of genomes.",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "magmap",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -957,6 +1020,7 @@
   },
   {
     "description": "MARS-seq v2 preprocessing pipeline",
+    "feeds": [],
     "input": "samplesheet (batch, fastq_1, fastq_2, amp_batches, seq_batches, well_cells)",
     "name": "marsseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -973,6 +1037,7 @@
   },
   {
     "description": "Whole-slide multiplexed microscopy image analysis",
+    "feeds": [],
     "input": "parameters (no samplesheet)",
     "name": "mcmicro",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -993,6 +1058,7 @@
   },
   {
     "description": "Pre-processing of mass spectrometry-based metabolomics data",
+    "feeds": [],
     "input": "samplesheet (sample, type, level, msfile)",
     "name": "metaboigniter",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1006,6 +1072,7 @@
   },
   {
     "description": "From metagenomes to peptides",
+    "feeds": [],
     "input": "samplesheet (condition, type, microbiome_path, alleles, weights_path)",
     "name": "metapep",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1035,6 +1102,7 @@
   },
   {
     "description": "Assembly and annotation of metatranscriptomic data, both prokaryotic and eukaryotic",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "metatdenovo",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1065,6 +1133,7 @@
   },
   {
     "description": "Extract methylation calls from long reads",
+    "feeds": [],
     "input": "samplesheet (group, sample, path, ref, method)",
     "name": "methylong",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1093,6 +1162,7 @@
   },
   {
     "description": "Methylation (Bisulfite-Sequencing) Best Practice analysis pipeline, part of the nf-core community.",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2, genome)",
     "name": "methylseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1115,6 +1185,7 @@
   },
   {
     "description": "Identify and quantify peptides from mass spectrometry raw data",
+    "feeds": [],
     "input": "samplesheet (ID, Sample, Condition, ReplicateFileName, Fasta, SearchPreset)",
     "name": "mhcquant",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1142,6 +1213,7 @@
   },
   {
     "description": "An analysis pipeline for processing Molecular Cartography data.",
+    "feeds": [],
     "input": "samplesheet (sample, nuclear_image, spot_table, membrane_image)",
     "name": "molkart",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1159,6 +1231,7 @@
   },
   {
     "description": "Pipeline to run and benchmark multiple sequence alignment tools.",
+    "feeds": [],
     "input": "samplesheet (id, fasta, reference, optional_data, template)",
     "name": "multiplesequencealign",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1184,6 +1257,7 @@
   },
   {
     "description": "A pipeline to demultiplex, QC and map Nanopore data",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "nanoseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1220,6 +1294,7 @@
   },
   {
     "description": "Nanostring nCounter analysis pipeline",
+    "feeds": [],
     "input": "samplesheet (SAMPLE_ID, RCC_FILE, RCC_FILE_NAME, TIME, TREATMENT, INCLUDE, OTHER_METADATA)",
     "name": "nanostring",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1237,6 +1312,7 @@
   },
   {
     "description": "Global Run-On sequencing analysis pipeline",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "nascent",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1273,6 +1349,7 @@
   },
   {
     "description": "A comprehensive cancer DNA/RNA analysis and reporting pipeline",
+    "feeds": [],
     "input": "samplesheet (group_id, subject_id, sample_id, sample_type, sequence_type, info, filetype, filepath)",
     "name": "oncoanalyser",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1297,6 +1374,7 @@
   },
   {
     "description": "A variant caller for PacBio long read sequencing - also can be used for PureTarget panel analysis, and quantification of repeat expansions",
+    "feeds": [],
     "input": "samplesheet (sample, bam, pbi, fail, repeat_id, karyotype)",
     "name": "pacvar",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1323,6 +1401,7 @@
   },
   {
     "description": "Pairwise alignment pipeline (genome to genome or reads to genome)",
+    "feeds": [],
     "input": "samplesheet (sample, fasta)",
     "name": "pairgenomealign",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1336,6 +1415,7 @@
   },
   {
     "description": "The pangenome graph construction pipeline renders a collection of sequences into a pangenome graph. Its goal is to build a graph that is locally directed and acyclic while preserving large-scale variation. Maintaining local linearity is important for interpretation, visualization, mapping, comparative genomics, and reuse of pangenome graphs",
+    "feeds": [],
     "input": "--input (no samplesheet schema)",
     "name": "pangenome",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1357,6 +1437,7 @@
   },
   {
     "description": "Surveillance of pathogens using high-throughput sequencing",
+    "feeds": [],
     "input": "samplesheet (sample_id, name, description, path, path_2, ncbi_accession, ncbi_query, ncbi_query_max, sequence_type, report_group_ids, color_by, ploidy, enabled, ref_group_ids)",
     "name": "pathogensurveillance",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1369,6 +1450,7 @@
   },
   {
     "description": "Phasing and imputation pipeline",
+    "feeds": [],
     "input": "samplesheet (sample, tools, file, index)",
     "name": "phaseimpute",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1386,6 +1468,7 @@
   },
   {
     "description": "Performs phylogenetic placement with EPA-NG",
+    "feeds": [],
     "input": "parameters (no samplesheet)",
     "name": "phyloplace",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1405,6 +1488,7 @@
   },
   {
     "description": "Pipeline for analysis of Proximity Network Assay data",
+    "feeds": [],
     "input": "samplesheet (pool, hash_index, sample, sample_alias, condition, design, panel, panel_file, fastq_1, fastq_2)",
     "name": "pixelator",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
@@ -1418,6 +1502,7 @@
   },
   {
     "description": "Generation of sequence-level annotations for amino acid sequences",
+    "feeds": [],
     "input": "samplesheet (id, fasta)",
     "name": "proteinannotator",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1434,6 +1519,7 @@
   },
   {
     "description": "Generate protein family level models (Multiple Sequence Alignments (MSAs), Hidden Markov Models (HMMs)) starting from a FASTA amino acid sequence file.",
+    "feeds": [],
     "input": "samplesheet (sample, fasta, existing_hmms_to_update, existing_msas_to_update)",
     "name": "proteinfamilies",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1455,6 +1541,7 @@
   },
   {
     "description": "Protein 3D structure prediction pipeline",
+    "feeds": [],
     "input": "samplesheet (sequence, id, fasta)",
     "name": "proteinfold",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1470,6 +1557,7 @@
   },
   {
     "description": "Long-term vegetation trend analysis pipeline for rangeland systems using satellite imagery.",
+    "feeds": [],
     "input": "--input (no samplesheet schema)",
     "name": "rangeland",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1482,6 +1570,7 @@
   },
   {
     "description": "call and score variants from WGS/WES of rare disease patients",
+    "feeds": [],
     "input": "samplesheet (sample, lane, fastq_1, fastq_2, spring_1, spring_2, bam, bai, sex, phenotype, paternal_id, maternal_id, case_id)",
     "name": "raredisease",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1533,6 +1622,7 @@
   },
   {
     "description": "A workflow to simulate reads",
+    "feeds": [],
     "input": "samplesheet (sample, seed)",
     "name": "readsimulator",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1554,6 +1644,7 @@
   },
   {
     "description": "A pipeline for ortholog fetching and analysis",
+    "feeds": [],
     "input": "samplesheet (id, query, fasta)",
     "name": "reportho",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1574,6 +1665,7 @@
   },
   {
     "description": "QC pipeline that monitors mass spectrometer performance in ribonucleoside analysis",
+    "feeds": [],
     "input": "samplesheet (id, raw_file)",
     "name": "ribomsqc",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1587,6 +1679,7 @@
   },
   {
     "description": "Analysis of ribosome profiling, or Ribo-seq (also named ribosome footprinting)",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2, strandedness, type, with_umi, trim_length, pair)",
     "name": "riboseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1630,6 +1723,7 @@
   },
   {
     "description": "Pipeline for RNA and DNA integrated analysis for somatic mutation detection",
+    "feeds": [],
     "input": "samplesheet (patient, sample, status, lane, fastq_1, fastq_2, table, cram, crai, bam, bai, vcf, variantcaller, maf, normal_id)",
     "name": "rnadnavar",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1658,6 +1752,7 @@
   },
   {
     "description": "Nextflow rnafusion analysis pipeline, part of the nf-core community.",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2, bam, bai, cram, crai, junctions, splice_junctions, strandedness, seq_platform, seq_center)",
     "name": "rnafusion",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1683,6 +1778,9 @@
   },
   {
     "description": "RNA sequencing analysis pipeline for gene/isoform quantification and extensive quality control.",
+    "feeds": [
+      "differentialabundance"
+    ],
     "input": "samplesheet (sample, fastq_1, fastq_2, strandedness, seq_platform, seq_center, genome_bam, transcriptome_bam, percent_mapped)",
     "name": "rnaseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1734,6 +1832,7 @@
   },
   {
     "description": "Alternative splicing analysis using RNA-seq.",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2, strandedness, condition)",
     "name": "rnasplice",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1765,6 +1864,7 @@
   },
   {
     "description": "This pipeline analyses chemical-based high-throughput RNA structure probing data",
+    "feeds": [],
     "input": "samplesheet (sample, sample_id, fastq_1, fastq_2, method, principle, chemical, RT_enzyme, organism, pH, adapter_3p, adapter_5p, umi_pattern, condition, sample_group, replicate, group)",
     "name": "rnastructurome",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1790,6 +1890,7 @@
   },
   {
     "description": "GATK4 RNA variant calling pipeline",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2, bam, bai, cram, crai, vcf, tbi, seq_platform, seq_center)",
     "name": "rnavar",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1822,6 +1923,7 @@
   },
   {
     "description": "An open-source analysis pipeline to detect germline or somatic variants from whole genome or targeted sequencing",
+    "feeds": [],
     "input": "samplesheet (patient, sample, sex, status, lane, fastq_1, fastq_2, spring_1, spring_2, table, cram, crai, bam, bai, contamination, vcf, variantcaller)",
     "name": "sarek",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1881,6 +1983,7 @@
   },
   {
     "description": "Single-cell/nuclei pipeline for data derived from Oxford Nanopore",
+    "feeds": [],
     "input": "samplesheet (sample, fastq, cell_count)",
     "name": "scnanoseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1914,6 +2017,7 @@
   },
   {
     "description": "Pipeline for processing 10x Genomics single cell rnaseq data",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2, fastq_barcode, expected_cells, seq_center, sample_type, feature_type)",
     "name": "scrnaseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1932,6 +2036,7 @@
   },
   {
     "description": "Pipeline to QC your sequences",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2, rundir, tags)",
     "name": "seqinspector",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1968,6 +2073,7 @@
   },
   {
     "description": "Submit sequences, assemblies, MAGs, etc., to public archives",
+    "feeds": [],
     "input": "--input (no samplesheet schema)",
     "name": "seqsubmit",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -1987,6 +2093,7 @@
   },
   {
     "description": "Small RNA-Seq Best Practice Analysis Pipeline.",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "smrnaseq",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -2006,6 +2113,7 @@
   },
   {
     "description": "Technology-invariant pipeline for spatial omics analysis that scales to millions of cells",
+    "feeds": [],
     "input": "samplesheet (sample, id, data_path, fastq_dir, cytaimage, colorizedimage, darkimage, image, slide, area, manual_alignment, slidefile)",
     "name": "sopa",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions)",
@@ -2020,6 +2128,7 @@
   },
   {
     "description": "A pipeline to process spatialomics data from 10x Xenium In Situ or 10x Atera.",
+    "feeds": [],
     "input": "samplesheet (sample, bundle, image)",
     "name": "spatialaxe",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -2031,6 +2140,7 @@
   },
   {
     "description": "Taxonomic classification and profiling of shotgun short- and long-read metagenomic data",
+    "feeds": [],
     "input": "samplesheet (sample, run_accession, instrument_platform, fastq_1, fastq_2, fasta)",
     "name": "taxprofiler",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -2073,6 +2183,7 @@
   },
   {
     "description": "Analysis pipeline to model tumour clonal evolution from WGS data (driver annotation, quality control of copy number calls, subclonal and mutational signature deconvolution)",
+    "feeds": [],
     "input": "samplesheet (dataset, patient, tumour_sample, normal_sample, cancer_type, cna_caller, vcf, tbi, tumour_alignment, tumour_alignment_index, cna_segments, cna_extra)",
     "name": "tumourevo",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -2094,6 +2205,7 @@
   },
   {
     "description": "Variant Benchmarking pipeline for germline and somatic variant callers",
+    "feeds": [],
     "input": "samplesheet (test_vcf, test_regions, id, caller, subsample, normshift, normdist, normsizediff, maxdist, pctsize, pctseq, pctovl, refdist, chunksize, dup_to_ins, typeignore, bpDistance, percentThreshold, absoluteThreshold, maxMatches, evaluationmode, liftover, fix_prefix)",
     "name": "variantbenchmarking",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -2127,6 +2239,7 @@
   },
   {
     "description": "pipeline for the functional annotation and translation of somatic SNVs/InDels and copy number abberations for precision cancer medicine",
+    "feeds": [],
     "input": "samplesheet (patient, status, sample, vcf, cna)",
     "name": "variantprioritization",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -2141,6 +2254,7 @@
   },
   {
     "description": "Integration of viral sequences in genomic data",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "viralintegration",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -2159,6 +2273,7 @@
   },
   {
     "description": "A bioinformatics best-practice analysis pipeline for untargeted viral genome reconstruction and to identify intra-host variants from metagenomic sequencing data.",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2)",
     "name": "viralmetagenome",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",
@@ -2207,6 +2322,7 @@
   },
   {
     "description": "Assembly and intrahost/low-frequency variant calling for viral samples",
+    "feeds": [],
     "input": "samplesheet (sample, fastq_1, fastq_2, barcode)",
     "name": "viralrecon",
     "output": "--outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report",

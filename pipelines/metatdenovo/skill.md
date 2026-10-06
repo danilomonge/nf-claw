@@ -85,6 +85,12 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/metatdenovo/blob/1.4.1/docs/output.md
 
+## Chaining
+Run metatdenovo as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges metatdenovo`.
+
+Fed by:
+- `fetchngs` — fetchngs writes a metatdenovo samplesheet (sample, fastq_1, fastq_2) with --nf-core-pipeline metatdenovo.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: FastQC, MultiQC, Trim Galore!, khmer, Seqtk, RNAspade, Megahit, TransDecoder, Prokka, Prodigal, BBmap, FeatureCounts, Eggnog, Kofamscan, HMMsearch, EUKulele, Diamond, TaxonKit, CAT, transrate.
 
