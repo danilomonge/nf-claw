@@ -5,11 +5,9 @@ import os
 import sys
 from pathlib import Path
 
-from runner import (discovery, execution, nextflow_command, orchestration, resources, runlog,
-                    verify, versions)
+from runner import (chain, discovery, execution, handoff, nextflow_command, orchestration,
+                    resources, runlog, verify, versions)
 from runner.errors import ErrorCode, NfclawError
-
-
 
 
 def _repo_root() -> Path:
@@ -70,6 +68,59 @@ def _collect_overrides(extras: list[str]) -> dict:
     return out
 
 
+def _stopped(exc: BaseException, log: Path) -> int:
+    """Say that a stop signal (or Ctrl-C) ended the run, and return the shell's exit status for it."""
+    stopped = (f"stopped by {exc.name}" if isinstance(exc, execution.Terminated)
+               else "interrupted")
+    print(f"nfclaw: {stopped}; any Nextflow run it had started was shut down."
+          + (f" Log: {log}" if log.is_file() else ""), file=sys.stderr)
+    return 128 + exc.signum if isinstance(exc, execution.Terminated) else 130
+
+
+def _chain(args: argparse.Namespace, parser: argparse.ArgumentParser, root: Path, warn) -> int:
+    if args.chain_cmd == "edges":
+        try:
+            rules = handoff.load_registry(root)
+        except NfclawError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        for (up, down), rule in sorted(rules.items()):
+            if args.name in (None, up, down):
+                print(f"{up}\t{down}\t{rule.description}")
+        return 0
+    if args.chain_cmd == "status":
+        try:
+            state, problems = chain.status(Path(args.outdir))
+        except NfclawError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        print(chain.format_status(state, problems), end="")
+        return 1 if problems else 0
+    if args.spec is None and not args.resume:
+        parser.error("chain run needs a spec file (or --resume an existing chain)")
+    outdir = Path(args.outdir).expanduser().resolve()
+    try:
+        spec = chain.load_spec(Path(args.spec).expanduser()) if args.spec else None
+        # As for `run`: `kill` or a closing terminal stop the running stage the way Ctrl-C does.
+        with execution.stop_on_signals():
+            res = chain.run_chain(spec, repo_root=root, outdir=outdir, check_only=args.check,
+                                  resume=args.resume, timeout_seconds=args.timeout,
+                                  on_warning=warn)
+    except NfclawError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    except (execution.Terminated, KeyboardInterrupt) as exc:
+        return _stopped(exc, outdir / chain.RECORD_DIRNAME / "logs" / chain.LOG_NAME)
+    for dirname, command in res.commands:                     # --check
+        print(f"# {dirname}\n{command}")
+    print(f"chain: {res.outcome} — {outdir}")
+    for s in res.stages:
+        print(f"  {s['index']:02d}-{s['id']}\t{s['status']}\t{s['outdir']}")
+    if res.log_path is not None:
+        print(f"log: {res.log_path}")
+    return 0
+
+
 # What a shell reports for a command killed by SIGPIPE (128 + 13).
 _EXIT_BROKEN_PIPE = 141
 
@@ -107,6 +158,26 @@ def _main(argv: list[str] | None = None) -> int:
     p_verify.add_argument("replay", help="--outdir of the replayed run")
     p_verify.add_argument("--against", dest="against", required=True,
                           help="--outdir of the original run it should reproduce")
+    # Several pipelines in sequence, each started only after the previous one succeeded, with its
+    # inputs prepared from that one's outputs (runner.chain; rules in handoffs/).
+    p_chain = sub.add_parser("chain")
+    chain_sub = p_chain.add_subparsers(dest="chain_cmd", required=True)
+    pc_run = chain_sub.add_parser("run", allow_abbrev=False)
+    pc_run.add_argument("spec", nargs="?",
+                        help="chain spec (JSON, or YAML with pyyaml); optional with --resume, "
+                             "which then re-reads the recorded one")
+    pc_run.add_argument("--outdir", required=True,
+                        help="the chain's directory: one NN-<stage>/ per stage, plus chain/")
+    pc_run.add_argument("--check", action="store_true",
+                        help="validate every stage and handoff, print the commands, run nothing")
+    pc_run.add_argument("--resume", action="store_true",
+                        help="continue the chain recorded in --outdir")
+    pc_run.add_argument("--timeout", type=_positive_int, default=None, metavar="SECONDS",
+                        help="stop the whole chain after SECONDS (default: no limit)")
+    pc_status = chain_sub.add_parser("status")
+    pc_status.add_argument("outdir", help="a chain's --outdir, or the outdir of one of its stages")
+    pc_edges = chain_sub.add_parser("edges")
+    pc_edges.add_argument("name", nargs="?", help="only the handoffs from or to this pipeline")
     # allow_abbrev=False: `run` forwards every unknown flag to the pipeline (via parse_known_args
     # → _collect_overrides). With abbreviation on, a pipeline flag that is a prefix of a reserved
     # nfclaw flag (e.g. `--res`, `--time`) would be silently swallowed as `--resume`/`--timeout`
@@ -223,13 +294,16 @@ def _main(argv: list[str] | None = None) -> int:
         # work — that is a failure. Differing bytes in the same file are expected and are not.
         return 0 if cmp.structurally_equal else 1
 
+    shown: list[str] = []
+
+    def warn(message: str) -> None:                           # advisory, non-blocking
+        shown.append(message)
+        print(f"warning: {message}", file=sys.stderr, flush=True)
+
+    if args.cmd == "chain":
+        return _chain(args, parser, root, warn)
+
     if args.cmd == "run":
-        shown: list[str] = []
-
-        def warn(message: str) -> None:                       # advisory, non-blocking
-            shown.append(message)
-            print(f"warning: {message}", file=sys.stderr, flush=True)
-
         try:
             # `kill` (SIGTERM) or a closing terminal (SIGHUP) stop the run the way Ctrl-C does —
             # Nextflow shut down, the run log closed with the outcome — instead of killing nfclaw on
@@ -253,13 +327,8 @@ def _main(argv: list[str] | None = None) -> int:
             print(str(exc), file=sys.stderr)
             return 1
         except (execution.Terminated, KeyboardInterrupt) as exc:
-            log = (Path(args.outdir).expanduser().resolve() / "provenance" / "logs"
-                   / runlog.RUN_LOG_NAME)
-            stopped = (f"stopped by {exc.name}" if isinstance(exc, execution.Terminated)
-                       else "interrupted")
-            print(f"nfclaw: {stopped}; any Nextflow run it had started was shut down."
-                  + (f" Log: {log}" if log.is_file() else ""), file=sys.stderr)
-            return 128 + exc.signum if isinstance(exc, execution.Terminated) else 130
+            return _stopped(exc, Path(args.outdir).expanduser().resolve() / "provenance" / "logs"
+                            / runlog.RUN_LOG_NAME)
         for w in res.warnings:                                # any not already said before launch
             if w not in shown:
                 warn(w)
