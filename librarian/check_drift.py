@@ -10,7 +10,9 @@ from pathlib import Path
 
 from librarian import write_catalog, write_skill
 from librarian.add_pipeline import read_sources
+from runner import handoff
 from runner import submodule as submod
+from runner.errors import NfclawError
 
 
 def _duplicates(names: list[str]) -> list[str]:
@@ -80,6 +82,25 @@ def _structure_drift(repo: Path, pipeline_names: list[str]) -> list[str]:
     return drift
 
 
+def _handoff_drift(repo: Path, pipelines_dir: Path) -> list[str]:
+    """Every handoff rule must name library pipelines and fit their pinned schemas, so a release that
+    renames a parameter or a samplesheet column a rule relies on is caught when it is pinned."""
+    try:
+        rules = handoff.load_registry(repo)
+    except NfclawError as exc:
+        return [exc.message]
+    names = {d.name for d in pipelines_dir.iterdir() if d.is_dir()}
+    drift: list[str] = []
+    for (up, down), rule in sorted(rules.items()):
+        if missing := [n for n in (up, down) if n not in names]:
+            drift.append(f"{rule.origin}: unknown pipeline(s): {', '.join(missing)}")
+            continue
+        up_st, down_st = submod.resolve(up, pipelines_dir), submod.resolve(down, pipelines_dir)
+        if up_st.complete and down_st.complete:               # else reported as incomplete above
+            drift.extend(handoff.check_rule(rule, up_st.path, down_st.path))
+    return drift
+
+
 def check(pipelines_dir: Path) -> list[str]:
     drift: list[str] = []
     pipeline_dirs = sorted(p for p in pipelines_dir.iterdir() if p.is_dir())
@@ -103,6 +124,8 @@ def check(pipelines_dir: Path) -> list[str]:
                 drift.append(f"{name}/{fname} is missing (run `make build`)")
             elif committed.read_text(encoding="utf-8") != expected:
                 drift.append(f"{name}/{fname} is stale (run `make build`)")
+
+    drift.extend(_handoff_drift(repo, pipelines_dir))
 
     # catalog.{md,json} must also stay in sync with the skill.md frontmatter
     with tempfile.TemporaryDirectory() as td:

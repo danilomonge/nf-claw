@@ -1,0 +1,16 @@
+{
+  "description": "fetchngs writes a metatdenovo samplesheet (sample, fastq_1, fastq_2) with --nf-core-pipeline metatdenovo.",
+  "upstream_params": {
+    "nf_core_pipeline": "metatdenovo"
+  },
+  "params": {
+    "input": {
+      "samplesheet": "samplesheet/samplesheet.csv",
+      "provides": [
+        "sample",
+        "fastq_1",
+        "fastq_2"
+      ]
+    }
+  }
+}

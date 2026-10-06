@@ -1,0 +1,17 @@
+{
+  "description": "fetchngs downloads the FastQ files and, with --nf-core-pipeline rnaseq, writes samplesheet/samplesheet.csv for rnaseq (absolute FastQ paths; strandedness from --nf-core-rnaseq-strandedness, default auto).",
+  "upstream_params": {
+    "nf_core_pipeline": "rnaseq"
+  },
+  "params": {
+    "input": {
+      "samplesheet": "samplesheet/samplesheet.csv",
+      "provides": [
+        "sample",
+        "fastq_1",
+        "fastq_2",
+        "strandedness"
+      ]
+    }
+  }
+}

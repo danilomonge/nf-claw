@@ -332,13 +332,18 @@ def _direct(src: Source, root: Path, sheet_schema, dest: Path) -> tuple[Path, li
         for r in rows:
             r[col] = _fill(template, r)
     derived = [sheet.relative_to(root).as_posix()]
-    path_cols = {c.name for c in sheet_schema.columns if c.is_path} & set(header)
+    path_cols = {c.name for c in sheet_schema.columns if c.is_path}
     for r in rows:
-        for col in sorted(path_cols):
-            if value := (r.get(col) or "").strip():
-                r[col] = _absolute(value, root)
-                if (rel := _under(Path(r[col]), root)) is not None:
-                    derived.append(rel)
+        for col in header:
+            if not (value := (r.get(col) or "").strip()):
+                continue
+            if col in path_cols:                          # the downstream reads it as a path
+                value = r[col] = _absolute(value, root)
+            # Trace every upstream result the sheet points at — also in a column the downstream
+            # schema declares no path format for (atacseq's fastq_1), so lineage misses none.
+            rel = _under(Path(value), root) if Path(value).is_absolute() else None
+            if rel is not None and (root / rel).is_file():
+                derived.append(rel)
     suffix = sheet.suffix.lower() if sheet.suffix.lower() in (".csv", ".tsv") else ".csv"
     return _write_sheet(dest.with_suffix(suffix), header, rows), derived
 

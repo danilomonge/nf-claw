@@ -1,0 +1,18 @@
+{
+  "description": "demultiplex writes samplesheet/taxprofiler_samplesheet.csv without run_accession or instrument_platform; each sample becomes its own run, sequenced on ILLUMINA (bcl2fastq/bclconvert data \u2014 use an inline handoff for other platforms).",
+  "params": {
+    "input": {
+      "samplesheet": "samplesheet/taxprofiler_samplesheet.csv",
+      "provides": [
+        "sample",
+        "fastq_1",
+        "fastq_2",
+        "fasta"
+      ],
+      "set": {
+        "run_accession": "{sample}",
+        "instrument_platform": "ILLUMINA"
+      }
+    }
+  }
+}

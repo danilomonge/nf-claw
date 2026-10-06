@@ -1,0 +1,27 @@
+{
+  "description": "fetchngs writes a mag samplesheet whose read columns predate mag's short_reads_1/short_reads_2; the columns are renamed, every sample goes into co-assembly group 0, and each run keeps its own run id.",
+  "upstream_params": {
+    "nf_core_pipeline": "mag"
+  },
+  "params": {
+    "input": {
+      "samplesheet": "samplesheet/samplesheet.csv",
+      "provides": [
+        "sample",
+        "fastq_1",
+        "fastq_2",
+        "group",
+        "short_reads_platform",
+        "run_accession"
+      ],
+      "rename": {
+        "fastq_1": "short_reads_1",
+        "fastq_2": "short_reads_2"
+      },
+      "set": {
+        "group": "0",
+        "run": "{run_accession}"
+      }
+    }
+  }
+}

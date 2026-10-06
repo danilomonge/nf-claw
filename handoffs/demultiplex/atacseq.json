@@ -1,0 +1,14 @@
+{
+  "description": "demultiplex writes samplesheet/atacseq_samplesheet.csv (every sample as replicate 1) for its demultiplexed FastQ files.",
+  "params": {
+    "input": {
+      "samplesheet": "samplesheet/atacseq_samplesheet.csv",
+      "provides": [
+        "sample",
+        "fastq_1",
+        "fastq_2",
+        "replicate"
+      ]
+    }
+  }
+}

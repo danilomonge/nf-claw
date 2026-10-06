@@ -1,0 +1,12 @@
+{
+  "description": "rnaseq's merged Salmon gene counts become differentialabundance's --matrix, with the GTF the rnaseq run used; the experimental design (--input, sample names as in rnaseq) and --contrasts describe your study and go in the stage's own params.",
+  "params": {
+    "matrix": {
+      "file": "*/salmon.merged.gene_counts.tsv"
+    },
+    "gtf": {
+      "upstream_param": "gtf",
+      "optional": true
+    }
+  }
+}

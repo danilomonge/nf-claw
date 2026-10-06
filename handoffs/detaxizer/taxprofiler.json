@@ -1,0 +1,20 @@
+{
+  "description": "detaxizer, with --generate-downstream-samplesheets, writes downstream_samplesheets/taxprofiler.csv for its filtered reads (paths into filter/filtered/).",
+  "upstream_params": {
+    "generate_downstream_samplesheets": true,
+    "generate_pipeline_samplesheets": "taxprofiler"
+  },
+  "params": {
+    "input": {
+      "samplesheet": "downstream_samplesheets/taxprofiler.csv",
+      "provides": [
+        "sample",
+        "run_accession",
+        "instrument_platform",
+        "fastq_1",
+        "fastq_2",
+        "fasta"
+      ]
+    }
+  }
+}

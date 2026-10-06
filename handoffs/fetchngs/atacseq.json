@@ -1,0 +1,17 @@
+{
+  "description": "fetchngs writes an atacseq samplesheet (every run as replicate 1 of its sample) with --nf-core-pipeline atacseq.",
+  "upstream_params": {
+    "nf_core_pipeline": "atacseq"
+  },
+  "params": {
+    "input": {
+      "samplesheet": "samplesheet/samplesheet.csv",
+      "provides": [
+        "sample",
+        "fastq_1",
+        "fastq_2",
+        "replicate"
+      ]
+    }
+  }
+}

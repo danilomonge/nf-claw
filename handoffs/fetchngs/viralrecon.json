@@ -1,0 +1,16 @@
+{
+  "description": "fetchngs writes a viralrecon samplesheet (sample, fastq_1, fastq_2) with --nf-core-pipeline viralrecon.",
+  "upstream_params": {
+    "nf_core_pipeline": "viralrecon"
+  },
+  "params": {
+    "input": {
+      "samplesheet": "samplesheet/samplesheet.csv",
+      "provides": [
+        "sample",
+        "fastq_1",
+        "fastq_2"
+      ]
+    }
+  }
+}

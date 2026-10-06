@@ -1,0 +1,19 @@
+{
+  "description": "createtaxdb, with --generate-downstream-samplesheets, writes downstream_samplesheets/databases-taxprofiler.csv; it becomes taxprofiler's --databases. The reads to profile (--input) and the --run-<tool> switches are the stage's own.",
+  "upstream_params": {
+    "generate_downstream_samplesheets": true,
+    "generate_pipeline_samplesheets": "taxprofiler"
+  },
+  "params": {
+    "databases": {
+      "samplesheet": "downstream_samplesheets/databases-taxprofiler.csv",
+      "provides": [
+        "tool",
+        "db_name",
+        "db_params",
+        "db_type",
+        "db_path"
+      ]
+    }
+  }
+}

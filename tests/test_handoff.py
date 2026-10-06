@@ -241,3 +241,15 @@ def test_a_set_template_naming_an_absent_column_fails_clearly(library, finished_
                                        "set": {"lane": "{lane_id}"}}}})
     with pytest.raises(NfclawError, match="needs column 'lane_id'"):
         handoff.materialize(rule, upstream_outdir=up, downstream_tree=down, dest=tmp_path / "h")
+
+
+def test_lineage_follows_absolute_paths_in_any_column(library, finished_run, tmp_path):
+    # atacseq declares no path format for fastq_1; the files it names are still traced.
+    _, down = _trees(library("mini_up", "mini"))
+    up = finished_run(tmp_path / "up", {
+        "s.csv": "sample,fastq_1,notes\nA,{outdir}/fastq/A_1.fastq.gz,{outdir}/fastq/A_2.fastq.gz\n",
+        **FASTQS})
+    rule = _rule({"params": {"input": {"samplesheet": "s.csv",
+                                       "provides": ["sample", "fastq_1"]}}})
+    hand = handoff.materialize(rule, upstream_outdir=up, downstream_tree=down, dest=tmp_path / "h")
+    assert set(hand.record["params"]["input"]["derived_from"]) == {"s.csv", *FASTQS}

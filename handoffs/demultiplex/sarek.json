@@ -1,0 +1,18 @@
+{
+  "description": "demultiplex writes samplesheet/sarek_samplesheet.csv with an empty patient; each sample is made its own patient (set it per sample yourself if several samples share one).",
+  "params": {
+    "input": {
+      "samplesheet": "samplesheet/sarek_samplesheet.csv",
+      "provides": [
+        "sample",
+        "fastq_1",
+        "fastq_2",
+        "patient",
+        "lane"
+      ],
+      "set": {
+        "patient": "{sample}"
+      }
+    }
+  }
+}

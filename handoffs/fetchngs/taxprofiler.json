@@ -1,0 +1,19 @@
+{
+  "description": "fetchngs writes a taxprofiler samplesheet with --nf-core-pipeline taxprofiler; run_accession and instrument_platform come from the ENA metadata. The profiling databases (--databases) are the stage's own.",
+  "upstream_params": {
+    "nf_core_pipeline": "taxprofiler"
+  },
+  "params": {
+    "input": {
+      "samplesheet": "samplesheet/samplesheet.csv",
+      "provides": [
+        "sample",
+        "fastq_1",
+        "fastq_2",
+        "fasta",
+        "run_accession",
+        "instrument_platform"
+      ]
+    }
+  }
+}

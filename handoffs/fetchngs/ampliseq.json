@@ -1,0 +1,17 @@
+{
+  "description": "fetchngs writes an ampliseq samplesheet (sample, fastq_1, fastq_2, run) with --nf-core-pipeline ampliseq.",
+  "upstream_params": {
+    "nf_core_pipeline": "ampliseq"
+  },
+  "params": {
+    "input": {
+      "samplesheet": "samplesheet/samplesheet.csv",
+      "provides": [
+        "sample",
+        "fastq_1",
+        "fastq_2",
+        "run"
+      ]
+    }
+  }
+}
