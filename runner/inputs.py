@@ -34,13 +34,14 @@ class ResolvedInput:
     must_exist: bool = False             # the schema declares `exists: true` for this value
 
 
-def input_param(repo: Path) -> dict | None:
-    """The `input` parameter's raw schema object, or None when the pipeline declares no `--input`."""
+def input_param(repo: Path, name: str = "input") -> dict | None:
+    """The raw schema object of parameter `name` (by default `input`), or None when the pipeline
+    declares no such parameter."""
     data = json.loads((repo / "nextflow_schema.json").read_text(encoding="utf-8"))
     for _, group in iter_param_groups(data):
         props = group.get("properties")
-        if isinstance(props, dict) and isinstance(props.get("input"), dict):
-            return props["input"]
+        if isinstance(props, dict) and isinstance(props.get(name), dict):
+            return props[name]
     return None
 
 
@@ -66,19 +67,21 @@ def _legacy_samplesheet(repo: Path, param: dict) -> str | None:
     return DEFAULT_SAMPLESHEET_SCHEMA if (repo / DEFAULT_SAMPLESHEET_SCHEMA).is_file() else None
 
 
-def samplesheet_schema(repo: Path) -> str | None:
-    """The samplesheet schema `--input` is documented against, in any of its input modes.
+def samplesheet_schema(repo: Path, param: str = "input") -> str | None:
+    """The samplesheet schema parameter `param` (by default `--input`) is documented against, in any
+    of its input modes.
 
-    None when `--input` is not a samplesheet at all (or there is no `--input`), so the generated docs
-    never present a template `schema_input.json` the release does not use."""
-    param = input_param(repo)
-    if param is None:
+    None when the parameter is not a samplesheet at all (or does not exist), so the generated docs
+    never present a template `schema_input.json` the release does not use. The conventional
+    `assets/schema_input.json` of a release that names no schema is the `--input` sheet's only."""
+    obj = input_param(repo, param)
+    if obj is None:
         return None
-    for part in (param, *_branches(param)):
+    for part in (obj, *_branches(obj)):
         ref = _schema_ref(part)
         if ref:
             return ref if (repo / ref).is_file() else None
-    return _legacy_samplesheet(repo, param)
+    return _legacy_samplesheet(repo, obj) if param == "input" else None
 
 
 def _satisfies(sub: object, value: str) -> bool | None:
