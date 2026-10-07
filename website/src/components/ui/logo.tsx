@@ -1,6 +1,17 @@
 import Image from "next/image";
 import { asset, cn } from "@/lib/utils";
 
+/**
+ * The smallest rendition that stays sharp at 2× density. The 3000 px source logo weighs ~3 MB, and
+ * with images unoptimized (static export) it was downloaded on every page for a 32 px mark.
+ */
+export function logoSrc(size: number): string {
+  if (size <= 32) return "/brand/logo-64.png";
+  if (size <= 64) return "/brand/logo-128.png";
+  if (size <= 96) return "/brand/logo-192.png";
+  return "/brand/logo-288.png";
+}
+
 export function Logo({
   size = 36,
   withText = false,
@@ -17,7 +28,7 @@ export function Logo({
         style={{ width: size, height: size }}
       >
         <Image
-          src={asset("/nf-claw-logo.png")}
+          src={asset(logoSrc(size))}
           alt={withText ? "" : "nf-claw"}
           width={size}
           height={size}

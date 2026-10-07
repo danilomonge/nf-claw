@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Sparkles, Boxes, Workflow, SlidersHorizontal, Puzzle, ChevronDown } from "lucide-react";
 import { Counter } from "@/components/ui/counter";
+import { logoSrc } from "@/components/ui/logo";
 import { InlineMarkdown } from "@/components/ui/inline-markdown";
 import type { RepoMeta } from "@/lib/types";
 import { asset, formatDate } from "@/lib/utils";
@@ -87,7 +88,7 @@ export function Hero({
             transition={{ type: "spring", stiffness: 300, damping: 18 }}
           >
             <Image
-              src={asset("/nf-claw-logo.png")}
+              src={asset(logoSrc(144))}
               alt="nf-claw"
               width={132}
               height={132}

@@ -8,16 +8,16 @@ import { BackToTop } from "@/components/layout/back-to-top";
 import { getRepoMeta, getPipelines, getDocs } from "@/lib/data";
 import { categorize } from "@/lib/derive";
 import { plainText } from "@/components/ui/inline-markdown";
+import { BASE_PATH, OG_IMAGE, SITE_ORIGIN } from "@/lib/site";
 
 const meta = getRepoMeta();
 
 // Hosting context: under a project path (e.g. GitHub Pages "/<repo>") assets
 // live under the base path, and the canonical origin comes from the deploy URL.
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const basePath = BASE_PATH;
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_ORIGIN),
   title: {
     default: "nf-claw — nf-core pipelines for AI agents",
     template: "%s · nf-claw",
@@ -25,13 +25,22 @@ export const metadata: Metadata = {
   description: plainText(meta.tagline),
   applicationName: "nf-claw",
   keywords: ["nf-core", "nextflow", "bioinformatics", "pipelines", "AI agents", "nf-claw"],
+  twitter: { card: "summary", title: "nf-claw", description: plainText(meta.tagline) },
   openGraph: {
+    siteName: "nf-claw",
     title: "nf-claw",
     description: plainText(meta.tagline),
     type: "website",
-    images: [`${basePath}/nf-claw-logo-with-text.png`],
+    images: [OG_IMAGE],
   },
-  icons: { icon: `${basePath}/nf-claw-logo.png` },
+  // Right-sized renditions of the 3000 px source logo (public/nf-claw-logo.png, ~3 MB).
+  icons: {
+    icon: [
+      { url: `${basePath}/brand/logo-64.png`, sizes: "64x64", type: "image/png" },
+      { url: `${basePath}/brand/logo-192.png`, sizes: "192x192", type: "image/png" },
+    ],
+    apple: `${basePath}/brand/apple-touch-icon.png`,
+  },
 };
 
 export const viewport: Viewport = {
