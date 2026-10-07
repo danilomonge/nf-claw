@@ -97,6 +97,8 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/mag/blob/5.5.0/docs/output.md
 
+Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: AdapterRemoval2, ALE, BBnorm/BBTools, BCFtools, Bowtie2, BUSCO, CAT, CheckM, CheckM2, Chopper, COMEBin, CONCOCT, MetaBinner, SemiBin2, DAS Tool, FastP, FastQC, Filtlong, Flye, Freebayes, geNomad, GTDB-Tk, GUNC, BIgMAG, MaxBin2, MEGAHIT, MetaBAT2, MetaEuk, metaMDBG, minimap2, MMseqs2, MultiQC, NanoLyse, NanoPlot, Nanoq, Porechop, Porechop-abi, Prodigal, Prokka, PyDamage, pypolca, SAMtools, Seqtk, SPAdes, Tiara, Trimmomatic.
 

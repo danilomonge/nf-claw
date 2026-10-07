@@ -87,6 +87,8 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/metatdenovo/blob/2.0.0/docs/output.md
 
+Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: FastQC, MultiQC, Trim Galore!, Seqtk, SPAdes, Megahit, TransDecoder, MetaEuk, Prokka, Prodigal, BBmap, FeatureCounts, BEDTools, MMseqs2, SAMtools, SeqKit, Eggnog, Kofamscan, dbCAN, HMMsearch, EUKulele, Diamond, TaxonKit, QUAST, DuckDB.
 

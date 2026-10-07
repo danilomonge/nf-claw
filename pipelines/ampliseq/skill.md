@@ -99,6 +99,8 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/ampliseq/blob/2.18.0/docs/output.md
 
+Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: FastQC, Cutadapt, Barrnap, DADA2, Greengenes2, PR2 - Protist Reference Ribosomal Database, GTDB - Genome Taxonomy Database, SBDI-GTDB, RDP - Ribosomal Database Project, UNITE - eukaryotic nuclear ribosomal ITS region, MIDORI2 - a collection of reference databases, COIDB - CO1 Taxonomy Database, PhytoRef plastid 16S rRNA database for photosynthetic eukaryotes, Zehr lab nifH database, BOLD Plantae, nf-core/phyloplace, HMMER, MAFFT, EPA-NG, Gappa, q2-sidle, SMURF, RESCRIPt, SEPP, QIIME2, ANCOM, ANCOM-BC, ANCOM-BC2, Adonis, Phyloseq, TreeSummarizedExperiment, ITSx, ITSxRust, PICRUSt2, VSEARCH, decontam, Kraken2, MultiQC.
 

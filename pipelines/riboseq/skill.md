@@ -92,6 +92,8 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/riboseq/blob/2.0.0/docs/output.md
 
+Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: AGAT, anota2seq, BBMap, BEDTools, Bowtie2, DESeq2, DOTSeq, fastp, FastQC, gffread / GffCompare, kallisto, MultiQC, plastid, PRICE / Gedi, Ribo-TISH, RiboCode, RiboDetector, Ribotricer, riboWaltz, Rp-Bp, Salmon, SAMtools, seqkit, MMseqs2, SortMeRNA, STAR, StringTie, SummarizedExperiment, Trim Galore!, tximport, UCSC bedGraphToBigWig, UMI-tools, UMICollapse.
 

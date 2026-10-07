@@ -88,6 +88,8 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/scnanoseq/blob/1.3.0/docs/output.md
 
+Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: BLAZE, FastQC, IsoQuant, Minimap2, MultiQC, NanoComp, Chopper, NanoPlot, oarfish, pigz, SAMtools, ToulligQC, UMI-tools, Picard, UCSC tools, R, ggplot2, optparse, Seurat, Biopython, NumPy, Pandas, Pysam.
 

@@ -93,6 +93,8 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/rnaseq/blob/3.27.0/docs/output.md
 
+Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: BBMap, BEDTools, Bowtie2, Bracken, fastp, FastQC, featureCounts, fq, GffRead, HISAT2, Kallisto, Kraken2, MultiQC, picard-tools, preseq, Qualimap 2, RiboDetector, RSEM, RustQC, RSeQC, Salmon, SeqKit, SAMtools, SortMeRNA, STAR, StringTie2, Sylph, Trim Galore!, tximport, UCSC tools, UMI-tools, UMICollapse, R, DESeq2, dupRadar, ggplot2, optparse, pheatmap, RColorBrewer, SummarizedExperiment, Tximeta.
 

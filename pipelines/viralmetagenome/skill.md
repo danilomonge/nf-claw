@@ -83,6 +83,8 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/viralmetagenome/blob/1.2.0/docs/output.md
 
+Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: Bbduk, BBNorm, BCFtools, BEDTools, blast, Bowtie2, Bracken, BWA-MEM2, cdhit, checkv, Clusty, FastQC, fastp, HUMID, iVar, Kaiju, Kraken2, leiden-algorithm, MAFFT, Mash, Megahit, Minimap2, MMseqs2, Mosdepth, MultiQC, picard-tools, prinseq++, prokka, QUAST, SAMtools, SNPeff, SPAdes, SSPACE Basic, Trimmomatic, Trinity, UMI-tools, vRhyme, VSEARCH.
 

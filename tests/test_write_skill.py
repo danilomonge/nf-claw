@@ -570,6 +570,7 @@ def test_outputs_section_says_where_the_run_is_logged(tmp_path):
     text = skill.read_text()
     assert "`<outdir>/provenance/logs/run.log`" in text
     assert "`<outdir>/.nextflow.log`" in text
+    assert "`nfclaw status <outdir>`" in text           # how to check a run without reading logs
 
 
 # --- dev: docs generated from an unreleased development commit ---------------------------------
