@@ -33,11 +33,10 @@ export default async function HomePage() {
   const dated = [...pipelines]
     .filter((p) => p.releaseDate)
     .sort((a, b) => +new Date(b.releaseDate!) - +new Date(a.releaseDate!));
-  const latest = dated[0]
-    ? { pipeline: dated[0].pipeline, version: dated[0].version, date: dated[0].releaseDate }
-    : pipelines[0]
-      ? { pipeline: pipelines[0].pipeline, version: pipelines[0].version, date: null }
-      : null;
+  const newest = dated[0] ?? pipelines[0];
+  const latest = newest
+    ? { name: newest.name, pipeline: newest.pipeline, version: newest.version, date: newest.releaseDate }
+    : null;
 
   const catByName = new Map(pipelines.map((p) => [p.name, categorize(p)]));
   const timeline: TimelineItem[] = getTimeline().map((e) => ({
@@ -48,7 +47,7 @@ export default async function HomePage() {
     date: e.date,
     version: e.version,
     pipeline: e.pipeline,
-    accent: e.pipeline ? colorForCategory(catByName.get(e.pipeline) ?? "Genomics") : "#39D353",
+    accent: e.pipeline ? colorForCategory(catByName.get(e.pipeline) ?? "Other") : "#39D353",
   }));
 
   return (
@@ -57,23 +56,16 @@ export default async function HomePage() {
 
       <Manifesto pipelines={summaries} />
 
-      <section id="pipelines" className="container-site scroll-mt-24 py-24 md:py-32">
+      <section id="pipelines" className="section container-site">
         <SectionHeading
           eyebrow="The collection"
           title="Pipeline universe"
-          description="Every nf-core pipeline in the library, as a living constellation. Search, filter by domain, compare side by side and inspect — all driven by the repository, scaling cleanly from a handful to hundreds."
+          description="Every nf-core pipeline in the library, grouped by research domain. Search by name or tool, filter by domain, inspect any pipeline and compare up to four side by side — all driven by the repository."
         />
         <PipelineUniverse pipelines={summaries} />
       </section>
 
-      <LiveStatus
-        commits={commits}
-        workflows={workflows}
-        liveRuns={liveRuns}
-        lastUpdate={meta.stats.latestUpdate}
-      />
-
-      <section id="skills" className="container-site scroll-mt-24 py-24 md:py-32">
+      <section id="skills" className="section container-site">
         <SectionHeading
           eyebrow="What an agent reads"
           title="Skills explorer"
@@ -82,7 +74,15 @@ export default async function HomePage() {
         <SkillsExplorer skills={skills} />
       </section>
 
-      <section id="releases" className="container-site scroll-mt-24 py-24 md:py-32">
+      <LiveStatus
+        commits={commits}
+        workflows={workflows}
+        liveRuns={liveRuns}
+        lastUpdate={meta.stats.latestUpdate}
+        repo={meta.remote}
+      />
+
+      <section id="releases" className="section container-site">
         <SectionHeading
           eyebrow="Versioned history"
           title="Release timeline"

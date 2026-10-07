@@ -27,6 +27,21 @@ interface CatalogEntry {
   name: string;
   version: string;
   description: string;
+  tools?: string[];
+}
+
+/** Catalog tool names come from upstream READMEs and can carry markup ("CADD<sup>1</sup>"). */
+function cleanTools(tools: string[] | undefined): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of tools ?? []) {
+    const t = raw.replace(/<sup>.*?<\/sup>/gi, "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    if (t && !seen.has(t.toLowerCase())) {
+      seen.add(t.toLowerCase());
+      out.push(t);
+    }
+  }
+  return out;
 }
 
 function readCatalog(): CatalogEntry[] {
@@ -229,6 +244,7 @@ export function getPipelines(): Pipeline[] {
         version: String(fm.version ?? entry.version ?? ""),
         commit,
         description: String(fm.description ?? entry.description ?? ""),
+        tools: cleanTools(entry.tools),
         hasSamplesheet: Boolean(fm.has_samplesheet),
         url: sources[name]?.url || submodules[name] || `https://github.com/nf-core/${name}`,
         policy: sources[name]?.policy || "",

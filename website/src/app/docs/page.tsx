@@ -8,9 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function DocsIndexPage() {
-  return (
-    <div className="pt-20">
-      <DocsHub docs={getDocs()} />
-    </div>
-  );
+  return <DocsHub docs={getDocs()} standalone />;
 }

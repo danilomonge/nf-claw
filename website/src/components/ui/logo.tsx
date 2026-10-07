@@ -18,7 +18,7 @@ export function Logo({
       >
         <Image
           src={asset("/nf-claw-logo.png")}
-          alt="nf-claw"
+          alt={withText ? "" : "nf-claw"}
           width={size}
           height={size}
           priority

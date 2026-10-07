@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   ArrowUpRight,
   BookOpen,
   ChevronDown,
+  ChevronRight,
   GitCommitHorizontal,
   Layers,
   Puzzle,
@@ -15,221 +16,385 @@ import {
   Table2,
 } from "lucide-react";
 import type { SkillSummary } from "@/lib/derive";
+import { CATEGORIES, OTHER_CATEGORY, colorForCategory } from "@/lib/derive";
 import { CodeBlock } from "@/components/ui/code-block";
+import { Highlight } from "@/components/ui/highlight";
+import { InlineMarkdown } from "@/components/ui/inline-markdown";
+import { SearchField, DomainChips } from "@/components/ui/filters";
 import { cn, formatDate, humanize } from "@/lib/utils";
+
+const EASE = [0.16, 1, 0.3, 1] as const;
+const ORDER = [...CATEGORIES.map((c) => c.name), OTHER_CATEGORY.name];
+const MOBILE_PAGE = 8;
+
+type Result = { skill: SkillSummary; matchedParams: SkillSummary["params"] };
 
 export function SkillsExplorer({ skills }: { skills: SkillSummary[] }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
+  const [selected, setSelected] = useState<string | null>(skills.find((s) => s.name === "rnaseq")?.name ?? skills[0]?.name ?? null);
+  // Small screens open a skill's detail inline under its row; this is that row (independent of the
+  // selection, which always stays on a visible result for the large-screen detail panel).
+  const [mobileOpen, setMobileOpen] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
 
-  const categories = useMemo(
-    () => ["All", ...[...new Set(skills.map((s) => s.category))].sort()],
-    [skills],
-  );
+  const categories = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const s of skills) counts.set(s.category, (counts.get(s.category) ?? 0) + 1);
+    return ORDER.filter((c) => counts.has(c)).map((c) => ({ name: c, count: counts.get(c)! }));
+  }, [skills]);
 
   const q = query.trim().toLowerCase();
 
-  const results = useMemo(() => {
+  const results = useMemo<Result[]>(() => {
     return skills
       .filter((s) => category === "All" || s.category === category)
       .map((s) => {
         const matchedParams = q
-          ? s.params.filter(
-              (p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q),
-            )
+          ? s.params.filter((p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q))
           : [];
         const textMatch =
           !q ||
           s.name.toLowerCase().includes(q) ||
           s.description.toLowerCase().includes(q) ||
           s.category.toLowerCase().includes(q);
-        return { skill: s, matchedParams, visible: textMatch || matchedParams.length > 0 };
+        return { skill: s, matchedParams, visible: textMatch || matchedParams.length > 0, rank: s.name.toLowerCase().startsWith(q) ? 0 : textMatch ? 1 : 2 };
       })
-      .filter((r) => r.visible);
+      .filter((r) => r.visible)
+      .sort((a, b) => (q ? a.rank - b.rank || b.matchedParams.length - a.matchedParams.length : 0) || a.skill.name.localeCompare(b.skill.name));
   }, [skills, category, q]);
+
+  // Keep the selection inside the visible results.
+  useEffect(() => {
+    if (results.length && !results.some((r) => r.skill.name === selected)) setSelected(results[0].skill.name);
+  }, [results, selected]);
+
+  useEffect(() => {
+    setShowAll(false);
+    setMobileOpen(null);
+  }, [q, category]);
+
+  const current = results.find((r) => r.skill.name === selected) ?? results[0] ?? null;
+  const totalParamHits = results.reduce((n, r) => n + r.matchedParams.length, 0);
+
+  const onListKey = (e: React.KeyboardEvent) => {
+    // Only rows on screen: small screens hide everything past the first page until "Show all".
+    const pool =
+      !showAll && window.matchMedia("(max-width: 1023px)").matches ? results.slice(0, MOBILE_PAGE) : results;
+    if (!pool.length) return;
+    const i = pool.findIndex((r) => r.skill.name === selected);
+    let next = -1;
+    if (e.key === "ArrowDown") next = Math.min(pool.length - 1, i + 1);
+    else if (e.key === "ArrowUp") next = Math.max(0, i - 1);
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = pool.length - 1;
+    if (next >= 0) {
+      e.preventDefault();
+      setSelected(pool[next].skill.name);
+      listRef.current?.querySelector<HTMLElement>(`[data-skill="${pool[next].skill.name}"]`)?.focus();
+    }
+  };
 
   return (
     <div className="mt-12">
-      <div className="glass flex flex-col gap-3 p-4 md:flex-row md:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-fog-dim" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search skills, descriptions and parameters (e.g. “aligner”, “strandedness”)…"
-            className="w-full rounded-xl border border-white/10 bg-ink-900/60 py-3 pl-11 pr-4 text-sm text-fog outline-none transition placeholder:text-fog-dim focus:border-claw-400/40 focus:bg-ink-900"
-          />
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {categories.map((c) => (
-            <button
-              key={c}
-              onClick={() => setCategory(c)}
-              className={cn(
-                "rounded-full border px-3.5 py-2 text-xs font-medium transition",
-                category === c
-                  ? "border-claw-400/40 bg-claw-500/15 text-claw-200"
-                  : "border-white/10 bg-white/[0.02] text-fog-muted hover:text-fog",
-              )}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+      <div className="glass flex flex-col gap-3 p-3 sm:p-4">
+        <SearchField value={query} onChange={setQuery} placeholder="Search skills, descriptions and every parameter (e.g. “aligner”, “strandedness”)…" label="Search skills and parameters" />
+        <DomainChips domains={categories} total={skills.length} value={category} onChange={setCategory} wrapFrom="lg" />
       </div>
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-2">
-        {results.map(({ skill, matchedParams }) => (
-          <SkillCard key={skill.name} skill={skill} matchedParams={matchedParams} />
-        ))}
-      </div>
-      {results.length === 0 && (
-        <p className="py-16 text-center text-sm text-fog-dim">No skills match your search.</p>
+      <p className="mt-3 px-1 text-xs text-fog-dim" aria-live="polite">
+        {results.length} skill{results.length !== 1 ? "s" : ""}
+        {q && totalParamHits > 0 && ` · ${totalParamHits} matching parameter${totalParamHits !== 1 ? "s" : ""}`}
+      </p>
+
+      {results.length === 0 ? (
+        <div className="glass mt-4 flex flex-col items-center gap-3 py-16 text-center">
+          <Search className="h-6 w-6 text-fog-faint" />
+          <p className="text-sm text-fog-muted">No skill or parameter matches “{query}”.</p>
+          <button onClick={() => { setQuery(""); setCategory("All"); }} className="pill pill-off">
+            Reset filters
+          </button>
+        </div>
+      ) : (
+        <div className="mt-4 grid items-start gap-5 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
+          {/* list — a sticky sidebar beside the detail on large screens */}
+          <div className="glass min-w-0 p-2 lg:sticky lg:top-24">
+            <div
+              ref={listRef}
+              role="listbox"
+              aria-label="Skills"
+              onKeyDown={onListKey}
+              className="space-y-1 lg:max-h-[min(680px,calc(100vh-8rem))] lg:overflow-y-auto lg:pr-1"
+            >
+              {results.map((r, i) => {
+                const isSel = current?.skill.name === r.skill.name;
+                const hiddenOnMobile = !showAll && i >= MOBILE_PAGE;
+                return (
+                  <div key={r.skill.name} className={cn(hiddenOnMobile && "hidden lg:block")}>
+                    <SkillRow
+                      result={r}
+                      query={query}
+                      selected={isSel}
+                      open={mobileOpen === r.skill.name}
+                      onSelect={() => {
+                        setSelected(r.skill.name);
+                        setMobileOpen((o) => (o === r.skill.name ? null : r.skill.name));
+                      }}
+                    />
+                    {/* on small screens the detail opens inline, under its row */}
+                    <AnimatePresence initial={false}>
+                      {mobileOpen === r.skill.name && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3, ease: EASE }}
+                          className="overflow-hidden lg:hidden"
+                        >
+                          <div className="px-2 pb-3 pt-1">
+                            <SkillDetail result={r} query={query} />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+              {!showAll && results.length > MOBILE_PAGE && (
+                <button
+                  onClick={() => setShowAll(true)}
+                  className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/[0.07] py-3 text-sm text-fog-muted transition hover:border-white/15 hover:text-fog lg:hidden"
+                >
+                  Show all {results.length} skills <ChevronDown className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* detail (large screens) */}
+          <div className="hidden min-w-0 lg:block">
+            <div className="glass p-6 xl:p-7">
+              <AnimatePresence mode="wait">
+                {current && (
+                  <motion.div
+                    key={current.skill.name}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.25, ease: EASE }}
+                  >
+                    <SkillDetail result={current} query={query} large />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
-function SkillCard({
-  skill,
-  matchedParams,
+function SkillRow({
+  result,
+  query,
+  selected,
+  open,
+  onSelect,
 }: {
-  skill: SkillSummary;
-  matchedParams: SkillSummary["params"];
+  result: Result;
+  query: string;
+  selected: boolean;
+  /** Its detail is expanded inline (small screens). */
+  open: boolean;
+  onSelect: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const { skill, matchedParams } = result;
+  const reduce = useReducedMotion();
+  return (
+    <button
+      data-skill={skill.name}
+      role="option"
+      aria-selected={selected}
+      tabIndex={selected ? 0 : -1}
+      onClick={onSelect}
+      className={cn(
+        "relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors duration-200 hover:bg-white/[0.03]",
+        open && "bg-white/[0.06]",
+        selected && "lg:bg-white/[0.06]",
+        !open && "max-lg:bg-transparent",
+      )}
+    >
+      {selected && (
+        <motion.span
+          layoutId="skill-active"
+          className="absolute inset-y-2 left-0 hidden w-0.5 rounded-full bg-claw-400 lg:block"
+          transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 500, damping: 40 }}
+        />
+      )}
+      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: colorForCategory(skill.category) }} />
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline gap-2">
+          <span className="truncate font-mono text-sm font-semibold text-fog">
+            <Highlight text={skill.name} query={query} />
+          </span>
+          <span className="shrink-0 font-mono text-[11px] text-fog-dim">{skill.version}</span>
+        </span>
+        <span className="block truncate text-xs text-fog-dim">{skill.description}</span>
+      </span>
+      {matchedParams.length > 0 ? (
+        <span className="shrink-0 rounded-md border border-claw-400/20 bg-claw-500/10 px-1.5 py-0.5 text-[10px] font-medium text-claw-300">
+          {matchedParams.length} param{matchedParams.length !== 1 ? "s" : ""}
+        </span>
+      ) : (
+        <ChevronRight
+          className={cn(
+            "h-4 w-4 shrink-0 text-fog-faint transition-transform duration-300",
+            open && "max-lg:rotate-90",
+            selected && "lg:translate-x-0.5 lg:text-fog-dim",
+          )}
+        />
+      )}
+    </button>
+  );
+}
+
+function SkillDetail({ result, query, large = false }: { result: Result; query: string; large?: boolean }) {
+  const { skill, matchedParams } = result;
+  const [outputsOpen, setOutputsOpen] = useState(false);
+  const explorerHref = `/pipelines/${skill.name}/${query.trim() && matchedParams.length ? `?q=${encodeURIComponent(query.trim())}` : ""}#parameters`;
 
   return (
-    <div className="glass glass-hover flex flex-col p-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/pipelines/${skill.name}`}
-              className="font-mono text-lg font-semibold text-fog transition hover:text-claw-300"
-            >
-              {skill.name}
-            </Link>
-            <span className="chip text-[10px]">{skill.category}</span>
+    <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            {large && (
+              <h3 className="font-mono text-2xl font-semibold text-fog">
+                <Link href={`/pipelines/${skill.name}/`} className="transition hover:text-claw-300">
+                  {skill.name}
+                </Link>
+              </h3>
+            )}
+            <span className="chip">
+              <span className="h-2 w-2 rounded-full" style={{ background: colorForCategory(skill.category) }} />
+              {skill.category}
+            </span>
           </div>
-          <p className="mt-0.5 text-xs text-fog-dim">{skill.pipeline}</p>
+          <p className="mt-1 text-xs text-fog-dim">{skill.pipeline}</p>
         </div>
         <div className="text-right">
           <div className="font-mono text-sm text-fog">{skill.version}</div>
-          {skill.releaseDate && (
-            <div className="text-[11px] text-fog-dim">{formatDate(skill.releaseDate)}</div>
-          )}
+          {skill.releaseDate && <div className="text-[11px] text-fog-dim">{formatDate(skill.releaseDate)}</div>}
         </div>
       </div>
 
-      <p className="mt-3 text-sm leading-relaxed text-fog-muted">{skill.description}</p>
+      {large && <p className="mt-4 text-sm leading-relaxed text-fog-muted">{skill.description}</p>}
 
       <div className="mt-4 flex flex-wrap gap-2 text-xs">
         <Stat icon={<SlidersHorizontal className="h-3.5 w-3.5" />}>{skill.parameterCount} params</Stat>
         <Stat icon={<Layers className="h-3.5 w-3.5" />}>{skill.groups.length} groups</Stat>
         <Stat icon={<Puzzle className="h-3.5 w-3.5" />}>{skill.moduleCount} modules</Stat>
-        {skill.hasSamplesheet && (
-          <Stat icon={<Table2 className="h-3.5 w-3.5" />}>{skill.samplesheetCount}-col sheet</Stat>
-        )}
+        {skill.hasSamplesheet && <Stat icon={<Table2 className="h-3.5 w-3.5" />}>{skill.samplesheetCount}-column sheet</Stat>}
         <Stat icon={<GitCommitHorizontal className="h-3.5 w-3.5" />}>
           <span className="font-mono">{skill.commit.slice(0, 7)}</span>
         </Stat>
       </div>
 
       {matchedParams.length > 0 && (
-        <div className="mt-4 rounded-xl border border-claw-400/15 bg-claw-500/[0.05] p-3">
-          <p className="mb-2 text-[11px] uppercase tracking-wider text-claw-300/80">
+        <div className="mt-5 rounded-2xl border border-claw-400/15 bg-claw-500/[0.04] p-4">
+          <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-claw-300/80">
             {matchedParams.length} matching parameter{matchedParams.length !== 1 ? "s" : ""}
           </p>
-          <div className="flex flex-wrap gap-1.5">
-            {matchedParams.slice(0, 8).map((p) => (
-              <code
-                key={p.name}
-                className="rounded bg-white/[0.05] px-1.5 py-0.5 font-mono text-[11px] text-fog"
-                title={p.description}
-              >
-                {p.name}
-              </code>
+          <ul className="space-y-2">
+            {matchedParams.slice(0, 5).map((p) => (
+              <li key={`${p.group}-${p.name}`} className="text-sm">
+                <code className="font-mono text-[13px] text-fog">
+                  <Highlight text={p.name} query={query} />
+                </code>
+                <span className="ml-2 text-[10px] uppercase tracking-wider text-fog-dim">{humanize(p.group)}</span>
+                {p.description && (
+                  <p className="mt-0.5 line-clamp-1 text-xs text-fog-muted">
+                    <Highlight text={p.description.replace(/`/g, "")} query={query} />
+                  </p>
+                )}
+              </li>
             ))}
-            {matchedParams.length > 8 && (
-              <span className="text-[11px] text-fog-dim">+{matchedParams.length - 8} more</span>
-            )}
-          </div>
+          </ul>
+          {matchedParams.length > 5 && (
+            <Link href={explorerHref} className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-claw-300 hover:text-claw-200">
+              See all {matchedParams.length} in the explorer <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          )}
         </div>
       )}
 
-      <div className="mt-4">
+      <div className="mt-5">
         <CodeBlock code={skill.runCommand} label="run it" />
       </div>
+      {skill.demoCommand && (
+        <div className="mt-3">
+          <CodeBlock code={skill.demoCommand} label="demo · bundled test profile" />
+        </div>
+      )}
 
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="mt-4 inline-flex items-center gap-1.5 self-start text-xs font-medium text-fog-muted transition hover:text-fog"
-      >
-        <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
-        {open ? "Hide details" : "Required params, groups & outputs"}
-      </button>
-
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-          >
-            <div className="space-y-5 pt-4">
-              {skill.required.length > 0 && (
-                <div>
-                  <h5 className="mb-2 text-[11px] uppercase tracking-wider text-fog-dim">
-                    Required parameters
-                  </h5>
-                  <div className="space-y-1.5">
-                    {skill.required.map((r) => (
-                      <div key={r.name} className="flex items-baseline gap-2 text-sm">
-                        <code className="font-mono text-claw-300">{r.name}</code>
-                        <span className="text-fog-dim">·</span>
-                        <span className="truncate text-fog-muted">{r.description}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <h5 className="mb-2 text-[11px] uppercase tracking-wider text-fog-dim">
-                  Parameter groups
-                </h5>
-                <div className="flex flex-wrap gap-1.5">
-                  {skill.groups.map((g) => (
-                    <span key={g.name} className="chip">
-                      {humanize(g.name)}
-                      <span className="text-fog-dim">{g.count}</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {skill.outputs && (
-                <div>
-                  <h5 className="mb-2 text-[11px] uppercase tracking-wider text-fog-dim">Outputs</h5>
-                  <p className="text-sm leading-relaxed text-fog-muted line-clamp-4">
-                    {skill.outputs}
-                  </p>
-                </div>
-              )}
-            </div>
-          </motion.div>
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+        {skill.required.length > 0 && (
+          <div>
+            <h4 className="mb-2.5 text-[11px] font-medium uppercase tracking-wider text-fog-dim">Required parameters</h4>
+            <ul className="space-y-2">
+              {skill.required.map((r) => (
+                <li key={r.name} className="text-sm">
+                  <code className="font-mono text-[13px] text-claw-300">{r.name}</code>
+                  <span className="ml-2 text-[11px] text-fog-dim">{r.type}</span>
+                  {r.description && (
+                    <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-fog-muted">
+                      <InlineMarkdown text={r.description} />
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
-      </AnimatePresence>
+        <div>
+          <h4 className="mb-2.5 text-[11px] font-medium uppercase tracking-wider text-fog-dim">Parameter groups</h4>
+          <div className="flex flex-wrap gap-1.5">
+            {skill.groups.map((g) => (
+              <span key={g.name} className="chip px-2.5 py-0.5 text-[11px]">
+                {humanize(g.name)}
+                <span className="text-fog-dim">{g.count}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
 
-      <div className="mt-5 flex items-center gap-3 border-t border-white/[0.05] pt-4">
+      {skill.outputs && (
+        <div className="mt-6">
+          <h4 className="mb-2 text-[11px] font-medium uppercase tracking-wider text-fog-dim">Outputs</h4>
+          <p className={cn("text-sm leading-relaxed text-fog-muted", !outputsOpen && "line-clamp-3")}>
+            <InlineMarkdown text={skill.outputs} />
+          </p>
+          <button
+            onClick={() => setOutputsOpen((v) => !v)}
+            className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-fog-dim transition hover:text-fog"
+            aria-expanded={outputsOpen}
+          >
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", outputsOpen && "rotate-180")} />
+            {outputsOpen ? "Less" : "More"}
+          </button>
+        </div>
+      )}
+
+      <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.06] pt-5">
         <Link
-          href={`/pipelines/${skill.name}`}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-claw-300 transition hover:text-claw-200"
+          href={explorerHref}
+          className="group inline-flex items-center gap-1.5 text-sm font-medium text-claw-300 transition hover:text-claw-200"
         >
-          Full parameter explorer <ArrowUpRight className="h-4 w-4" />
+          Full parameter explorer
+          <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
         </Link>
         {skill.usageUrl && (
           <a
