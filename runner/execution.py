@@ -139,6 +139,9 @@ def _run(command: list[str], *, cwd: Path, logs_dir: Path, timeout_seconds: int 
     # terminal's Ctrl-C reaches nfclaw as a KeyboardInterrupt (not the child), and nfclaw then tears
     # down the whole group below. Without this the child kept running in the background after Ctrl-C.
     popen_kwargs: dict[str, Any] = {} if sys.platform == "win32" else {"start_new_session": True}
+    die_with_nfclaw = _die_with_parent()
+    if die_with_nfclaw is not None:
+        popen_kwargs["preexec_fn"] = die_with_nfclaw
     # Inherit the full environment, then overlay the caller's NXF_* overrides (engine version,
     # JVM args, …). Inheriting keeps shell-set vars (proxies, JAVA_HOME) working as before.
     env = {**os.environ, **env_extra} if env_extra else None
@@ -155,6 +158,7 @@ def _run(command: list[str], *, cwd: Path, logs_dir: Path, timeout_seconds: int 
                               details={"run_log": str(run_log.path)})
             run_log.fail("could not launch", str(err))
             raise err from exc
+        run_log.launched(proc.pid)
         # One drainer per stream: both pipes must be read concurrently, or a child that fills one
         # while nfclaw is blocked reading the other would deadlock. Daemon threads so a wedged reader
         # can never keep the process alive on its own.
@@ -195,6 +199,31 @@ def _run(command: list[str], *, cwd: Path, logs_dir: Path, timeout_seconds: int 
         raise err
     run_log.outcome = "success"
     return ExecResult(code, out_p, err_p)
+
+
+def _die_with_parent():
+    """On Linux, a pre-exec hook asking the kernel to send the child SIGTERM when nfclaw dies.
+
+    nfclaw stops Nextflow itself on Ctrl-C, SIGTERM and SIGHUP; SIGKILL (`kill -9`, the out-of-
+    memory killer) cannot be caught, and Nextflow — in its own session — would run on orphaned.
+    PR_SET_PDEATHSIG survives the launcher's `exec` of the JVM, so Nextflow gets its normal SIGTERM
+    shutdown and stops its tasks. None elsewhere, or if libc cannot be loaded."""
+    if not sys.platform.startswith("linux"):
+        return None
+    try:
+        import ctypes
+        import ctypes.util
+        libc = ctypes.CDLL(ctypes.util.find_library("c") or "libc.so.6", use_errno=True)
+    except (OSError, AttributeError):
+        return None
+    parent = os.getpid()
+
+    def preexec() -> None:
+        libc.prctl(1, signal.SIGTERM, 0, 0, 0)          # PR_SET_PDEATHSIG
+        if os.getppid() != parent:                      # nfclaw died before the hook took effect
+            os._exit(1)
+
+    return preexec
 
 
 def _log_details(run_log: runlog.RunLog) -> dict[str, str]:

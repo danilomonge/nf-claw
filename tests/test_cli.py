@@ -494,3 +494,144 @@ def test_run_interrupted_by_ctrl_c_exits_cleanly(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
     assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 130
     assert "nfclaw: interrupted" in capsys.readouterr().err
+
+
+# --- `nfclaw status`: the state of a run, without reading its log ---------------------------------
+
+def _write_run_log(outdir, text):
+    log = outdir / "provenance" / "logs" / "run.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    log.write_text(text)
+    return log
+
+
+def _finished_block(outcome, body=""):
+    import socket
+    return ("==> nfclaw run started 2026-10-06T10:00:00+00:00\n    command: nextflow run x\n"
+            f"    host: {socket.gethostname()}\n    pid: 1\n{body}"
+            f"==> nfclaw run finished 2026-10-06T10:05:00+00:00: {outcome}\n")
+
+
+def test_status_of_a_successful_run(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    log = _write_run_log(tmp_path / "out", _finished_block("success"))
+    assert cli.main(["status", str(tmp_path / "out")]) == 0
+    out = capsys.readouterr().out
+    assert "status: success" in out and f"log: {log}" in out
+
+
+def test_status_of_a_failed_run_prints_the_recorded_error(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    body = "ERROR ~ x\n==> nfclaw error:\n[execution_failed] Nextflow execution failed (exit status 1).\n"
+    _write_run_log(tmp_path / "out", _finished_block("failed (exit status 1)", body))
+    assert cli.main(["status", str(tmp_path / "out")]) == 1
+    out = capsys.readouterr().out
+    assert "status: failed (exit status 1)" in out
+    assert "[execution_failed] Nextflow execution failed (exit status 1)." in out
+
+
+def test_status_of_a_running_run_exits_3(tmp_path, monkeypatch, capsys):
+    import socket
+    import subprocess
+    import sys
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)", "nfclaw"])
+    try:
+        _write_run_log(tmp_path / "out", "==> nfclaw run started 2026-10-06T10:00:00+00:00\n"
+                       f"    host: {socket.gethostname()}\n    pid: {proc.pid}\n"
+                       "[ab/cdef12] NFCORE_DEMO:DEMO:FASTQC (S1) | 1 of 2\n")
+        assert cli.main(["status", str(tmp_path / "out")]) == 3
+    finally:
+        proc.kill()
+        proc.wait()
+    out = capsys.readouterr().out
+    assert f"status: running (nfclaw pid {proc.pid}" in out and "FASTQC (S1) | 1 of 2" in out
+
+
+def test_status_of_a_run_killed_outright(tmp_path, monkeypatch, capsys):
+    import socket
+    import subprocess
+    import sys
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    proc = subprocess.Popen([sys.executable, "-c", "pass", "nfclaw"])
+    proc.wait()
+    _write_run_log(tmp_path / "out", "==> nfclaw run started 2026-10-06T10:00:00+00:00\n"
+                   f"    host: {socket.gethostname()}\n    pid: {proc.pid}\nlast words\n")
+    assert cli.main(["status", str(tmp_path / "out")]) == 1
+    out = capsys.readouterr().out
+    assert "status: stopped without an outcome" in out and "last words" in out
+
+
+def test_status_without_a_run_log_says_why(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["status", str(tmp_path / "never")]) == 1
+    out = capsys.readouterr().out
+    assert "status: no run log" in out and "in the foreground" in out
+
+
+# --- a refused relaunch must not leave the previous attempt's outcome as the last line -----------
+
+def test_refused_relaunch_is_recorded_in_the_existing_run_log(tmp_path, monkeypatch, capsys):
+    from runner import orchestration
+    from runner.errors import ErrorCode, NfclawError
+
+    log = _write_run_log(tmp_path / "out", _finished_block("failed (exit status 1)"))
+
+    def refused(*a, **k):
+        raise NfclawError(ErrorCode.ENVIRONMENT, "Preflight checks failed.",
+                          details={"issues": ["--outdir is not empty"]})
+
+    monkeypatch.setattr(orchestration, "run_pipeline", refused)
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 1
+    text = log.read_text()
+    assert text.count("==> nfclaw run started") == 2
+    assert "--outdir is not empty" in text
+    assert text.rstrip().splitlines()[-1].endswith(": refused before launch")
+
+
+def test_refusal_into_a_fresh_outdir_leaves_it_untouched(tmp_path, monkeypatch):
+    from runner import orchestration
+    from runner.errors import ErrorCode, NfclawError
+
+    def refused(*a, **k):
+        raise NfclawError(ErrorCode.PARAMS_INVALID, "Parameters failed validation.")
+
+    monkeypatch.setattr(orchestration, "run_pipeline", refused)
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 1
+    assert not (tmp_path / "out").exists()
+
+
+def test_check_never_writes_into_the_run_log(tmp_path, monkeypatch):
+    from runner import orchestration
+    from runner.errors import ErrorCode, NfclawError
+
+    log = _write_run_log(tmp_path / "out", _finished_block("success"))
+    before = log.read_text()
+
+    def refused(*a, **k):
+        raise NfclawError(ErrorCode.PARAMS_INVALID, "Parameters failed validation.")
+
+    monkeypatch.setattr(orchestration, "run_pipeline", refused)
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out"), "--check"]) == 1
+    assert log.read_text() == before
+
+
+def test_a_launched_run_is_not_recorded_twice(tmp_path, monkeypatch):
+    # The run log already records a failure that happened after launch; cli adds nothing.
+    from runner import orchestration
+    from runner.errors import ErrorCode, NfclawError
+
+    log = _write_run_log(tmp_path / "out", _finished_block("success"))
+
+    def launched_then_failed(*a, **k):
+        with log.open("a") as fh:
+            fh.write(_finished_block("failed (exit status 1)"))
+        raise NfclawError(ErrorCode.EXECUTION_FAILED, "Nextflow execution failed.")
+
+    monkeypatch.setattr(orchestration, "run_pipeline", launched_then_failed)
+    monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
+    assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 1
+    assert log.read_text().count("==> nfclaw run started") == 2
