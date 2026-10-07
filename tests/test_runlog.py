@@ -257,6 +257,7 @@ import os as _os
 import socket as _socket
 import subprocess as _subprocess
 import sys as _sys
+import time as _time
 
 _HOST = _socket.gethostname()
 
@@ -280,7 +281,16 @@ def _log(tmp_path, text):
 
 def _sleeper(*marker):
     # A live process whose command line looks like the one the log names (nfclaw / commands.sh).
-    return _subprocess.Popen([_sys.executable, "-c", "import time; time.sleep(60)", *marker])
+    # Returned only once it has exec'd: between fork and exec /proc/<pid>/cmdline is still the
+    # parent's (pytest's), so a check made right away would not see the marker (seen on Linux CI).
+    proc = _subprocess.Popen([_sys.executable, "-c", "import time; time.sleep(60)", *marker])
+    deadline = _time.monotonic() + 10
+    while _time.monotonic() < deadline:
+        argv = runlog._argv(proc.pid) or []
+        if all(m in argv for m in marker):
+            break
+        _time.sleep(0.05)
+    return proc
 
 
 def test_state_of_a_successful_run(tmp_path):
