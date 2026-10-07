@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, CornerDownLeft, FileText, Hash, Search, X } from "lucide-react";
 import { Highlight } from "@/components/ui/highlight";
 import { colorForCategory } from "@/lib/derive";
+import { lockScroll } from "@/lib/scroll-lock";
 import { cn } from "@/lib/utils";
 
 export interface PaletteData {
@@ -114,20 +115,20 @@ export function CommandPalette({ data }: { data: PaletteData }) {
   }, [open]);
 
   useEffect(() => {
-    if (open) {
-      restoreFocus.current = document.activeElement as HTMLElement | null;
-      setQuery("");
-      setActive(0);
-      document.documentElement.style.overflow = "hidden";
-      requestAnimationFrame(() => inputRef.current?.focus());
-    } else {
-      document.documentElement.style.overflow = "";
-      restoreFocus.current?.focus?.();
-    }
+    if (!open) return;
+    restoreFocus.current = document.activeElement as HTMLElement | null;
+    setQuery("");
+    setActive(0);
+    const unlock = lockScroll();
+    requestAnimationFrame(() => inputRef.current?.focus());
     return () => {
-      document.documentElement.style.overflow = "";
+      unlock();
+      if (restoreFocus.current?.isConnected) restoreFocus.current.focus();
     };
   }, [open]);
+
+  // Any navigation — including browser back/forward — closes the palette.
+  useEffect(() => setOpen(false), [pathname]);
 
   useEffect(() => setActive(0), [query]);
 

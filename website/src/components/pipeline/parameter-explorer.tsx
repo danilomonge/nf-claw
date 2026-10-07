@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ChevronsDownUp, ChevronsUpDown, Code2, Eye, EyeOff, Search, Star, X } from "lucide-react";
+import { ChevronDown, ChevronsDownUp, ChevronsUpDown, Code2, Eye, EyeOff, Search, Star } from "lucide-react";
 import type { ParamLite, SkillGroupLite } from "@/lib/derive";
 import { CopyButton } from "@/components/ui/copy-button";
 import { Highlight } from "@/components/ui/highlight";
 import { InlineMarkdown } from "@/components/ui/inline-markdown";
+import { SearchField } from "@/components/ui/filters";
 import { cn, humanize } from "@/lib/utils";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -76,33 +77,22 @@ export function ParameterExplorer({
     setRequiredOnly(false);
   };
 
-  const groupCount = (name: string) =>
-    params.filter((p) => p.group === name && (showHidden || !p.hidden) && (!requiredOnly || p.required)).length;
+  // Per-group counts under the visibility toggles (not the search, so a group never "vanishes").
+  const counts = useMemo(() => {
+    const m = new Map<string, number>([["All", 0]]);
+    for (const p of params) {
+      if ((!showHidden && p.hidden) || (requiredOnly && !p.required)) continue;
+      m.set(p.group, (m.get(p.group) ?? 0) + 1);
+      m.set("All", m.get("All")! + 1);
+    }
+    return m;
+  }, [params, showHidden, requiredOnly]);
 
   return (
     <div>
       {/* toolbar */}
       <div className="glass flex flex-col gap-3 p-3 sm:p-4 lg:flex-row lg:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-fog-dim" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Escape" && setQuery("")}
-            placeholder="Search parameters, values, descriptions…"
-            aria-label="Search parameters"
-            className="field"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-fog-dim transition hover:bg-white/5 hover:text-fog"
-              aria-label="Clear search"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
+        <SearchField value={query} onChange={setQuery} placeholder="Search parameters, values, descriptions…" label="Search parameters" className="flex-1" />
         <div className="flex flex-wrap items-center gap-2">
           <Toggle active={requiredOnly} onClick={() => setRequiredOnly((v) => !v)}>
             <Star className="h-3.5 w-3.5" /> Required only
@@ -126,9 +116,9 @@ export function ParameterExplorer({
           <div className="lg:sticky lg:top-36">
             <p className="mb-2 hidden text-[11px] font-semibold uppercase tracking-[0.16em] text-fog-dim lg:block">Groups</p>
             <div className="mask-fade-r scrollbar-none -mx-1 flex gap-1.5 overflow-x-auto px-1 py-0.5 lg:mask-none lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:px-0">
-              {[{ name: "All", title: "All groups", count: filtered.length }, ...groups].map((g) => {
+              {[{ name: "All" }, ...groups].map((g) => {
                 const on = group === g.name;
-                const count = g.name === "All" ? params.filter((p) => (showHidden || !p.hidden) && (!requiredOnly || p.required)).length : groupCount(g.name);
+                const count = counts.get(g.name) ?? 0;
                 return (
                   <button
                     key={g.name}

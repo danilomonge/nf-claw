@@ -14,13 +14,13 @@ import {
   Search,
   SlidersHorizontal,
   Table2,
-  X,
 } from "lucide-react";
 import type { SkillSummary } from "@/lib/derive";
 import { CATEGORIES, OTHER_CATEGORY, colorForCategory } from "@/lib/derive";
 import { CodeBlock } from "@/components/ui/code-block";
 import { Highlight } from "@/components/ui/highlight";
 import { InlineMarkdown } from "@/components/ui/inline-markdown";
+import { SearchField, DomainChips } from "@/components/ui/filters";
 import { cn, formatDate, humanize } from "@/lib/utils";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -79,57 +79,28 @@ export function SkillsExplorer({ skills }: { skills: SkillSummary[] }) {
   const totalParamHits = results.reduce((n, r) => n + r.matchedParams.length, 0);
 
   const onListKey = (e: React.KeyboardEvent) => {
-    if (!results.length) return;
-    const i = results.findIndex((r) => r.skill.name === selected);
+    // Only rows on screen: small screens hide everything past the first page until "Show all".
+    const pool =
+      !showAll && window.matchMedia("(max-width: 1023px)").matches ? results.slice(0, MOBILE_PAGE) : results;
+    if (!pool.length) return;
+    const i = pool.findIndex((r) => r.skill.name === selected);
     let next = -1;
-    if (e.key === "ArrowDown") next = Math.min(results.length - 1, i + 1);
+    if (e.key === "ArrowDown") next = Math.min(pool.length - 1, i + 1);
     else if (e.key === "ArrowUp") next = Math.max(0, i - 1);
     else if (e.key === "Home") next = 0;
-    else if (e.key === "End") next = results.length - 1;
+    else if (e.key === "End") next = pool.length - 1;
     if (next >= 0) {
       e.preventDefault();
-      setSelected(results[next].skill.name);
-      listRef.current?.querySelector<HTMLElement>(`[data-skill="${results[next].skill.name}"]`)?.focus();
+      setSelected(pool[next].skill.name);
+      listRef.current?.querySelector<HTMLElement>(`[data-skill="${pool[next].skill.name}"]`)?.focus();
     }
   };
 
   return (
     <div className="mt-12">
       <div className="glass flex flex-col gap-3 p-3 sm:p-4">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-fog-dim" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Escape" && setQuery("")}
-            placeholder="Search skills, descriptions and every parameter (e.g. “aligner”, “strandedness”)…"
-            aria-label="Search skills and parameters"
-            className="field"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-fog-dim transition hover:bg-white/5 hover:text-fog"
-              aria-label="Clear search"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-        <div className="mask-fade-r scrollbar-none -mx-1 flex gap-2 overflow-x-auto px-1 py-0.5 lg:mask-none lg:flex-wrap lg:overflow-visible">
-          {[{ name: "All", count: skills.length }, ...categories].map((c) => (
-            <button
-              key={c.name}
-              onClick={() => setCategory(c.name === category && c.name !== "All" ? "All" : c.name)}
-              aria-pressed={category === c.name}
-              className={cn("pill", category === c.name ? "pill-on" : "pill-off")}
-            >
-              {c.name !== "All" && <span className="h-2 w-2 rounded-full" style={{ background: colorForCategory(c.name) }} />}
-              {c.name}
-              <span className={cn("tabular-nums", category === c.name ? "text-claw-200/70" : "text-fog-dim")}>{c.count}</span>
-            </button>
-          ))}
-        </div>
+        <SearchField value={query} onChange={setQuery} placeholder="Search skills, descriptions and every parameter (e.g. “aligner”, “strandedness”)…" label="Search skills and parameters" />
+        <DomainChips domains={categories} total={skills.length} value={category} onChange={setCategory} wrapFrom="lg" />
       </div>
 
       <p className="mt-3 px-1 text-xs text-fog-dim" aria-live="polite">

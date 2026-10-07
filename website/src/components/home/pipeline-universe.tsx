@@ -21,6 +21,7 @@ import { CATEGORIES, OTHER_CATEGORY, categoryRank, colorForCategory } from "@/li
 import { layoutConstellation } from "@/lib/constellation";
 import { useCopy } from "@/components/ui/copy-button";
 import { Highlight } from "@/components/ui/highlight";
+import { SearchField, DomainChips } from "@/components/ui/filters";
 import { cn, formatDate } from "@/lib/utils";
 
 type SortKey = "name" | "parameters" | "modules" | "newest";
@@ -140,26 +141,7 @@ export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }
     <div className="mt-12">
       {/* toolbar */}
       <div className="glass flex flex-col gap-3 p-3 sm:p-4 md:flex-row md:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-fog-dim" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Escape" && setQuery("")}
-            placeholder="Search pipelines, domains or tools (e.g. “salmon”)…"
-            aria-label="Search pipelines"
-            className="field"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-fog-dim transition hover:bg-white/5 hover:text-fog"
-              aria-label="Clear search"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
+        <SearchField value={query} onChange={setQuery} placeholder="Search pipelines, domains or tools (e.g. “salmon”)…" label="Search pipelines" className="flex-1" />
         <div className="flex items-center gap-2">
           <AnimatePresence initial={false}>
             {view === "grid" && (
@@ -218,23 +200,14 @@ export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }
 
       {/* domain chips */}
       <div className="mt-4 flex items-center gap-3">
-        <div className="mask-fade-r scrollbar-none -mx-1 flex flex-1 gap-2 overflow-x-auto px-1 py-0.5 md:mask-none md:flex-wrap md:overflow-visible">
-          {[{ name: "All", count: pipelines.length }, ...categories].map((c) => (
-            <button
-              key={c.name}
-              onClick={() => setCategory(c.name === category && c.name !== "All" ? "All" : c.name)}
-              onMouseEnter={() => c.name !== "All" && setHoverCategory(c.name)}
-              onMouseLeave={() => setHoverCategory(null)}
-              aria-pressed={category === c.name}
-              className={cn("pill", category === c.name ? "pill-on" : "pill-off")}
-            >
-              {c.name !== "All" && (
-                <span className="h-2 w-2 rounded-full" style={{ background: colorForCategory(c.name) }} />
-              )}
-              {c.name}
-              <span className={cn("tabular-nums", category === c.name ? "text-claw-200/70" : "text-fog-dim")}>{c.count}</span>
-            </button>
-          ))}
+        <div className="min-w-0 flex-1">
+          <DomainChips
+            domains={categories}
+            total={pipelines.length}
+            value={category}
+            onChange={setCategory}
+            onHover={setHoverCategory}
+          />
         </div>
       </div>
       <p className="mt-3 text-xs text-fog-dim" aria-live="polite">

@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion";
-import { ArrowUpRight, Search, SlidersHorizontal, X } from "lucide-react";
+import { ArrowUpRight, Search, SlidersHorizontal } from "lucide-react";
 import type { PipelineSummary } from "@/lib/derive";
 import { CATEGORIES, OTHER_CATEGORY, categoryRank, colorForCategory } from "@/lib/derive";
 import { Highlight } from "@/components/ui/highlight";
-import { cn, formatDate } from "@/lib/utils";
+import { SearchField, DomainChips } from "@/components/ui/filters";
+import { formatDate } from "@/lib/utils";
 
 type SortKey = "name" | "domain" | "parameters" | "modules" | "newest";
 const ORDER = [...CATEGORIES.map((c) => c.name), OTHER_CATEGORY.name];
@@ -72,26 +73,7 @@ export function PipelineIndex({ pipelines }: { pipelines: PipelineSummary[] }) {
   return (
     <div className="mt-10">
       <div className="glass flex flex-col gap-3 p-3 sm:p-4 md:flex-row md:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-fog-dim" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Escape" && setQuery("")}
-            placeholder="Search by name, description or tool…"
-            aria-label="Search pipelines"
-            className="field"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-fog-dim transition hover:bg-white/5 hover:text-fog"
-              aria-label="Clear search"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
+        <SearchField value={query} onChange={setQuery} placeholder="Search by name, description or tool…" label="Search pipelines" className="flex-1" />
         <div className="relative">
           <select
             value={sort}
@@ -109,21 +91,13 @@ export function PipelineIndex({ pipelines }: { pipelines: PipelineSummary[] }) {
         </div>
       </div>
 
-      <div className="mask-fade-r scrollbar-none -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 py-0.5 md:mask-none md:flex-wrap md:overflow-visible">
-        {["All", ...domains].map((d) => (
-          <button
-            key={d}
-            onClick={() => setDomain(d === domain && d !== "All" ? "All" : d)}
-            aria-pressed={domain === d}
-            className={cn("pill", domain === d ? "pill-on" : "pill-off")}
-          >
-            {d !== "All" && <span className="h-2 w-2 rounded-full" style={{ background: colorForCategory(d) }} />}
-            {d}
-            <span className={cn("tabular-nums", domain === d ? "text-claw-200/70" : "text-fog-dim")}>
-              {d === "All" ? pipelines.length : counts.get(d)}
-            </span>
-          </button>
-        ))}
+      <div className="mt-4">
+        <DomainChips
+          domains={domains.map((d) => ({ name: d, count: counts.get(d) ?? 0 }))}
+          total={pipelines.length}
+          value={domain}
+          onChange={setDomain}
+        />
       </div>
 
       <p className="mt-4 px-1 text-xs text-fog-dim" aria-live="polite">

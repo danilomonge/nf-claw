@@ -19,7 +19,7 @@ import {
   Terminal,
   Wrench,
 } from "lucide-react";
-import { getPipeline, getPipelines, pipelineNames } from "@/lib/data";
+import { getPipeline, getPipelines, githubRepoPath, pipelineNames } from "@/lib/data";
 import { toSkill, categorize, colorForCategory } from "@/lib/derive";
 import { CodeBlock } from "@/components/ui/code-block";
 import { InlineMarkdown } from "@/components/ui/inline-markdown";
@@ -42,11 +42,6 @@ export async function generateMetadata({ params }: { params: Promise<{ name: str
   };
 }
 
-function githubPath(url: string): string | null {
-  const m = url.match(/github\.com[:/](.+?)(?:\.git)?$/);
-  return m ? m[1] : null;
-}
-
 export default async function PipelinePage({ params }: { params: Promise<{ name: string }> }) {
   const { name } = await params;
   const pipeline = getPipeline(name);
@@ -60,7 +55,7 @@ export default async function PipelinePage({ params }: { params: Promise<{ name:
   const skill = toSkill(pipeline);
   const category = categorize(pipeline);
   const accent = colorForCategory(category);
-  const gh = githubPath(pipeline.url);
+  const gh = githubRepoPath(pipeline.url);
   const schema = gh ? `https://github.com/${gh}/blob/${pipeline.version}/nextflow_schema.json` : null;
   const upstream = gh ? `https://github.com/${gh}/tree/${pipeline.version}` : null;
 

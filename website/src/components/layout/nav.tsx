@@ -7,6 +7,7 @@ import { motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
 import { ArrowUpRight, Github, Menu, Search, X } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { OPEN_PALETTE_EVENT } from "@/components/layout/command-palette";
+import { lockScroll } from "@/lib/scroll-lock";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -71,11 +72,11 @@ export function Nav({ repo }: { repo: string | null }) {
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
     if (!open) return;
-    document.documentElement.style.overflow = "hidden";
+    const unlock = lockScroll();
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", onKey);
     return () => {
-      document.documentElement.style.overflow = "";
+      unlock();
       window.removeEventListener("keydown", onKey);
     };
   }, [open]);
