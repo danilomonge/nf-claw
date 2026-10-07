@@ -320,8 +320,7 @@ def _first_match(root: Path, patterns: str | list[str]) -> Path:
             return _one_match(root, pattern)
         except _NoMatch:
             continue                                      # several files matching is not skipped
-    raise _NoMatch(f"nothing in {root} matches any of "
-                      + ", ".join(repr(p) for p in patterns))
+    raise _NoMatch(f"nothing in {root} matches any of " + ", ".join(repr(p) for p in patterns))
 
 
 def _fill(template: str, values: Mapping[str, str]) -> str:
@@ -400,6 +399,7 @@ def _direct(src: Source, root: Path, sheet_schema, dest: Path, downstream: str
     # sourmash database the pinned taxprofiler cannot use) — dropped only where the rule says so.
     allowed = {c.name: set(c.enum) for c in sheet_schema.columns
                if c.enum and c.name in src.spec.get("drop_rows_not_allowed", [])}
+
     def rejected(row: dict) -> bool:
         return any((value := (row.get(col) or "").strip()) and value not in values
                    for col, values in allowed.items())
