@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shlex
 import sys
 from pathlib import Path
 
@@ -68,11 +69,13 @@ def _collect_overrides(extras: list[str]) -> dict:
     return out
 
 
+def _stop_words(exc: BaseException) -> str:
+    return f"stopped by {exc.name}" if isinstance(exc, execution.Terminated) else "interrupted"
+
+
 def _stopped(exc: BaseException, log: Path) -> int:
     """Say that a stop signal (or Ctrl-C) ended the run, and return the shell's exit status for it."""
-    stopped = (f"stopped by {exc.name}" if isinstance(exc, execution.Terminated)
-               else "interrupted")
-    print(f"nfclaw: {stopped}; any Nextflow run it had started was shut down."
+    print(f"nfclaw: {_stop_words(exc)}; any Nextflow run it had started was shut down."
           + (f" Log: {log}" if log.is_file() else ""), file=sys.stderr)
     return 128 + exc.signum if isinstance(exc, execution.Terminated) else 130
 
@@ -95,7 +98,7 @@ def _chain(args: argparse.Namespace, parser: argparse.ArgumentParser, root: Path
             print(str(exc), file=sys.stderr)
             return 1
         print(chain.format_status(state, problems), end="")
-        return 1 if problems else 0
+        return chain.status_exit_code(state, problems)
     if args.spec is None and not args.resume:
         parser.error("chain run needs a spec file (or --resume an existing chain)")
     outdir = Path(args.outdir).expanduser().resolve()
@@ -125,6 +128,52 @@ def _chain(args: argparse.Namespace, parser: argparse.ArgumentParser, root: Path
 _EXIT_BROKEN_PIPE = 141
 
 
+def _run_log_path(outdir: str) -> Path:
+    return Path(outdir).expanduser().resolve() / "provenance" / "logs" / runlog.RUN_LOG_NAME
+
+
+def _status_report(st: runlog.RunState) -> str:
+    """`nfclaw status` output: the state first, then where to look and what the run last said."""
+    who = "the replay (commands.sh)" if st.kind == "replay" else "nfclaw"
+    lines: list[str] = []
+    if st.state == "missing":
+        return (f"status: no run log — {st.log} does not exist.\n"
+                "nfclaw has not launched a run into this --outdir. A run it refuses before launching "
+                "(invalid parameters or samplesheet, a failed preflight check) leaves a fresh "
+                "--outdir untouched: run the same command in the foreground to see why.\n")
+    if st.state == "success":
+        lines.append("status: success")
+    elif st.state == "ended":
+        lines.append(f"status: {st.outcome}")
+    elif st.state == "running":
+        lines.append(f"status: running ({who} pid {st.pid} on {st.host}, started {st.started})")
+    elif st.state == "elsewhere":
+        lines.append(f"status: unknown here — launched on {st.host} and not finished; "
+                     "run `nfclaw status` there")
+    else:
+        lines.append(f"status: stopped without an outcome — {who} (pid {st.pid}) is no longer "
+                     "running and never recorded how the run ended: it was killed with SIGKILL, "
+                     "ran out of memory, or the machine restarted")
+    times = f"started: {st.started}" + (f" · finished: {st.finished}" if st.finished else "")
+    lines += [times, f"log: {st.log}"]
+    if st.nextflow_log:
+        lines.append(f"nextflow log: {st.nextflow_log}")
+    if st.state in ("dead", "elsewhere") and st.nextflow_alive:
+        lines.append(f"Nextflow (pid {st.nextflow_pid}) is still running — stop it with: "
+                     f"kill {st.nextflow_pid}")
+    if st.state == "running":
+        lines += ["last output:", *(f"  {line}" for line in st.last_output)]
+    elif st.state != "success":
+        if st.error:
+            lines += ["error (as recorded):", *(f"  {line}" for line in st.error)]
+        else:
+            quoted = runlog.error_excerpt(st.console)
+            lines += ["last output:", *(f"  {line}" if line else "" for line in quoted)]
+        if st.state == "dead":
+            lines.append("Re-run the same command with --resume to continue where it stopped.")
+    return "\n".join(lines) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run one nfclaw command. Output piped into a reader that stops early (`nfclaw versions X |
     head -1`, `nfclaw list | grep -m1 rna`) ends the command quietly, as it would a Unix tool, rather
@@ -152,6 +201,10 @@ def _main(argv: list[str] | None = None) -> int:
     p_show.add_argument("--pipeline-version", dest="pipeline_version")
     p_versions = sub.add_parser("versions")
     p_versions.add_argument("name")
+    # The state of a run from its log alone — running, finished and how, or stopped without an
+    # outcome (nfclaw killed outright) — so nobody has to read or interpret the log to know.
+    p_status = sub.add_parser("status")
+    p_status.add_argument("outdir", help="--outdir of the run (or replay target) to report on")
     # Compare a replay against the run it reproduces. Keyed on path, because comparing the raw
     # `outputs.sha256` lines counts one changed file as both a missing and an extra one.
     p_verify = sub.add_parser("verify")
@@ -294,6 +347,19 @@ def _main(argv: list[str] | None = None) -> int:
         # work — that is a failure. Differing bytes in the same file are expected and are not.
         return 0 if cmp.structurally_equal else 1
 
+    if args.cmd == "status":
+        log = _run_log_path(args.outdir)
+        chain_log = (Path(args.outdir).expanduser().resolve() / chain.RECORD_DIRNAME / "logs"
+                     / chain.LOG_NAME)
+        if not log.is_file() and chain_log.is_file():       # the --outdir of a chain
+            log = chain_log
+        st = runlog.read_state(log)
+        print(_status_report(st), end="")
+        if st.kind == "chain":
+            print(f"chain: `nfclaw chain status {args.outdir}` lists its stages and verifies "
+                  "their lineage")
+        return 0 if st.state == "success" else 3 if st.state == "running" else 1
+
     shown: list[str] = []
 
     def warn(message: str) -> None:                           # advisory, non-blocking
@@ -304,6 +370,24 @@ def _main(argv: list[str] | None = None) -> int:
         return _chain(args, parser, root, warn)
 
     if args.cmd == "run":
+        log_path = _run_log_path(args.outdir)
+        size_before = log_path.stat().st_size if log_path.is_file() else None
+
+        def unlaunched(outcome: str, error: str) -> None:
+            # An attempt that ended before launching wrote nothing; if the --outdir already holds a
+            # run log, its last line is the *previous* attempt's — record this one after it. A fresh
+            # --outdir stays untouched (so the next attempt is not refused as "not empty"), and
+            # --check never writes there.
+            if args.check or size_before is None:
+                return
+            try:
+                if log_path.stat().st_size != size_before:
+                    return                                    # launched: the log has it already
+            except OSError:
+                return
+            runlog.record_unlaunched(log_path, command=shlex.join(["nfclaw", *argv]),
+                                     outcome=outcome, error=error)
+
         try:
             # `kill` (SIGTERM) or a closing terminal (SIGHUP) stop the run the way Ctrl-C does —
             # Nextflow shut down, the run log closed with the outcome — instead of killing nfclaw on
@@ -325,10 +409,13 @@ def _main(argv: list[str] | None = None) -> int:
                     on_warning=warn)
         except NfclawError as exc:
             print(str(exc), file=sys.stderr)
+            unlaunched("refused before launch", str(exc))
             return 1
         except (execution.Terminated, KeyboardInterrupt) as exc:
-            return _stopped(exc, Path(args.outdir).expanduser().resolve() / "provenance" / "logs"
-                            / runlog.RUN_LOG_NAME)
+            code = _stopped(exc, log_path)
+            unlaunched(f"{execution.stop_outcome(exc)} before launch",
+                       f"nfclaw: {_stop_words(exc)} before launching")
+            return code
         for w in res.warnings:                                # any not already said before launch
             if w not in shown:
                 warn(w)

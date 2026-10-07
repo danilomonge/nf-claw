@@ -18,14 +18,18 @@ from __future__ import annotations
 import os
 import re
 import shlex
+import socket
+import subprocess
 import sys
 import threading
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
 from runner import nextflow_command
 
 RUN_LOG_NAME = "run.log"
+ERROR_MARK = "==> nfclaw error:"          # precedes the error nfclaw records, up to the last line
 
 # The tail of a launch's console kept in memory for quoting its error. Nextflow ends a failed run
 # with its error report, so the tail always holds it; a bound keeps a days-long run cheap.
@@ -269,6 +273,10 @@ class RunLog:
         log.note(f"    launch dir: {launch_dir}")
         if nextflow_log is not None:
             log.note(f"    nextflow log: {nextflow_log}")
+        # Who runs it: `nfclaw status` tells a live run from one whose nfclaw was killed outright
+        # (SIGKILL, out of memory, a restart) — the only way a launch can end without a last line.
+        log.note(f"    host: {socket.gethostname()}")
+        log.note(f"    pid: {os.getpid()}")
         for note in notes:
             log.note(f"    warning: {note}")
         print(f"nfclaw: logging this run to {log.path}", file=sys.stderr, flush=True)
@@ -298,10 +306,16 @@ class RunLog:
         with self._lock:
             return self._tails[stream].decode("utf-8", errors="replace")
 
+    def launched(self, pid: int) -> None:
+        """Record Nextflow's pid, before any of its output."""
+        self.note(f"    nextflow pid: {pid}")
+
     def fail(self, outcome: str, error: str = "") -> None:
-        """Record how the run failed: the error text now, the outcome for the final line."""
+        """Record how the run failed: the error text now (after `ERROR_MARK`, so it can be read
+        back apart from the console), the outcome for the final line."""
         self.outcome = outcome
         if error:
+            self.note(ERROR_MARK)
             self.note(error)
 
     def finish(self) -> None:
@@ -315,3 +329,156 @@ class RunLog:
             self._fh.close()
         except OSError:
             pass
+
+
+def record_unlaunched(log: Path, *, command: str, outcome: str, error: str) -> None:
+    """Append an attempt nfclaw refused (or was stopped) before launching to an existing run log.
+
+    Without it a relaunch into the same --outdir that fails validation or preflight leaves the
+    *previous* attempt's outcome as the log's last line — read by anyone polling a background run as
+    the result of the new one. Only ever appended to a run log that already exists: a fresh
+    --outdir is left untouched, so the next attempt is not refused as "not empty"."""
+    lines = [f"==> nfclaw run started {now()}", f"    command: {command}",
+             f"    host: {socket.gethostname()}", f"    pid: {os.getpid()}",
+             ERROR_MARK, error.rstrip("\n"), f"==> nfclaw run finished {now()}: {outcome}"]
+    try:
+        with log.open("a", encoding="utf-8") as fh:
+            fh.write("\n".join(lines) + "\n")
+    except OSError:
+        pass                                             # never mask the refusal itself
+
+
+# --- reading a run's state back (`nfclaw status`) -------------------------------------------------
+
+_STARTED = re.compile(r"^==> nfclaw (run|replay|chain) started (\S+)")
+_FINISHED = re.compile(r"^==> nfclaw (run|replay|chain) finished (\S+): (.*)$")
+_HEADER = re.compile(r"^    (command|launch dir|nextflow log|replay of|host|pid|nextflow pid|"
+                     r"warning): (.*)$")
+_HEAD_BYTES = 64 * 1024
+_STATE_TAIL_BYTES = 512 * 1024
+_LAST_OUTPUT_LINES = 5
+# What the recorded pid must be running, so a pid reused after a restart is not taken for the run:
+# the `nfclaw` entry point (or `python -m runner`) for a run, the replay script for a replay.
+_RUN_NAMES = {"run": ("nfclaw", "runner"), "replay": ("commands.sh",),
+              "chain": ("nfclaw", "runner")}
+
+
+@dataclass
+class RunState:
+    """The state of the last launch recorded in a run log.
+
+    `state` is one of: `success`; `ended` (finished any other way — see `outcome`); `running`;
+    `dead` (no last line and its nfclaw is gone: killed with SIGKILL, out of memory, a restart);
+    `elsewhere` (unfinished, launched on another host — not judged from here); `missing`."""
+
+    log: Path
+    state: str
+    kind: str = "run"
+    outcome: str | None = None
+    started: str | None = None
+    finished: str | None = None
+    host: str | None = None
+    pid: int | None = None
+    nextflow_pid: int | None = None
+    nextflow_alive: bool = False
+    nextflow_log: str | None = None
+    error: list[str] = field(default_factory=list)
+    console: str = ""                                    # the tail of the launch's console output
+    last_output: list[str] = field(default_factory=list)
+
+
+def _argv(pid: int) -> list[str] | None:
+    """A live process's command line, or None when it cannot be read."""
+    try:
+        raw = Path(f"/proc/{pid}/cmdline").read_bytes()
+        return [a for a in raw.decode("utf-8", errors="replace").split("\0") if a]
+    except OSError:
+        pass
+    try:
+        out = subprocess.run(["ps", "-p", str(pid), "-o", "command="], capture_output=True,
+                             text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return out.stdout.split() if out.returncode == 0 else []
+
+
+def _is_process(pid: int | None, names: tuple[str, ...]) -> bool:
+    """Whether `pid` is alive and running one of `names` (an argument's basename, or the argument
+    itself) — a zombie or a reused pid is not."""
+    if not pid or pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        pass                                             # alive, but another user's
+    except OSError:
+        return False
+    argv = _argv(pid)
+    if argv is None:
+        return True                                      # alive; nothing more can be checked
+    return any(a in names or os.path.basename(a) in names for a in argv)
+
+
+def read_state(log: Path) -> RunState:
+    """The state of the last launch in `log`, deterministically: its last line if it has one,
+    otherwise whether the nfclaw that wrote it is still running. Reads the launch's header and the
+    tail of the file only, so a days-long run's log is cheap to check."""
+    if not log.is_file():
+        return RunState(log, "missing")
+    start = None
+    offset = 0
+    with log.open("rb") as fh:
+        for raw in fh:
+            if _STARTED.match(raw[:64].decode("utf-8", errors="replace")):
+                start = offset
+            offset += len(raw)
+        if start is None:
+            return RunState(log, "missing")
+        fh.seek(start)
+        head = fh.read(_HEAD_BYTES).decode("utf-8", errors="replace").splitlines()
+        tail_from = max(start, offset - _STATE_TAIL_BYTES)
+        fh.seek(tail_from)
+        tail = fh.read().decode("utf-8", errors="replace").splitlines()
+    if tail_from > start and tail:
+        tail = tail[1:]                                  # the first line may be cut mid-way
+
+    m = _STARTED.match(head[0])
+    st = RunState(log, "missing", kind=m.group(1), started=m.group(2))
+    header_lines = 1
+    for line in head[1:]:
+        h = _HEADER.match(line)
+        if not h:
+            break
+        header_lines += 1
+        key, value = h.group(1), h.group(2).strip()
+        if key == "host":
+            st.host = value
+        elif key == "pid" and value.isdigit():
+            st.pid = int(value)
+        elif key == "nextflow pid" and value.isdigit():
+            st.nextflow_pid = int(value)
+        elif key == "nextflow log":
+            st.nextflow_log = value
+    body = tail[header_lines:] if tail_from == start else tail
+
+    if body and (f := _FINISHED.match(body[-1])):
+        st.finished, st.outcome = f.group(2), f.group(3)
+        body = body[:-1]
+    if ERROR_MARK in body:
+        at = len(body) - 1 - body[::-1].index(ERROR_MARK)
+        st.error, body = body[at + 1:], body[:at]
+    st.console = "\n".join(body)
+    st.last_output = [line for line in _clean(st.console) if line][-_LAST_OUTPUT_LINES:]
+    st.nextflow_alive = _is_process(st.nextflow_pid, ("nextflow", "java"))
+
+    if st.outcome is not None:
+        st.state = "success" if st.outcome == "success" else "ended"
+    elif st.host and st.host != socket.gethostname():
+        st.state = "elsewhere"
+    elif _is_process(st.pid, _RUN_NAMES[st.kind]):
+        st.state = "running"
+    else:
+        st.state = "dead"
+    return st

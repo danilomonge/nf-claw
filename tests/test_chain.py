@@ -604,3 +604,43 @@ def test_status_detects_a_tampered_link(library, fake_runs, tmp_path):
 def test_status_needs_a_chain(tmp_path):
     with pytest.raises(NfclawError, match="no chain recorded"):
         chain.status(tmp_path)
+
+
+# --- the chain's log speaks for itself (runlog.read_state, as `nfclaw status` reads a run) ------
+
+def test_the_chain_log_is_read_like_a_run_log(library, fake_runs, tmp_path):
+    from runner import runlog
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
+    out = tmp_path / "c"
+    chain.run_chain(_spec(), repo_root=root, outdir=out)
+    st = runlog.read_state(out / "chain" / "logs" / "chain.log")
+    assert (st.state, st.kind, st.outcome) == ("success", "chain", "success")
+    assert st.pid == __import__("os").getpid() and st.host
+
+
+def test_status_tells_a_chain_whose_nfclaw_was_killed(library, fake_runs, tmp_path):
+    # SIGKILL leaves no last line: state.json still says "running", the log's pid is gone.
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
+    out = tmp_path / "c"
+    chain.run_chain(_spec(), repo_root=root, outdir=out)
+    log = out / "chain" / "logs" / "chain.log"
+    lines = log.read_text().splitlines()
+    log.write_text("\n".join(lines[:-1]).replace(f"pid: {__import__('os').getpid()}",
+                                                 "pid: 999999") + "\n")
+    state_file = out / "chain" / "state.json"
+    state_file.write_text(state_file.read_text().replace('"outcome": "success"',
+                                                         '"outcome": "running"', 1))
+    state, problems = chain.status(out)
+    assert state["log_state"] == "dead"
+    assert "stopped without an outcome" in chain.format_status(state, problems)
+    assert chain.status_exit_code(state, problems) == 1
+
+
+def test_status_exit_codes_follow_nfclaw_status(library, fake_runs, tmp_path):
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
+    out = tmp_path / "c"
+    chain.run_chain(_spec(), repo_root=root, outdir=out)
+    state, problems = chain.status(out)
+    assert chain.status_exit_code(state, problems) == 0
+    assert chain.status_exit_code(state, ["a broken link"]) == 1
+    assert chain.status_exit_code({**state, "log_state": "running"}, []) == 3

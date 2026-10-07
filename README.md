@@ -33,6 +33,7 @@ pip install -e .             # first time: puts `nfclaw` on PATH (or use `python
 
 nfclaw list                  # or: python3 -m runner list
 nfclaw run rnaseq --input samplesheet.csv --outdir results -profile docker
+nfclaw status results        # success / running / how it ended — from results/provenance/logs/run.log
 
 # run a specific (non-latest) release — default stays the pinned latest
 nfclaw versions rnaseq                                   # list release tags (latest is flagged; dev last)

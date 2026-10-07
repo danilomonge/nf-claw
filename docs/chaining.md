@@ -163,8 +163,11 @@ recorded in its `outputs.sha256`. The snapshot is also the downstream's `--input
 
 `nfclaw chain status DIR` (DIR is the chain, or any one of its stages) reconstructs the chain and
 verifies each link — the downstream ran with exactly that handoff, the snapshot is unchanged and is
-the input it hashed, and every file it was derived from is what the upstream produced — and exits 1
-if any link is broken.
+the input it hashed, and every file it was derived from is what the upstream produced. Like
+`nfclaw status` (which reads a chain's `--outdir` too), it exits 0 when the chain succeeded and every
+link holds, 3 while it is still running, 1 otherwise: a broken link, a failed or stopped chain, or one
+"stopped without an outcome" — its nfclaw killed outright (SIGKILL, out of memory, a restart), told
+apart from a live chain by the pid and host its log records.
 
 To reproduce a chain: `nfclaw chain run DIR/chain/chain.json --outdir FRESH`, then
 `nfclaw verify FRESH/NN-<stage> --against DIR/NN-<stage>` per stage. (Each stage's own

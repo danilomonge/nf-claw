@@ -11,10 +11,14 @@ Four zones:
   pre-checks against the pipeline's own schema (samplesheet columns, unknown flags, scalar types,
   enum values and compatible value constraints — failing fast before Nextflow starts), composes a
   `-params-file`, runs `nextflow run` from `--outdir`, records the launch in
-  `<outdir>/provenance/logs/run.log` (`runner/runlog.py`: nfclaw's header, Nextflow's console in
-  order, and a final outcome line; appended on `--resume`; on failure the error quotes Nextflow's
-  report and the `Caused by:` chain of its log's last error, and names `run.log`, `.nextflow.log` and the failing task's `.command.err` by absolute
-  path), and writes a provenance bundle. Nextflow's `nf-schema`
+  `<outdir>/provenance/logs/run.log` (`runner/runlog.py`: nfclaw's header with host and pids,
+  Nextflow's console in order, and a final outcome line written after the bundle; appended on
+  `--resume` and for a relaunch refused before starting; on failure the error quotes Nextflow's
+  report and the `Caused by:` chain of its log's last error, and names `run.log`, `.nextflow.log`
+  and the failing task's `.command.err` by absolute path). `nfclaw status <outdir>` reads the state
+  back from that log alone — the last line, or whether the recorded nfclaw is still running.
+  SIGTERM/SIGHUP stop a run the way Ctrl-C does, and on Linux Nextflow is set to die with nfclaw
+  even on SIGKILL. It then writes a provenance bundle. Nextflow's `nf-schema`
   plugin remains authoritative at runtime, including for conditional requirements and any schema
   constraints the lightweight pre-check cannot interpret safely.
   The bundle is written whether the run succeeds or fails — a failed run is precisely when the

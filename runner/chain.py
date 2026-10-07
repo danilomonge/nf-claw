@@ -16,6 +16,7 @@ import json
 import os
 import re
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -566,7 +567,13 @@ def _execute(spec: ChainSpec, planned: list[Planned], state: dict | None, *, rep
         _write_json(record / "chain.json", normalized(spec, planned))
         _write_json(record / "state.json", state)
         log = runlog.RunLog(record / "logs" / LOG_NAME, label="chain")
-        log.note(f"==> nfclaw chain started {runlog.now()}: {len(planned)} stages in {outdir}")
+        # The same header as a run's, so `runlog.read_state` — `nfclaw status` — tells a chain still
+        # running from one whose nfclaw was killed outright (the only way it ends without a last line).
+        log.note(f"==> nfclaw chain started {runlog.now()}")
+        log.note(f"    launch dir: {outdir}")
+        log.note(f"    host: {socket.gethostname()}")
+        log.note(f"    pid: {os.getpid()}")
+        log.note(f"    {len(planned)} stages: " + " → ".join(p.stage.dirname for p in planned))
         print(f"nfclaw: logging this chain to {log.path}", file=sys.stderr, flush=True)
         deadline = None if timeout_seconds is None else time.monotonic() + timeout_seconds
         try:
@@ -740,6 +747,8 @@ def status(path: Path) -> tuple[dict, list[str]]:
     upstream file the handoff drew on is what the upstream run recorded producing."""
     record = _record_for(path.expanduser().resolve())
     state = _read_json(record / "state.json") or {}
+    live = runlog.read_state(record / "logs" / LOG_NAME)
+    state["log_state"], state["log_pid"], state["log_host"] = live.state, live.pid, live.host
     problems: list[str] = []
     for entry in state.get("stages", []):
         if not entry.get("handoff"):
@@ -773,8 +782,24 @@ def status(path: Path) -> tuple[dict, list[str]]:
     return state, problems
 
 
+def status_exit_code(state: dict, problems: list[str]) -> int:
+    """As `nfclaw status`: 0 succeeded (and every link verified), 3 still running, 1 otherwise."""
+    if problems or state.get("log_state") == "dead":
+        return 1
+    if state.get("log_state") == "running":
+        return 3
+    return 0 if state.get("outcome") == "success" else 1
+
+
 def format_status(state: dict, problems: list[str]) -> str:
-    lines = [f"chain {state.get('chain_id', '?')}: {state.get('outcome', '?')}"]
+    outcome = state.get("outcome", "?")
+    if state.get("log_state") == "running":
+        outcome = f"running (nfclaw pid {state.get('log_pid')} on {state.get('log_host')})"
+    elif state.get("log_state") == "dead":
+        outcome = (f"stopped without an outcome — nfclaw (pid {state.get('log_pid')}) is no longer "
+                   "running and never recorded how the chain ended (SIGKILL, out of memory, a "
+                   "restart); resume it with --resume")
+    lines = [f"chain {state.get('chain_id', '?')}: {outcome}"]
     stages = state.get("stages", [])
     for i, s in enumerate(stages):
         ver = f"{s.get('version') or '?'} ({(s.get('commit') or '')[:12]})"
