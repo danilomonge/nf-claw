@@ -278,6 +278,24 @@ def test_the_probe_suggests_the_engine_the_release_declares(library, monkeypatch
     assert 'the release declares Nextflow 23.04.0: try "nxf_ver": "23.04.0"' in issue
 
 
+def test_the_probe_tells_an_engine_that_cannot_start_from_a_config_it_rejects(library,
+                                                                             monkeypatch):
+    # Nextflow 23.04's launcher fetches its jars on first use; on a host where that fails the stage
+    # could not start either — said as what it is, not as a config the engine rejects.
+    import subprocess
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
+    spec = chain.parse_spec({"stages": [{"pipeline": "mini_up"},
+                                        {"pipeline": "mini", "nxf_ver": "23.04.0"}]})
+    planned = chain.plan(spec, repo_root=root)
+    monkeypatch.setattr(chain.shutil, "which", lambda name: "/usr/bin/nextflow")
+    monkeypatch.setattr(chain.subprocess, "run", lambda cmd, **kw: subprocess.CompletedProcess(
+        cmd, 1, stdout="", stderr="CAPSULE EXCEPTION: Error resolving dependencies.\n"
+                                   "Unable to initialize nextflow environment\n"))
+    [issue] = chain._probe_config(spec, planned[1])
+    assert "02-mini (mini): Nextflow 23.04.0 could not be started" in issue
+    assert "cannot parse" not in issue and "Unable to initialize" in issue
+
+
 def test_a_probe_that_cannot_run_is_no_verdict(library, monkeypatch):
     import subprocess
     root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
@@ -299,7 +317,7 @@ def test_an_unparsable_stage_config_stops_the_chain_before_anything_runs(library
     monkeypatch.setattr(chain, "_probe_config",
                         lambda spec, p: ["02-mini (mini): cannot parse"] if p.stage.index == 2
                         else [])
-    with pytest.raises(NfclawError, match="Nextflow cannot parse its configuration") as err:
+    with pytest.raises(NfclawError, match="its Nextflow engine cannot set it up") as err:
         chain.run_chain(_spec(), repo_root=root, outdir=tmp_path / "c")
     assert '"nxf_ver"' in err.value.fix and fake_runs.calls == []
     assert not (tmp_path / "c").exists()

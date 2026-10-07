@@ -46,6 +46,9 @@ _STAGE_KEYS = {"id", "pipeline", "input", "params", "params_file", "pipeline_ver
                "retries", "demo", "handoff"} | _OPTION_KEYS
 _LIMIT_KEYS = {"cpus", "memory", "time"}
 _PROBE_TIMEOUT = 300
+# What the Nextflow launcher prints when it cannot set an engine up at all (no jars, no Java).
+_ENGINE_DOWN = re.compile(r"Unable to initialize nextflow environment|CAPSULE EXCEPTION|"
+                          r"Cannot download nextflow|Unable to download")
 
 
 # --- the spec --------------------------------------------------------------------------------
@@ -456,6 +459,12 @@ def _probe_config(spec: ChainSpec, p: Planned) -> list[str]:
     engine = f"Nextflow {opts.nxf_ver}" if opts.nxf_ver else "the installed Nextflow"
     report = (runlog.error_excerpt(r.stdout or "")
               + runlog.stderr_excerpt(r.stderr or "")) or [f"exit status {r.returncode}"]
+    if _ENGINE_DOWN.search((r.stdout or "") + (r.stderr or "")):
+        # The launcher could not set the engine up (a pinned version is downloaded on first use):
+        # the stage could not start either, but not because of its configuration.
+        return [f"{p.stage.dirname} ({p.stage.pipeline}): {engine} could not be started — "
+                "Nextflow downloads a pinned engine on first use; check this host can:\n"
+                + "\n".join(f"      {line}" for line in report)]
     # The engine the release was written for is the one it declares (docs/compatibility.md).
     declared = engine_version.minimum_version(
         engine_version.required_spec(p.tree.path / "nextflow.config"))
@@ -520,10 +529,10 @@ def run_chain(spec: ChainSpec | None, *, repo_root: Path, outdir: Path, check_on
                       on_warning=on_warning if check_only else None, keep=check_only)
     if unparsable := [issue for p in todo for issue in _probe_config(spec, p)]:
         raise NfclawError(
-            ErrorCode.ENVIRONMENT, "A stage could not start: Nextflow cannot parse its configuration.",
-            fix=("Nothing was launched. Give that stage an engine its release parses — its "
-                 "\"nxf_ver\" in the spec entry (see 'Nextflow too new for an older release' in "
-                 f"{runlog.known_issues_path()}) — and run the chain again."),
+            ErrorCode.ENVIRONMENT, "A stage could not start: its Nextflow engine cannot set it up.",
+            fix=("Nothing was launched. Give that stage an engine that runs here and parses its "
+                 "release — its \"nxf_ver\" in the spec entry (see 'Nextflow too new for an older "
+                 f"release' in {runlog.known_issues_path()}) — and run the chain again."),
             details={"issues": unparsable})
     if check_only:
         return ChainResult(outdir=outdir, outcome="checked", stages=[], commands=commands)
