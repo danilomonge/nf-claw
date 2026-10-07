@@ -194,7 +194,7 @@ function Entry({ item }: { item: TimelineItem }) {
           </span>
           <span className="shrink-0 text-[11px] tabular-nums text-fog-dim">{item.date ? formatDate(item.date) : "unreleased"}</span>
         </span>
-        <span className="mt-0.5 line-clamp-1 block text-xs leading-relaxed text-fog-muted">{item.subtitle}</span>
+        <span className="mt-0.5 line-clamp-1 text-xs leading-relaxed text-fog-muted">{item.subtitle}</span>
       </span>
     </>
   );

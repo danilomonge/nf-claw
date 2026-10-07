@@ -398,7 +398,7 @@ function PagerLink({
           <span className="h-2 w-2 rounded-full" style={{ background: color }} />
           {name}
         </span>
-        <span className="mt-0.5 line-clamp-1 block text-xs text-fog-dim">{sub}</span>
+        <span className="mt-0.5 line-clamp-1 text-xs text-fog-dim">{sub}</span>
       </span>
     </Link>
   );

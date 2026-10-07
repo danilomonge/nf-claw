@@ -208,6 +208,8 @@ export function CommandPalette({ data }: { data: PaletteData }) {
             <Search className="h-4 w-4 shrink-0 text-fog-dim" />
             <input
               ref={inputRef}
+              // focus on mount, so keys typed right after ⌘K are not lost
+              autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search pipelines, docs and sections…"
