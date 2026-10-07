@@ -384,3 +384,20 @@ def test_add_empty_adds_a_missing_column_and_keeps_a_present_one(library, finish
     handoff.materialize(rule, upstream_outdir=pe, downstream_tree=down, dest=tmp_path / "h2")
     assert _rows(tmp_path / "h2" / "input.csv")[0]["fastq_2"] == f"{pe}/b.fq.gz"
     assert "fastq_2" in handoff.provided_columns(rule.params["input"])
+
+
+def test_require_values_fails_the_handoff_for_rows_the_downstream_cannot_take(library,
+                                                                             finished_run,
+                                                                             tmp_path):
+    # sarek takes paired-end FastQ only; a single-end demultiplex run would fail inside sarek with
+    # "Missing or unknown field in csv file header". The handoff says why, before sarek launches.
+    _, down = _trees(library("mini_up", "mini"))
+    up = finished_run(tmp_path / "up", {
+        "s.csv": "sample,fastq_1,fastq_2\nA,{outdir}/a.fq.gz,{outdir}/b.fq.gz\nB,{outdir}/a.fq.gz,\n",
+        "a.fq.gz": "a", "b.fq.gz": "b"})
+    rule = _rule({"params": {"input": {"samplesheet": "s.csv", "provides": ["sample", "fastq_1"],
+                                       "require_values": ["fastq_2"]}}})
+    with pytest.raises(NfclawError, match="mini needs a value in 'fastq_2' on every row") as err:
+        handoff.materialize(rule, upstream_outdir=up, downstream_tree=down, dest=tmp_path / "h")
+    assert err.value.code is ErrorCode.HANDOFF_FAILED
+    assert "row 3 (B)" in str(err.value)

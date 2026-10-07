@@ -34,7 +34,8 @@ from runner.outputs import is_result
 REGISTRY_DIRNAME = "handoffs"
 KINDS = ("samplesheet", "build", "file", "upstream_param")
 _RULE_KEYS = {"description", "upstream_params", "params"}
-_EXTRA_KEYS = {"samplesheet": {"provides", "rename", "set", "add_empty", "drop_rows_not_allowed"},
+_EXTRA_KEYS = {"samplesheet": {"provides", "rename", "set", "add_empty", "drop_rows_not_allowed",
+                               "require_values"},
                "build": set(), "file": set(), "upstream_param": set()}
 _BUILD_KEYS = {"rows", "columns", "format"}
 PLACEHOLDER = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
@@ -128,7 +129,7 @@ def parse_rule(data: Any, *, upstream: str, downstream: str, origin: str) -> Rul
             for key in ("rename", "set"):
                 if key in src and not _str_map(src[key]):
                     raise bad(f"'{target}': '{key}' must map column names to strings")
-            for key in ("add_empty", "drop_rows_not_allowed"):
+            for key in ("add_empty", "drop_rows_not_allowed", "require_values"):
                 cols = src.get(key, [])
                 if not (isinstance(cols, list) and all(isinstance(c, str) and c for c in cols)):
                     raise bad(f"'{target}': '{key}' must list column names")
@@ -368,7 +369,7 @@ def _absolute(value: str, root: Path) -> str:
     return os.path.normpath(root / value)
 
 
-def _direct(src: Source, root: Path, sheet_schema, dest: Path
+def _direct(src: Source, root: Path, sheet_schema, dest: Path, downstream: str
             ) -> tuple[Path, list[str], dict[str, Any]]:
     sheet = _one_match(root, src.spec["samplesheet"])
     try:
@@ -409,6 +410,14 @@ def _direct(src: Source, root: Path, sheet_schema, dest: Path
         raise _Unresolved(f"no row of {sheet.name} is left once rows with values the downstream "
                           f"does not allow ({', '.join(sorted(allowed))}) are dropped")
     rows = kept
+    # Rows a downstream cannot take although its schema allows them (sarek reads paired-end FastQ
+    # only; its schema leaves fastq_2 optional): named here, before it launches.
+    for col in src.spec.get("require_values", []):
+        if missing := [f"row {i} ({r.get('sample') or '?'})" for i, r in enumerate(rows, start=2)
+                       if not (r.get(col) or "").strip()]:
+            raise _Unresolved(f"{downstream} needs a value in '{col}' on every row, and "
+                              f"{', '.join(missing[:5])} "
+                              + ("have none" if len(missing) > 1 else "has none"))
     derived = [sheet.relative_to(root).as_posix()]
     path_cols = {c.name for c in sheet_schema.columns if c.is_path}
     for r in rows:
@@ -428,7 +437,7 @@ def _direct(src: Source, root: Path, sheet_schema, dest: Path
             derived, extra)
 
 
-def _build(src: Source, root: Path, sheet_schema, dest: Path
+def _build(src: Source, root: Path, sheet_schema, dest: Path, downstream: str
            ) -> tuple[Path, list[str], dict[str, Any]]:
     spec = src.spec["build"]
     glob, rx = _pattern(spec["rows"])
@@ -469,7 +478,8 @@ def _resolve(rule: Rule, target: str, src: Source, *, upstream_outdir: Path,
         if sheet_schema is None:
             raise _Unresolved(f"'{_flag(target)}' of {rule.downstream} is not a samplesheet")
         make = _direct if src.kind == "samplesheet" else _build
-        path, derived, extra = make(src, upstream_outdir, sheet_schema, dest / target)
+        path, derived, extra = make(src, upstream_outdir, sheet_schema, dest / target,
+                                    rule.downstream)
         if issues := samplesheet.validate(path, sheet_schema):
             raise NfclawError(
                 ErrorCode.HANDOFF_FAILED,

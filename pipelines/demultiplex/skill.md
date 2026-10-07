@@ -90,7 +90,7 @@ Feeds into:
 - `atacseq` — demultiplex writes samplesheet/atacseq_samplesheet.csv (every sample as replicate 1) for its demultiplexed FastQ files; a single-end run's sheet lacks the fastq_2 column, which atacseq's own sheet check requires, so it is added empty.
 - `methylseq` — demultiplex writes samplesheet/methylseq_samplesheet.csv for its demultiplexed FastQ files.
 - `rnaseq` — demultiplex writes samplesheet/rnaseq_samplesheet.csv for its demultiplexed FastQ files (strandedness from its --strandedness, default auto).
-- `sarek` — demultiplex writes samplesheet/sarek_samplesheet.csv with an empty patient; each sample is made its own patient (set it per sample yourself if several samples share one).
+- `sarek` — demultiplex writes samplesheet/sarek_samplesheet.csv with an empty patient; each sample is made its own patient (set it per sample yourself if several samples share one); sarek reads paired-end FastQ only, so every row needs a fastq_2.
 - `seqinspector` — demultiplex writes samplesheet/seqinspector_samplesheet.csv for its demultiplexed FastQ files.
 - `taxprofiler` — demultiplex writes samplesheet/taxprofiler_samplesheet.csv without run_accession or instrument_platform; each sample becomes its own run, sequenced on ILLUMINA (bcl2fastq/bclconvert data — use an inline handoff for other platforms).
 

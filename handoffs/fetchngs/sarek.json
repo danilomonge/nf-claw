@@ -1,5 +1,5 @@
 {
-  "description": "fetchngs writes a sarek samplesheet (patient = the ENA sample accession) with --nf-core-pipeline sarek; it has no lane, so each run's accession becomes its lane \u2014 sarek needs patient, sample and lane to be unique together.",
+  "description": "fetchngs writes a sarek samplesheet (patient = the ENA sample accession) with --nf-core-pipeline sarek; it has no lane, so each run's accession becomes its lane \u2014 sarek needs patient, sample and lane to be unique together; sarek reads paired-end FastQ only, so every row needs a fastq_2.",
   "upstream_params": {
     "nf_core_pipeline": "sarek"
   },
@@ -15,7 +15,10 @@
       ],
       "set": {
         "lane": "{run_accession}"
-      }
+      },
+      "require_values": [
+        "fastq_2"
+      ]
     }
   }
 }

@@ -74,7 +74,7 @@ Feeds into:
 - `mag` — fetchngs writes a mag samplesheet whose read columns predate mag's short_reads_1/short_reads_2; the columns are renamed, every sample goes into co-assembly group 0, and each run keeps its own run id.
 - `metatdenovo` — fetchngs writes a metatdenovo samplesheet (sample, fastq_1, fastq_2) with --nf-core-pipeline metatdenovo.
 - `rnaseq` — fetchngs downloads the FastQ files and, with --nf-core-pipeline rnaseq, writes samplesheet/samplesheet.csv for rnaseq (absolute FastQ paths; strandedness from --nf-core-rnaseq-strandedness, default auto).
-- `sarek` — fetchngs writes a sarek samplesheet (patient = the ENA sample accession) with --nf-core-pipeline sarek; it has no lane, so each run's accession becomes its lane — sarek needs patient, sample and lane to be unique together.
+- `sarek` — fetchngs writes a sarek samplesheet (patient = the ENA sample accession) with --nf-core-pipeline sarek; it has no lane, so each run's accession becomes its lane — sarek needs patient, sample and lane to be unique together; sarek reads paired-end FastQ only, so every row needs a fastq_2.
 - `taxprofiler` — fetchngs writes a taxprofiler samplesheet with --nf-core-pipeline taxprofiler; run_accession and instrument_platform come from the ENA metadata. The profiling databases (--databases) are the stage's own.
 - `viralrecon` — fetchngs writes a viralrecon samplesheet (sample, fastq_1, fastq_2) with --nf-core-pipeline viralrecon.
 
