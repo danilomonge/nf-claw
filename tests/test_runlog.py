@@ -1,3 +1,5 @@
+import os as _os
+import socket as _socket
 from pathlib import Path
 
 from runner import runlog
@@ -244,11 +246,6 @@ def test_last_paragraph_fallback_reaches_above_a_trailing_check_line():
 
 # --- the state of a run, read from its log alone (`nfclaw status`) -------------------------------
 
-import os as _os
-import socket as _socket
-import subprocess as _subprocess
-import sys as _sys
-
 _HOST = _socket.gethostname()
 
 
@@ -269,11 +266,6 @@ def _log(tmp_path, text):
     return path
 
 
-def _sleeper(*marker):
-    # A live process whose command line looks like the one the log names (nfclaw / commands.sh).
-    return _subprocess.Popen([_sys.executable, "-c", "import time; time.sleep(60)", *marker])
-
-
 def test_state_of_a_successful_run(tmp_path):
     st = runlog.read_state(_log(tmp_path, _block(pid=1, body="N E X T F L O W", end="success")))
     assert st.state == "success" and st.outcome == "success"
@@ -292,8 +284,8 @@ def test_state_is_that_of_the_last_launch(tmp_path):
     assert runlog.read_state(_log(tmp_path, text)).state == "success"
 
 
-def test_a_run_whose_nfclaw_is_alive_is_running(tmp_path):
-    proc = _sleeper("nfclaw")
+def test_a_run_whose_nfclaw_is_alive_is_running(tmp_path, named_process):
+    proc = named_process("nfclaw")
     try:
         body = "executor >  local (3)\n[ab/cdef12] NFCORE_DEMO:DEMO:FASTQC (S1) | 1 of 2"
         st = runlog.read_state(_log(tmp_path, _block(pid=proc.pid, body=body)))
@@ -304,9 +296,9 @@ def test_a_run_whose_nfclaw_is_alive_is_running(tmp_path):
     assert st.last_output[-1] == "[ab/cdef12] NFCORE_DEMO:DEMO:FASTQC (S1) | 1 of 2"
 
 
-def test_a_run_whose_nfclaw_is_gone_stopped_without_an_outcome(tmp_path):
+def test_a_run_whose_nfclaw_is_gone_stopped_without_an_outcome(tmp_path, named_process):
     # kill -9, out of memory, a restart: nfclaw never wrote the last line and is not running.
-    proc = _sleeper("nfclaw")
+    proc = named_process("nfclaw")
     proc.kill()
     proc.wait()
     st = runlog.read_state(_log(tmp_path, _block(pid=proc.pid, body="ERROR ~ half a report")))
@@ -319,11 +311,11 @@ def test_a_reused_pid_is_not_mistaken_for_the_run(tmp_path):
     assert st.state == "dead"
 
 
-def test_a_dead_run_reports_a_nextflow_still_running(tmp_path):
-    gone = _sleeper("nfclaw")
+def test_a_dead_run_reports_a_nextflow_still_running(tmp_path, named_process):
+    gone = named_process("nfclaw")
     gone.kill()
     gone.wait()
-    nextflow = _sleeper("nextflow")
+    nextflow = named_process("nextflow")
     try:
         st = runlog.read_state(_log(tmp_path, _block(pid=gone.pid, nextflow_pid=nextflow.pid)))
         assert st.state == "dead" and st.nextflow_pid == nextflow.pid and st.nextflow_alive
@@ -342,8 +334,8 @@ def test_a_finished_run_is_final_on_any_host(tmp_path):
     assert st.state == "success"
 
 
-def test_a_replay_log_is_read_the_same_way(tmp_path):
-    proc = _sleeper("commands.sh")
+def test_a_replay_log_is_read_the_same_way(tmp_path, named_process):
+    proc = named_process("commands.sh")
     try:
         st = runlog.read_state(_log(tmp_path, _block(pid=proc.pid, kind="replay")))
     finally:
