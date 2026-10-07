@@ -1,7 +1,7 @@
 ---
 name: metatdenovo
-version: 1.4.1
-commit: 113adb3c3e5dc04ac0df9041a4cb001c838dd830
+version: 2.0.0
+commit: e9f8311e9a24278fdaed0f8717eb819532aef55e
 ---
 
 # metatdenovo — full parameter reference
@@ -13,6 +13,11 @@ nf-core/metatdenovo pipeline parameters. Every parameter from the pinned `nextfl
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--assembler` | string |  |  | `megahit`, `spades` |  |  | Specify the assembler to run. Possible alternatives: megahit, spades. |
+| `--megahit-k-list` | string |  | yes |  |  |  | Comma-separated list of k-mer sizes for MEGAHIT, all must be odd, in the range 15-255, increment <=28. |
+| `--megahit-k-max` | integer |  | yes |  |  |  | Maximum k-mer size for MEGAHIT, must be odd and <=255. |
+| `--megahit-k-min` | integer |  | yes |  |  |  | Minimum k-mer size for MEGAHIT, must be odd and <=255. |
+| `--megahit-k-step` | integer |  | yes |  |  |  | Increment of k-mer size of each iteration for MEGAHIT, must be even and <=28. |
+| `--megahit-min-count` | integer |  | yes |  |  |  | Minimum multiplicity for filtering k-mers in MEGAHIT. |
 | `--min-contig-length` | integer |  |  |  |  | 0 | Filter out contigs shorter than this. |
 | `--save-formatspades` | boolean |  |  |  |  |  | Save the formatted spades fasta file |
 | `--spades-flavor` | string |  |  | `rna`, `isolate`, `sc`, `meta`, `plasmid`, `metaplasmid`, `metaviral`, `rnaviral` |  | rna | Select which type of assembly you want to make. Default: rna |
@@ -24,7 +29,17 @@ nf-core/metatdenovo pipeline parameters. Every parameter from the pinned `nextfl
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--save-bbduk-fastq` | boolean |  |  |  |  |  | Save the resulting fastq files from filtering |
+| `--save-bbduk-removed-fastq` | boolean |  |  |  |  |  | Save the reads that were removed (matched the sequence_filter reference) during BBDuk filtering |
 | `--sequence-filter` | string |  |  |  |  |  | Fasta file with sequences to filter away before running assembly etc.. |
+
+## consolidation_options
+
+| parameter | type | required | hidden | allowed values | constraints | default | description |
+|---|---|---|---|---|---|---|---|
+| `--annotate-only-consolidated` | boolean |  |  |  |  | true | Only annotate the consolidated cluster representatives, not every individual ORF source as well |
+| `--cluster-coverage` | number |  |  |  | ≥ 0; ≤ 1 | 0.8 | Minimum fraction of both proteins that must be covered by the alignment |
+| `--cluster-min-seq-id` | number |  |  |  | ≥ 0; ≤ 1 | 0.99 | Minimum sequence identity for two proteins to be considered the same gene |
+| `--skip-protein-consolidation` | boolean |  |  |  |  |  | Skip cross-contig consolidation of ORFs whose proteins cluster together |
 
 ## digital_normalization_options
 
@@ -39,11 +54,19 @@ nf-core/metatdenovo pipeline parameters. Every parameter from the pinned `nextfl
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
+| `--dbcan-dbpath` | string |  |  |  |  | dbcan | Specify the dbCAN database path. |
+| `--eggnog-db-url` | string |  | yes |  |  | http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.db.gz | URL to download the eggNOG annotation database from. |
 | `--eggnog-dbpath` | string |  |  |  |  | eggnog | Specify EGGNOG database path |
+| `--eggnog-dmnd-url` | string |  | yes |  |  | http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog_proteins.dmnd.gz | URL to download the eggNOG Diamond database from. |
+| `--eggnog-taxa-url` | string |  | yes |  |  | http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.taxa.tar.gz | URL to download the eggNOG taxonomy database from. |
 | `--hmmdir` | string (directory path) |  |  |  | matches ^\S+ |  | Directory with hmm files which will be searched for among ORFs |
 | `--hmmfiles` | string (file path) |  |  |  | matches \S+hmm(\.gz)? |  | Comma-separated list of hmm files which will be searched for among ORFs |
 | `--hmmpattern` | string |  |  |  |  | *.hmm | Specify which pattern hmm files end with |
-| `--kofam-dir` | string |  |  |  |  | ./kofam/ | Path to a directory with KOfam files. Will be created if it doesn't exist. |
+| `--kofam-dbpath` | string |  |  |  |  | ./kofam/ | Path to a directory with KOfam files. Will be created if it doesn't exist. |
+| `--kofam-dir` | string |  | yes |  |  |  | Deprecated: use `--kofam_dbpath`. If set, its value is used instead of `--kofam_dbpath`. |
+| `--kofam-ko-list-url` | string |  | yes |  |  | https://www.genome.jp/ftp/db/kofam/ko_list.gz | URL to download the KOfam ko_list file from. |
+| `--kofam-profiles-url` | string |  | yes |  |  | https://www.genome.jp/ftp/db/kofam/profiles.tar.gz | URL to download the KOfam HMM profiles archive from. |
+| `--skip-dbcan` | boolean |  |  |  |  |  | If enabled, skips dbCAN CAZyme annotation. |
 | `--skip-eggnog` | boolean |  |  |  |  |  | Skip EGGNOG functional annotation |
 | `--skip-kofamscan` | boolean |  |  |  |  |  | If enabled, skips the run of KofamScan. |
 
@@ -75,6 +98,7 @@ nf-core/metatdenovo pipeline parameters. Every parameter from the pinned `nextfl
 | `--input` | string (file path) | yes |  |  | matches ^\S+\.csv$ |  | Path to comma-separated file containing information about the samples in the experiment. |
 | `--multiqc-title` | string |  |  |  |  |  | MultiQC report title. Printed as page header, used for filename if not otherwise specified. |
 | `--outdir` | string (directory path) | yes |  |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
+| `--save-parquet` | boolean |  |  |  |  |  | Also write the summary tables in Parquet format, alongside the default gzipped TSV. |
 
 ## institutional_config_options
 
@@ -91,27 +115,41 @@ nf-core/metatdenovo pipeline parameters. Every parameter from the pinned `nextfl
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
+| `--bbmap-ambiguous` | string |  |  | `best`, `all`, `random`, `toss` |  | best | How BBMap should handle reads that align equally well to more than one site |
 | `--bbmap-minid` | number |  |  |  |  | 0.9 | Minimum identity needed to assign read to a contig |
 | `--save-bam` | boolean |  |  |  |  |  | Save the bam files from mapping |
+| `--save-idxstats` | boolean |  |  |  |  |  | Save the per-contig read counts from `samtools idxstats` |
 | `--save-samtools` | boolean |  |  |  |  | true | Save the output from samtools |
 
 ## orf_caller_options
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
-| `--orf-caller` | string |  |  | `prodigal`, `prokka`, `transdecoder` |  |  | Specify which ORF caller to run. Possible alternatives: prodigal, prokka, transdecoder. This needs to be set unless the `--user_orfs_*` params are set. |
+| `--metaeuk-batchsize` | integer or string |  | yes |  | matches ^\d+(\.\d+)?\.?\s*((K\|M\|G\|T)?B)?$ | 104857600 | Size of individual files annotated by MetaEuk in one batch. |
+| `--metaeuk-db` | string |  |  |  |  |  | Path to a pre-built reference protein database for MetaEuk, either a protein fasta file or a directory containing an mmseqs2-formatted database. Optional -- when unset, `--metaeuk_db_name` is downloaded and built automatically. |
+| `--metaeuk-db-name` | string |  |  | `UniRef100`, `UniRef90`, `UniRef50`, `UniProtKB`, `UniProtKB/TrEMBL`, `UniProtKB/Swiss-Prot`, `NR`, `GTDB`, `PDB` |  | UniRef50 | Name of the amino-acid reference database to download and build for MetaEuk when `--metaeuk_db` isn't set. Restricted to the amino-acid databases `metaeuk databases -h` lists (its nucleotide/profile entries aren't valid MetaEuk homology references); see the table in usage.md for which of these we've actually confirmed downloadable. |
+| `--metaeuk-dbpath` | string |  |  |  |  | ./metaeuk_db/ | Path to a directory to store the downloaded MetaEuk database in. Will be created if it doesn't exist. Ignored when `--metaeuk_db` is set. |
+| `--orf-caller` | string |  |  |  | matches ^(prodigal\|prokka\|transdecoder\|metaeuk)(,(prodigal\|prokka\|transdecoder\|metaeuk))*$ |  | Comma-separated list of ORF callers to run. Possible alternatives: prodigal, prokka, transdecoder, metaeuk. At least one of this, `--user_orfs`, or `--user_orfs_gff`/`--user_orfs_faa` must be set; any combination may be set together. |
 | `--prodigal-trainingfile` | string |  |  |  |  |  | Specify a training file for prodigal. By default prodigal will learn from the input sequences |
-| `--prokka-batchsize` | integer |  | yes |  | matches ^\d+(\.\d+)?\.?\s*(K\|M\|G\|T)?B$ | 10485760 | Size of individual files annotated by Prokka in one batch. |
-| `--user-orfs-faa` | string (file path) |  |  |  |  |  | Path to a protein fasta file for user-provided ORFs. |
-| `--user-orfs-gff` | string (file path) |  |  |  |  |  | Path to a gff file for user-provided ORFs. |
-| `--user-orfs-name` | string |  |  |  |  | user_orfs | Name to give to user-provided ORFs. |
+| `--prokka-batchsize` | integer or string |  | yes |  | matches ^\d+(\.\d+)?\.?\s*((K\|M\|G\|T)?B)?$ | 10485760 | Size of individual files annotated by Prokka in one batch. |
+| `--transdecoder-batchsize` | integer or string |  | yes |  | matches ^\d+(\.\d+)?\.?\s*((K\|M\|G\|T)?B)?$ | 104857600 | Size of individual files annotated by TransDecoder in one batch. |
+| `--user-orfs` | string (file path) |  |  |  | matches ^\S+\.(csv\|tsv\|json\|yaml\|yml)$ |  | Path to comma-separated file listing user-provided ORF calls to add alongside (or instead of) `--orf_caller`. |
+| `--user-orfs-faa` | string (file path) |  |  |  |  |  | Path to a protein fasta file for a single set of user-provided ORFs. Additive with `--orf_caller` and `--user_orfs`; requires `--user_orfs_gff` too. |
+| `--user-orfs-gff` | string (file path) |  |  |  |  |  | Path to a gff file for a single set of user-provided ORFs. Additive with `--orf_caller` and `--user_orfs`; requires `--user_orfs_faa` too. |
+| `--user-orfs-name` | string |  |  |  |  | user_orfs | Name to give the ORFs supplied via `--user_orfs_gff`/`--user_orfs_faa`. Cannot collide with an active `--orf_caller` value, a `--user_orfs` row name, or the pipeline's own reserved names. |
 
 ## quality_control_options
 
 | parameter | type | required | hidden | allowed values | constraints | default | description |
 |---|---|---|---|---|---|---|---|
 | `--skip-fastqc` | boolean |  |  |  |  |  | Skip FastQC. |
-| `--skip-qc` | boolean |  |  |  |  |  | Skip all QC steps except for MultiQC. |
+
+## quantification_options
+
+| parameter | type | required | hidden | allowed values | constraints | default | description |
+|---|---|---|---|---|---|---|---|
+| `--featurecounts-fraction` | boolean |  |  |  |  |  | Count multi-mapped reads fractionally in featureCounts instead of at full weight per site |
+| `--trim-bam-header-above` | integer |  | yes |  | ≥ 0 | 1073741824 | Header size in bytes above which contigs without reads are removed from a BAM file before featureCounts |
 
 ## taxonomy_annotation_options
 
@@ -122,6 +160,7 @@ nf-core/metatdenovo pipeline parameters. Every parameter from the pinned `nextfl
 | `--eukulele-db` | string |  |  | `gtdb`, `phylodb`, `marmmetsp`, `mmetsp`, `eukprot` |  |  | EUKulele database. |
 | `--eukulele-dbpath` | string |  |  |  |  | ./eukulele/ | EUKulele database folder. |
 | `--eukulele-method` | string |  |  | `mets`, `mags` |  | mets | Specify which method to use for EUKulele. the alternatives are: mets (metatranscriptomics) or mags (Metagenome Assembled Genomes). default: mets |
+| `--save-eukulele-alignments` | boolean |  |  |  |  |  | Also publish EUKulele's raw Diamond alignment file, on top of the taxonomy estimation and counts. |
 | `--skip-eukulele` | boolean |  |  |  |  |  | If enabled, skips the run of EUKulele |
 
 ## trimming_options
@@ -136,4 +175,4 @@ nf-core/metatdenovo pipeline parameters. Every parameter from the pinned `nextfl
 | `--three-prime-clip-r2` | string |  |  |  |  |  | Instructs Trim Galore to remove bp from the 3' end of read 2 AFTER adapter/quality trimming has been performed. |
 | `--trim-nextseq` | string |  |  |  |  |  | Instructs Trim Galore to apply the --nextseq=X option, to trim based on quality after removing poly-G tails. |
 
-<!-- Generated from nf-core/metatdenovo@113adb3c3e5dc04ac0df9041a4cb001c838dd830. Do not edit by hand. -->
+<!-- Generated from nf-core/metatdenovo@e9f8311e9a24278fdaed0f8717eb819532aef55e. Do not edit by hand. -->

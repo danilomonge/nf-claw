@@ -1,8 +1,8 @@
 ---
 name: datasync
 pipeline: nf-core/datasync
-version: 1.0.1
-commit: d652a3cac0ba3a47cb74a2162cee3b628289921f
+version: 1.0.2
+commit: c48b5103cc568d275c7d65a9609771cfb3471931
 description: A simple sysops pipeline that can be used to synchronize, integrity check and permanently archive data.
 summary: nf-core/datasync is a Nextflow pipeline for copying files and directories between storage locations and documenting their integrity. For every row in an input samplesheet, the pipeline:
 has_samplesheet: true
@@ -76,12 +76,12 @@ nfclaw run datasync ... --nxf-ver 25.10.4
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/datasync/blob/1.0.1/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/datasync/blob/1.0.2/docs/output.md
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: Rclone, MultiQC, R.
 
-Full list with references: https://github.com/nf-core/datasync/blob/1.0.1/CITATIONS.md
+Full list with references: https://github.com/nf-core/datasync/blob/1.0.2/CITATIONS.md
 
 ## Demo
 ```bash
@@ -89,6 +89,6 @@ nfclaw run datasync --demo --outdir results   # adds the upstream test profile (
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/datasync/blob/1.0.1/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/datasync/blob/1.0.2/docs/usage.md
 
-<!-- Generated from nf-core/datasync@d652a3cac0ba3a47cb74a2162cee3b628289921f. Do not edit by hand. -->
+<!-- Generated from nf-core/datasync@c48b5103cc568d275c7d65a9609771cfb3471931. Do not edit by hand. -->
