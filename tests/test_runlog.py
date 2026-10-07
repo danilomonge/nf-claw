@@ -240,3 +240,118 @@ def test_last_paragraph_fallback_reaches_above_a_trailing_check_line():
     excerpt = runlog.error_excerpt(console)
     assert excerpt[0] == "* --genome (GRCh99): not a known genome"
     assert excerpt[-1].startswith(" -- Check script 'main.nf'")
+
+
+# --- the state of a run, read from its log alone (`nfclaw status`) -------------------------------
+
+import os as _os
+import socket as _socket
+import subprocess as _subprocess
+import sys as _sys
+
+_HOST = _socket.gethostname()
+
+
+def _block(*, pid, host=_HOST, body="", end=None, kind="run", nextflow_pid=None):
+    lines = [f"==> nfclaw {kind} started 2026-10-06T10:00:00+00:00", "    command: nextflow run x",
+             f"    host: {host}", f"    pid: {pid}"]
+    if nextflow_pid is not None:
+        lines.append(f"    nextflow pid: {nextflow_pid}")
+    lines.append(body)
+    if end is not None:
+        lines.append(f"==> nfclaw {kind} finished 2026-10-06T10:05:00+00:00: {end}")
+    return "\n".join(lines) + "\n"
+
+
+def _log(tmp_path, text):
+    path = tmp_path / "run.log"
+    path.write_text(text)
+    return path
+
+
+def _sleeper(*marker):
+    # A live process whose command line looks like the one the log names (nfclaw / commands.sh).
+    return _subprocess.Popen([_sys.executable, "-c", "import time; time.sleep(60)", *marker])
+
+
+def test_state_of_a_successful_run(tmp_path):
+    st = runlog.read_state(_log(tmp_path, _block(pid=1, body="N E X T F L O W", end="success")))
+    assert st.state == "success" and st.outcome == "success"
+    assert st.finished == "2026-10-06T10:05:00+00:00"
+
+
+def test_state_of_a_failed_run_carries_the_recorded_error(tmp_path):
+    body = "ERROR ~ boom\n==> nfclaw error:\n[execution_failed] Nextflow failed.\n  run_log: /x"
+    st = runlog.read_state(_log(tmp_path, _block(pid=1, body=body, end="failed (exit status 1)")))
+    assert st.state == "ended" and st.outcome == "failed (exit status 1)"
+    assert st.error == ["[execution_failed] Nextflow failed.", "  run_log: /x"]
+
+
+def test_state_is_that_of_the_last_launch(tmp_path):
+    text = _block(pid=1, end="failed (exit status 1)") + _block(pid=2, end="success")
+    assert runlog.read_state(_log(tmp_path, text)).state == "success"
+
+
+def test_a_run_whose_nfclaw_is_alive_is_running(tmp_path):
+    proc = _sleeper("nfclaw")
+    try:
+        body = "executor >  local (3)\n[ab/cdef12] NFCORE_DEMO:DEMO:FASTQC (S1) | 1 of 2"
+        st = runlog.read_state(_log(tmp_path, _block(pid=proc.pid, body=body)))
+    finally:
+        proc.kill()
+        proc.wait()
+    assert st.state == "running" and st.pid == proc.pid
+    assert st.last_output[-1] == "[ab/cdef12] NFCORE_DEMO:DEMO:FASTQC (S1) | 1 of 2"
+
+
+def test_a_run_whose_nfclaw_is_gone_stopped_without_an_outcome(tmp_path):
+    # kill -9, out of memory, a restart: nfclaw never wrote the last line and is not running.
+    proc = _sleeper("nfclaw")
+    proc.kill()
+    proc.wait()
+    st = runlog.read_state(_log(tmp_path, _block(pid=proc.pid, body="ERROR ~ half a report")))
+    assert st.state == "dead"
+
+
+def test_a_reused_pid_is_not_mistaken_for_the_run(tmp_path):
+    # After a restart the recorded pid can belong to an unrelated process: that is not the run.
+    st = runlog.read_state(_log(tmp_path, _block(pid=_os.getpid())))
+    assert st.state == "dead"
+
+
+def test_a_dead_run_reports_a_nextflow_still_running(tmp_path):
+    gone = _sleeper("nfclaw")
+    gone.kill()
+    gone.wait()
+    nextflow = _sleeper("nextflow")
+    try:
+        st = runlog.read_state(_log(tmp_path, _block(pid=gone.pid, nextflow_pid=nextflow.pid)))
+        assert st.state == "dead" and st.nextflow_pid == nextflow.pid and st.nextflow_alive
+    finally:
+        nextflow.kill()
+        nextflow.wait()
+
+
+def test_an_unfinished_run_on_another_host_is_not_judged_here(tmp_path):
+    st = runlog.read_state(_log(tmp_path, _block(pid=1, host="some-other-node")))
+    assert st.state == "elsewhere" and st.host == "some-other-node"
+
+
+def test_a_finished_run_is_final_on_any_host(tmp_path):
+    st = runlog.read_state(_log(tmp_path, _block(pid=1, host="some-other-node", end="success")))
+    assert st.state == "success"
+
+
+def test_a_replay_log_is_read_the_same_way(tmp_path):
+    proc = _sleeper("commands.sh")
+    try:
+        st = runlog.read_state(_log(tmp_path, _block(pid=proc.pid, kind="replay")))
+    finally:
+        proc.kill()
+        proc.wait()
+    assert st.kind == "replay" and st.state == "running"
+
+
+def test_state_without_a_run_log(tmp_path):
+    st = runlog.read_state(tmp_path / "provenance" / "logs" / "run.log")
+    assert st.state == "missing"

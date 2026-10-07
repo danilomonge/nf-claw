@@ -401,3 +401,61 @@ def test_run_log_header_command_carries_the_nxf_overlay(tmp_path):
                   timeout_seconds=30, env_extra={"NXF_VER": "25.10.4"})
     log = (tmp_path / "logs" / "run.log").read_text()
     assert f"    command: NXF_VER=25.10.4 {PY}" in log
+
+
+def test_run_log_header_records_who_runs_it(tmp_path):
+    # pid + host let `nfclaw status` tell a live run from one whose nfclaw was killed outright.
+    import socket
+    execution.run([PY, "-c", "import os; print('CHILD', os.getpid())"], cwd=tmp_path,
+                  logs_dir=tmp_path / "logs", timeout_seconds=30)
+    log = (tmp_path / "logs" / "run.log").read_text()
+    child = int(log.split("\nCHILD ")[1].split()[0])
+    assert f"    pid: {os.getpid()}\n" in log
+    assert f"    host: {socket.gethostname()}\n" in log
+    assert f"    nextflow pid: {child}\n" in log
+    assert log.index("    nextflow pid:") < log.index("\nCHILD ")     # before any console output
+
+
+def test_recorded_error_is_marked_in_the_run_log(tmp_path):
+    with pytest.raises(NfclawError) as exc:
+        execution.run([PY, "-c", "import sys; print('ERROR ~ boom'); sys.exit(2)"], cwd=tmp_path,
+                      logs_dir=tmp_path / "logs", timeout_seconds=30)
+    log = (tmp_path / "logs" / "run.log").read_text()
+    assert f"==> nfclaw error:\n{exc.value}\n" in log
+
+
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="PR_SET_PDEATHSIG is Linux-only")
+def test_nextflow_does_not_outlive_an_nfclaw_killed_with_sigkill(tmp_path):
+    # SIGKILL (kill -9, the OOM killer) cannot be caught, so nfclaw cannot stop Nextflow itself: on
+    # Linux the kernel does it — Nextflow is told to exit when the nfclaw that launched it dies.
+    import signal
+    import subprocess
+    import time
+
+    pidfile = tmp_path / "child.pid"
+    launcher = (
+        "import sys; from pathlib import Path; from runner import execution;"
+        "execution.run([sys.executable, '-c', "
+        f"\"import os, time; open(r'{pidfile}', 'w').write(str(os.getpid())); time.sleep(60)\"], "
+        f"cwd=Path(r'{tmp_path}'), logs_dir=Path(r'{tmp_path}') / 'logs', timeout_seconds=None)"
+    )
+    nfclaw = subprocess.Popen([PY, "-c", launcher], cwd=Path(__file__).parent.parent,
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    deadline = time.time() + 15
+    while not pidfile.exists() and time.time() < deadline:
+        time.sleep(0.1)
+    child = int(pidfile.read_text())
+    nfclaw.send_signal(signal.SIGKILL)
+    nfclaw.wait()
+    gone = False
+    deadline = time.time() + 5
+    while time.time() < deadline:
+        try:
+            os.kill(child, 0)
+            time.sleep(0.1)
+        except ProcessLookupError:
+            gone = True
+            break
+    if not gone:
+        os.kill(child, signal.SIGKILL)
+    assert gone, "Nextflow outlived an nfclaw killed with SIGKILL"
