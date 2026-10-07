@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
 import { ArrowUpRight, Github, Menu, Search, X } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { OPEN_PALETTE_EVENT } from "@/components/layout/command-palette";
@@ -166,17 +166,20 @@ export function Nav({ repo }: { repo: string | null }) {
               aria-expanded={open}
               aria-controls="mobile-menu"
             >
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.span
-                  key={open ? "x" : "menu"}
-                  initial={reduce ? false : { rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={reduce ? undefined : { rotate: 90, opacity: 0 }}
-                  transition={{ duration: 0.18 }}
-                >
-                  {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                </motion.span>
-              </AnimatePresence>
+              <span className="relative h-5 w-5">
+                <Menu
+                  className={cn(
+                    "absolute inset-0 h-5 w-5 transition-[transform,opacity] duration-200",
+                    open ? "rotate-90 opacity-0" : "rotate-0 opacity-100",
+                  )}
+                />
+                <X
+                  className={cn(
+                    "absolute inset-0 h-5 w-5 transition-[transform,opacity] duration-200",
+                    open ? "rotate-0 opacity-100" : "-rotate-90 opacity-0",
+                  )}
+                />
+              </span>
             </button>
           </div>
         </nav>
@@ -189,63 +192,64 @@ export function Nav({ repo }: { repo: string | null }) {
         />
       </div>
 
-      <AnimatePresence>
+      {/* Shown/hidden with CSS rather than unmounted through an exit animation, which could leave an
+          invisible layer over the page after a navigation in production builds. */}
+      <div
+        id="mobile-menu"
+        className={cn(
+          "fixed inset-x-0 bottom-0 top-16 overflow-y-auto bg-ink-950/95 backdrop-blur-xl md:hidden",
+          open
+            ? "visible opacity-100 [transition:opacity_200ms]"
+            : "pointer-events-none invisible opacity-0 [transition:opacity_200ms,visibility_0s_linear_200ms]",
+        )}
+      >
         {open && (
           <motion.div
-            id="mobile-menu"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-x-0 bottom-0 top-16 overflow-y-auto bg-ink-950/95 backdrop-blur-xl md:hidden"
+            className="container-site flex flex-col gap-1 py-6"
+            initial="hidden"
+            animate="show"
+            variants={{ show: { transition: { staggerChildren: 0.04, delayChildren: 0.04 } } }}
           >
-            <motion.div
-              className="container-site flex flex-col gap-1 py-6"
-              initial="hidden"
-              animate="show"
-              variants={{ show: { transition: { staggerChildren: 0.04, delayChildren: 0.04 } } }}
-            >
-              {LINKS.map((l) => (
-                <motion.div
-                  key={l.href}
-                  variants={{
-                    hidden: reduce ? {} : { opacity: 0, x: -12 },
-                    show: { opacity: 1, x: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } },
-                  }}
-                >
-                  <Link
-                    href={l.href}
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                      "flex items-center justify-between rounded-2xl px-4 py-4 text-lg font-medium transition",
-                      isActive(l) ? "bg-white/[0.05] text-fog" : "text-fog-muted hover:bg-white/5 hover:text-fog",
-                    )}
-                  >
-                    {l.label}
-                    {isActive(l) && <span className="h-1.5 w-1.5 rounded-full bg-claw-400" />}
-                  </Link>
-                </motion.div>
-              ))}
+            {LINKS.map((l) => (
               <motion.div
-                className="mt-4 border-t border-white/[0.06] pt-4"
-                variants={{ hidden: reduce ? {} : { opacity: 0 }, show: { opacity: 1 } }}
+                key={l.href}
+                variants={{
+                  hidden: reduce ? {} : { opacity: 0, x: -12 },
+                  show: { opacity: 1, x: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } },
+                }}
               >
-                <a
-                  href={githubUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between rounded-2xl px-4 py-4 text-lg text-fog"
+                <Link
+                  href={l.href}
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    "flex items-center justify-between rounded-2xl px-4 py-4 text-lg font-medium transition",
+                    isActive(l) ? "bg-white/[0.05] text-fog" : "text-fog-muted hover:bg-white/5 hover:text-fog",
+                  )}
                 >
-                  <span className="flex items-center gap-3">
-                    <Github className="h-5 w-5" /> GitHub
-                  </span>
-                  <ArrowUpRight className="h-4 w-4 text-fog-dim" />
-                </a>
+                  {l.label}
+                  {isActive(l) && <span className="h-1.5 w-1.5 rounded-full bg-claw-400" />}
+                </Link>
               </motion.div>
+            ))}
+            <motion.div
+              className="mt-4 border-t border-white/[0.06] pt-4"
+              variants={{ hidden: reduce ? {} : { opacity: 0 }, show: { opacity: 1 } }}
+            >
+              <a
+                href={githubUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between rounded-2xl px-4 py-4 text-lg text-fog"
+              >
+                <span className="flex items-center gap-3">
+                  <Github className="h-5 w-5" /> GitHub
+                </span>
+                <ArrowUpRight className="h-4 w-4 text-fog-dim" />
+              </a>
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </div>
     </header>
   );
 }

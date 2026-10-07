@@ -246,7 +246,6 @@ function SkillRow({
       data-skill={skill.name}
       role="option"
       aria-selected={selected}
-      aria-expanded={open}
       tabIndex={selected ? 0 : -1}
       onClick={onSelect}
       className={cn(
@@ -301,12 +300,11 @@ function SkillDetail({ result, query, large = false }: { result: Result; query: 
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             {large && (
-              <Link
-                href={`/pipelines/${skill.name}/`}
-                className="font-mono text-2xl font-semibold text-fog transition hover:text-claw-300"
-              >
-                {skill.name}
-              </Link>
+              <h3 className="font-mono text-2xl font-semibold text-fog">
+                <Link href={`/pipelines/${skill.name}/`} className="transition hover:text-claw-300">
+                  {skill.name}
+                </Link>
+              </h3>
             )}
             <span className="chip">
               <span className="h-2 w-2 rounded-full" style={{ background: colorForCategory(skill.category) }} />
@@ -373,7 +371,7 @@ function SkillDetail({ result, query, large = false }: { result: Result; query: 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         {skill.required.length > 0 && (
           <div>
-            <h5 className="mb-2.5 text-[11px] font-medium uppercase tracking-wider text-fog-dim">Required parameters</h5>
+            <h4 className="mb-2.5 text-[11px] font-medium uppercase tracking-wider text-fog-dim">Required parameters</h4>
             <ul className="space-y-2">
               {skill.required.map((r) => (
                 <li key={r.name} className="text-sm">
@@ -390,7 +388,7 @@ function SkillDetail({ result, query, large = false }: { result: Result; query: 
           </div>
         )}
         <div>
-          <h5 className="mb-2.5 text-[11px] font-medium uppercase tracking-wider text-fog-dim">Parameter groups</h5>
+          <h4 className="mb-2.5 text-[11px] font-medium uppercase tracking-wider text-fog-dim">Parameter groups</h4>
           <div className="flex flex-wrap gap-1.5">
             {skill.groups.map((g) => (
               <span key={g.name} className="chip px-2.5 py-0.5 text-[11px]">
@@ -404,7 +402,7 @@ function SkillDetail({ result, query, large = false }: { result: Result; query: 
 
       {skill.outputs && (
         <div className="mt-6">
-          <h5 className="mb-2 text-[11px] font-medium uppercase tracking-wider text-fog-dim">Outputs</h5>
+          <h4 className="mb-2 text-[11px] font-medium uppercase tracking-wider text-fog-dim">Outputs</h4>
           <p className={cn("text-sm leading-relaxed text-fog-muted", !outputsOpen && "line-clamp-3")}>
             <InlineMarkdown text={skill.outputs} />
           </p>

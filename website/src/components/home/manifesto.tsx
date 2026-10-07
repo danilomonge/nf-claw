@@ -72,7 +72,7 @@ export function Manifesto({ pipelines }: { pipelines: PipelineSummary[] }) {
               <p.icon className="h-5 w-5" />
             </span>
             <div>
-              <h3 className="text-sm font-semibold text-fog">{p.title}</h3>
+              <h2 className="text-sm font-semibold text-fog">{p.title}</h2>
               <p className="mt-1 text-sm leading-relaxed text-fog-muted">{p.body}</p>
             </div>
           </motion.div>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, CornerDownLeft, FileText, Hash, Search, X } from "lucide-react";
 import { Highlight } from "@/components/ui/highlight";
 import { colorForCategory } from "@/lib/derive";
@@ -177,136 +177,139 @@ export function CommandPalette({ data }: { data: PaletteData }) {
 
   let index = -1;
 
+  // The overlay is always mounted and shown/hidden with CSS. Unmounting it through an exit
+  // animation left an invisible layer over the page in production builds after a navigation
+  // (the exit never reported complete), swallowing every click.
   return (
-    <AnimatePresence>
+    <div
+      className={cn(
+        "fixed inset-0 z-[70] flex items-start justify-center px-4 pt-[12vh] sm:pt-[14vh]",
+        // visibility flips at once when opening (so the input can take focus), after the fade when closing
+        open
+          ? "visible opacity-100 [transition:opacity_200ms]"
+          : "pointer-events-none invisible opacity-0 [transition:opacity_200ms,visibility_0s_linear_200ms]",
+      )}
+      aria-hidden={!open}
+    >
+      <div className="absolute inset-0 bg-ink-950/70 backdrop-blur-sm" onClick={close} aria-hidden />
       {open && (
         <motion.div
-          className="fixed inset-0 z-[70] flex items-start justify-center px-4 pt-[12vh] sm:pt-[14vh]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Search nf-claw"
+          className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-white/10 bg-ink-900/95 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.9),0_0_0_1px_rgba(57,211,83,0.06)] backdrop-blur-xl"
+          initial={reduce ? false : { opacity: 0, y: -12, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          onKeyDown={onKeyDown}
         >
-          <div className="absolute inset-0 bg-ink-950/70 backdrop-blur-sm" onClick={close} aria-hidden />
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Search nf-claw"
-            className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-white/10 bg-ink-900/95 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.9),0_0_0_1px_rgba(57,211,83,0.06)] backdrop-blur-xl"
-            initial={reduce ? false : { opacity: 0, y: -12, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={reduce ? undefined : { opacity: 0, y: -8, scale: 0.98 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            onKeyDown={onKeyDown}
-          >
-            <div className="flex items-center gap-3 border-b border-white/[0.07] px-4">
-              <Search className="h-4 w-4 shrink-0 text-fog-dim" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search pipelines, docs and sections…"
-                className="h-14 w-full bg-transparent text-[15px] text-fog outline-none placeholder:text-fog-dim focus-visible:outline-none"
-                role="combobox"
-                aria-expanded="true"
-                aria-controls="palette-results"
-                aria-activedescendant={flat[active] ? `palette-${flat[active].id}` : undefined}
-                autoComplete="off"
-                spellCheck={false}
-              />
-              <button
-                onClick={close}
-                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fog-dim transition hover:bg-white/5 hover:text-fog"
-                aria-label="Close search"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+          <div className="flex items-center gap-3 border-b border-white/[0.07] px-4">
+            <Search className="h-4 w-4 shrink-0 text-fog-dim" />
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search pipelines, docs and sections…"
+              className="h-14 w-full bg-transparent text-[15px] text-fog outline-none placeholder:text-fog-dim focus-visible:outline-none"
+              role="combobox"
+              aria-expanded="true"
+              aria-controls="palette-results"
+              aria-activedescendant={flat[active] ? `palette-${flat[active].id}` : undefined}
+              autoComplete="off"
+              spellCheck={false}
+            />
+            <button
+              onClick={close}
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fog-dim transition hover:bg-white/5 hover:text-fog"
+              aria-label="Close search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
 
-            <div ref={listRef} id="palette-results" role="listbox" className="max-h-[min(60vh,440px)] overflow-y-auto p-2">
-              {flat.length === 0 && (
-                <div className="px-4 py-12 text-center">
-                  <p className="text-sm text-fog-muted">No results for “{query}”.</p>
-                  <p className="mt-1 text-xs text-fog-dim">Try a pipeline name, a domain or a doc title.</p>
-                </div>
-              )}
-              {groups.map((g) => (
-                <div key={g.kind} className="mb-1 last:mb-0">
-                  <p className="px-3 pb-1.5 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-fog-dim">
-                    {g.title}
-                    <span className="ml-1.5 font-normal tracking-normal text-fog-faint">{g.items.length}</span>
-                  </p>
-                  {g.items.map((item) => {
-                    index += 1;
-                    const i = index;
-                    const isActive = i === active;
-                    return (
-                      <button
-                        key={item.id}
-                        id={`palette-${item.id}`}
-                        role="option"
-                        aria-selected={isActive}
-                        data-index={i}
-                        onMouseMove={() => active !== i && setActive(i)}
-                        onClick={() => go(item)}
-                        className={cn(
-                          "relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
-                          isActive ? "bg-white/[0.06]" : "hover:bg-white/[0.03]",
-                        )}
-                      >
-                        {isActive && (
-                          <motion.span
-                            layoutId="palette-active"
-                            className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-claw-400"
-                            transition={{ duration: 0.15 }}
-                          />
-                        )}
-                        <ItemIcon item={item} />
-                        <span className="min-w-0 flex-1">
-                          <span className={cn("block truncate text-sm", item.kind === "pipeline" ? "font-mono font-medium text-fog" : "text-fog")}>
-                            <Highlight text={item.label} query={query} />
-                          </span>
-                          <span className="block truncate text-xs text-fog-dim">
-                            {item.kind === "pipeline" ? item.description : item.hint}
-                          </span>
-                        </span>
-                        {item.kind === "pipeline" && (
-                          <span className="hidden shrink-0 font-mono text-[11px] text-fog-dim sm:block">{item.version}</span>
-                        )}
-                        <ArrowRight
-                          className={cn("h-3.5 w-3.5 shrink-0 transition", isActive ? "text-claw-300 opacity-100" : "opacity-0")}
+          <div ref={listRef} id="palette-results" role="listbox" className="max-h-[min(60vh,440px)] overflow-y-auto p-2">
+            {flat.length === 0 && (
+              <div className="px-4 py-12 text-center">
+                <p className="text-sm text-fog-muted">No results for “{query}”.</p>
+                <p className="mt-1 text-xs text-fog-dim">Try a pipeline name, a domain or a doc title.</p>
+              </div>
+            )}
+            {groups.map((g) => (
+              <div key={g.kind} className="mb-1 last:mb-0">
+                <p className="px-3 pb-1.5 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-fog-dim">
+                  {g.title}
+                  <span className="ml-1.5 font-normal tracking-normal text-fog-dim">{g.items.length}</span>
+                </p>
+                {g.items.map((item) => {
+                  index += 1;
+                  const i = index;
+                  const isActive = i === active;
+                  return (
+                    <button
+                      key={item.id}
+                      id={`palette-${item.id}`}
+                      role="option"
+                      aria-selected={isActive}
+                      data-index={i}
+                      onMouseMove={() => active !== i && setActive(i)}
+                      onClick={() => go(item)}
+                      className={cn(
+                        "relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
+                        isActive ? "bg-white/[0.06]" : "hover:bg-white/[0.03]",
+                      )}
+                    >
+                      {isActive && (
+                        <motion.span
+                          layoutId="palette-active"
+                          className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-claw-400"
+                          transition={{ duration: 0.15 }}
                         />
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
+                      )}
+                      <ItemIcon item={item} />
+                      <span className="min-w-0 flex-1">
+                        <span className={cn("block truncate text-sm", item.kind === "pipeline" ? "font-mono font-medium text-fog" : "text-fog")}>
+                          <Highlight text={item.label} query={query} />
+                        </span>
+                        <span className="block truncate text-xs text-fog-dim">
+                          {item.kind === "pipeline" ? item.description : item.hint}
+                        </span>
+                      </span>
+                      {item.kind === "pipeline" && (
+                        <span className="hidden shrink-0 font-mono text-[11px] text-fog-dim sm:block">{item.version}</span>
+                      )}
+                      <ArrowRight
+                        className={cn("h-3.5 w-3.5 shrink-0 transition", isActive ? "text-claw-300 opacity-100" : "opacity-0")}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
 
-            <div className="flex items-center justify-between gap-4 border-t border-white/[0.07] px-4 py-2.5 text-[11px] text-fog-dim">
-              <span className="flex items-center gap-3">
-                <span className="flex items-center gap-1">
-                  <span className="kbd">↑</span>
-                  <span className="kbd">↓</span> navigate
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="kbd">
-                    <CornerDownLeft className="h-3 w-3" />
-                  </span>{" "}
-                  open
-                </span>
-                <span className="hidden items-center gap-1 sm:flex">
-                  <span className="kbd">esc</span> close
-                </span>
+          <div className="flex items-center justify-between gap-4 border-t border-white/[0.07] px-4 py-2.5 text-[11px] text-fog-dim">
+            <span className="flex items-center gap-3">
+              <span className="flex items-center gap-1">
+                <span className="kbd">↑</span>
+                <span className="kbd">↓</span> navigate
               </span>
-              <span>
-                {flat.length} result{flat.length !== 1 ? "s" : ""}
+              <span className="flex items-center gap-1">
+                <span className="kbd">
+                  <CornerDownLeft className="h-3 w-3" />
+                </span>{" "}
+                open
               </span>
-            </div>
-          </motion.div>
+              <span className="hidden items-center gap-1 sm:flex">
+                <span className="kbd">esc</span> close
+              </span>
+            </span>
+            <span>
+              {flat.length} result{flat.length !== 1 ? "s" : ""}
+            </span>
+          </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </div>
   );
 }
 

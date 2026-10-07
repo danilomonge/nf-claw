@@ -79,7 +79,7 @@ export default async function DocPage({ params }: { params: Promise<{ slug: stri
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(0,1fr)_200px] xl:gap-12">
         {/* all docs */}
-        <aside className="hidden lg:block">
+        <aside aria-label="All documents" className="hidden lg:block">
           <nav aria-label="Documentation" className="sticky top-24">
             <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-fog-dim">Docs</p>
             <ul className="space-y-0.5">
@@ -178,7 +178,7 @@ export default async function DocPage({ params }: { params: Promise<{ slug: stri
         </article>
 
         {/* table of contents */}
-        <aside className="hidden xl:block">
+        <aside aria-label="Table of contents" className="hidden xl:block">
           <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pb-6">
             <DocToc headings={headings} />
           </div>

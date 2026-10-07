@@ -112,7 +112,7 @@ export function ReleaseTimeline({ items }: { items: TimelineItem[] }) {
                 key={g.key}
                 initial={reduce ? false : { opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={reduce ? undefined : { opacity: 0, y: -8 }}
+                exit={reduce ? undefined : { opacity: 0, transition: { duration: 0.15 } }}
                 transition={{ duration: 0.45, ease: EASE, delay: gi >= initialGroups ? (gi - initialGroups) * 0.04 : 0 }}
                 className="relative grid gap-4 pl-8 md:grid-cols-[120px_1fr] md:gap-10 md:pl-0"
               >

@@ -33,6 +33,7 @@ function iconFor(slug: string): LucideIcon {
 
 export function DocsHub({ docs, standalone = false }: { docs: DocPage[]; standalone?: boolean }) {
   const Heading = standalone ? "h1" : "h2";
+  const CardHeading = standalone ? "h2" : "h3";
   return (
     <section id="docs" className={cn("container-site", standalone ? "pb-12 pt-28 md:pt-32" : "section")}>
       <SectionHeading
@@ -61,7 +62,9 @@ export function DocsHub({ docs, standalone = false }: { docs: DocPage[]; standal
                     </span>
                     <ArrowUpRight className="h-5 w-5 text-fog-dim transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-claw-300" />
                   </div>
-                  <h3 className={cn("mt-5 font-semibold text-fog", featured ? "text-xl md:text-2xl" : "text-lg")}>{doc.title}</h3>
+                  <CardHeading className={cn("mt-5 font-semibold text-fog", featured ? "text-xl md:text-2xl" : "text-lg")}>
+                    {doc.title}
+                  </CardHeading>
                   <p className={cn("mt-2 flex-1 text-sm leading-relaxed text-fog-muted", featured && "md:text-base")}>
                     {docPreview(doc.content, featured ? 260 : 150)}
                   </p>

@@ -47,11 +47,16 @@ export function SectionNav({ sections, className }: { sections: SectionLink[]; c
     return () => io.disconnect();
   }, []);
 
-  // Keep the active chip in view inside the horizontally scrolling bar.
+  // Keep the active chip in view inside the horizontally scrolling bar. Only the bar scrolls:
+  // scrollIntoView would also scroll the window, cutting short a smooth scroll to a section.
   useEffect(() => {
-    barRef.current
-      ?.querySelector<HTMLElement>(`[data-section="${active}"]`)
-      ?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: reduce ? "auto" : "smooth" });
+    const bar = barRef.current;
+    const chip = bar?.querySelector<HTMLElement>(`[data-section="${active}"]`);
+    if (!bar || !chip || bar.scrollWidth <= bar.clientWidth) return;
+    const left = chip.offsetLeft - bar.offsetLeft;
+    if (left < bar.scrollLeft || left + chip.offsetWidth > bar.scrollLeft + bar.clientWidth) {
+      bar.scrollTo({ left: Math.max(0, left - 24), behavior: reduce ? "auto" : "smooth" });
+    }
   }, [active, reduce]);
 
   const go = (id: string) => {
@@ -63,14 +68,15 @@ export function SectionNav({ sections, className }: { sections: SectionLink[]; c
   return (
     <>
       <div ref={sentinel} aria-hidden className="h-px" />
-      <nav
-        aria-label="On this page"
-        className={cn(
-          "sticky top-16 z-30 -mx-5 border-b px-5 py-2.5 transition-[background-color,border-color] duration-300 sm:-mx-6 sm:px-6 md:-mx-10 md:px-10",
-          stuck ? "border-white/[0.06] bg-ink-950/80 backdrop-blur-xl" : "border-transparent",
-          className,
-        )}
-      >
+      <nav aria-label="On this page" className={cn("sticky top-16 z-30 py-2.5", className)}>
+        {/* full-bleed backdrop, shown only while the bar is pinned under the header */}
+        <div
+          aria-hidden
+          className={cn(
+            "absolute inset-y-0 left-1/2 -z-10 w-screen -translate-x-1/2 border-b transition-[background-color,border-color,opacity] duration-300",
+            stuck ? "border-white/[0.06] bg-ink-950/80 opacity-100 backdrop-blur-xl" : "border-transparent opacity-0",
+          )}
+        />
         <div ref={barRef} className="scrollbar-none flex gap-1 overflow-x-auto">
           {sections.map((s) => {
             const on = s.id === active;

@@ -325,7 +325,7 @@ export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }
                             transition={{ duration: 0.5, delay: inView && !faded && !lit ? 0.4 + i * 0.05 : 0 }}
                           >
                             {shortLabel(w.category)}
-                            <tspan fill="#646B76" fontWeight={400}>
+                            <tspan fill="#7C838E" fontWeight={400}>
                               {" "}
                               {w.count}
                             </tspan>
@@ -382,7 +382,7 @@ export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }
                       <text x={cx} y={cy - 1} textAnchor="middle" fontSize="12.5" fontWeight="600" fill="#F4F5F6" style={{ fontFamily: "var(--font-mono)" }}>
                         nf-claw
                       </text>
-                      <text x={cx} y={cy + 14} textAnchor="middle" fontSize="9.5" fill="#646B76">
+                      <text x={cx} y={cy + 14} textAnchor="middle" fontSize="9.5" fill="#7C838E">
                         {filtered.length === pipelines.length ? `${pipelines.length} pipelines` : `${filtered.length} / ${pipelines.length}`}
                       </text>
                     </g>
@@ -613,7 +613,7 @@ function Inspector({
           <span className="h-2 w-2 rounded-full" style={{ background: colorForCategory(p.category) }} />
           {p.category}
         </span>
-        <span className="ml-auto font-mono text-sm text-fog-dim">{p.version}</span>
+        <span className="ml-auto font-mono text-sm text-fog-muted">{p.version}</span>
       </div>
       <h3 className="mt-4 font-mono text-2xl font-semibold text-fog">{p.name}</h3>
       <p className="mt-1 text-xs text-fog-dim">{p.pipeline}</p>
