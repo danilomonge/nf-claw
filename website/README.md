@@ -33,8 +33,20 @@ The data layer (`src/lib/data`) is the single source of truth and reads, at buil
 | local `git log` / `git tag` | the update history + release timeline |
 
 **Add a pipeline, push a release, edit a doc → the site reflects it on the next build.**
-No page is maintained by hand. The design scales from 5 to 500 pipelines (the pipeline
-constellation lays nodes onto concentric rings and the grid/cards reflow automatically).
+No page is maintained by hand. The design scales from 5 to 500 pipelines: the constellation
+gives each research domain a wedge sized to its pipeline count and tightens its rings until
+every node fits, and the explorers page, group and search rather than render everything.
+
+## Navigating it
+
+- **⌘K / Ctrl K or `/`** opens a command palette over every pipeline, doc and home section.
+- The header marks the section being read (scroll-spy on the home page, the route elsewhere)
+  and shows reading progress; pipeline pages add a sticky "on this page" bar, docs a
+  table of contents, and both have previous/next links.
+- Filters are shareable: `/pipelines/?domain=Epigenomics&q=chip`, and a skills search hands
+  its query to the pipeline's parameter explorer (`/pipelines/rnaseq/?q=aligner#parameters`).
+- Research domains (`src/lib/derive.ts`) are matched from each pipeline's name and
+  description — no per-pipeline list to maintain; anything unmatched lands in "Other".
 
 ## Develop
 
@@ -84,4 +96,9 @@ Defined in `tailwind.config.ts` and `src/app/globals.css`, derived from the logo
 - **Surfaces** — a near-black `ink` scale with subtle elevation
 - **Primary** — apple-green `claw` scale
 - **Secondary** — warm `cream` (the apple's bite)
-- Consistent spacing, `glass` cards, ambient glows, film grain, and reduced-motion support
+- **Text** — `fog` scale; even the dimmest step clears WCAG AA (4.5:1) on every surface
+- **Domains** — eight categorical colors validated for the dark surface (lightness band,
+  ≥ 3:1 contrast, adjacent pairs distinct under protan/deutan simulation, in wedge order);
+  reordering them re-pairs neighbours, so re-validate before changing `CATEGORIES`
+- Consistent spacing, `glass` cards with a pointer spotlight, ambient glows, film grain,
+  keyboard focus rings, and reduced-motion support throughout

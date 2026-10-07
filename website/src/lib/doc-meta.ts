@@ -48,6 +48,8 @@ export interface DocHeading {
   depth: 2 | 3;
   text: string;
   id: string;
+  /** 1-based source line, so a renderer can look the id up by its node's position. */
+  line: number;
 }
 
 /** The ## and ### headings of a Markdown document, outside code fences, with unique ids. */
@@ -55,7 +57,9 @@ export function docHeadings(md: string): DocHeading[] {
   const out: DocHeading[] = [];
   const seen = new Map<string, number>();
   let fence: string | null = null;
-  for (const line of md.split("\n")) {
+  const lines = md.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const f = line.match(/^ {0,3}(`{3,}|~{3,})/);
     if (f) {
       if (fence === null) fence = f[1];
@@ -66,7 +70,7 @@ export function docHeadings(md: string): DocHeading[] {
     const m = line.match(/^(#{2,3})\s+(.+?)\s*#*\s*$/);
     if (!m) continue;
     const text = m[2].replace(/`([^`]*)`/g, "$1").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
-    out.push({ depth: m[1].length as 2 | 3, text, id: uniqueId(slugify(text), seen) });
+    out.push({ depth: m[1].length as 2 | 3, text, id: uniqueId(slugify(text), seen), line: i + 1 });
   }
   return out;
 }

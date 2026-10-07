@@ -21,12 +21,14 @@ function highlight(line: string) {
       {tokens.map((tok, i) => {
         if (/^\s+$/.test(tok) || !tok) return <span key={i}>{tok}</span>;
         word += 1;
-        if (word === 0) return <span key={i} className="text-claw-300">{tok}</span>;
-        if (/^-{1,2}[\w-]/.test(tok)) return <span key={i} className="text-cream">{tok}</span>;
-        if (/^<[^>]+>$/.test(tok)) return <span key={i} className="text-cream/60 italic">{tok}</span>;
+        // A wrapped line breaks between words, never inside a short one ("-" / "profile").
+        const keep = tok.length <= 32 ? "whitespace-nowrap" : "";
+        if (word === 0) return <span key={i} className={cn("text-claw-300", keep)}>{tok}</span>;
+        if (/^-{1,2}[\w-]/.test(tok)) return <span key={i} className={cn("text-cream", keep)}>{tok}</span>;
+        if (/^<[^>]+>$/.test(tok)) return <span key={i} className={cn("italic text-cream/60", keep)}>{tok}</span>;
         if (word === 1 && /^[a-z]+$/.test(tok)) return <span key={i} className="text-white">{tok}</span>;
-        if (/^NXF_\w+=/.test(tok)) return <span key={i} className="text-claw-200/80">{tok}</span>;
-        return <span key={i} className="text-fog-muted">{tok}</span>;
+        if (/^NXF_\w+=/.test(tok)) return <span key={i} className={cn("text-claw-200/80", keep)}>{tok}</span>;
+        return <span key={i} className={cn("text-fog-muted", keep)}>{tok}</span>;
       })}
       {comment && <span className="italic text-fog-dim">{comment}</span>}
     </>
