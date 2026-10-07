@@ -9,6 +9,7 @@ export function SectionHeading({
   align = "left",
   className,
   action,
+  as: Heading = "h2",
 }: {
   eyebrow: string;
   title: ReactNode;
@@ -16,6 +17,8 @@ export function SectionHeading({
   align?: "left" | "center";
   className?: string;
   action?: ReactNode;
+  /** h1 when the heading opens its own page, h2 inside the home page. */
+  as?: "h1" | "h2";
 }) {
   return (
     <div
@@ -31,13 +34,11 @@ export function SectionHeading({
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-claw-400" />
           {eyebrow}
         </p>
-        <h2 className="text-balance text-4xl font-semibold tracking-tighter md:text-5xl">
+        <Heading className="text-balance text-[2rem] font-semibold leading-[1.08] tracking-tighter sm:text-4xl md:text-5xl">
           <span className="gradient-text">{title}</span>
-        </h2>
+        </Heading>
         {description && (
-          <p className="mt-5 text-pretty text-lg leading-relaxed text-fog-muted">
-            {description}
-          </p>
+          <p className="mt-5 text-pretty text-base leading-relaxed text-fog-muted sm:text-lg">{description}</p>
         )}
       </Reveal>
       {action && <Reveal delay={0.1}>{action}</Reveal>}

@@ -1,23 +1,60 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { Github, Menu, X } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
+import { ArrowUpRight, Github, Menu, Search, X } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
+import { OPEN_PALETTE_EVENT } from "@/components/layout/command-palette";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
-  { href: "/#pipelines", label: "Pipelines" },
-  { href: "/#activity", label: "Activity" },
-  { href: "/#skills", label: "Skills" },
-  { href: "/#releases", label: "Releases" },
-  { href: "/#docs", label: "Docs" },
+  { href: "/pipelines/", label: "Pipelines", section: "pipelines", route: "/pipelines" },
+  { href: "/#skills", label: "Skills", section: "skills" },
+  { href: "/#activity", label: "Activity", section: "activity" },
+  { href: "/#releases", label: "Releases", section: "releases" },
+  { href: "/docs/", label: "Docs", section: "docs", route: "/docs" },
 ];
 
+const SECTION_IDS = LINKS.map((l) => l.section);
+
+/** The home section crossing the middle of the viewport (null above the first one). */
+function useActiveSection(enabled: boolean) {
+  const [active, setActive] = useState<string | null>(null);
+  useEffect(() => {
+    if (!enabled) {
+      setActive(null);
+      return;
+    }
+    const seen = new Map<string, boolean>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) seen.set(e.target.id, e.isIntersecting);
+        setActive(SECTION_IDS.find((id) => seen.get(id)) ?? null);
+      },
+      { rootMargin: "-45% 0px -50% 0px" },
+    );
+    for (const id of SECTION_IDS) {
+      const el = document.getElementById(id);
+      if (el) io.observe(el);
+    }
+    return () => io.disconnect();
+  }, [enabled]);
+  return active;
+}
+
 export function Nav({ repo }: { repo: string | null }) {
+  const pathname = usePathname() || "/";
+  const isHome = pathname === "/";
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [mac, setMac] = useState(true);
+  const reduce = useReducedMotion();
+  const section = useActiveSection(isHome);
+
+  const { scrollYProgress } = useScroll();
+  const progress = useSpring(scrollYProgress, { stiffness: 220, damping: 40, restDelta: 0.001 });
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16);
@@ -27,47 +64,97 @@ export function Nav({ repo }: { repo: string | null }) {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
+    setMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent));
+  }, []);
+
+  // Close the mobile menu on navigation and on Escape.
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    if (!open) return;
+    document.documentElement.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
     };
   }, [open]);
 
+  const isActive = (l: (typeof LINKS)[number]) =>
+    isHome ? section === l.section : Boolean(l.route && pathname.startsWith(l.route));
+
   const githubUrl = repo ? `https://github.com/${repo}` : "https://github.com";
+  const openPalette = () => window.dispatchEvent(new Event(OPEN_PALETTE_EVENT));
 
   return (
     <header className="fixed inset-x-0 top-0 z-50">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-claw-500 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink-950"
+      >
+        Skip to content
+      </a>
       <div
         className={cn(
-          "transition-all duration-500 ease-out",
-          scrolled
-            ? "border-b border-white/[0.06] bg-ink-950/70 backdrop-blur-xl"
+          "relative transition-[background-color,border-color,backdrop-filter] duration-500 ease-out",
+          scrolled || open
+            ? "border-b border-white/[0.06] bg-ink-950/75 backdrop-blur-xl"
             : "border-b border-transparent bg-transparent",
         )}
       >
-        <nav className="container-site flex h-16 items-center justify-between">
-          <Link href="/" className="group flex items-center" aria-label="nf-claw home">
-            <Logo size={32} withText />
+        <nav className="container-site flex h-16 items-center justify-between gap-4" aria-label="Main">
+          <Link href="/" className="group flex shrink-0 items-center rounded-xl" aria-label="nf-claw home">
+            <Logo size={32} withText className="transition-transform duration-300 group-hover:scale-[1.02]" />
           </Link>
 
-          <div className="hidden items-center gap-1 md:flex">
-            {LINKS.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className="rounded-full px-3.5 py-2 text-sm text-fog-muted transition-colors hover:text-fog"
-              >
-                {l.label}
-              </Link>
-            ))}
+          <div className="hidden items-center gap-0.5 rounded-full border border-white/[0.06] bg-white/[0.02] p-1 md:flex">
+            {LINKS.map((l) => {
+              const active = isActive(l);
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  aria-current={active ? (l.route ? "page" : "location") : undefined}
+                  className={cn(
+                    "relative isolate rounded-full px-3.5 py-1.5 text-sm transition-colors duration-200",
+                    active ? "text-fog" : "text-fog-muted hover:text-fog",
+                  )}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="nav-pill"
+                      className="absolute inset-0 -z-10 rounded-full border border-white/[0.08] bg-white/[0.07]"
+                      transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 36 }}
+                    />
+                  )}
+                  {l.label}
+                </Link>
+              );
+            })}
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={openPalette}
+              className="group hidden h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] pl-3 pr-1.5 text-sm text-fog-dim transition hover:border-white/20 hover:text-fog sm:inline-flex"
+              aria-label="Search (⌘K)"
+            >
+              <Search className="h-3.5 w-3.5" />
+              <span className="hidden lg:inline">Search</span>
+              <span className="kbd ml-1 h-6 px-2 group-hover:text-fog-muted">{mac ? "⌘K" : "Ctrl K"}</span>
+            </button>
+            <button
+              onClick={openPalette}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-fog sm:hidden"
+              aria-label="Search"
+            >
+              <Search className="h-4 w-4" />
+            </button>
             <a
               href={githubUrl}
               target="_blank"
               rel="noreferrer"
-              className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-medium text-fog transition hover:border-claw-400/30 hover:bg-white/[0.06] md:inline-flex"
+              className="hidden h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 text-sm font-medium text-fog transition hover:border-claw-400/30 hover:bg-white/[0.06] md:inline-flex"
             >
               <Github className="h-4 w-4" />
               GitHub
@@ -75,43 +162,87 @@ export function Nav({ repo }: { repo: string | null }) {
             <button
               onClick={() => setOpen((v) => !v)}
               className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-fog md:hidden"
-              aria-label="Toggle menu"
+              aria-label={open ? "Close menu" : "Open menu"}
+              aria-expanded={open}
+              aria-controls="mobile-menu"
             >
-              {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={open ? "x" : "menu"}
+                  initial={reduce ? false : { rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={reduce ? undefined : { rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </motion.span>
+              </AnimatePresence>
             </button>
           </div>
         </nav>
+
+        {/* reading progress */}
+        <motion.div
+          aria-hidden
+          className="absolute inset-x-0 bottom-[-1px] h-px origin-left bg-gradient-to-r from-claw-600 via-claw-400 to-claw-200"
+          style={{ scaleX: progress, opacity: scrolled ? 1 : 0 }}
+        />
       </div>
 
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25 }}
-            className="border-b border-white/[0.06] bg-ink-950/95 backdrop-blur-xl md:hidden"
+            id="mobile-menu"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-x-0 bottom-0 top-16 overflow-y-auto bg-ink-950/95 backdrop-blur-xl md:hidden"
           >
-            <div className="container-site flex flex-col gap-1 py-4">
+            <motion.div
+              className="container-site flex flex-col gap-1 py-6"
+              initial="hidden"
+              animate="show"
+              variants={{ show: { transition: { staggerChildren: 0.04, delayChildren: 0.04 } } }}
+            >
               {LINKS.map((l) => (
-                <Link
+                <motion.div
                   key={l.href}
-                  href={l.href}
-                  onClick={() => setOpen(false)}
-                  className="rounded-xl px-4 py-3 text-base text-fog-muted transition hover:bg-white/5 hover:text-fog"
+                  variants={{
+                    hidden: reduce ? {} : { opacity: 0, x: -12 },
+                    show: { opacity: 1, x: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } },
+                  }}
                 >
-                  {l.label}
-                </Link>
+                  <Link
+                    href={l.href}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "flex items-center justify-between rounded-2xl px-4 py-4 text-lg font-medium transition",
+                      isActive(l) ? "bg-white/[0.05] text-fog" : "text-fog-muted hover:bg-white/5 hover:text-fog",
+                    )}
+                  >
+                    {l.label}
+                    {isActive(l) && <span className="h-1.5 w-1.5 rounded-full bg-claw-400" />}
+                  </Link>
+                </motion.div>
               ))}
-              <a
-                href={githubUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-1 flex items-center gap-2 rounded-xl px-4 py-3 text-base text-fog"
+              <motion.div
+                className="mt-4 border-t border-white/[0.06] pt-4"
+                variants={{ hidden: reduce ? {} : { opacity: 0 }, show: { opacity: 1 } }}
               >
-                <Github className="h-4 w-4" /> GitHub
-              </a>
-            </div>
+                <a
+                  href={githubUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between rounded-2xl px-4 py-4 text-lg text-fog"
+                >
+                  <span className="flex items-center gap-3">
+                    <Github className="h-5 w-5" /> GitHub
+                  </span>
+                  <ArrowUpRight className="h-4 w-4 text-fog-dim" />
+                </a>
+              </motion.div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

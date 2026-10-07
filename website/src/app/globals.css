@@ -8,6 +8,7 @@
     Helvetica, Arial, sans-serif;
   --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", "Cascadia Code",
     "Fira Code", Menlo, Consolas, monospace;
+  color-scheme: dark;
 }
 
 /* Defined at the top level so it is always emitted (the marquee is driven via an
@@ -21,6 +22,12 @@
   }
 }
 
+@keyframes orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @layer base {
   * {
     border-color: rgba(255, 255, 255, 0.06);
@@ -28,6 +35,8 @@
 
   html {
     scroll-behavior: smooth;
+    /* Anchored headings and sections land below the fixed header, not under it. */
+    scroll-padding-top: 6rem;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
@@ -42,6 +51,16 @@
   ::selection {
     background: rgba(57, 211, 83, 0.28);
     color: #fff;
+  }
+
+  /* One visible, on-brand focus ring for keyboard users; none for mouse clicks. */
+  :focus-visible {
+    outline: 2px solid theme("colors.claw.400");
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
   }
 
   /* Refined dark scrollbar. */
@@ -62,11 +81,22 @@
     background: rgba(57, 211, 83, 0.3);
     background-clip: content-box;
   }
+  * {
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    scrollbar-width: thin;
+  }
 }
 
 @layer components {
   .container-site {
-    @apply mx-auto w-full max-w-site px-6 md:px-10;
+    @apply mx-auto w-full max-w-site px-5 sm:px-6 md:px-10;
+  }
+
+  /* Vertical rhythm shared by every home section. The negative scroll margin cancels most of the
+     top padding when the section is a link target, so its heading lands just under the header. */
+  .section {
+    @apply py-20 md:py-28;
+    scroll-margin-top: -4rem;
   }
 
   /* Frosted card surface used across the app. */
@@ -77,8 +107,27 @@
       0 40px 80px -48px rgba(0, 0, 0, 0.9);
   }
 
+  /* Hover lift + a soft light that follows the pointer (--sx/--sy are set by BackgroundFX). */
   .glass-hover {
-    @apply transition-all duration-500 ease-out hover:border-claw-400/30 hover:bg-white/[0.04];
+    @apply relative isolate transition-[border-color,background-color,transform,box-shadow] duration-500 ease-out hover:border-claw-400/25 hover:bg-white/[0.035];
+  }
+  .glass-hover::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    background: radial-gradient(
+      420px circle at var(--sx, 50%) var(--sy, 0%),
+      rgba(57, 211, 83, 0.075),
+      transparent 65%
+    );
+  }
+  .glass-hover:hover::before {
+    opacity: 1;
   }
 
   .gradient-text {
@@ -96,6 +145,26 @@
 
   .chip {
     @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-medium text-fog-muted;
+  }
+
+  /* Filter pill: a toggleable chip. */
+  .pill {
+    @apply inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors duration-200;
+  }
+  .pill-off {
+    @apply border-white/10 bg-white/[0.02] text-fog-muted hover:border-white/20 hover:text-fog;
+  }
+  .pill-on {
+    @apply border-claw-400/40 bg-claw-500/15 text-claw-100;
+  }
+
+  /* Text input used by every search box. */
+  .field {
+    @apply w-full rounded-xl border border-white/10 bg-ink-900/60 py-3 pl-11 pr-10 text-sm text-fog outline-none transition placeholder:text-fog-dim focus:border-claw-400/40 focus:bg-ink-900 focus-visible:outline-none;
+  }
+
+  .kbd {
+    @apply inline-flex h-5 min-w-5 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] px-1.5 font-mono text-[10px] font-medium text-fog-dim;
   }
 
   .hairline {
@@ -129,9 +198,27 @@
     -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
     mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
   }
+  /* A horizontally scrolling row whose overflow fades out at the right edge. */
+  .mask-fade-r {
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 40px), transparent);
+    mask-image: linear-gradient(to right, black calc(100% - 40px), transparent);
+  }
+  .mask-none {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   *,
   *::before,
   *::after {

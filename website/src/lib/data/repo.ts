@@ -76,13 +76,18 @@ export function getDocs(): DocPage[] {
     docs.push({ slug: "readme", title: "README", source: "README.md", content: readme });
   }
 
-  const extras = ["CONTRIBUTING.md", "AGENTS.md", "NOTICE"];
-  for (const f of extras) {
+  // Root-level guides, titled for a reader (their H1s repeat the project name).
+  const extras: [string, string][] = [
+    ["CONTRIBUTING.md", "Contributing"],
+    ["AGENTS.md", "Agent guide"],
+    ["NOTICE", "Notice & credits"],
+  ];
+  for (const [f, title] of extras) {
     const content = readText(f);
     if (content) {
       docs.push({
         slug: f.toLowerCase().replace(/\.md$/, "").replace(/[^a-z0-9]+/g, "-"),
-        title: f.replace(/\.md$/, ""),
+        title,
         source: f,
         content,
       });

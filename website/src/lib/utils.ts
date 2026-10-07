@@ -23,12 +23,15 @@ export function humanize(id: string): string {
     .replace(/^./, (c) => c.toUpperCase());
 }
 
+// Dates are formatted in UTC: the build machine and the reader's browser are in different zones,
+// and a date rendered on both sides must read the same or hydration breaks.
+
 /** Format an ISO date string as e.g. "Jun 2026". */
 export function formatMonth(date: string | null): string {
   if (!date) return "";
   const d = new Date(date);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  return d.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
 }
 
 /** Format an ISO date string as e.g. "17 Jun 2026". */
@@ -40,15 +43,16 @@ export function formatDate(date: string | null): string {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: "UTC",
   });
 }
 
-/** Relative "time ago" string. */
-export function timeAgo(date: string | null): string {
+/** Relative "time ago" string, measured from `now` (default: the current time). */
+export function timeAgo(date: string | null, now: number = Date.now()): string {
   if (!date) return "";
   const d = new Date(date);
   if (Number.isNaN(d.getTime())) return "";
-  const seconds = Math.floor((Date.now() - d.getTime()) / 1000);
+  const seconds = Math.floor((now - d.getTime()) / 1000);
   const units: [number, string][] = [
     [31536000, "y"],
     [2592000, "mo"],
@@ -66,4 +70,30 @@ export function timeAgo(date: string | null): string {
 
 export function compactNumber(n: number): string {
   return new Intl.NumberFormat("en-US", { notation: "compact" }).format(n);
+}
+
+/** Strip the quotes some git configs wrap a name in (user.name = "“jane”"). */
+export function cleanAuthor(name: string): string {
+  return name.replace(/^["'“”‘’\s]+|["'“”‘’\s]+$/g, "");
+}
+
+/** Split `text` around case-insensitive matches of `query`, for highlighting. */
+export function splitMatch(text: string, query: string): { text: string; hit: boolean }[] {
+  const q = query.trim();
+  if (!q) return [{ text, hit: false }];
+  const lower = text.toLowerCase();
+  const needle = q.toLowerCase();
+  const out: { text: string; hit: boolean }[] = [];
+  let i = 0;
+  while (i < text.length) {
+    const at = lower.indexOf(needle, i);
+    if (at === -1) {
+      out.push({ text: text.slice(i), hit: false });
+      break;
+    }
+    if (at > i) out.push({ text: text.slice(i, at), hit: false });
+    out.push({ text: text.slice(at, at + needle.length), hit: true });
+    i = at + needle.length;
+  }
+  return out;
 }

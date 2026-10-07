@@ -1,75 +1,77 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
 import {
   ArrowUpRight,
+  Check,
   GitBranch,
   LayoutGrid,
   Orbit,
   Plus,
+  Puzzle,
   Search,
   SlidersHorizontal,
-  Puzzle,
   X,
-  Check,
 } from "lucide-react";
 import type { PipelineSummary } from "@/lib/derive";
+import { CATEGORIES, OTHER_CATEGORY, categoryRank, colorForCategory } from "@/lib/derive";
+import { layoutConstellation } from "@/lib/constellation";
+import { useCopy } from "@/components/ui/copy-button";
+import { Highlight } from "@/components/ui/highlight";
 import { cn, formatDate } from "@/lib/utils";
-
-const CATEGORY_COLOR: Record<string, string> = {
-  Transcriptomics: "#39D353",
-  "Single-cell": "#5FDD86",
-  "Variant calling": "#EFE6B8",
-  "Data retrieval": "#94EBB0",
-  Epigenomics: "#28BA47",
-  Metagenomics: "#C9F5D6",
-  Proteomics: "#D8C98A",
-  Genomics: "#39D353",
-};
-
-function colorFor(cat: string) {
-  return CATEGORY_COLOR[cat] ?? "#39D353";
-}
 
 type SortKey = "name" | "parameters" | "modules" | "newest";
 
-function ringLayout(n: number, w: number, h: number) {
-  const cx = w / 2;
-  const cy = h / 2;
-  const positions: { x: number; y: number }[] = [];
-  const baseR = Math.min(w, h) * 0.17;
-  const gap = Math.min(w, h) * 0.15;
-  let placed = 0;
-  let ring = 1;
-  while (placed < n) {
-    const cap = ring * 6;
-    const count = Math.min(cap, n - placed);
-    const r = baseR + (ring - 1) * gap;
-    for (let k = 0; k < count; k++) {
-      const angle = (k / count) * Math.PI * 2 + ring * 0.6 - Math.PI / 2;
-      positions.push({ x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) });
-    }
-    placed += count;
-    ring++;
-  }
-  return { cx, cy, positions };
+const EASE = [0.16, 1, 0.3, 1] as const;
+const ORDER = [...CATEGORIES.map((c) => c.name), OTHER_CATEGORY.name];
+const MAX_COMPARE = 4;
+
+/** Short wedge label: the domain's first word ("Microbial & metagenomics" → "Microbial"). */
+function shortLabel(category: string): string {
+  if (category === "Data & utilities") return "Utilities";
+  return category.split(" & ")[0];
 }
 
 export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }) {
   const reduce = useReducedMotion();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("All");
+  const [hoverCategory, setHoverCategory] = useState<string | null>(null);
   const [sort, setSort] = useState<SortKey>("name");
   const [view, setView] = useState<"orbit" | "grid">("orbit");
-  const [selected, setSelected] = useState<string | null>(pipelines[0]?.name ?? null);
+  const [selected, setSelected] = useState<string | null>(pipelines.find((p) => p.name === "rnaseq")?.name ?? pipelines[0]?.name ?? null);
+  const [hovered, setHovered] = useState<string | null>(null);
   const [compare, setCompare] = useState<string[]>([]);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const inView = useInView(chartRef, { once: true, margin: "-80px" });
+
+  // On a phone the disc is too small to tap, so the list is the better default there.
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 767px)").matches) setView("grid");
+  }, []);
+
+  const byName = useMemo(() => new Map(pipelines.map((p) => [p.name, p])), [pipelines]);
 
   const categories = useMemo(() => {
-    const set = new Set(pipelines.map((p) => p.category));
-    return ["All", ...[...set].sort()];
+    const counts = new Map<string, number>();
+    for (const p of pipelines) counts.set(p.category, (counts.get(p.category) ?? 0) + 1);
+    return ORDER.filter((c) => counts.has(c)).map((c) => ({ name: c, count: counts.get(c)! }));
   }, [pipelines]);
+
+  const q = query.trim().toLowerCase();
+  const matches = (p: PipelineSummary) => {
+    const inQuery =
+      !q ||
+      p.name.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      p.tools.some((t) => t.toLowerCase().includes(q));
+    return inQuery && (category === "All" || p.category === category);
+  };
 
   const sorted = useMemo(() => {
     const arr = [...pipelines];
@@ -80,323 +82,481 @@ export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }
         case "modules":
           return b.moduleCount - a.moduleCount;
         case "newest":
-          return (
-            (b.releaseDate ? +new Date(b.releaseDate) : 0) -
-            (a.releaseDate ? +new Date(a.releaseDate) : 0)
-          );
+          return (b.releaseDate ? +new Date(b.releaseDate) : 0) - (a.releaseDate ? +new Date(a.releaseDate) : 0);
         default:
-          return a.name.localeCompare(b.name);
+          return categoryRank(a.category) - categoryRank(b.category) || a.name.localeCompare(b.name);
       }
     });
     return arr;
   }, [pipelines, sort]);
 
-  const matches = (p: PipelineSummary) => {
-    const q = query.trim().toLowerCase();
-    const inQuery =
-      !q ||
-      p.name.toLowerCase().includes(q) ||
-      p.description.toLowerCase().includes(q) ||
-      p.category.toLowerCase().includes(q);
-    const inCat = category === "All" || p.category === category;
-    return inQuery && inCat;
-  };
-
   const filtered = sorted.filter(matches);
-  const selectedPipeline = pipelines.find((p) => p.name === selected) ?? null;
+  const matchSet = new Set(filtered.map((p) => p.name));
+
+  // A search that narrows to one pipeline selects it.
+  useEffect(() => {
+    if (q && filtered.length === 1) setSelected(filtered[0].name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, filtered.length]);
+
+  const layout = useMemo(
+    () =>
+      layoutConstellation(
+        pipelines.map((p) => ({ name: p.name, category: p.category, parameterCount: p.parameterCount })),
+        ORDER,
+      ),
+    [pipelines],
+  );
+  const nodeByName = useMemo(() => new Map(layout.nodes.map((n) => [n.name, n])), [layout]);
+  // Keyboard order follows the disc: clockwise from the top.
+  const ring = useMemo(() => [...layout.nodes].sort((a, b) => a.angle - b.angle).map((n) => n.name), [layout]);
+
+  const selectedPipeline = selected ? byName.get(selected) ?? null : null;
+  const focusCategory = hoverCategory ?? (category !== "All" ? category : null);
+  const tip = hovered ? nodeByName.get(hovered) : null;
+  const tipPipeline = hovered ? byName.get(hovered) : null;
 
   const toggleCompare = (name: string) =>
-    setCompare((c) =>
-      c.includes(name) ? c.filter((n) => n !== name) : c.length >= 4 ? c : [...c, name],
-    );
+    setCompare((c) => (c.includes(name) ? c.filter((n) => n !== name) : c.length >= MAX_COMPARE ? c : [...c, name]));
 
-  const W = 760;
-  const H = 560;
-  const { cx, cy, positions } = useMemo(() => ringLayout(sorted.length, W, H), [sorted.length]);
+  const onChartKey = (e: React.KeyboardEvent) => {
+    const pool = ring.filter((n) => matchSet.has(n));
+    if (!pool.length) return;
+    const i = selected ? pool.indexOf(selected) : -1;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelected(pool[(i + 1) % pool.length]);
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelected(pool[(i - 1 + pool.length) % pool.length]);
+    } else if (e.key === "Enter" && selected) {
+      router.push(`/pipelines/${selected}/`);
+    }
+  };
+
+  const { cx, cy, width: W, height: H } = layout;
 
   return (
     <div className="mt-12">
       {/* toolbar */}
-      <div className="glass flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
+      <div className="glass flex flex-col gap-3 p-3 sm:p-4 md:flex-row md:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-fog-dim" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search pipelines…"
-            className="w-full rounded-xl border border-white/10 bg-ink-900/60 py-3 pl-11 pr-4 text-sm text-fog outline-none transition placeholder:text-fog-dim focus:border-claw-400/40 focus:bg-ink-900"
+            onKeyDown={(e) => e.key === "Escape" && setQuery("")}
+            placeholder="Search pipelines, domains or tools (e.g. “salmon”)…"
+            aria-label="Search pipelines"
+            className="field"
           />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              className="absolute right-3 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-fog-dim transition hover:bg-white/5 hover:text-fog"
+              aria-label="Clear search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as SortKey)}
-              className="appearance-none rounded-xl border border-white/10 bg-ink-900/60 py-3 pl-4 pr-9 text-sm text-fog-muted outline-none transition focus:border-claw-400/40"
-            >
-              <option value="name">Sort: Name</option>
-              <option value="parameters">Sort: Parameters</option>
-              <option value="modules">Sort: Modules</option>
-              <option value="newest">Sort: Newest</option>
-            </select>
-            <SlidersHorizontal className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fog-dim" />
-          </div>
-          <div className="flex rounded-xl border border-white/10 bg-ink-900/60 p-1">
-            <ViewBtn active={view === "orbit"} onClick={() => setView("orbit")} label="Orbit">
-              <Orbit className="h-4 w-4" />
-            </ViewBtn>
-            <ViewBtn active={view === "grid"} onClick={() => setView("grid")} label="Grid">
-              <LayoutGrid className="h-4 w-4" />
-            </ViewBtn>
+          <AnimatePresence initial={false}>
+            {view === "grid" && (
+              <motion.div
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.25, ease: EASE }}
+                className="relative flex-1 overflow-hidden md:flex-none"
+              >
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as SortKey)}
+                  aria-label="Sort pipelines"
+                  className="w-full appearance-none rounded-xl border border-white/10 bg-ink-900/60 py-3 pl-4 pr-9 text-sm text-fog-muted outline-none transition focus:border-claw-400/40"
+                >
+                  <option value="name">Sort: Domain</option>
+                  <option value="parameters">Sort: Parameters</option>
+                  <option value="modules">Sort: Modules</option>
+                  <option value="newest">Sort: Newest</option>
+                </select>
+                <SlidersHorizontal className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fog-dim" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <div className="relative flex rounded-xl border border-white/10 bg-ink-900/60 p-1" role="group" aria-label="View">
+            {(
+              [
+                ["orbit", "Orbit", Orbit],
+                ["grid", "Grid", LayoutGrid],
+              ] as const
+            ).map(([v, label, Icon]) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                aria-pressed={view === v}
+                className={cn(
+                  "relative inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors",
+                  view === v ? "text-fog" : "text-fog-dim hover:text-fog",
+                )}
+              >
+                {view === v && (
+                  <motion.span
+                    layoutId="universe-view"
+                    className="absolute inset-0 rounded-lg bg-white/10"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                  />
+                )}
+                <Icon className="relative h-4 w-4" />
+                <span className="relative">{label}</span>
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* category chips */}
-      <div className="mt-4 flex flex-wrap gap-2">
-        {categories.map((c) => (
-          <button
-            key={c}
-            onClick={() => setCategory(c)}
-            className={cn(
-              "rounded-full border px-3.5 py-1.5 text-xs font-medium transition",
-              category === c
-                ? "border-claw-400/40 bg-claw-500/15 text-claw-200"
-                : "border-white/10 bg-white/[0.02] text-fog-muted hover:border-white/20 hover:text-fog",
-            )}
-          >
-            {c}
-            {c !== "All" && (
-              <span className="ml-1.5 text-fog-dim">
-                {pipelines.filter((p) => p.category === c).length}
-              </span>
-            )}
-          </button>
-        ))}
-        <span className="ml-auto self-center text-xs text-fog-dim">
-          {filtered.length} of {pipelines.length} shown
-        </span>
+      {/* domain chips */}
+      <div className="mt-4 flex items-center gap-3">
+        <div className="mask-fade-r scrollbar-none -mx-1 flex flex-1 gap-2 overflow-x-auto px-1 py-0.5 md:mask-none md:flex-wrap md:overflow-visible">
+          {[{ name: "All", count: pipelines.length }, ...categories].map((c) => (
+            <button
+              key={c.name}
+              onClick={() => setCategory(c.name === category && c.name !== "All" ? "All" : c.name)}
+              onMouseEnter={() => c.name !== "All" && setHoverCategory(c.name)}
+              onMouseLeave={() => setHoverCategory(null)}
+              aria-pressed={category === c.name}
+              className={cn("pill", category === c.name ? "pill-on" : "pill-off")}
+            >
+              {c.name !== "All" && (
+                <span className="h-2 w-2 rounded-full" style={{ background: colorForCategory(c.name) }} />
+              )}
+              {c.name}
+              <span className={cn("tabular-nums", category === c.name ? "text-claw-200/70" : "text-fog-dim")}>{c.count}</span>
+            </button>
+          ))}
+        </div>
       </div>
+      <p className="mt-3 text-xs text-fog-dim" aria-live="polite">
+        {filtered.length === pipelines.length
+          ? `${pipelines.length} pipelines across ${categories.length} domains`
+          : `${filtered.length} of ${pipelines.length} pipelines match`}
+      </p>
 
       {/* main */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+      <div className="mt-4 grid gap-6 lg:grid-cols-[1.55fr_1fr]">
         {/* visualization */}
-        <div className="glass relative overflow-hidden p-2 sm:p-4">
-          {view === "orbit" ? (
-            <div className="relative">
-              <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full">
-                {/* connection lines */}
-                {sorted.map((p, i) => {
-                  const pos = positions[i];
-                  const dim = !matches(p);
-                  const isSel = p.name === selected;
-                  return (
-                    <motion.line
-                      key={`l-${p.name}`}
-                      x1={cx}
-                      y1={cy}
-                      x2={pos.x}
-                      y2={pos.y}
-                      stroke={isSel ? colorFor(p.category) : "#ffffff"}
-                      strokeOpacity={dim ? 0.03 : isSel ? 0.4 : 0.07}
-                      strokeWidth={isSel ? 1.4 : 1}
-                      initial={reduce ? false : { pathLength: 0, opacity: 0 }}
-                      whileInView={{ pathLength: 1, opacity: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 1, delay: 0.2 + i * 0.04 }}
-                    />
-                  );
-                })}
-
-                {/* center hub */}
-                <g>
-                  <circle cx={cx} cy={cy} r={34} fill="#0A0B0E" stroke="rgba(57,211,83,0.4)" strokeWidth={1} />
-                  <circle cx={cx} cy={cy} r={34} fill="url(#hubGlow)" />
-                  <text x={cx} y={cy - 2} textAnchor="middle" className="fill-fog font-mono" fontSize="12" fontWeight="600">
-                    nf-claw
-                  </text>
-                  <text x={cx} y={cy + 13} textAnchor="middle" className="fill-current text-fog-dim" fontSize="9">
-                    {pipelines.length} pipelines
-                  </text>
-                </g>
-                <defs>
-                  <radialGradient id="hubGlow">
-                    <stop offset="0%" stopColor="rgba(57,211,83,0.25)" />
-                    <stop offset="100%" stopColor="transparent" />
-                  </radialGradient>
-                </defs>
-
-                {/* nodes */}
-                {sorted.map((p, i) => {
-                  const pos = positions[i];
-                  const dim = !matches(p);
-                  const isSel = p.name === selected;
-                  const color = colorFor(p.category);
-                  const r = sorted.length > 24 ? 7 : sorted.length > 12 ? 9 : 12;
-                  return (
-                    <motion.g
-                      key={p.name}
-                      style={{ cursor: "pointer" }}
-                      onClick={() => setSelected(p.name)}
-                      initial={reduce ? false : { scale: 0, opacity: 0 }}
-                      whileInView={{ scale: 1, opacity: dim ? 0.25 : 1 }}
-                      animate={{ opacity: dim ? 0.25 : 1 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.6, delay: 0.3 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
-                      whileHover={{ scale: 1.25 }}
-                    >
-                      {isSel && (
-                        <motion.circle
-                          cx={pos.x}
-                          cy={pos.y}
-                          r={r + 6}
-                          fill="none"
-                          stroke={color}
-                          strokeOpacity={0.5}
-                          animate={reduce ? undefined : { r: [r + 4, r + 12], opacity: [0.5, 0] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        />
-                      )}
-                      <circle cx={pos.x} cy={pos.y} r={r + 4} fill={color} opacity={0.12} />
-                      <circle
-                        cx={pos.x}
-                        cy={pos.y}
-                        r={r}
-                        fill={color}
-                        stroke={isSel ? "#fff" : "rgba(255,255,255,0.4)"}
-                        strokeWidth={isSel ? 2 : 1}
-                      />
-                      {(sorted.length <= 16 || isSel) && (
-                        <text
-                          x={pos.x}
-                          y={pos.y + r + 15}
-                          textAnchor="middle"
-                          className="fill-current font-mono"
-                          fontSize="11"
-                          fill={dim ? "#646B76" : "#F4F5F6"}
-                        >
-                          {p.name}
-                        </text>
-                      )}
-                    </motion.g>
-                  );
-                })}
-              </svg>
-            </div>
-          ) : (
-            <div className="grid max-h-[560px] gap-3 overflow-y-auto p-1 sm:grid-cols-2">
-              {filtered.map((p) => (
-                <button
-                  key={p.name}
-                  onClick={() => setSelected(p.name)}
-                  className={cn(
-                    "group rounded-2xl border p-4 text-left transition",
-                    p.name === selected
-                      ? "border-claw-400/40 bg-claw-500/[0.06]"
-                      : "border-white/[0.07] bg-white/[0.02] hover:border-white/20",
-                  )}
+        <div className="glass relative flex min-w-0 flex-col overflow-hidden p-2 sm:p-3">
+          <AnimatePresence mode="wait" initial={false}>
+            {view === "orbit" ? (
+              <motion.div
+                key="orbit"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="flex flex-1 flex-col justify-center"
+              >
+                <div
+                  ref={chartRef}
+                  className="relative rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-claw-400/60"
+                  tabIndex={0}
+                  role="listbox"
+                  aria-label="Pipeline constellation — use the arrow keys to move between pipelines, Enter to open one"
+                  aria-activedescendant={selected ? `node-${selected}` : undefined}
+                  onKeyDown={onChartKey}
+                  onMouseLeave={() => setHovered(null)}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-2 font-mono text-sm font-semibold text-fog">
-                      <span
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ background: colorFor(p.category) }}
+                  <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full select-none">
+                    <defs>
+                      <radialGradient id="hubGlow">
+                        <stop offset="0%" stopColor="rgba(57,211,83,0.28)" />
+                        <stop offset="100%" stopColor="rgba(57,211,83,0)" />
+                      </radialGradient>
+                      <linearGradient id="sweep" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="rgba(57,211,83,0)" />
+                        <stop offset="100%" stopColor="rgba(57,211,83,0.10)" />
+                      </linearGradient>
+                    </defs>
+
+                    {/* guide rings */}
+                    {[0.45, 0.72, 1].map((f, i) => (
+                      <ellipse
+                        key={f}
+                        cx={cx}
+                        cy={cy}
+                        rx={(layout.rInner + (layout.rOuter - layout.rInner) * f) * layout.sx}
+                        ry={layout.rInner + (layout.rOuter - layout.rInner) * f}
+                        fill="none"
+                        stroke="rgba(255,255,255,0.045)"
+                        strokeDasharray={i === 2 ? undefined : "2 6"}
                       />
-                      {p.name}
+                    ))}
+
+                    {/* domain wedges */}
+                    {layout.wedges.map((w, i) => {
+                      const color = colorForCategory(w.category);
+                      const lit = focusCategory === w.category;
+                      const faded = focusCategory !== null && !lit;
+                      return (
+                        <g
+                          key={w.category}
+                          className="cursor-pointer"
+                          onMouseEnter={() => setHoverCategory(w.category)}
+                          onMouseLeave={() => setHoverCategory(null)}
+                          onClick={() => setCategory(category === w.category ? "All" : w.category)}
+                        >
+                          <motion.path
+                            d={w.path}
+                            fill={color}
+                            initial={reduce ? false : { opacity: 0 }}
+                            animate={{ opacity: !inView ? 0 : lit ? 0.11 : faded ? 0.015 : 0.035 }}
+                            transition={{ duration: 0.5, delay: inView && !lit && !faded ? 0.1 + i * 0.05 : 0 }}
+                          />
+                          <motion.text
+                            x={w.label.x}
+                            y={w.label.y}
+                            textAnchor={w.label.anchor}
+                            fontSize="11"
+                            fontWeight={lit ? 600 : 500}
+                            fill={lit ? "#F4F5F6" : "#9AA0AA"}
+                            initial={reduce ? false : { opacity: 0 }}
+                            animate={{ opacity: !inView ? 0 : faded ? 0.35 : 1 }}
+                            transition={{ duration: 0.5, delay: inView && !faded && !lit ? 0.4 + i * 0.05 : 0 }}
+                          >
+                            {shortLabel(w.category)}
+                            <tspan fill="#646B76" fontWeight={400}>
+                              {" "}
+                              {w.count}
+                            </tspan>
+                          </motion.text>
+                        </g>
+                      );
+                    })}
+
+                    {/* slow radar sweep */}
+                    {!reduce && inView && (
+                      <g
+                        style={{
+                          transformOrigin: `${cx}px ${cy}px`,
+                          transformBox: "view-box",
+                          animation: "orbit-spin 40s linear infinite",
+                        }}
+                        pointerEvents="none"
+                      >
+                        <path
+                          d={`M ${cx} ${cy} L ${cx + layout.rOuter * 1.25} ${cy} A ${layout.rOuter * 1.25} ${layout.rOuter * 1.25} 0 0 0 ${cx + layout.rOuter * 1.25 * Math.cos(-0.5)} ${cy + layout.rOuter * 1.25 * Math.sin(-0.5)} Z`}
+                          fill="url(#sweep)"
+                          opacity={0.6}
+                        />
+                      </g>
+                    )}
+
+                    {/* the selected / hovered pipeline's link to the hub */}
+                    {[selected, hovered !== selected ? hovered : null].map((name, i) => {
+                      const n = name ? nodeByName.get(name) : null;
+                      if (!n) return null;
+                      return (
+                        <motion.line
+                          key={`${i}-${n.name}`}
+                          x1={cx}
+                          y1={cy}
+                          x2={n.x}
+                          y2={n.y}
+                          stroke={colorForCategory(n.category)}
+                          strokeWidth={i === 0 ? 1.4 : 1}
+                          strokeOpacity={i === 0 ? 0.55 : 0.3}
+                          strokeLinecap="round"
+                          initial={reduce ? false : { pathLength: 0 }}
+                          animate={{ pathLength: 1 }}
+                          transition={{ duration: 0.45, ease: EASE }}
+                          pointerEvents="none"
+                        />
+                      );
+                    })}
+
+                    {/* hub */}
+                    <g pointerEvents="none">
+                      <circle cx={cx} cy={cy} r={layout.rInner - 18} fill="url(#hubGlow)" />
+                      <circle cx={cx} cy={cy} r={36} fill="#0A0B0E" stroke="rgba(57,211,83,0.45)" strokeWidth={1} />
+                      <text x={cx} y={cy - 1} textAnchor="middle" fontSize="12.5" fontWeight="600" fill="#F4F5F6" style={{ fontFamily: "var(--font-mono)" }}>
+                        nf-claw
+                      </text>
+                      <text x={cx} y={cy + 14} textAnchor="middle" fontSize="9.5" fill="#646B76">
+                        {filtered.length === pipelines.length ? `${pipelines.length} pipelines` : `${filtered.length} / ${pipelines.length}`}
+                      </text>
+                    </g>
+
+                    {/* nodes */}
+                    {layout.nodes.map((n) => {
+                      const p = byName.get(n.name)!;
+                      const dim = !matchSet.has(n.name) || (hoverCategory !== null && n.category !== hoverCategory);
+                      const isSel = n.name === selected;
+                      const isHover = n.name === hovered;
+                      const color = colorForCategory(n.category);
+                      // the sweep-in order: clockwise from the top
+                      const order = (n.angle + Math.PI / 2 + Math.PI * 2) % (Math.PI * 2);
+                      return (
+                        <motion.g
+                          key={n.name}
+                          id={`node-${n.name}`}
+                          role="option"
+                          aria-selected={isSel}
+                          aria-label={`${p.name} ${p.version}, ${p.category}`}
+                          className="cursor-pointer"
+                          onClick={() => setSelected(n.name)}
+                          onMouseEnter={() => setHovered(n.name)}
+                          initial={reduce ? false : { opacity: 0, scale: 0 }}
+                          animate={inView ? { opacity: dim ? 0.18 : 1, scale: 1 } : { opacity: 0, scale: 0 }}
+                          transition={{
+                            opacity: { duration: 0.3 },
+                            scale: { duration: 0.6, ease: EASE, delay: inView ? 0.25 + order * 0.12 : 0 },
+                          }}
+                        >
+                          {/* generous invisible hit target */}
+                          <circle cx={n.x} cy={n.y} r={Math.max(n.r + 6, 12)} fill="transparent" />
+                          {isSel && !reduce && (
+                            <motion.circle
+                              cx={n.x}
+                              cy={n.y}
+                              fill="none"
+                              stroke={color}
+                              strokeWidth={1.2}
+                              initial={{ r: n.r + 2, opacity: 0.6 }}
+                              animate={{ r: [n.r + 2, n.r + 14], opacity: [0.6, 0] }}
+                              transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut" }}
+                            />
+                          )}
+                          <circle cx={n.x} cy={n.y} r={n.r + 4} fill={color} opacity={isSel || isHover ? 0.25 : 0.1} />
+                          <circle
+                            cx={n.x}
+                            cy={n.y}
+                            r={isHover && !isSel ? n.r + 1.5 : n.r}
+                            fill={color}
+                            stroke={isSel ? "#ffffff" : "#0A0B0E"}
+                            strokeWidth={isSel ? 2 : 1.5}
+                            style={{ transition: "r 0.2s ease" }}
+                          />
+                          {isSel && (
+                            <text
+                              x={n.x}
+                              y={n.y - n.r - 9}
+                              textAnchor="middle"
+                              fontSize="11.5"
+                              fontWeight="600"
+                              fill="#F4F5F6"
+                              stroke="#0A0B0E"
+                              strokeWidth={3}
+                              paintOrder="stroke"
+                              style={{ fontFamily: "var(--font-mono)" }}
+                              pointerEvents="none"
+                            >
+                              {n.name}
+                            </text>
+                          )}
+                        </motion.g>
+                      );
+                    })}
+                  </svg>
+
+                  {/* hover tooltip */}
+                  <AnimatePresence>
+                    {tip && tipPipeline && tip.name !== selected && (
+                      <motion.div
+                        key="tip"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-xl border border-white/10 bg-ink-900/95 px-3 py-2 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.8)] backdrop-blur"
+                        style={{ left: `${(tip.x / W) * 100}%`, top: `calc(${(tip.y / H) * 100}% - ${tip.r + 10}px)` }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full" style={{ background: colorForCategory(tip.category) }} />
+                          <span className="font-mono text-sm font-semibold text-fog">{tip.name}</span>
+                          <span className="font-mono text-[11px] text-fog-dim">{tipPipeline.version}</span>
+                        </div>
+                        <div className="mt-0.5 text-[11px] text-fog-dim">
+                          {tipPipeline.category} · {tipPipeline.parameterCount} params
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-2 pb-1 pt-2 text-[11px] text-fog-dim">
+                  <span className="flex items-center gap-2">
+                    <span className="flex items-end gap-1" aria-hidden>
+                      <span className="h-1.5 w-1.5 rounded-full bg-fog-dim" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-fog-dim" />
+                      <span className="h-3.5 w-3.5 rounded-full bg-fog-dim" />
                     </span>
-                    <span className="text-xs text-fog-dim">{p.version}</span>
-                  </div>
-                  <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-fog-muted">
-                    {p.description}
-                  </p>
-                  <div className="mt-3 flex gap-3 text-[11px] text-fog-dim">
-                    <span>{p.parameterCount} params</span>
-                    <span>{p.moduleCount} modules</span>
-                  </div>
-                </button>
-              ))}
-              {filtered.length === 0 && (
-                <p className="col-span-full py-12 text-center text-sm text-fog-dim">
-                  No pipelines match your search.
-                </p>
-              )}
-            </div>
-          )}
+                    size = parameters · color = domain
+                  </span>
+                  <span className="hidden sm:inline">Click a node or wedge · arrow keys to step through</span>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="grid"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="grid max-h-[600px] content-start gap-2.5 overflow-y-auto p-1 sm:grid-cols-2"
+              >
+                {filtered.map((p) => (
+                  <button
+                    key={p.name}
+                    onClick={() => setSelected(p.name)}
+                    aria-pressed={p.name === selected}
+                    className={cn(
+                      "group rounded-2xl border p-4 text-left transition-colors duration-200",
+                      p.name === selected
+                        ? "border-claw-400/40 bg-claw-500/[0.06]"
+                        : "border-white/[0.07] bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.035]",
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex min-w-0 items-center gap-2 font-mono text-sm font-semibold text-fog">
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: colorForCategory(p.category) }} />
+                        <span className="truncate">
+                          <Highlight text={p.name} query={query} />
+                        </span>
+                      </span>
+                      <span className="shrink-0 font-mono text-xs text-fog-dim">{p.version}</span>
+                    </div>
+                    <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-fog-muted">{p.description}</p>
+                    <div className="mt-3 flex gap-3 text-[11px] text-fog-dim">
+                      <span>{p.parameterCount} params</span>
+                      <span>{p.moduleCount} modules</span>
+                      <span className="ml-auto truncate">{p.category}</span>
+                    </div>
+                  </button>
+                ))}
+                {filtered.length === 0 && <EmptyState onReset={() => { setQuery(""); setCategory("All"); }} />}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* inspector */}
-        <div className="glass flex flex-col p-6">
+        <div className="glass relative flex min-h-[420px] flex-col overflow-hidden p-6">
+          {selectedPipeline && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full blur-[90px] transition-colors duration-700"
+              style={{ background: `${colorForCategory(selectedPipeline.category)}26` }}
+            />
+          )}
           <AnimatePresence mode="wait">
             {selectedPipeline ? (
-              <motion.div
+              <Inspector
                 key={selectedPipeline.name}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="flex h-full flex-col"
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="h-3 w-3 rounded-full"
-                    style={{ background: colorFor(selectedPipeline.category) }}
-                  />
-                  <span className="chip">{selectedPipeline.category}</span>
-                  <span className="ml-auto font-mono text-sm text-fog-dim">
-                    {selectedPipeline.version}
-                  </span>
-                </div>
-                <h3 className="mt-4 font-mono text-2xl font-semibold text-fog">
-                  {selectedPipeline.name}
-                </h3>
-                <p className="mt-1 text-xs text-fog-dim">{selectedPipeline.pipeline}</p>
-                <p className="mt-4 text-sm leading-relaxed text-fog-muted">
-                  {selectedPipeline.description}
-                </p>
-
-                <div className="mt-6 grid grid-cols-2 gap-3">
-                  <Metric icon={<SlidersHorizontal className="h-4 w-4" />} value={selectedPipeline.parameterCount} label="parameters" />
-                  <Metric icon={<Puzzle className="h-4 w-4" />} value={selectedPipeline.moduleCount} label="nf-core modules" />
-                  <Metric icon={<GitBranch className="h-4 w-4" />} value={selectedPipeline.groupCount} label="param groups" />
-                  <Metric icon={<Check className="h-4 w-4" />} value={selectedPipeline.requiredCount} label="required" />
-                </div>
-
-                {selectedPipeline.releaseDate && (
-                  <p className="mt-4 text-xs text-fog-dim">
-                    Pinned release · {formatDate(selectedPipeline.releaseDate)}
-                    {selectedPipeline.policy && ` · ${selectedPipeline.policy}`}
-                  </p>
-                )}
-
-                <div className="mt-auto flex flex-col gap-2 pt-6">
-                  <Link
-                    href={`/pipelines/${selectedPipeline.name}`}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-claw-500 px-4 py-3 text-sm font-semibold text-ink-950 transition hover:bg-claw-400"
-                  >
-                    Inspect pipeline
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Link>
-                  <button
-                    onClick={() => toggleCompare(selectedPipeline.name)}
-                    className={cn(
-                      "inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition",
-                      compare.includes(selectedPipeline.name)
-                        ? "border-claw-400/40 bg-claw-500/10 text-claw-200"
-                        : "border-white/10 bg-white/[0.02] text-fog-muted hover:text-fog",
-                    )}
-                  >
-                    {compare.includes(selectedPipeline.name) ? (
-                      <>
-                        <Check className="h-4 w-4" /> In comparison
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4" /> Add to compare
-                      </>
-                    )}
-                  </button>
-                </div>
-              </motion.div>
+                p={selectedPipeline}
+                inCompare={compare.includes(selectedPipeline.name)}
+                compareFull={compare.length >= MAX_COMPARE}
+                onCompare={() => toggleCompare(selectedPipeline.name)}
+              />
             ) : (
               <p className="m-auto text-sm text-fog-dim">Select a pipeline to inspect.</p>
             )}
@@ -408,61 +568,18 @@ export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }
       <AnimatePresence>
         {compare.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="glass mt-6 overflow-hidden p-5"
+            initial={{ opacity: 0, y: 20, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: 20, height: 0 }}
+            transition={{ duration: 0.4, ease: EASE }}
+            className="overflow-hidden"
           >
-            <div className="mb-4 flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-fog">
-                Comparing {compare.length} pipeline{compare.length > 1 ? "s" : ""}
-              </h4>
-              <button
-                onClick={() => setCompare([])}
-                className="inline-flex items-center gap-1 text-xs text-fog-dim hover:text-fog"
-              >
-                <X className="h-3.5 w-3.5" /> Clear
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs uppercase tracking-wider text-fog-dim">
-                    <th className="py-2 pr-4 font-medium">Metric</th>
-                    {compare.map((name) => (
-                      <th key={name} className="py-2 pr-4 font-mono font-medium text-fog">
-                        {name}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="text-fog-muted">
-                  {(
-                    [
-                      ["Category", (p: PipelineSummary) => p.category],
-                      ["Version", (p: PipelineSummary) => p.version],
-                      ["Parameters", (p: PipelineSummary) => p.parameterCount],
-                      ["Param groups", (p: PipelineSummary) => p.groupCount],
-                      ["nf-core modules", (p: PipelineSummary) => p.moduleCount],
-                      ["Required params", (p: PipelineSummary) => p.requiredCount],
-                      ["Samplesheet cols", (p: PipelineSummary) => p.samplesheetCount],
-                    ] as const
-                  ).map(([label, accessor]) => (
-                    <tr key={label} className="border-t border-white/[0.05]">
-                      <td className="py-2.5 pr-4 text-fog-dim">{label}</td>
-                      {compare.map((name) => {
-                        const p = pipelines.find((x) => x.name === name)!;
-                        return (
-                          <td key={name} className="py-2.5 pr-4 text-fog">
-                            {accessor(p)}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <CompareTray
+              names={compare}
+              byName={byName}
+              onRemove={(n) => setCompare((c) => c.filter((x) => x !== n))}
+              onClear={() => setCompare([])}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -470,45 +587,200 @@ export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }
   );
 }
 
-function ViewBtn({
-  active,
-  onClick,
-  label,
-  children,
+function Inspector({
+  p,
+  inCompare,
+  compareFull,
+  onCompare,
 }: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  children: React.ReactNode;
+  p: PipelineSummary;
+  inCompare: boolean;
+  compareFull: boolean;
+  onCompare: () => void;
 }) {
+  const { copied, copy } = useCopy();
+  const tools = p.tools.slice(0, 7);
   return (
-    <button
-      onClick={onClick}
-      aria-label={label}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition",
-        active ? "bg-white/10 text-fog" : "text-fog-dim hover:text-fog",
-      )}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.28, ease: EASE }}
+      className="relative flex h-full flex-col"
     >
-      {children}
-    </button>
+      <div className="flex items-center gap-2">
+        <span className="chip">
+          <span className="h-2 w-2 rounded-full" style={{ background: colorForCategory(p.category) }} />
+          {p.category}
+        </span>
+        <span className="ml-auto font-mono text-sm text-fog-dim">{p.version}</span>
+      </div>
+      <h3 className="mt-4 font-mono text-2xl font-semibold text-fog">{p.name}</h3>
+      <p className="mt-1 text-xs text-fog-dim">{p.pipeline}</p>
+      <p className="mt-4 text-sm leading-relaxed text-fog-muted">{p.description}</p>
+
+      {tools.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          {tools.map((t) => (
+            <span key={t} className="rounded-md border border-white/[0.07] bg-white/[0.03] px-2 py-0.5 text-[11px] text-fog-muted">
+              {t}
+            </span>
+          ))}
+          {p.tools.length > tools.length && (
+            <span className="px-1 py-0.5 text-[11px] text-fog-dim">+{p.tools.length - tools.length} more</span>
+          )}
+        </div>
+      )}
+
+      <div className="mt-5 grid grid-cols-2 gap-2.5">
+        <Metric icon={<SlidersHorizontal className="h-4 w-4" />} value={p.parameterCount} label="parameters" />
+        <Metric icon={<Puzzle className="h-4 w-4" />} value={p.moduleCount} label="nf-core modules" />
+        <Metric icon={<GitBranch className="h-4 w-4" />} value={p.groupCount} label="param groups" />
+        <Metric icon={<Check className="h-4 w-4" />} value={p.requiredCount} label="required" />
+      </div>
+
+      {p.releaseDate && (
+        <p className="mt-4 text-xs text-fog-dim">
+          Pinned release · {formatDate(p.releaseDate)}
+          {p.policy && ` · ${p.policy}`}
+        </p>
+      )}
+
+      <div className="mt-auto grid grid-cols-2 gap-2 pt-6">
+        <Link
+          href={`/pipelines/${p.name}/`}
+          className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl bg-claw-500 px-4 py-3 text-sm font-semibold text-ink-950 transition hover:bg-claw-400 hover:shadow-[0_10px_30px_-12px_rgba(57,211,83,0.7)]"
+        >
+          Inspect pipeline
+          <ArrowUpRight className="h-4 w-4" />
+        </Link>
+        <button
+          onClick={() => void copy(p.runCommand)}
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5 text-xs font-medium text-fog-muted transition hover:border-white/20 hover:text-fog"
+        >
+          {copied ? <Check className="h-3.5 w-3.5 text-claw-400" /> : <span className="font-mono text-claw-400">$</span>}
+          {copied ? "Copied" : "Copy run command"}
+        </button>
+        <button
+          onClick={onCompare}
+          disabled={!inCompare && compareFull}
+          title={!inCompare && compareFull ? "Compare holds up to four pipelines" : undefined}
+          className={cn(
+            "inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40",
+            inCompare
+              ? "border-claw-400/40 bg-claw-500/10 text-claw-200"
+              : "border-white/10 bg-white/[0.02] text-fog-muted hover:border-white/20 hover:text-fog",
+          )}
+        >
+          {inCompare ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+          {inCompare ? "Comparing" : "Compare"}
+        </button>
+      </div>
+    </motion.div>
   );
 }
 
-function Metric({
-  icon,
-  value,
-  label,
+const COMPARE_ROWS: [string, (p: PipelineSummary) => string | number, boolean][] = [
+  ["Domain", (p) => p.category, false],
+  ["Version", (p) => p.version, false],
+  ["Parameters", (p) => p.parameterCount, true],
+  ["Param groups", (p) => p.groupCount, true],
+  ["nf-core modules", (p) => p.moduleCount, true],
+  ["Required params", (p) => p.requiredCount, true],
+  ["Samplesheet columns", (p) => p.samplesheetCount, true],
+  ["Pinned", (p) => (p.releaseDate ? formatDate(p.releaseDate) : "—"), false],
+];
+
+function CompareTray({
+  names,
+  byName,
+  onRemove,
+  onClear,
 }: {
-  icon: React.ReactNode;
-  value: number;
-  label: string;
+  names: string[];
+  byName: Map<string, PipelineSummary>;
+  onRemove: (name: string) => void;
+  onClear: () => void;
 }) {
+  const ps = names.map((n) => byName.get(n)!).filter(Boolean);
+  return (
+    <div className="glass mt-6 p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <h4 className="text-sm font-semibold text-fog">
+          Comparing {ps.length} pipeline{ps.length > 1 ? "s" : ""}
+          <span className="ml-2 font-normal text-fog-dim">· up to {MAX_COMPARE}</span>
+        </h4>
+        <button onClick={onClear} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-fog-dim transition hover:bg-white/5 hover:text-fog">
+          <X className="h-3.5 w-3.5" /> Clear
+        </button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[480px] text-sm">
+          <thead>
+            <tr className="text-left text-xs uppercase tracking-wider text-fog-dim">
+              <th className="py-2 pr-4 font-medium">Metric</th>
+              {ps.map((p) => (
+                <th key={p.name} className="py-2 pr-4 font-medium normal-case tracking-normal">
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full" style={{ background: colorForCategory(p.category) }} />
+                    <Link href={`/pipelines/${p.name}/`} className="font-mono text-sm text-fog hover:text-claw-300">
+                      {p.name}
+                    </Link>
+                    <button
+                      onClick={() => onRemove(p.name)}
+                      className="inline-flex h-5 w-5 items-center justify-center rounded text-fog-dim transition hover:bg-white/5 hover:text-fog"
+                      aria-label={`Remove ${p.name} from comparison`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {COMPARE_ROWS.map(([label, get, numeric]) => {
+              const values = ps.map(get);
+              const max = numeric && ps.length > 1 ? Math.max(...(values as number[])) : null;
+              return (
+                <tr key={label} className="border-t border-white/[0.05]">
+                  <td className="py-2.5 pr-4 text-fog-dim">{label}</td>
+                  {values.map((v, i) => (
+                    <td
+                      key={ps[i].name}
+                      className={cn("py-2.5 pr-4 tabular-nums", max !== null && v === max ? "font-semibold text-claw-300" : "text-fog")}
+                    >
+                      {v}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function Metric({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
   return (
     <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
       <div className="flex items-center gap-2 text-claw-400/80">{icon}</div>
-      <div className="mt-2 text-2xl font-semibold text-fog">{value}</div>
+      <div className="mt-2 text-2xl font-semibold tabular-nums text-fog">{value}</div>
       <div className="text-[11px] text-fog-dim">{label}</div>
+    </div>
+  );
+}
+
+function EmptyState({ onReset }: { onReset: () => void }) {
+  return (
+    <div className="col-span-full flex flex-col items-center gap-3 py-16 text-center">
+      <Search className="h-6 w-6 text-fog-faint" />
+      <p className="text-sm text-fog-muted">No pipelines match your search.</p>
+      <button onClick={onReset} className="pill pill-off">
+        Reset filters
+      </button>
     </div>
   );
 }
