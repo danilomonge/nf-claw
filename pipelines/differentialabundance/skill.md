@@ -118,6 +118,8 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/differentialabundance/blob/2.0.0/docs/output.md
 
+Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: decoupler-py, GSEA, affy, DESeq2, GEOQuery, ggplot2, gprofiler2, Limma, optparse, plotly, Proteus, R, RColorBrewer, RMarkdown, shinyngs, SummarizedExperiment, variancePartition, variancePartition::dream.
 

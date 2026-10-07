@@ -114,6 +114,8 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/drop/blob/1.0.0/docs/output.md
 
+Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: BBmisc, BCFTools, BeautifulSoup4, BiocManager, BiocParallel, BSgenome, Cowplot, Data.table, DelayedMatrixStats, Devtools, Dplyr, DT, FRASER, GATK, GenomicAlignments, GenomicFeatures, GenomicRanges, Ggplot2, Ggthemes, Hdf5r, Htslib, Knitr, Lxml, MafDB, Magrittr, MultiQC, OUTRIDER, Pheatmap, Plotly.R, Python, R, RColorBrewer, Reshape2, Rmarkdown, Rsamtools, Rtracklayer, R utils, R YAML, SAMtools, Stringr, SummarizedExperiment, Tar, Tidyr, tMAE, Txdbmaker, VariantAnnotation.
 

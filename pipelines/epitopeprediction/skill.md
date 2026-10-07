@@ -77,6 +77,8 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/epitopeprediction/blob/3.1.1/docs/output.md
 
+Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: MultiQC, SnpSift, Epytope (FRED2), MHCflurry, MHCnuggets, NetMHC-4.0, NetMHCpan-4.0, NetMHCpan-4.1, NetMHCII-2.3, NetMHCIIpan-4.0.
 
