@@ -11,12 +11,14 @@ export function SearchField({
   placeholder,
   label,
   className,
+  onFocus,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
   label: string;
   className?: string;
+  onFocus?: () => void;
 }) {
   return (
     <div className={cn("relative", className)}>
@@ -25,6 +27,7 @@ export function SearchField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => e.key === "Escape" && onChange("")}
+        onFocus={onFocus}
         placeholder={placeholder}
         aria-label={label}
         className="field"

@@ -8,6 +8,7 @@ import { docHeadings, docPreview, readingMinutes } from "@/lib/doc-meta";
 import { Markdown } from "@/components/ui/markdown";
 import { DocToc } from "@/components/docs/doc-toc";
 import { Reveal } from "@/components/ui/reveal";
+import { OG_IMAGE, siteUrl } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export function generateStaticParams() {
@@ -18,7 +19,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const doc = getDoc(slug);
   if (!doc) return { title: "Document not found" };
-  return { title: doc.title, description: docPreview(doc.content, 160) };
+  const description = docPreview(doc.content, 160);
+  return {
+    title: doc.title,
+    description,
+    alternates: { canonical: siteUrl(`/docs/${doc.slug}/`) },
+    openGraph: { title: `${doc.title} · nf-claw`, description, type: "article", images: [OG_IMAGE] },
+  };
 }
 
 function clean(md: string): string {

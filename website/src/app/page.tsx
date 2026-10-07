@@ -15,13 +15,13 @@ import {
   getDocs,
   getLiveRuns,
 } from "@/lib/data";
-import { toSummary, toSkill, categorize, colorForCategory } from "@/lib/derive";
+import { toSummary, toSkillCard, categorize, colorForCategory } from "@/lib/derive";
 
 export default async function HomePage() {
   const pipelines = getPipelines();
   const meta = getRepoMeta();
   const summaries = pipelines.map(toSummary);
-  const skills = pipelines.map(toSkill);
+  const skills = pipelines.map(toSkillCard);
   // Fetch more commits than ever fit on screen: the Update history panel crops
   // and fades the list to the exact height of the automation column beside it.
   const commits = getCommits(40);
