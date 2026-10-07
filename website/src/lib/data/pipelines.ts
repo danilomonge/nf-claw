@@ -200,6 +200,33 @@ function demoCommand(skill: string): string | null {
   return line ? line.trim() : null;
 }
 
+interface Handoff {
+  from: string;
+  to: string;
+  description: string;
+}
+
+/** The chaining rules, `handoffs/<upstream>/<downstream>.json` — which pipeline can follow which. */
+function readHandoffs(): Handoff[] {
+  const root = repoPath("handoffs");
+  if (!fs.existsSync(root)) return [];
+  const out: Handoff[] = [];
+  for (const up of fs.readdirSync(root).sort()) {
+    const dir = path.join(root, up);
+    if (!fs.statSync(dir).isDirectory()) continue;
+    for (const file of fs.readdirSync(dir).sort()) {
+      if (!file.endsWith(".json")) continue;
+      try {
+        const rule = JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"));
+        out.push({ from: up, to: file.slice(0, -".json".length), description: String(rule.description ?? "") });
+      } catch {
+        // a malformed rule is the drift gate's to report, not the website's
+      }
+    }
+  }
+  return out;
+}
+
 let cache: Pipeline[] | null = null;
 
 export function getPipelines(): Pipeline[] {
@@ -207,6 +234,7 @@ export function getPipelines(): Pipeline[] {
   const catalog = readCatalog();
   const sources = readSources();
   const submodules = readSubmoduleUrls();
+  const handoffs = readHandoffs();
 
   const pipelines = catalog
     .map((entry): Pipeline | null => {
@@ -244,6 +272,12 @@ export function getPipelines(): Pipeline[] {
         usageUrl: extractUsageUrl(skillBody),
         releaseDate: releaseDate(name, commit),
         moduleCount: moduleCount(name),
+        feeds: handoffs
+          .filter((h) => h.from === name)
+          .map((h) => ({ pipeline: h.to, description: h.description })),
+        fedBy: handoffs
+          .filter((h) => h.to === name)
+          .map((h) => ({ pipeline: h.from, description: h.description })),
       };
     })
     .filter((p): p is Pipeline => p !== null)

@@ -52,7 +52,7 @@ over the chain's; the others replace it). Each means what the `nfclaw run` flag 
 | `params` | the stage's own pipeline parameters, as on the command line (`skip-busco` = `skip_busco`) — look them up in its `reference.md` |
 | `params_file` | a params file for the stage |
 | `pipeline_version` | a release, or `dev` (as `--pipeline-version`) |
-| `demo` | add the release's `test` profile (its small references and resource ceiling); the handed-over `--input` still wins, because a params file beats a profile |
+| `demo` | add the release's `test` profile (its small references and resource ceiling); the handed-over `--input` still wins, because a params file beats a profile. That ceiling is sized for the test data — often 1 h per task (mag's BUSCO on a real metagenome takes longer): give the stage its own `limits`, which replace it |
 | `retries` | relaunch the stage (with Nextflow's `-resume`) after a pipeline failure — never after a validation error or a timeout. Default 0 |
 | `handoff` | an inline rule (or a path to a rule file) used *into* this stage instead of the registry's |
 

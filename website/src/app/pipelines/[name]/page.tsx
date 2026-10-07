@@ -8,6 +8,7 @@ import {
   Calendar,
   GitCommitHorizontal,
   Github,
+  Link2,
   Layers,
   Puzzle,
   SlidersHorizontal,
@@ -298,6 +299,50 @@ export default async function PipelinePage({
           <h2 className="text-2xl font-semibold tracking-tight text-fog">Outputs</h2>
           <div className="glass mt-5 p-6">
             <p className="text-pretty leading-relaxed text-fog-muted">{pipeline.outputs}</p>
+          </div>
+        </section>
+      )}
+
+      {/* chaining */}
+      {(pipeline.feeds.length > 0 || pipeline.fedBy.length > 0) && (
+        <section className="mt-16">
+          <h2 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-fog">
+            <Link2 className="h-5 w-5 text-claw-400" /> Chaining
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm text-fog-muted">
+            Run {pipeline.name} as one stage of a chain: <code className="font-mono">nfclaw chain run</code>{" "}
+            starts each stage only after the one before it succeeded, and prepares its inputs from
+            that stage&apos;s outputs. Every rule is checked against both pinned schemas.
+          </p>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {(
+              [
+                ["Feeds into", pipeline.feeds],
+                ["Fed by", pipeline.fedBy],
+              ] as const
+            )
+              .filter(([, edges]) => edges.length > 0)
+              .map(([title, edges]) => (
+                <div key={title} className="glass p-5">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-fog-dim">{title}</h3>
+                  <ul className="mt-3 space-y-3">
+                    {edges.map((e) => (
+                      <li key={e.pipeline} className="text-sm leading-relaxed text-fog-muted">
+                        <Link
+                          href={`/pipelines/${e.pipeline}`}
+                          className="font-mono text-claw-300 hover:text-claw-200"
+                        >
+                          {e.pipeline}
+                        </Link>
+                        {e.description && <span> — {e.description}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+          </div>
+          <div className="mt-4">
+            <CodeBlock code={`nfclaw chain edges ${pipeline.name}`} label="nfclaw" />
           </div>
         </section>
       )}
