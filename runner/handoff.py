@@ -34,7 +34,7 @@ from runner.outputs import is_result
 REGISTRY_DIRNAME = "handoffs"
 KINDS = ("samplesheet", "build", "file", "upstream_param")
 _RULE_KEYS = {"description", "upstream_params", "params"}
-_EXTRA_KEYS = {"samplesheet": {"provides", "rename", "set", "drop_rows_not_allowed"},
+_EXTRA_KEYS = {"samplesheet": {"provides", "rename", "set", "add_empty", "drop_rows_not_allowed"},
                "build": set(), "file": set(), "upstream_param": set()}
 _BUILD_KEYS = {"rows", "columns", "format"}
 PLACEHOLDER = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
@@ -128,9 +128,10 @@ def parse_rule(data: Any, *, upstream: str, downstream: str, origin: str) -> Rul
             for key in ("rename", "set"):
                 if key in src and not _str_map(src[key]):
                     raise bad(f"'{target}': '{key}' must map column names to strings")
-            drop = src.get("drop_rows_not_allowed", [])
-            if not (isinstance(drop, list) and all(isinstance(c, str) and c for c in drop)):
-                raise bad(f"'{target}': 'drop_rows_not_allowed' must list column names")
+            for key in ("add_empty", "drop_rows_not_allowed"):
+                cols = src.get(key, [])
+                if not (isinstance(cols, list) and all(isinstance(c, str) and c for c in cols)):
+                    raise bad(f"'{target}': '{key}' must list column names")
         if kind == "build":
             _check_build(src["build"], target, bad)
         sources[target] = Source(kind, src, bool(src.get("optional", False)))
@@ -184,7 +185,8 @@ def provided_columns(source: Source) -> list[str]:
         return list(source.spec["build"]["columns"])
     rename = source.spec.get("rename", {})
     cols = [rename.get(c, c) for c in source.spec["provides"]]
-    return list(dict.fromkeys([*cols, *source.spec.get("set", {})]))
+    return list(dict.fromkeys([*cols, *source.spec.get("set", {}),
+                               *source.spec.get("add_empty", [])]))
 
 
 def check_rule(rule: Rule, upstream_tree: Path, downstream_tree: Path) -> list[str]:
@@ -340,6 +342,14 @@ def _pattern(rows: str) -> tuple[str, re.Pattern]:
     return PLACEHOLDER.sub("*", rows), re.compile("^" + "".join(parts) + "$")
 
 
+def _schema_order(header: list[str], sheet_schema) -> list[str]:
+    """`header` with the columns the downstream schema declares first, in its order, then the rest
+    as they were. nf-schema reads columns by name; some releases also check the header literally
+    (atacseq 2.1.2 wants `sample,fastq_1,fastq_2,replicate` first)."""
+    declared = [c.name for c in sheet_schema.columns if c.name in header]
+    return declared + [h for h in header if h not in declared]
+
+
 def _write_sheet(dest: Path, header: list[str], rows: list[dict[str, str]]) -> Path:
     dest.parent.mkdir(parents=True, exist_ok=True)
     with dest.open("w", newline="", encoding="utf-8") as fh:
@@ -380,6 +390,11 @@ def _direct(src: Source, root: Path, sheet_schema, dest: Path
             header.append(col)
         for r in rows:
             r[col] = _fill(template, r)
+    for col in src.spec.get("add_empty", []):           # a column the downstream wants present
+        if col not in header:
+            header.append(col)
+            for r in rows:
+                r[col] = ""
     # Rows the downstream would reject for a value its schema does not allow (createtaxdb builds a
     # sourmash database the pinned taxprofiler cannot use) — dropped only where the rule says so.
     allowed = {c.name: set(c.enum) for c in sheet_schema.columns
@@ -409,7 +424,8 @@ def _direct(src: Source, root: Path, sheet_schema, dest: Path
                 derived.append(rel)
     suffix = sheet.suffix.lower() if sheet.suffix.lower() in (".csv", ".tsv") else ".csv"
     extra = {"dropped_rows": dropped} if dropped else {}
-    return _write_sheet(dest.with_suffix(suffix), header, rows), derived, extra
+    return (_write_sheet(dest.with_suffix(suffix), _schema_order(header, sheet_schema), rows),
+            derived, extra)
 
 
 def _build(src: Source, root: Path, sheet_schema, dest: Path
@@ -440,7 +456,7 @@ def _build(src: Source, root: Path, sheet_schema, dest: Path
     if not rows:
         raise _Unresolved(f"no file in {root} matches {spec['rows']!r}")
     return _write_sheet(dest.with_suffix("." + spec.get("format", "csv")),
-                        list(spec["columns"]), rows), derived, {}
+                        _schema_order(list(spec["columns"]), sheet_schema), rows), derived, {}
 
 
 def _resolve(rule: Rule, target: str, src: Source, *, upstream_outdir: Path,

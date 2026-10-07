@@ -351,3 +351,36 @@ def test_drop_rows_needs_columns_with_allowed_values(library):
     with pytest.raises(NfclawError, match="'drop_rows_not_allowed' must list column names"):
         _rule({"params": {"input": {"samplesheet": "s.csv", "provides": ["sample"],
                                     "drop_rows_not_allowed": "tool"}}})
+
+
+# --- the layout of a written samplesheet --------------------------------------------------------
+
+def test_a_handed_over_sheet_follows_the_downstream_schemas_column_order(library, finished_run,
+                                                                         tmp_path):
+    # Some releases check the header literally (atacseq 2.1.2 wants sample,fastq_1,fastq_2,…).
+    _, down = _trees(library("mini_up", "mini"))
+    up = finished_run(tmp_path / "up", {
+        "s.csv": "extra,fastq_2,sample,fastq_1\nx,{outdir}/b.fq.gz,A,{outdir}/a.fq.gz\n",
+        "a.fq.gz": "a", "b.fq.gz": "b"})
+    rule = _rule({"params": {"input": {"samplesheet": "s.csv",
+                                       "provides": ["sample", "fastq_1"]}}})
+    handoff.materialize(rule, upstream_outdir=up, downstream_tree=down, dest=tmp_path / "h")
+    header = (tmp_path / "h" / "input.csv").read_text().splitlines()[0]
+    assert header == "sample,fastq_1,fastq_2,extra"
+
+
+def test_add_empty_adds_a_missing_column_and_keeps_a_present_one(library, finished_run, tmp_path):
+    # demultiplex leaves fastq_2 out of a single-end sheet; atacseq 2.1.2 requires the column.
+    _, down = _trees(library("mini_up", "mini"))
+    rule = _rule({"params": {"input": {"samplesheet": "s.csv", "provides": ["sample", "fastq_1"],
+                                       "add_empty": ["fastq_2"]}}})
+    se = finished_run(tmp_path / "se", {"s.csv": "sample,fastq_1\nA,{outdir}/a.fq.gz\n",
+                                        "a.fq.gz": "a"})
+    handoff.materialize(rule, upstream_outdir=se, downstream_tree=down, dest=tmp_path / "h1")
+    assert (tmp_path / "h1" / "input.csv").read_text().splitlines() == [
+        "sample,fastq_1,fastq_2", f"A,{se}/a.fq.gz,"]
+    pe = finished_run(tmp_path / "pe", {"s.csv": "sample,fastq_1,fastq_2\nA,{outdir}/a.fq.gz,"
+                                                 "{outdir}/b.fq.gz\n", "a.fq.gz": "a", "b.fq.gz": "b"})
+    handoff.materialize(rule, upstream_outdir=pe, downstream_tree=down, dest=tmp_path / "h2")
+    assert _rows(tmp_path / "h2" / "input.csv")[0]["fastq_2"] == f"{pe}/b.fq.gz"
+    assert "fastq_2" in handoff.provided_columns(rule.params["input"])

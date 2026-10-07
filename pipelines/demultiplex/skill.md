@@ -87,7 +87,7 @@ The exact output files and directory layout for this release are documented upst
 Run demultiplex as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges demultiplex`.
 
 Feeds into:
-- `atacseq` — demultiplex writes samplesheet/atacseq_samplesheet.csv (every sample as replicate 1) for its demultiplexed FastQ files.
+- `atacseq` — demultiplex writes samplesheet/atacseq_samplesheet.csv (every sample as replicate 1) for its demultiplexed FastQ files; a single-end run's sheet lacks the fastq_2 column, which atacseq's own sheet check requires, so it is added empty.
 - `methylseq` — demultiplex writes samplesheet/methylseq_samplesheet.csv for its demultiplexed FastQ files.
 - `rnaseq` — demultiplex writes samplesheet/rnaseq_samplesheet.csv for its demultiplexed FastQ files (strandedness from its --strandedness, default auto).
 - `sarek` — demultiplex writes samplesheet/sarek_samplesheet.csv with an empty patient; each sample is made its own patient (set it per sample yourself if several samples share one).
