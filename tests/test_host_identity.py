@@ -42,3 +42,11 @@ def test_failed_macos_probe_falls_back_without_breaking_logging(monkeypatch):
 
     monkeypatch.setattr(guard.subprocess, "run", timeout)
     assert guard.host_identity() is None
+
+
+@pytest.mark.parametrize("uuid", ["00000000-0000-0000-0000-000000000000", "-" * 36, "unknown"])
+def test_macos_placeholder_or_invalid_uuid_does_not_claim_a_host_identity(monkeypatch, uuid):
+    monkeypatch.setattr(guard.sys, "platform", "darwin")
+    monkeypatch.setattr(guard.subprocess, "run", lambda *args, **kwargs: SimpleNamespace(
+        returncode=0, stdout=f'"IOPlatformUUID" = "{uuid}"'))
+    assert guard.host_identity() is None

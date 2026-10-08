@@ -483,15 +483,12 @@ def read_state(log: Path) -> RunState:
         st.error, body = body[at + 1:], body[:at]
     st.console = "\n".join(body)
     st.last_output = [line for line in _clean(st.console) if line][-_LAST_OUTPUT_LINES:]
-    st.nextflow_alive = _is_process(st.nextflow_pid, ("nextflow", "java"))
-
     if st.outcome is not None:
         st.state = "success" if st.outcome == "success" else "ended"
     elif ((st.host_id and st.host_id != host_identity())
           or (not st.host_id and st.host and st.host != socket.gethostname())):
         st.state = "elsewhere"
-    elif _is_process(st.pid, _RUN_NAMES[st.kind]):
-        st.state = "running"
     else:
-        st.state = "dead"
+        st.nextflow_alive = _is_process(st.nextflow_pid, ("nextflow", "java"))
+        st.state = "running" if _is_process(st.pid, _RUN_NAMES[st.kind]) else "dead"
     return st

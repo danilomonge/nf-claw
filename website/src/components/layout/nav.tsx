@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight, Github, Menu, Search, X } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { OPEN_PALETTE_EVENT } from "@/components/layout/command-palette";
+import { ReadingProgress } from "@/components/layout/reading-progress";
 import { lockScroll } from "@/lib/scroll-lock";
 import { cn } from "@/lib/utils";
 
@@ -54,8 +55,6 @@ export function Nav({ repo }: { repo: string | null }) {
   const reduce = useReducedMotion();
   const section = useActiveSection(isHome);
 
-  const { scrollYProgress } = useScroll();
-  const progress = useSpring(scrollYProgress, { stiffness: 220, damping: 40, restDelta: 0.001 });
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16);
@@ -185,12 +184,8 @@ export function Nav({ repo }: { repo: string | null }) {
           </div>
         </nav>
 
-        {/* reading progress */}
-        <motion.div
-          aria-hidden
-          className="absolute inset-x-0 bottom-[-1px] h-px origin-left bg-gradient-to-r from-claw-600 via-claw-400 to-claw-200"
-          style={{ scaleX: progress, opacity: scrolled ? 1 : 0 }}
-        />
+        {/* reading progress, chapter by chapter */}
+        <ReadingProgress visible={scrolled && !open} />
       </div>
 
       {/* Shown/hidden with CSS rather than unmounted through an exit animation, which could leave an

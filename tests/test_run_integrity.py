@@ -108,3 +108,77 @@ def test_planned_pipeline_tree_is_reused_for_check(library, tmp_path, monkeypatc
         demo=True, check_only=True, write_provenance=False,
         timeout_seconds=None, resolved_tree=planned)
     assert str(planned.path) in result.command
+
+
+@pytest.mark.parametrize("exists", [None, False])
+def test_pipeline_can_create_an_optional_path_destination(library, tmp_path, monkeypatch, exists):
+    root = library("mini")
+    source = root / "pipelines/mini/upstream/nextflow_schema.json"
+    schema = json.loads(source.read_text())
+    field = {"type": "string", "format": "directory-path"}
+    if exists is not None:
+        field["exists"] = exists
+    schema["definitions"]["reference_genome_options"]["properties"]["reference_cache"] = field
+    source.write_text(json.dumps(schema))
+    cache = tmp_path / "new-cache"
+    outdir = tmp_path / "results"
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **kwargs: [])
+    monkeypatch.setattr(orchestration.engine_version, "check", lambda *args, **kwargs: [])
+    monkeypatch.setattr(orchestration.provenance, "_nextflow_version", lambda *args: "test")
+
+    def launch(*args, **kwargs):
+        cache.mkdir()
+        (cache / "database.bin").write_bytes(b"generated reference")
+
+    monkeypatch.setattr(orchestration.execution, "run", launch)
+    result = orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=outdir,
+        profile="docker", params_file=None, cli_overrides={"reference_cache": str(cache)},
+        resume=False, demo=True, check_only=False, write_provenance=True, timeout_seconds=None)
+    assert (cache / "database.bin").is_file()
+    manifest = json.loads((outdir / "provenance/run_manifest.json").read_text())
+    assert manifest["unverified_local_paths"] == {"reference_cache": str(cache)}
+    assert any("reference_cache" in warning for warning in result.warnings)
+
+
+def test_missing_schema_required_path_is_still_refused(library, tmp_path, monkeypatch):
+    root = library("mini")
+    source = root / "pipelines/mini/upstream/nextflow_schema.json"
+    schema = json.loads(source.read_text())
+    schema["definitions"]["reference_genome_options"]["properties"]["fasta"]["exists"] = True
+    source.write_text(json.dumps(schema))
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **kwargs: [])
+    monkeypatch.setattr(orchestration.engine_version, "check", lambda *args, **kwargs: [])
+    monkeypatch.setattr(orchestration.execution, "run", lambda *args, **kwargs: pytest.fail("launched"))
+    with pytest.raises(NfclawError, match="cannot snapshot local run dependencies"):
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "results",
+            profile="docker", params_file=None, cli_overrides={"fasta": str(tmp_path / "missing.fa")},
+            resume=False, demo=True, check_only=False, write_provenance=True, timeout_seconds=None)
+
+
+@pytest.mark.parametrize("kind", ["directory", "glob"])
+def test_optional_existing_source_with_broken_member_is_refused(
+        library, tmp_path, monkeypatch, kind):
+    root = library("mini")
+    source = root / "pipelines/mini/upstream/nextflow_schema.json"
+    schema = json.loads(source.read_text())
+    schema["definitions"]["reference_genome_options"]["properties"]["reference_cache"] = {
+        "type": "string", "format": "directory-path"}
+    source.write_text(json.dumps(schema))
+    cache = tmp_path / "existing-cache"
+    cache.mkdir()
+    (cache / "index.bin").write_bytes(b"important reference bytes")
+    (cache / "dangling.bin").symlink_to(tmp_path / "missing-reference")
+    if kind == "glob":
+        value = tmp_path / "existing-*"
+    else:
+        value = cache
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **kwargs: [])
+    monkeypatch.setattr(orchestration.engine_version, "check", lambda *args, **kwargs: [])
+    monkeypatch.setattr(orchestration.execution, "run", lambda *args, **kwargs: pytest.fail("launched"))
+    with pytest.raises(NfclawError, match="cannot snapshot local run dependencies"):
+        orchestration.run_pipeline(
+            "mini", repo_root=root, input_path=None, outdir=tmp_path / "results",
+            profile="docker", params_file=None, cli_overrides={"reference_cache": str(value)},
+            resume=False, demo=True, check_only=False, write_provenance=True, timeout_seconds=None)

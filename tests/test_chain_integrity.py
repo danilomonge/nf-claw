@@ -449,6 +449,60 @@ def test_resume_refuses_changed_inherited_nextflow_environment(
         chain.run_chain(None, repo_root=root, outdir=out, resume=True)
 
 
+@pytest.mark.parametrize("change", ["changed", "missing", "extra"])
+@pytest.mark.parametrize("published_symlink", [False, True])
+def test_status_checks_downstream_input_inventory_for_internal_directory_handoff(
+        library, fake_runs, tmp_path, monkeypatch, change, published_symlink):
+    import hashlib
+    from runner import provenance
+    tmp_path = tmp_path.resolve()
+    rule = {"params": {"fasta": {"upstream_param": "gtf"}}}
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): rule})
+    launch = chain.orchestration.run_pipeline
+    reference = tmp_path / "chain/01-mini_up/index"
+
+    def with_index(name, **kw):
+        result = launch(name, **kw)
+        if not kw["check_only"]:
+            prov = kw["outdir"] / "provenance"
+            if name == "mini_up":
+                if published_symlink:
+                    target = tmp_path / "work-index"
+                    target.mkdir()
+                    reference.symlink_to(target, target_is_directory=True)
+                else:
+                    reference.mkdir()
+                (reference / "index.bin").write_bytes(b"original index")
+                (prov / "params.json").write_text(json.dumps({"gtf": str(reference)}))
+                hashes = provenance.output_checksums(kw["outdir"])
+                (prov / "outputs.sha256").write_text("".join(
+                    f"{digest}  {path}\n" for path, digest in hashes.items()))
+            else:
+                # The real runner resolves the directory parameter before snapshotting inputs.
+                hashes = provenance.hash_inputs([reference.resolve()])
+                (prov / "inputs.sha256").write_text("".join(
+                    f"{digest}  {path}\n" for path, digest in hashes.items()))
+        return result
+
+    monkeypatch.setattr(chain.orchestration, "run_pipeline", with_index)
+    out = tmp_path / "chain"
+    chain.run_chain(_spec(), repo_root=root, outdir=out)
+    state, problems = chain.status(out)
+    assert problems == []
+    snapshot = out / "02-mini/provenance/inputs.sha256"
+    original = snapshot.read_text()
+    different = hashlib.sha256(b"different prelaunch index").hexdigest()
+    if change == "changed":
+        snapshot.write_text(f"{different}  {reference.resolve() / 'index.bin'}\n")
+    elif change == "missing":
+        snapshot.write_text("")
+    else:
+        snapshot.write_text(original + f"{different}  {reference.resolve() / 'extra.bin'}\n")
+    state, problems = chain.status(out)
+    assert any("input inventory" in problem for problem in problems)
+    assert chain.status_exit_code(state, problems) == 1
+
+
 def test_chain_lock_reports_environment_error_on_oserror(tmp_path, monkeypatch):
     import os
     record = tmp_path / "chain"

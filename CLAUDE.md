@@ -5,8 +5,8 @@ This repo is a library of nf-core pipelines. Each lives in `pipelines/<name>/`:
 
 ## Setup (first time)
 Install once, from the repo root, so the `nfclaw` command is on PATH: `pip install -e .`
-(use a virtualenv). No-install equivalent: run `python3 -m runner <cmd>` from the repo root
-anywhere this doc shows `nfclaw <cmd>`.
+(use a virtualenv on a space-free path; on macOS also avoid iCloud paths). No-install equivalent:
+run `python3 -m runner <cmd>` from the repo root anywhere this doc shows `nfclaw <cmd>`.
 
 ## To run a pipeline
 1. Find it: grep `catalog.json` (or `catalog.md`) for a keyword — do NOT read it whole.
@@ -24,12 +24,17 @@ for it, e.g. `NXF_VER=25.10.4 nextflow run …` — and exits; it writes nothing
 can still use that directory for the real run). Add `--demo` to run the pinned release's bundled test profile end
 to end. A run has no overall time limit unless you pass `--timeout SECONDS`.
 
+On POSIX systems, `nfclaw run` holds an exclusive non-blocking sibling lock (`.{outdir.name}.nfclaw.lock`)
+around the run. Overlapping or concurrent runs into the same `--outdir` fail fast with an environment
+error, preventing race conditions or output corruption.
+
 Write **absolute paths inside a samplesheet**: Nextflow resolves them against its launch directory,
 which `nfclaw run` sets to `--outdir`, so a relative one cannot mean what it says — `nfclaw run`
 rejects it before launching. `--input` itself may be relative (nfclaw makes it absolute), and it is
 not always a samplesheet: the pipeline's schema decides — a directory or tarball (rangeland), an SDRF
 file or PRIDE accession (mhcquant), or `--input false` where a pipeline documents running without
-one (sarek — nfclaw then leaves `input` unset). The `Inputs` section of `skill.md` says which.
+one (sarek — nfclaw intercepts it and leaves `input` unset in the params file, avoiding nf-schema type errors).
+The `Inputs` section of `skill.md` says which.
 
 ## Where a run is logged — and how to check one
 Every `nfclaw run` records itself at a fixed place — there is no need to redirect its output, and
@@ -57,8 +62,9 @@ last output. Exit code: 0 success, 3 running, 1 anything else. It works for repl
 
 Start a long run in the background with `nohup nfclaw run ... &` and stop it with
 `kill <nfclaw pid>` (the `pid:` line of the run log): nfclaw then shuts Nextflow and its tasks down,
-writes the bundle and closes the log, as on Ctrl-C. Even `kill -9` cannot orphan Nextflow on Linux —
-the kernel stops it with nfclaw.
+writes the bundle and closes the log, as on Ctrl-C. On Linux, parent-death signaling stops the
+direct Nextflow child if nfclaw is killed abruptly; detached tasks and containers still require
+the executor's cleanup and are not covered by that signal alone.
 
 When a run fails, nfclaw's error quotes what Nextflow reported on stdout and stderr — plus the
 `Caused by:` chain from `.nextflow.log` when the console alone hides the reason (e.g. "Unable to
@@ -79,9 +85,13 @@ original bundle's `outputs.sha256`. It logs itself the same way, to
 
 New replay bundles acquire the same output-directory writer lock as `nfclaw run`,
 so overlapping runs and replays cannot write into that directory concurrently.
-Invoke `commands.sh` by an absolute or relative path. Moving a bundle preserves
-its internal params/config paths; external inputs, user configs and pipeline
-source must still exist at their recorded paths and pass their checksum checks.
+Before launching Nextflow, the standalone guard checks the recorded pipeline revision and tracked
+source bytes (`pipeline.sha256`), declared local input content (`inputs.sha256`), parameters and
+configuration (`configs.sha256`). Changed or missing dependencies and incomplete bundles are refused.
+Invoke `commands.sh` by an absolute or relative path. Moving a bundle preserves its internal
+params/config paths; external inputs, user configs and pipeline source must still exist at their
+recorded paths and pass their checksum checks.
+
 
 Trust `skill.md` / `reference.md` over your own memory — they are generated from the pinned commit.
 To set any parameter beyond the essentials, look it up in `pipelines/<name>/reference.md` (the complete
@@ -100,18 +110,25 @@ rnaseq's `--input`). Write a spec (JSON) and run it:
             {"pipeline": "rnaseq", "params": {"genome": "GRCh38"}}]}
 ```
 `nfclaw chain run spec.json --outdir /abs/chain --check` first — it validates every stage, every
-handoff and that every stage's config parses with its engine, and writes nothing — then the same
-without `--check`. Which pipeline can follow which: `nfclaw chain edges [name]`, or the `## Chaining`
-section of a `skill.md`; without a rule there is no chain (or give the stage an inline `"handoff"`).
+handoff, and verifies that every stage's config parses with its target engine (`nextflow config`),
+leaving `--outdir` untouched — then run the same without `--check`. Unavailable engines and
+timed-out configuration probes block the chain before any stage launches. Which pipeline can follow which:
+`nfclaw chain edges [name]`, or the `## Chaining` section of a `skill.md`; without a rule there is no
+chain (or give the stage an inline `"handoff"`).
 - A stage's `params` are its own flags (look them up in its `reference.md`); the handed-over ones
   (rnaseq's `--input`) are not yours to set. `demo: true` adds that release's `test` profile.
 - Run options (`profile`, `nxf_ver`, `nxf_env`, `config`, `limits`) go on the chain or on a stage:
   releases of different ages can need different engines (`"nxf_ver": "25.10.4"` on an older one).
+- Concurrent chain processes targeting the same `--outdir` are blocked by an exclusive POSIX flock
+  on `<outdir>/chain/.lock`.
 - Each stage is an ordinary run in `<outdir>/NN-<stage>/`, with its own run log and provenance.
   The chain logs to `<outdir>/chain/logs/chain.log`; its **last line** is
   `==> nfclaw chain finished <time>: <outcome>` — poll it with `tail -n 1` for a background chain
   (`nohup nfclaw chain run ... &`); `kill <pid>` stops it cleanly. Per-stage state:
   `<outdir>/chain/state.json`.
+- Before feeding stage outputs into a downstream stage, the handoff engine cryptographically verifies
+  upstream files against `outputs.sha256`. Metagenomic assembly handoffs (fetchngs → mag, detaxizer → mag)
+  isolate individual samples (`group: {sample}`) to avoid accidental multi-sample co-assembly pooling.
 - A failed chain continues with `nfclaw chain run [spec.json] --outdir /abs/chain --resume`:
   succeeded stages are skipped (and frozen), the failed one — which you may edit in the spec —
   resumes with Nextflow's cache. `"retries": N` relaunches a stage automatically after a pipeline

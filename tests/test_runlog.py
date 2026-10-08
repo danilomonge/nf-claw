@@ -344,6 +344,17 @@ def test_matching_hostname_does_not_override_a_different_host_identity(tmp_path,
     assert runlog.read_state(_log(tmp_path, text)).state == "elsewhere"
 
 
+def test_foreign_host_pids_are_not_probed_in_the_local_namespace(tmp_path, monkeypatch):
+    monkeypatch.setattr(runlog, "host_identity", lambda: "a" * 64)
+    calls = []
+    monkeypatch.setattr(runlog, "_is_process", lambda pid, names: calls.append(pid) or True)
+    text = _block(pid=123, nextflow_pid=456).replace(
+        "    pid: 123\n", "    host id: " + "b" * 64 + "\n    pid: 123\n")
+    state = runlog.read_state(_log(tmp_path, text))
+    assert calls == []
+    assert state.state == "elsewhere" and state.nextflow_alive is False
+
+
 def test_a_finished_run_is_final_on_any_host(tmp_path):
     st = runlog.read_state(_log(tmp_path, _block(pid=1, host="some-other-node", end="success")))
     assert st.state == "success"

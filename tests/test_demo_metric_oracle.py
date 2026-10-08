@@ -51,3 +51,18 @@ def test_oracle_refuses_empty_malformed_or_unsupported_fastq(tmp_path, content):
 def test_oracle_refuses_unvalidated_filtered_read_mode(tmp_path):
     with pytest.raises(ValueError, match="filtered reads require a different oracle"):
         oracle.check_report(_report(tmp_path, filtered="1"))
+
+
+def test_comparison_ignores_archive_timestamps_but_checks_full_data_tables(tmp_path):
+    row = oracle.check_report(_report(tmp_path))
+    oracle.compare_metrics([{**row, "report_sha256": "changed ZIP timestamp bytes"}], [row])
+    with pytest.raises(ValueError, match="replay changed data_sha256"):
+        oracle.compare_metrics([{**row, "data_sha256": "changed other QC module"}], [row])
+
+
+def test_comparison_refuses_missing_or_duplicate_report_identities(tmp_path):
+    row = oracle.check_report(_report(tmp_path))
+    with pytest.raises(ValueError, match="inventory changed"):
+        oracle.compare_metrics([], [row])
+    with pytest.raises(ValueError, match="duplicate report identities"):
+        oracle.compare_metrics([row, row], [row])

@@ -72,13 +72,28 @@ def check_report(report: Path) -> dict:
             raise ValueError(f"{report}: {key}: observed {value!r}, expected {expected[key]!r}")
     return {"report": report.name, "input_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
             "report_sha256": hashlib.sha256(report.read_bytes()).hexdigest(),
+            "data_sha256": hashlib.sha256(content.encode("utf-8")).hexdigest(),
             "expected": expected, "observed": observed, "matches": True}
+
+
+def compare_metrics(results: list[dict], baseline: list[dict]) -> None:
+    current = {row["report"]: row for row in results}
+    previous = {row["report"]: row for row in baseline}
+    if len(current) != len(results) or len(previous) != len(baseline):
+        raise ValueError("duplicate report identities in comparison")
+    if current.keys() != previous.keys():
+        raise ValueError("FastQC report inventory changed")
+    for name in current:
+        for key in ("input_sha256", "data_sha256", "expected", "observed"):
+            if current[name][key] != previous[name][key]:
+                raise ValueError(f"{name}: replay changed {key}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("run", type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--against", type=Path, help="compare inputs and full FastQC data tables with prior evidence")
     args = parser.parse_args()
     log = (args.run / ".nextflow.log").read_text(encoding="utf-8")
     directories = dict.fromkeys(re.findall(
@@ -89,6 +104,8 @@ def main() -> None:
         raise ValueError(f"expected three completed demo FastQC tasks and six reports, found "
                          f"{len(directories)} tasks and {len(reports)} reports")
     results = [check_report(report) for report in reports]
+    if args.against is not None:
+        compare_metrics(results, json.loads(args.against.read_text(encoding="utf-8"))["results"])
     args.output.write_text(json.dumps({"scope": "FastQC 0.12.1 basic statistics for bundled demo",
                                       "reports_checked": len(results), "results": results},
                                      indent=2, sort_keys=True) + "\n", encoding="utf-8")

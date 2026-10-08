@@ -122,9 +122,11 @@ time, `import` in `.nf`). Many older releases hit this.
 pipeline's declared `nextflowVersion` minimum). If you hit it on most pipelines, set it once for the
 shell: `export NXF_VER=25.10.2` (nfclaw passes it through). See [`compatibility.md`](compatibility.md).
 Confirmed-affected releases that **do** run with `--nxf-ver 25.10.2` include `epitopeprediction`,
-`fetchngs`, `hgtseq`, `callingcards`, `coproid`, `denovotranscript` 1.2.1, `chipseq` 2.1.0,
-`fastqrepair` 1.0.0, `atacseq` 2.1.2, `circdna` 1.1.0, `sarek` 3.8.1, `genomeassembler` 1.1.0,
-`detaxizer` 1.3.0, `scrnaseq` 4.1.0, `cutandrun` 3.2.2 and `marsseq` 1.0.3. Examples of what NF 26
+`hgtseq`, `callingcards`, `coproid`, `denovotranscript` 1.2.1, `chipseq` 2.1.0,
+`fastqrepair` 1.0.0, `atacseq` 2.1.2, `circdna` 1.1.0, `genomeassembler` 1.1.0,
+`detaxizer` 1.3.0, `cutandrun` 3.2.2 and `marsseq` 1.0.3 (newer releases such as
+`fetchngs` 1.13.0, `sarek` 3.10.0, and `scrnaseq` 4.2.0 declare `!>=25.10.4`, so use `--nxf-ver 25.10.4`
+to avoid Nextflow 26 strict parser failures on them). Examples of what NF 26
 rejects: chipseq's **and** marsseq's `def check_max(obj, type)` in `nextflow.config` (marsseq 1.0.3
 declares only `!>=23.04.0`, so unpinned it parses under NF 26 and fails at launch with a
 `nextflow.cli.Launcher` error — `--nxf-ver 25.10.2` fixes it; note its `test` profile also sets
@@ -304,10 +306,28 @@ the snapshot under `<outdir>/chain/handoffs/`).
 upstream stage's options — then `nfclaw chain run spec.json --outdir DIR --resume` (the upstream is
 not re-run). See [`chaining.md`](chaining.md).
 
+### Concurrency: `another nfclaw run is active in …`
+**Symptom:** `nfclaw run` aborts immediately with `[environment] another nfclaw run is active in <outdir>`.
+**Why:** to prevent session corruption, race conditions, and interleaved logs, `runner/locking.py` holds
+an exclusive non-blocking sibling flock on `.{outdir.name}.nfclaw.lock` throughout workflow execution.
+**Fix:** wait for the active run to finish (`nfclaw status <outdir>`), or stop it (`kill <pid>`) before
+running or resuming in that directory.
+
 ### Chains: `another nfclaw chain is running in …`
 One `nfclaw chain` process per `--outdir`: a second would race on the same stages and state. Wait for
 the first (`tail -n 1 <outdir>/chain/logs/chain.log`) or stop it with `kill <pid>`; the lock is
 released when that process exits, however it exits.
+
+### Replay dependency guard failures (`provenance/replay_guard.py`)
+**Symptom:** running `<outdir>/provenance/commands.sh` aborts with `nfclaw replay: dependency check failed: ...`
+before Nextflow is launched.
+**Why:** `commands.sh` executes `replay_guard.py` to ensure local input files (including paths referenced
+in samplesheets), external Nextflow configs (`-c`), and tracked pipeline source commits have not changed
+since the original run. If an input file was modified or deleted, the guard halts to prevent silent
+reproducibility divergence.
+**Fix:** restore the original input files or external configs to match the recorded checksums in
+`<outdir>/provenance/inputs.sha256` and `configs.sha256`. If intentional changes were made, launch a
+new run into a new `--outdir` instead of replaying.
 
 ## Warnings a run prints that are not faults
 
@@ -344,7 +364,7 @@ The pin is recorded in `<outdir>/provenance/`, so the replay uses the same engin
 ### `WARN: Could not load / include the nf-core institutional config` (a host without network access)
 **Nextflow could not fetch nf-core's *optional* remote config — not a defect in the pipeline or in
 nf-claw, and it does not affect results.** Every nf-core release pulls a shared institutional-config
-file from GitHub at parse time. sarek 3.9.0 does it in its own `nextflow.config` (line 322):
+file from GitHub at parse time. sarek 3.10.0 (and 3.9.0) does it in its own `nextflow.config` (line 322):
 
 ```groovy
 includeConfig params.custom_config_base && (!System.getenv('NXF_OFFLINE') || !params.custom_config_base.startsWith('http'))
@@ -404,7 +424,7 @@ If you hit it, the state is in the host's plugin cache, so:
 
 ### `WARN: nf-core pipelines do not accept positional arguments. The positional argument \`nextflow\` has been detected.`
 **A bug in the pinned `nf-core-utils@0.4.0` plugin — not nf-claw, not the samplesheet, and not a shell
-alias.** sarek 3.9.0 declares `nf-core-utils@0.4.0` (`nextflow.config`, `plugins {}` block). That
+alias.** sarek 3.10.0 (and 3.9.0) declares `nf-core-utils@0.4.0` (`nextflow.config`, `plugins {}` block). That
 plugin registers a pipeline observer (`NfcorePipelineObserver`) that runs on every launch and calls
 `NfcoreConfigValidator.checkProfileProvided(session.profile, session.commandLine, …)`.
 `checkProfileProvided` **splits its second argument on whitespace and reports the first token as a
@@ -435,7 +455,7 @@ word-split or glob-expanded, and `tests/test_nextflow_command.py` pins that. The
 the same on a plain `nextflow run nf-core/sarek` and on any other pipeline that loads this plugin
 version.
 
-sarek 3.9.0 is the latest release, so there is no fixed version to pin to; the fix belongs upstream in
+sarek 3.10.0 is the latest release, so there is no fixed version to pin to; the fix belongs upstream in
 `nf-core-utils` (report it there). Because the misattribution keeps recurring, `nfclaw run` now prints
 an advisory before launching when a pinned release declares this plugin version, so the log warning
 arrives already explained.
@@ -475,8 +495,8 @@ neutralises the warning by adding `validationSchemaIgnoreParams` to nf-schema's
 ```
 
 The mechanism is deliberately narrow: a release that declares **nf-validation 1.x** is using that
-parameter *correctly* and is never touched (nine pinned releases do, including `fetchngs` and
-`chipseq`). Only the nf-schema-2.x-with-a-1.x-parameter combination — the actual defect — triggers
+parameter *correctly* and is never touched (pinned releases that declare nf-validation 1.x include `chipseq`,
+`atacseq`, and `circdna`). Only the nf-schema-2.x-with-a-1.x-parameter combination — the actual defect — triggers
 it, and injecting the ignore for a parameter a real run never sets (the option lives only in the test
 profiles) is a harmless no-op. Today `scrnaseq` is the only pipeline in the library that hits it.
 
@@ -561,13 +581,14 @@ schema requires:
   appear to hang. On a constrained or slow network, pre-supply the AMP DB with
   `--amp_ampcombi_db /path/to/db` (this also sidesteps the DRAMP bug in the table above) and skip the
   heavy steps with `--run_cazyme_screening false` and `--arg_skip_deeparg true`.
-- **`sarek` 3.9.0** — upstream usage examples for cache/index-only runs show
-  `--build_only_index --input false`, but the pinned release's nf-schema rejects `--input false`
-  because `input` is declared as a string path. For cache/index-only runs, omit `--input` instead
-  and set the cache/index parameters explicitly (for example `--build_only_index true`,
-  `--download_cache true`, and the relevant `--tools` value). Normal analysis runs should still pass
-  a real samplesheet with `--input`.
-- **`sarek` 3.9.0** — do not use
+- **`sarek` 3.10.0 (`sarek` 3.9.0)** — upstream usage examples for cache/index-only runs show
+  `--build_only_index --input false`. In raw Nextflow, this causes an nf-schema validation failure
+  because `input` is declared as a string path. In `nfclaw run sarek --input false`, nfclaw
+  specifically intercepts `--input false` and leaves `input` unset in the generated `params.json`,
+  allowing cache- and index-only runs (e.g. `--build_only_index true --download_cache true`) to succeed
+  cleanly without schema validation errors. For raw Nextflow runs, omit `--input` instead of passing `false`.
+  Normal analysis runs should always pass a real samplesheet with `--input`.
+- **`sarek` 3.10.0 (`sarek` 3.9.0)** — do not use
   `--config pipelines/sarek/upstream/conf/test.config` to turn a normal analysis run into a
   test-data run with a custom samplesheet. Extra config files are loaded after Sarek's profile/config
   initialisation wires iGenomes paths, so the run can still validate default S3 iGenomes paths before

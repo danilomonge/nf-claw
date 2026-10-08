@@ -253,8 +253,30 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                          outputs_report=None, warnings=warnings, env=nxf_overlay, staging=staging)
 
     refs = param_schema.reference_path_params()
-    prov_inputs = [Path(v) for k, v in resolved.items()
-                   if k in refs and k != "outdir" and isinstance(v, str) and v and "://" not in v]
+    prov_inputs = []
+    unverified_paths = {}
+    for key, value in resolved.items():
+        if key not in refs or key in {"input", "outdir"} or not isinstance(value, str) \
+                or not value or "://" in value:
+            continue
+        path = Path(value)
+        if write_provenance:
+            try:
+                provenance.input_files([path])
+            except provenance.MissingInputSource:
+                if param_schema.params[key].exists is True:
+                    prov_inputs.append(path)  # Required input: the snapshot below reports failure.
+                else:
+                    # Schema path formats describe both inputs and destinations. An absent path
+                    # without an existence assertion may be created by the workflow; leave that
+                    # judgment to Nextflow, and record the lack of an input snapshot explicitly.
+                    unverified_paths[key] = value
+                continue
+            except OSError as exc:
+                raise NfclawError(
+                    ErrorCode.ENVIRONMENT, f"cannot snapshot local run dependencies: {exc}",
+                    fix="Make the input data and configuration files readable before launching.") from exc
+        prov_inputs.append(path)
     # A local --input is an input whatever its declared format (mhcquant's carries none).
     if resolved_input is not None and resolved_input.local_path is not None:
         prov_inputs = list(dict.fromkeys([resolved_input.local_path, *prov_inputs]))
@@ -276,13 +298,22 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
             raise NfclawError(
                 ErrorCode.ENVIRONMENT, f"cannot snapshot local run dependencies: {exc}",
                 fix="Make the input data and configuration files readable before launching.") from exc
+        if unverified_paths:
+            warning = ("Local path parameters absent before launch were not input-snapshotted: "
+                       + ", ".join(sorted(unverified_paths))
+                       + ". Their schemas do not require existing paths; Nextflow validates "
+                       "their use. Provenance records these paths as unverified.")
+            warnings.append(warning)
+            if on_warning is not None:
+                on_warning(warning)
 
     def record(outcome: str) -> None:
         provenance.write(outdir=outdir, pipeline=name, command_str=cmd_str, submodule=st,
                          input_paths=prov_inputs, env_extra=nxf_overlay, outcome=outcome,
                          chain=chain_link, input_checksums=input_snapshot,
                          config_paths=replay_configs, config_checksums=config_snapshot,
-                         pipeline_checksums=pipeline_snapshot)
+                         pipeline_checksums=pipeline_snapshot,
+                         unverified_local_paths=unverified_paths)
 
     # Launch from the outdir so each run owns its `.nextflow/` history and cache: `-resume` then
     # resumes THIS run, never another pipeline's session. Paths in the command are absolute, so
