@@ -169,7 +169,12 @@ rule file — for a pair the registry lacks, or to fix a case it does not cover.
 `chain/chain.json`). Stages that succeeded are skipped — and frozen: a spec that changes one of them
 (its pipeline, version, input, params or handoff) is refused; use a fresh `--outdir` for that. The
 stage that failed may be edited — that is how it is fixed — and resumes with Nextflow's cache; stages
-may be appended to extend a finished chain. `--timeout SECONDS` bounds the whole chain.
+may be appended to extend a finished chain. The frozen fingerprint includes the resolved commit,
+run options, local input and configuration content, and params-file content. The planned pipeline
+tree is reused for checking and launching, including when the remote `dev` branch moves. Completed
+chains recorded with older fingerprints must use a fresh `--outdir`; they cannot be safely resumed
+under the stronger integrity contract. `--timeout SECONDS` gives the whole chain a shared budget;
+startup checks can overrun before the next budget check, which prevents a subsequent stage launch.
 
 ## Provenance and lineage
 
@@ -181,7 +186,7 @@ recorded in its `outputs.sha256`. The snapshot is also the downstream's `--input
 `inputs.sha256` hashes it.
 
 `nfclaw chain status DIR` (DIR is the chain, or any one of its stages) reconstructs the chain and
-verifies each link — the downstream ran with exactly that handoff, the snapshot is unchanged and is
+verifies live stage outputs against their recorded hashes as well as each link — the downstream ran with exactly that handoff, the snapshot is unchanged and is
 the input it hashed, and every file it was derived from is what the upstream produced. Like
 `nfclaw status` (which reads a chain's `--outdir` too), it exits 0 when the chain succeeded and every
 link holds, 3 while it is still running, 1 otherwise: a broken link, a failed or stopped chain, or one
@@ -191,3 +196,8 @@ apart from a live chain by the pid and host its log records.
 To reproduce a chain: `nfclaw chain run DIR/chain/chain.json --outdir FRESH`, then
 `nfclaw verify FRESH/NN-<stage> --against DIR/NN-<stage>` per stage. (Each stage's own
 `provenance/commands.sh` still replays that stage alone, against the original handoff.)
+
+The registered fetchngs→mag and detaxizer→mag rules preserve each sample as its own assembly group;
+lanes of the same sample share a group. Pooling distinct samples requires an explicit handoff rule
+and a scientific rationale for co-assembly. A validated handoff establishes format and lineage,
+not the biological validity of combining two analyses.

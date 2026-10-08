@@ -7,7 +7,7 @@ description: A pipeline for preprocessing and analysis of large-scale light-shee
 summary: nf-core/lsmquant is a bioinformatics pipeline that performs preprocessing and analysis of light-sheet microscopy images of tissue cleared samples. The pipeline takes raw images from a directory or a zip archive as input. The images need to be in a 2D single-channel 16-bit tifformat.
 has_samplesheet: true
 input: samplesheet (sample_id, img_directory, parameter_file)
-output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
+output: --outdir/ (configured results); pipeline_info/ (run metadata when enabled); MultiQC report (conditional)
 tools: ["BaSiC", "elastix", "MultiQC", "NuMorph", "3DUnetCNN"]
 ---
 # lsmquant
@@ -68,7 +68,7 @@ nfclaw run lsmquant ... --nxf-ver 25.10.4
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
-Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`; the files and directory layout depend on the selected workflow, parameters and publication settings. Run metadata is normally placed in `<outdir>/pipeline_info/` (execution report, software versions), when those outputs are enabled. The pinned tree includes MultiQC support; a report is produced only when its workflow step runs. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/lsmquant/blob/1.0.3/docs/output.md
 

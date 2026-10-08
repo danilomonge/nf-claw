@@ -7,7 +7,7 @@ description: This pipeline analyses chemical-based high-throughput RNA structure
 summary: nf-core/rnastructurome is a bioinformatics pipeline for analysing chemical high-throughput RNA structure-probing data. It takes a samplesheet and FASTQ files from SHAPE or DMS experiments (read out by either the RT-stop or mutational profiling (MaP) principle) then performs quality control, trimming and alignment, quantifies per-base reactivity, and predicts RNA secondary structures. Outputs include normalised reactivity, Shannon entropy and base-pair arc tracks, 2D structure diagrams, RMDB-compatible RDAT files, and an aggregated QC report. References can be supplied locally or fetched automatically from Ensembl or NCBI, so the pipeline works across a wide range of organisms, including viruses and bacteria.
 has_samplesheet: true
 input: samplesheet (sample, sample_id, fastq_1, fastq_2, method, principle, chemical, RT_enzyme, organism, pH, adapter_3p, adapter_5p, umi_pattern, condition, sample_group, replicate, group)
-output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
+output: --outdir/ (configured results); pipeline_info/ (run metadata when enabled); MultiQC report (conditional)
 tools: ["FastQC", "UMI-tools", "Cutadapt", "GffRead", "STAR", "Bowtie", "Bowtie2", "SAMtools", "BEDOPS", "RSeQC", "RNAFramework", "UCSC wigToBigWig", "R2DT", "ViennaRNA", "MultiQC"]
 ---
 # rnastructurome
@@ -92,7 +92,7 @@ nfclaw run rnastructurome ... --nxf-ver 25.10.4
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
-Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`; the files and directory layout depend on the selected workflow, parameters and publication settings. Run metadata is normally placed in `<outdir>/pipeline_info/` (execution report, software versions), when those outputs are enabled. The pinned tree includes MultiQC support; a report is produced only when its workflow step runs. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/rnastructurome/blob/1.0.0/docs/output.md
 

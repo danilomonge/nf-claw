@@ -1,17 +1,22 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 import os
 import platform
 import re
 import shlex
-import shutil
 import subprocess
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 from runner.outputs import is_result
+from runner.replay_guard import (hash_inputs, hash_pipeline as hash_pipeline,
+                                 read_checksums as read_checksums)
+from runner.samplesheet import delimiter_for
+from runner.schema import InputSchema, PATH_FORMATS
 from runner.submodule import SubmoduleStatus
 
 
@@ -28,6 +33,44 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: fh.read(65536), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def samplesheet_input_paths(path: Path, schema: InputSchema) -> list[Path]:
+    """Local data sources in schema-declared CSV/TSV path columns.
+
+    Remote URLs and non-tabular inputs need pipeline-specific identity handling and are not guessed.
+    The sheet has already been validated by the runner, including its absolute-path requirement.
+    """
+    if path.suffix.lower() not in (".csv", ".tsv"):
+        return []
+    columns = [column.name for column in schema.columns if column.fmt in PATH_FORMATS]
+    paths: set[Path] = set()
+    with path.open(newline="", encoding="utf-8-sig") as stream:
+        for row in csv.DictReader(stream, delimiter=delimiter_for(path)):
+            for column in columns:
+                value = (row.get(column) or "").strip()
+                if value and "://" not in value:
+                    paths.add(Path(value))
+    return sorted(paths)
+
+
+def _atomic_bytes(path: Path, content: bytes, *, mode: int | None = None) -> None:
+    """Replace one bundle file without exposing a truncated write."""
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=path.parent, prefix=f".{path.name}.", delete=False) as fh:
+            temporary = Path(fh.name)
+            fh.write(content)
+        if mode is not None:
+            temporary.chmod(mode)
+        temporary.replace(path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def _atomic_text(path: Path, content: str, *, mode: int | None = None) -> None:
+    _atomic_bytes(path, content.encode("utf-8"), mode=mode)
 
 
 def _nextflow_version(env_extra: dict[str, str] | None = None) -> str:
@@ -98,6 +141,7 @@ def output_checksums(outdir: Path) -> dict[str, str]:
 # and the log through a FIFO, and the last line is written after the last of that output.
 # Portable to bash 3.2 (macOS's /bin/bash).
 _REPLAY_TAIL = r"""original=__ORIGINAL__
+python3 "$original/provenance/replay_guard.py" "$original/provenance"
 log="$target/provenance/logs/run.log"
 mkdir -p -- "$target/provenance/logs"
 echo "nfclaw replay: logging this replay to $log" >&2
@@ -150,9 +194,17 @@ exit "$status"
 def write(*, outdir: Path, pipeline: str, command_str: str,
           submodule: SubmoduleStatus, input_paths: list[Path],
           env_extra: dict[str, str] | None = None,
-          outcome: str = "success", chain: dict | None = None) -> Path:
+          outcome: str = "success", chain: dict | None = None,
+          input_checksums: dict[str, str] | None = None,
+          config_paths: tuple[Path, ...] = (),
+          config_checksums: dict[str, str] | None = None,
+          pipeline_checksums: dict[str, str] | None = None) -> Path:
     prov = outdir / "provenance"
     prov.mkdir(parents=True, exist_ok=True)
+    manifest_path = prov / "run_manifest.json"
+    # An old successful bundle must not survive a failed attempt to record the latest run. Publish
+    # the new outcome only after every dependent artifact is complete.
+    manifest_path.unlink(missing_ok=True)
 
     nxf_env = effective_nxf_env(env_extra)
     recorded_env, redacted_env = safe_env(nxf_env)
@@ -172,16 +224,34 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
     # the whole chain can be reconstructed from any one stage. A plain run's manifest is unchanged.
     if chain:
         manifest["chain"] = chain
-    (prov / "run_manifest.json").write_text(
-        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-
-    in_lines = [f"{_sha256(p)}  {p}" for p in input_paths if p.is_file()]
-    (prov / "inputs.sha256").write_text("\n".join(in_lines) + ("\n" if in_lines else ""),
-                                        encoding="utf-8")
+    if pipeline_checksums is not None or submodule.path.is_dir():
+        manifest["pipeline_path"] = str(submodule.path.absolute())
+        manifest["pipeline_git_head"] = (
+            submodule.commit if re.fullmatch(r"[0-9a-fA-F]{40,64}", submodule.commit) else None)
+        pipeline_hashes = hash_pipeline(submodule.path) if pipeline_checksums is None else pipeline_checksums
+        _atomic_text(prov / "pipeline.sha256", "".join(
+            f"{digest}  {path}\n" for path, digest in sorted(pipeline_hashes.items())))
+    # params.json is itself a scientific dependency. Direct recording callers get its guard too;
+    # the runner supplies a prelaunch config snapshot containing it, preserving the bytes used.
+    params = prov / "params.json"
+    if params.is_file():
+        config_paths = tuple(dict.fromkeys((*config_paths, params)))
+        if config_checksums is not None and str(params.absolute()) not in config_checksums:
+            config_checksums = {**config_checksums, str(params.absolute()): _sha256(params)}
+    snapshots = {
+        "inputs": (input_paths, input_checksums),
+        "configs": (list(config_paths), config_checksums),
+    }
+    for kind, (paths, snapshot) in snapshots.items():
+        hashes = hash_inputs(paths) if snapshot is None else snapshot
+        lines = [f"{digest}  {path}" for path, digest in sorted(hashes.items())]
+        _atomic_text(prov / f"{kind}.sha256", "\n".join(lines) + ("\n" if lines else ""))
+        _atomic_text(prov / f"{kind}.sources.json", json.dumps(
+            sorted({str(p.expanduser().absolute()) for p in paths}), indent=2) + "\n")
+    _atomic_bytes(prov / "replay_guard.py", Path(__file__).with_name("replay_guard.py").read_bytes())
 
     out_lines = [f"{digest}  {rel}" for rel, digest in output_checksums(outdir).items()]
-    (prov / "outputs.sha256").write_text("\n".join(out_lines) + ("\n" if out_lines else ""),
-                                         encoding="utf-8")
+    _atomic_text(prov / "outputs.sha256", "\n".join(out_lines) + ("\n" if out_lines else ""))
 
     # Copy the run's collated software-versions YAML into the bundle. nf-core publishes it under two
     # names across template generations: the older `software_versions.yml` and the newer
@@ -194,7 +264,7 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
     if pinfo.is_dir():
         for sv in sorted(pinfo.glob("*software*version*.yml")):
             if sv.is_file():
-                shutil.copy2(sv, prov / sv.name)
+                _atomic_bytes(prov / sv.name, sv.read_bytes())
 
     # A faithful, self-contained replay:
     #  - reproduce into a FRESH output directory, never the original. An nf-core pipeline publishes
@@ -217,13 +287,18 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         for key, value in sorted(nxf_env.items())
         if key not in redacted_env
     )
+    # Preserve the original effective environment in the manifest, but remove the launcher's
+    # moving default from the replay: its actual observed version is an explicit replay pin.
+    if "NXF_VER" not in nxf_env and isinstance(manifest["nextflow"], str):
+        if match := re.search(r"\bversion\s+(\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?)", manifest["nextflow"]):
+            env_exports += f"export NXF_VER={shlex.quote(match[1])}\n"
     if redacted_env:
         names = " ".join(redacted_env)
         env_exports += ("# Sensitive values were omitted from provenance. Export these before "
                         f"replay: {names}\n")
     default_target = shlex.quote(f"{outdir}.replay")
     commands = prov / "commands.sh"
-    commands.write_text(
+    _atomic_text(commands,
         "#!/usr/bin/env bash\n"
         "set -euo pipefail\n"
         "# Replay of this run. Reproduces it into a FRESH output directory — an nf-core pipeline\n"
@@ -246,7 +321,6 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         "cd -- \"$target\"\n"
         f"{env_exports}"
         + _REPLAY_TAIL.replace("__ORIGINAL__", shlex.quote(str(outdir)))
-                      .replace("__COMMAND__", command_str),
-        encoding="utf-8")
-    commands.chmod(0o755)                             # so the documented replay works as `./commands.sh`
+                      .replace("__COMMAND__", command_str), mode=0o755)
+    _atomic_text(manifest_path, json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     return prov

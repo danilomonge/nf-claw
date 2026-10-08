@@ -206,11 +206,15 @@ def test_file_source_ignores_the_provenance_bundle(library, finished_run, tmp_pa
 
 def test_upstream_param_and_optional(library, finished_run, tmp_path):
     _, down = _trees(library("mini_up", "mini"))
-    up = finished_run(tmp_path / "up", {}, params={"gtf": "/refs/genes.gtf"})
+    reference = tmp_path / "genes.gtf"
+    reference.write_text("annotation")
+    up = finished_run(tmp_path / "up", {}, params={"gtf": str(reference)})
+    (up / "provenance/inputs.sha256").write_text(
+        f"{handoff.sha256_file(reference)}  {reference}\n")
     rule = _rule({"params": {"fasta": {"upstream_param": "gtf"},
                              "aligner": {"upstream_param": "never_set", "optional": True}}})
     hand = handoff.materialize(rule, upstream_outdir=up, downstream_tree=down, dest=tmp_path / "h")
-    assert hand.params == {"fasta": "/refs/genes.gtf"}
+    assert hand.params == {"fasta": str(reference)}
     assert "aligner" not in hand.record["params"]
 
 
@@ -260,12 +264,16 @@ def test_upstream_param_prefers_the_pipelines_own_resolved_params(library, finis
     # nf-core template dumps every resolved parameter to pipeline_info/params_<timestamp>.json.
     import json
     _, down = _trees(library("mini_up", "mini"))
+    reference = tmp_path / "test.gtf"
+    reference.write_text("annotation")
     up = finished_run(tmp_path / "up", {
         "pipeline_info/params_2026-01-01_10-00-00.json": json.dumps({"gtf": "/old.gtf"}),
-        "pipeline_info/params_2026-01-02_10-00-00.json": json.dumps({"gtf": "/refs/test.gtf"})})
+        "pipeline_info/params_2026-01-02_10-00-00.json": json.dumps({"gtf": str(reference)})})
+    (up / "provenance/inputs.sha256").write_text(
+        f"{handoff.sha256_file(reference)}  {reference}\n")
     hand = handoff.materialize(_rule({"params": {"fasta": {"upstream_param": "gtf"}}}),
                                upstream_outdir=up, downstream_tree=down, dest=tmp_path / "h")
-    assert hand.params == {"fasta": "/refs/test.gtf"}                  # the latest launch's
+    assert hand.params == {"fasta": str(reference)}                  # the latest launch's
     assert list(hand.record["params"]["fasta"]["derived_from"]) == [
         "pipeline_info/params_2026-01-02_10-00-00.json"]
 

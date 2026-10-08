@@ -9,7 +9,7 @@ hardcoded: every value on the site is read from the repository at build time.
 ## Stack
 
 - **Next.js 15** (App Router, React Server Components) · **TypeScript**
-- **Tailwind CSS** (custom design system derived from the brand logo)
+- **Tailwind CSS 4** (custom design system derived from the brand logo)
 - **Framer Motion** (scroll storytelling, micro-interactions)
 - **react-markdown** (documentation hub)
 
@@ -69,6 +69,9 @@ server runtime is required.
 npm run build          # writes ./out
 npx serve out          # preview the static bundle
 ```
+
+The Tailwind 4 build targets Safari 16.4+, Chrome 111+ and Firefox 128+; see the
+[official browser requirements](https://tailwindcss.com/docs/upgrade-guide#browser-requirements).
 
 For project-site hosting under a sub-path, set the base path at build time:
 

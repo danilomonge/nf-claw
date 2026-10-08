@@ -184,12 +184,18 @@ singularity. **Use a space-free path on macOS *and* Linux** — many bioinformat
 Nextflow's work directory mishandle spaces in paths; on macOS also avoid iCloud paths.
 
 ## Checking a replay
-`nfclaw verify <replay-outdir> --against <original-outdir>` compares the two runs' `outputs.sha256`
-**by path** and reports `identical` / `changed` / `missing` / `extra`. A *missing* or *extra* file
-means the replay did different work (exit 1); a *changed* file does not — nf-core outputs embed
-timestamps (reports, gzip headers, zip entries, MultiQC HTML), so the same file re-made from the same
-inputs is legitimately not byte-identical. Never diff the two `outputs.sha256` files directly: each
-line is `hash  path`, so one changed file appears as both a missing and an extra one.
+`nfclaw verify <replay-outdir> --against <original-outdir>` hashes the replay's live files and
+compares them **by path** with the original recorded `outputs.sha256` (or live originals when no
+manifest exists). It reports `identical` / `changed` / `missing` / `extra`. Missing or extra files
+fail the structural check. Changed bytes may reflect metadata or different scientific results;
+inspect them using a format-aware comparison. File structure alone establishes no analytical
+agreement. Add `--strict` to require identical bytes and fail on any changed file.
+
+Replay requires Python 3 and checks the recorded local data, configurations, parameters and
+tracked pipeline source before launching. A changed dependency or incomplete bundle is refused.
+It pins the observed engine version, but remote inputs, indirect configuration includes and
+container image digests are not frozen. See the [release audit](docs/validation/2026-10-08-audit.md)
+for validation scope and limitations.
 
 ## Reference genomes
 Some releases resolve a reference **remotely by default** — sarek defaults `--genome` to

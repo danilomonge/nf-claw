@@ -1,3 +1,5 @@
+import hashlib
+
 import pytest
 
 from runner import verify
@@ -5,11 +7,16 @@ from runner.errors import NfclawError
 
 
 def _bundle(root, name, entries):
-    """A run directory with a provenance bundle listing {path: hash}."""
+    """A real result directory and its recorded {path: checksum} bundle."""
     out = root / name
     (out / "provenance").mkdir(parents=True)
-    (out / "provenance" / "outputs.sha256").write_text(
-        "".join(f"{digest}  {path}\n" for path, digest in entries.items()))
+    lines = []
+    for path, content in entries.items():
+        result = out / path
+        result.parent.mkdir(parents=True, exist_ok=True)
+        result.write_text(content)
+        lines.append(f"{hashlib.sha256(content.encode()).hexdigest()}  {path}\n")
+    (out / "provenance" / "outputs.sha256").write_text("".join(lines))
     return out
 
 
@@ -47,7 +54,7 @@ def test_report_explains_why_bytes_differ_but_flags_a_structural_difference(tmp_
     replay = _bundle(tmp_path, "replay", {"report.html": "zzz"})
     text = verify.report(verify.compare(orig, replay))
     assert "changed   : 1" in text
-    assert "same set of files" in text and "embed timestamps" in text
+    assert "same set of files" in text and "scientific results" in text
 
     orig2 = _bundle(tmp_path, "orig2", {"a.txt": "aaa"})
     replay2 = _bundle(tmp_path, "replay2", {})
@@ -124,7 +131,8 @@ def test_unreadable_run_is_a_clean_error(tmp_path, monkeypatch):
     from runner.errors import ErrorCode, NfclawError
     orig, replay = tmp_path / "orig", tmp_path / "replay"
     (orig / "provenance").mkdir(parents=True)
-    (orig / "provenance" / "outputs.sha256").write_text("abc  a.txt\n")
+    (orig / "provenance" / "outputs.sha256").write_text(
+        hashlib.sha256(b"a").hexdigest() + "  a.txt\n")
     replay.mkdir()
     (replay / "a.txt").write_text("a")
 

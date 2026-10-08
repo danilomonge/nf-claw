@@ -209,8 +209,9 @@ def test_sensitive_nxf_env_is_redacted_and_omitted_from_replay(tmp_path):
     assert "Export these before replay: NXF_GITHUB_TOKEN NXF_JVM_ARGS" in replay
 
 
-def test_commands_sh_has_no_exports_without_env(tmp_path):
-    # No env overlay → no stray export lines (keeps the replay script byte-stable).
+def test_commands_sh_has_no_exports_without_env_or_observed_engine(tmp_path, monkeypatch):
+    # No environment or observed engine version → no invented export lines.
+    monkeypatch.setattr(provenance, "_nextflow_version", lambda env_extra=None: "")
     out = tmp_path / "out"
     out.mkdir()
     prov = provenance.write(outdir=out, pipeline="mini", command_str="nextflow run x",

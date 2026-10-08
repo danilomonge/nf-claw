@@ -87,19 +87,17 @@ def _samplesheet_format(ps: ParamSchema | None) -> tuple[str, str, str]:
 
 
 def _produces_multiqc(upstream: Path) -> bool:
-    """A MultiQC report is a near-universal nf-core output; detect it from the pinned tree."""
+    """Whether the pinned tree contains MultiQC support, which may be skipped at runtime."""
     return ((upstream / "assets" / "multiqc_config.yml").exists()
             or (upstream / "modules" / "nf-core" / "multiqc").is_dir())
 
 
 def _output_summary(upstream: Path) -> str:
-    """One-line, fact-only description of outputs (for the catalog). nf-core pins no
-    machine-readable output schema, so this states the guaranteed output contract — not an
-    invented per-file list. Per-release detail lives in the upstream docs/output.md (linked
-    from the skill)."""
-    parts = ["--outdir/ (per-module results)", "pipeline_info/ (reports, versions)"]
+    """Output locations and potential reports, without inferring a guarantee from vendored code.
+    The selected workflow and publication settings determine the actual files."""
+    parts = ["--outdir/ (configured results)", "pipeline_info/ (run metadata when enabled)"]
     if _produces_multiqc(upstream):
-        parts.append("MultiQC report")
+        parts.append("MultiQC report (conditional)")
     return "; ".join(parts)
 
 
@@ -214,23 +212,18 @@ def _resources_section(name: str, ps: ParamSchema, insch: InputSchema | None,
 
 
 def _reference_section(ps: ParamSchema) -> str:
-    """Where the pipeline gets its reference genome when the caller does not say.
+    """Name only reference sources the schema actually declares.
 
-    nf-core resolves references through AWS iGenomes: `--genome <id>` is looked up under
-    `igenomes_base`, which defaults to the S3 bucket `s3://ngi-igenomes/igenomes/`. When a release
-    also gives `--genome` a **non-null default** (sarek defaults it to `GATK.GRCh38`), a run that
-    passes no reference of its own silently resolves one over S3 — which fails on any host without
-    access to that bucket, and pulls tens of gigabytes on one that has it. The schema says all of
-    this; the docs did not, so the basic recipe looked runnable when it was not.
-
-    Both facts are read straight from the schema, so this stays correct as releases change."""
+    A `genome` key does not identify a provider: some pipelines use local custom references
+    (marsseq's ERCC references), and an iGenomes base can itself be local or use a custom host.
+    When the source cannot be established here, point to the pinned configuration instead."""
     genome = ps.params.get("genome")
     if genome is None:              # no --genome: nothing is resolved through iGenomes by name
         return ""
     base = ps.params.get("igenomes_base")
-    where = f" at `{base.default}`" if base is not None and base.default else ""
-    ignore = " Set `--igenomes-ignore true` to disable the lookup entirely." \
-        if "igenomes_ignore" in ps.params else ""
+    source = str(base.default) if base is not None and base.default else ""
+    ignored = ps.params.get("igenomes_ignore")
+    ignore = " Set `--igenomes-ignore true` to disable the lookup entirely." if ignored else ""
     # Name only flags and groups this schema has: the reference options live in different groups
     # across releases (reference_genome_options, reference_data_options, reference_file_options, …),
     # and not every release takes a --fasta.
@@ -239,18 +232,31 @@ def _reference_section(ps: ParamSchema) -> str:
     own = (f"e.g. `--fasta`; the {group} group in [reference.md](reference.md) lists every "
            "reference option" if fasta else
            f"the {group} group in [reference.md](reference.md) lists the reference options")
-    if genome.default:
+    selected = (f"`--genome` defaults to `{genome.default}`. " if genome.default else
+                "No reference genome is set by default: supply your own reference. ")
+    config_note = ("Confirm the selected reference's paths and source in the pinned "
+                   "`upstream/nextflow.config` and `upstream/conf/` before running.")
+    if ignored is not None and ignored.default is True:
+        return (f"{selected}The iGenomes lookup is disabled by default "
+                "(`--igenomes-ignore true`). Configure your reference explicitly "
+                f"({own}). {config_note}\n")
+    if not source:
+        return (f"{selected}A genome name alone does not specify where reference files come from. "
+                f"{config_note} To supply your own reference, use {own}.{ignore}\n")
+    remote = bool(re.match(r"^(?:https?|s3|gs|ftp)://", source, re.I))
+    provider = "AWS iGenomes" if source.startswith("s3://ngi-igenomes/") else "iGenomes"
+    if genome.default and remote:
         return (
             f"**This release resolves a reference genome remotely by default.** `--genome` defaults "
-            f"to `{genome.default}`, which is looked up in AWS iGenomes{where}. A run that passes no "
-            f"reference of its own therefore reads its references over S3 — that fails on a host "
-            f"without access to the bucket, and downloads tens of gigabytes on one that has it. For "
-            f"a self-contained run, pass your own reference instead ({own}).{ignore}\n"
+            f"to `{genome.default}`; the schema declares {provider} at `{source}`. Resolving "
+            "references through that default needs access to this source. For a self-contained "
+            f"run, pass your own reference instead ({own}).{ignore} {config_note}\n"
         )
     return (
-        f"No reference genome is set by default: supply your own ({own}). Passing "
-        f"`--genome <id>` instead resolves the references from AWS iGenomes{where}, which needs "
-        f"access to that bucket and downloads them.{ignore}\n"
+        f"{selected}The schema declares {provider} at `{source}`; selecting `--genome <id>` uses "
+        f"the paths in the pipeline's reference configuration. "
+        + ("Access to that remote source is required. " if remote else "")
+        + f"To supply your own reference, use {own}.{ignore} {config_note}\n"
     )
 
 
@@ -280,16 +286,22 @@ def _engine_section(name: str, st: SubmoduleStatus, what: str = "release",
 
 
 def _outputs_section(name: str, st: SubmoduleStatus, ref: str | None = None,
-                     what: str = "release") -> str:
-    mq = " A MultiQC HTML report aggregates QC across steps." if _produces_multiqc(st.path) else ""
+                     what: str = "release", ps: ParamSchema | None = None) -> str:
+    mq = ""
+    if _produces_multiqc(st.path):
+        mq = (" The pinned tree includes MultiQC support; a report is produced only when its "
+              "workflow step runs.")
+        if ps is not None and "skip_multiqc" in ps.params:
+            mq += " `--skip-multiqc true` disables that report."
     link = ""
     if (st.path / "docs" / "output.md").exists():
         link = (f"\n\nThe exact output files and directory layout for this {what} are documented "
                 f"upstream: https://github.com/nf-core/{name}/blob/{ref or st.version}/docs/output.md")
     return (
-        "Results land in `--outdir`, organised into one sub-directory per pipeline step/module; "
-        "standardized run metadata in `<outdir>/pipeline_info/` (execution report, software "
-        f"versions).{mq} `nfclaw run` also writes `<outdir>/provenance/` with the exact params "
+        "Results land in `--outdir`; the files and directory layout depend on the selected "
+        "workflow, parameters and publication settings. Run metadata is normally placed in "
+        "`<outdir>/pipeline_info/` (execution report, software versions), when those outputs "
+        f"are enabled.{mq} `nfclaw run` also writes `<outdir>/provenance/` with the exact params "
         "file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last "
         "line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless "
         "`--no-provenance` it adds a run manifest (pinned version, commit and exact command), "
@@ -619,7 +631,7 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
         f"## Other parameters\n{_param_groups(ps)}\n"
         f"## Resources\n{_resources_section(name, ps, insch, pipeline_version)}\n"
         f"{engine_block}"
-        f"## Outputs\n{_outputs_section(name, st, ref, what)}\n"
+        f"## Outputs\n{_outputs_section(name, st, ref, what, ps=ps)}\n"
         f"{chaining_block}"
         f"{tools_block}"
         "## Demo\n```bash\n"

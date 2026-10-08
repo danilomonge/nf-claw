@@ -12,6 +12,7 @@ from runner import (discovery, engine_version, execution, inputs, nextflow_comma
                     resources, runlog, samplesheet, versions)
 from runner import schema as schema_mod
 from runner.errors import ErrorCode, NfclawError
+from runner.locking import single_writer
 from runner.submodule import SubmoduleStatus
 
 
@@ -51,6 +52,7 @@ class RunResult:
     staging: Path | None = None
 
 
+@single_writer
 def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                  outdir: Path, profile: str, params_file: Path | None,
                  cli_overrides: dict, resume: bool, demo: bool,
@@ -63,7 +65,8 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                  limits: "resources.ResourceLimits | None" = None,
                  on_warning: Callable[[str], None] | None = None,
                  chain_link: dict | None = None,
-                 deferred_params: frozenset[str] = frozenset()) -> RunResult:
+                 deferred_params: frozenset[str] = frozenset(),
+                 resolved_tree: SubmoduleStatus | None = None) -> RunResult:
     """Validate, launch and record one pipeline run.
 
     Two arguments exist for a chain (runner.chain) and change nothing otherwise: `chain_link` is
@@ -93,8 +96,10 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                               fix="Pass a path to an existing JSON or YAML params file.")
     # None → pinned latest (unchanged); a tag → that release, validated + materialized.
     # Everything downstream consumes `st`/`st.path`, so it all targets the chosen version.
-    st = versions.ensure(name, pipeline_version, pipelines_dir=pipelines_dir,
-                         repo_root=repo_root)
+    st = resolved_tree or versions.ensure(name, pipeline_version, pipelines_dir=pipelines_dir,
+                                         repo_root=repo_root)
+    if st.name != name:
+        raise ValueError("resolved_tree must belong to the requested pipeline")
     # The Nextflow runtime env nfclaw applies for this run: --nxf-env vars plus --nxf-ver
     # (sugar for NXF_VER, which wins if both set it). Threaded to the engine check, the
     # subprocess and provenance so the engine actually used is consistent and recorded.
@@ -123,6 +128,7 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     raw_input = (None if "input" in deferred_params
                  else input_path if input_path is not None else file_params.get("input"))
     resolved_input = inputs.resolve(raw_input, st.path)
+    input_schema = None
     if resolved_input is not None and resolved_input.local_path is not None:
         input_schema = (schema_mod.load_input_schema(st.path, resolved_input.samplesheet_schema)
                         if resolved_input.samplesheet_schema else None)
@@ -248,15 +254,35 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
 
     refs = param_schema.reference_path_params()
     prov_inputs = [Path(v) for k, v in resolved.items()
-                   if k in refs and k != "outdir" and isinstance(v, str) and "://" not in v]
+                   if k in refs and k != "outdir" and isinstance(v, str) and v and "://" not in v]
     # A local --input is an input whatever its declared format (mhcquant's carries none).
     if resolved_input is not None and resolved_input.local_path is not None:
         prov_inputs = list(dict.fromkeys([resolved_input.local_path, *prov_inputs]))
+        if input_schema is not None:
+            prov_inputs = list(dict.fromkeys([
+                *prov_inputs,
+                *provenance.samplesheet_input_paths(resolved_input.local_path, input_schema)]))
+    # Capture the local dependency content the launch sees, before a long analysis can change it.
+    # The replay guard uses these snapshots, rather than hashing a potentially changed input only
+    # after the run has finished. Remote references and runtime downloads remain upstream inputs.
+    input_snapshot = config_snapshot = pipeline_snapshot = None
+    replay_configs = tuple(dict.fromkeys([*extra_configs, params_file_out]))
+    if write_provenance:
+        try:
+            input_snapshot = provenance.hash_inputs(prov_inputs)
+            config_snapshot = provenance.hash_inputs(list(replay_configs))
+            pipeline_snapshot = provenance.hash_pipeline(st.path)
+        except OSError as exc:
+            raise NfclawError(
+                ErrorCode.ENVIRONMENT, f"cannot snapshot local run dependencies: {exc}",
+                fix="Make the input data and configuration files readable before launching.") from exc
 
     def record(outcome: str) -> None:
         provenance.write(outdir=outdir, pipeline=name, command_str=cmd_str, submodule=st,
                          input_paths=prov_inputs, env_extra=nxf_overlay, outcome=outcome,
-                         chain=chain_link)
+                         chain=chain_link, input_checksums=input_snapshot,
+                         config_paths=replay_configs, config_checksums=config_snapshot,
+                         pipeline_checksums=pipeline_snapshot)
 
     # Launch from the outdir so each run owns its `.nextflow/` history and cache: `-resume` then
     # resumes THIS run, never another pipeline's session. Paths in the command are absolute, so

@@ -19,40 +19,37 @@ class Comparison:
 
     @property
     def structurally_equal(self) -> bool:
-        """The replay produced exactly the same set of files — the property that is achievable.
-
-        Byte-equality is not: nf-core outputs embed timestamps (HTML reports, gzip headers, zip
-        entries), so re-running the same pipeline on the same inputs legitimately yields different
-        bytes for the same file. A *missing* or *extra* file is a different matter — that means the
-        replay did not do the same work."""
+        """The replay has the same file identities and multiplicities, regardless of contents."""
         return not self.missing and not self.extra
 
+    @property
+    def byte_identical(self) -> bool:
+        """Every paired file has the same bytes and no file is missing or extra."""
+        return self.structurally_equal and not self.changed
 
-def _read(outdir: Path) -> dict[str, str]:
+
+def _read(outdir: Path, *, recorded: bool) -> dict[str, str]:
     """What a run directory produced, as {relative path: hash}.
 
-    Prefers the recorded `provenance/outputs.sha256`, so the original run is compared against what it
-    *actually* produced rather than whatever is in its directory now. Falls back to hashing the
-    directory — which is the normal case for the replay side: `provenance/commands.sh` replays the
-    recorded `nextflow` command directly, so the replayed run has results but no bundle of its own.
-    Requiring one would have made this command unusable for exactly the comparison it exists for.
+    The original's recorded snapshot is the reference. The replay is always measured live, even
+    when it has a bundle: otherwise a stale manifest hides changed, removed or added results.
+    Without an original snapshot, both directories are measured live.
     """
     checksums = outdir / "provenance" / "outputs.sha256"
     try:
-        if checksums.is_file():
-            out: dict[str, str] = {}
-            for line in checksums.read_text(encoding="utf-8").splitlines():
-                digest, _, path = line.partition("  ")
-                if digest and path:
-                    out[path] = digest
-            return out
+        if recorded and checksums.exists():
+            return provenance.read_checksums(checksums)
         if not outdir.is_dir():
             raise NfclawError(
                 ErrorCode.ENVIRONMENT, f"not a run directory: {outdir}",
                 fix="Pass the --outdir of a run (the replay's target, and the original it "
                     "reproduces).")
         return provenance.output_checksums(outdir)
-    except (OSError, UnicodeDecodeError) as exc:
+    except ValueError as exc:
+        raise NfclawError(
+            ErrorCode.ENVIRONMENT, f"cannot read checksum manifest {checksums}: {exc}",
+            fix="Restore a valid outputs.sha256 from the original run; do not discard records.") from exc
+    except OSError as exc:
         where = getattr(exc, "filename", None) or checksums
         reason = getattr(exc, "strerror", None) or exc
         raise NfclawError(
@@ -94,19 +91,27 @@ def compare(original: Path, replay: Path) -> Comparison:
     separates the two questions that matter: did the replay produce the same *files* (structural),
     and did any of them come out different (content).
     """
-    # Key on the comparison identity (see `_key`), but report the paths as they are on disk.
-    before = {_key(p): (p, d) for p, d in _read(original).items()}
-    after = {_key(p): (p, d) for p, d in _read(replay).items()}
+    before = _read(original, recorded=True)
+    after = _read(replay, recorded=False)
     identical, changed = [], []
-    for key, (path, digest) in sorted(before.items()):
-        if key not in after:
-            continue
-        (identical if after[key][1] == digest else changed).append(path)
+    # Match exact paths first. Then pair timestamp variants without collapsing several attempts'
+    # metadata into one dictionary entry: every surplus file must remain missing or extra.
+    for path in sorted(before.keys() & after.keys()):
+        (identical if after.pop(path) == before.pop(path) else changed).append(path)
+    before_groups: dict[str, list[str]] = {}
+    after_groups: dict[str, list[str]] = {}
+    for path in sorted(before):
+        before_groups.setdefault(_key(path), []).append(path)
+    for path in sorted(after):
+        after_groups.setdefault(_key(path), []).append(path)
+    for key in before_groups.keys() & after_groups.keys():
+        for path, replay_path in zip(before_groups[key], after_groups[key]):
+            (identical if before.pop(path) == after.pop(replay_path) else changed).append(path)
     return Comparison(
-        identical=identical,
-        changed=changed,
-        missing=sorted(path for key, (path, _) in before.items() if key not in after),
-        extra=sorted(path for key, (path, _) in after.items() if key not in before),
+        identical=sorted(identical),
+        changed=sorted(changed),
+        missing=sorted(before),
+        extra=sorted(after),
     )
 
 
@@ -122,12 +127,15 @@ def report(cmp: Comparison) -> str:
         lines.append("The replay produced the same set of files as the original run.")
         if cmp.changed:
             lines.append(
-                "Differing bytes are expected: nf-core outputs embed timestamps (the execution "
-                "report and timeline, gzip headers, zip entries, MultiQC's HTML), so the same file "
-                "re-made from the same inputs is not byte-identical. Inspect the list below if a "
-                "specific result matters.")
+                "Changed bytes may reflect timestamps or metadata, but may also reflect different "
+                "scientific results. File structure alone does not establish scientific agreement; "
+                "inspect the changed results or use a format-aware comparison.")
+        else:
+            lines.append("All compared files are byte-identical. This establishes output agreement, "
+                         "not the biological accuracy of either run.")
     else:
-        lines.append("The replay did NOT produce the same set of files — it did different work.")
+        lines.append("The replay did NOT produce the same set of files. Check whether the runs "
+                     "completed and used the same inputs and settings.")
     for label, paths in (("missing", cmp.missing), ("extra", cmp.extra), ("changed", cmp.changed)):
         if paths:
             lines.append("")

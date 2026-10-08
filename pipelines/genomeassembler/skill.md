@@ -7,7 +7,7 @@ description: Assemble genomes from long ONT or pacbio HiFi reads
 summary: nf-core/genomeassembler is a bioinformatics pipeline that carries out genome assembly, polishing and scaffolding from long reads (ONT or pacbio). Assembly can be done via flye or hifiasm, or combinations of both, polishing can be carried out with medaka (ONT), dorado (ONT only, experimental) or pilon (requires short-reads), and scaffolding can be done using LINKS, Longstitch, both using long-reads, yahs if HiC reads are availble, or RagTag if a reference is available. Quality control includes BUSCO, QUAST and merqury (requires short-reads). Currently, this pipeline does not implement phasing of polyploid genomes.
 has_samplesheet: true
 input: samplesheet (sample, group, ref_fasta, ref_gff, use_ref, strategy, assembler, assembly_scaffolding_order, genome_size, flye_mode, flye_args, hifiasm_args, assembler_ont, assembler_ont_args, assembler_hifi, assembler_hifi_args, ontreads, ont_collect, ont_adapters, ont_fastplong_args, hifireads, hifi_adapters, hifi_fastplong_args, jellyfish, jellyfish_k, jellyfish_size, polish, polish_pilon, polish_dorado, polish_medaka, medaka_model, scaffold_longstitch, scaffold_links, scaffold_ragtag, scaffold_hic, hic_aligner, merqury, qc_reads, busco, busco_db, busco_lineage, quast, ref_map_bam, assembly, assembly_map_bam, csi_index_size, lift_annotations, use_short_reads, shortread_trim, meryl_k, shortread_F, shortread_R, paired, hic_trim, hic_F, hic_R)
-output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
+output: --outdir/ (configured results); pipeline_info/ (run metadata when enabled)
 tools: ["fastp", "hifiasm", "flye", "pilon", "medaka", "dorado", "LINKS", "longstitch", "yahs", "RagTag", "liftoff", "BUSCO", "genomescope2", "jellyfish", "meryl", "QUAST", "minimap2", "samtools", "bwa-mem2", "picard"]
 ---
 # genomeassembler
@@ -134,7 +134,7 @@ nfclaw run genomeassembler ... --nxf-ver 25.10.4
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
-Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`; the files and directory layout depend on the selected workflow, parameters and publication settings. Run metadata is normally placed in `<outdir>/pipeline_info/` (execution report, software versions), when those outputs are enabled. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/genomeassembler/blob/2.0.0/docs/output.md
 

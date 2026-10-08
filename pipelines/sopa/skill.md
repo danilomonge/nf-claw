@@ -7,7 +7,7 @@ description: Technology-invariant pipeline for spatial omics analysis that scale
 summary: nf-core/sopa is the Nextflow version of Sopa. Built on top of SpatialData, Sopa enables processing and analyses of spatial omics data with single-cell resolution (spatial transcriptomics or multiplex imaging data) using a standard data structure and output. We currently support the following technologies: Xenium, Visium HD, MERSCOPE, CosMX, PhenoCycler, MACSima, Molecural Cartography, and others. It outputs a .zarr directory containing a processed SpatialData object, and a .explorer directory for visualization.
 has_samplesheet: true
 input: samplesheet (sample, id, data_path, fastq_dir, cytaimage, colorizedimage, darkimage, image, slide, area, manual_alignment, slidefile)
-output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
+output: --outdir/ (configured results); pipeline_info/ (run metadata when enabled)
 tools: ["AnnData", "Scanpy", "Space Ranger", "SpatialData"]
 ---
 # sopa
@@ -95,7 +95,7 @@ nfclaw run sopa ... --nxf-ver 25.10.4
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
-Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`; the files and directory layout depend on the selected workflow, parameters and publication settings. Run metadata is normally placed in `<outdir>/pipeline_info/` (execution report, software versions), when those outputs are enabled. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/sopa/blob/1.0.1/docs/output.md
 

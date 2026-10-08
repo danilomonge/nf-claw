@@ -7,16 +7,16 @@
 # `nextflow run <upstream> -profile test,docker -preview` with the Nextflow
 # version the release declares (a release declaring an engine older than 22.10.0
 # is checked on 24.10.5, a -preview-capable lenient-parser version). "Accepted" means Nextflow compiled the
-# pipeline, resolved its config/profile and validated its parameters; a real
-# REJECTION is a parse / version / parameter / DSL error. A pipeline that gets
-# past those but whose -preview cannot stage remote test inputs (analysis-time
-# I/O, out of scope) is still accepted.
+# pipeline, resolved its config/profile and validated its parameters, and the
+# preview exited successfully. Every nonzero exit fails this gate. A clearly
+# identified remote-input staging failure is labelled "staging-unverified":
+# it could not finish the preview, so it is never accepted for auto-merge.
 #
 # Env:
-#   NFCLAW_RESULT_FILE      if set, write "<name>\t(accepted|rejected)" per line
+#   NFCLAW_RESULT_FILE      if set, write "<name>\t(accepted|staging-unverified|rejected)" per line
 #   NFCLAW_KEEP_SUBMODULES  if "1", do not deinit submodules after checking
 #
-# Exits non-zero if any pipeline is rejected.
+# Exits non-zero unless every pipeline completed its preview successfully.
 set -uo pipefail
 
 _run_with_timeout() {
@@ -90,20 +90,15 @@ for name in "${names[@]}"; do
     tail -6 "$log"
     echo "| \`$name\` | $ver | ✅ |" >> "$summary"
     printf '%s\taccepted\n' "$name" >> "$result"
-  elif grep -qiE "Config parsing failed|Unexpected input|Invalid include source|does not match workflow required version|Unknown option: -preview|Validation of pipeline parameters failed|DSL ?1|Script compilation error|Unable to parse|MissingMethod" "$log"; then
+  elif [ "$rc" = 1 ] && grep -qiE '^ERROR[[:space:]]*~[[:space:]]*(No such file or directory|Cannot access remote file|Unable to access (remote )?file):?[[:space:]]+(https?://|s3://|gs://)' "$log"; then
     cat "$log"
-    echo "::error::Nextflow rejected $name (compile/config/version/parameters)"
-    echo "| \`$name\` | $ver | ❌ |" >> "$summary"
-    printf '%s\trejected\n' "$name" >> "$result"
+    echo "::warning::$name staging-unverified: remote test inputs prevented a completed preview (exit $rc)"
+    echo "| \`$name\` | $ver | ⚠️ staging-unverified |" >> "$summary"
+    printf '%s\tstaging-unverified\n' "$name" >> "$result"
     fail=1
-  elif grep -qiE "\* ?PREVIEW ?\*|Only displaying parameters that differ|Core Nextflow options|If you use nf-core" "$log"; then
-    tail -6 "$log"
-    echo "::warning::$name accepted (compiled + parameters validated); -preview could not stage test inputs"
-    echo "| \`$name\` | $ver | ✅ ¹ |" >> "$summary"
-    printf '%s\taccepted\n' "$name" >> "$result"
   else
     cat "$log"
-    echo "::error::Nextflow did not accept $name"
+    echo "::error::Nextflow did not accept $name (exit $rc)"
     echo "| \`$name\` | $ver | ❌ |" >> "$summary"
     printf '%s\trejected\n' "$name" >> "$result"
     fail=1
@@ -117,6 +112,6 @@ done
 
 {
   echo ""
-  echo "¹ compiled + parameters validated; \`-preview\` could not stage remote test inputs (analysis-time I/O, out of scope)."
+  echo "Only exit-zero previews are accepted. Staging-unverified previews fail the gate and cannot be auto-merged."
 } >> "$summary"
 exit $fail

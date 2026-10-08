@@ -7,7 +7,7 @@ description: A pipeline to identify (and remove) certain sequences from raw geno
 summary: nf-core/detaxizer is a bioinformatics pipeline that checks for the presence of a specific taxon in (meta)genomic fastq files and to filter out this taxon or taxonomic subtree. The process begins with quality assessment via FastQC and optional preprocessing (adapter trimming, quality cutting and optional length and quality filtering) using fastp, followed by taxonomic classification with kraken2 and/or bbduk, and optionally employs blastn for validation of the reads associated with the identified taxa. Users must provide a samplesheet to indicate the fastq files and, if utilizing bbduk in the classification and/or the validation step, fasta files for usage of bbduk and creating the blastn database to verify the targeted taxon.
 has_samplesheet: true
 input: samplesheet (sample, short_reads_fastq_1, short_reads_fastq_2, long_reads_fastq_1)
-output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
+output: --outdir/ (configured results); pipeline_info/ (run metadata when enabled); MultiQC report (conditional)
 tools: ["bbmap", "blastn", "fastp", "FastQC", "Kraken2", "MultiQC", "seqkit", "dnaio", "Python", "biopython"]
 feeds: ["mag", "taxprofiler"]
 ---
@@ -47,7 +47,7 @@ sample,short_reads_fastq_1,short_reads_fastq_2,long_reads_fastq_1
 | `--outdir` | string (directory path) |  |  |  | The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure. |
 
 ## Reference genome
-**This release resolves a reference genome remotely by default.** `--genome` defaults to `GRCh38`, which is looked up in AWS iGenomes at `s3://ngi-igenomes/igenomes/`. A run that passes no reference of its own therefore reads its references over S3 — that fails on a host without access to the bucket, and downloads tens of gigabytes on one that has it. For a self-contained run, pass your own reference instead (the `reference_genome_options` group in [reference.md](reference.md) lists the reference options). Set `--igenomes-ignore true` to disable the lookup entirely.
+**This release resolves a reference genome remotely by default.** `--genome` defaults to `GRCh38`; the schema declares AWS iGenomes at `s3://ngi-igenomes/igenomes/`. Resolving references through that default needs access to this source. For a self-contained run, pass your own reference instead (the `reference_genome_options` group in [reference.md](reference.md) lists the reference options). Set `--igenomes-ignore true` to disable the lookup entirely. Confirm the selected reference's paths and source in the pinned `upstream/nextflow.config` and `upstream/conf/` before running.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):
@@ -82,7 +82,7 @@ nfclaw run detaxizer ... --nxf-ver 25.04.8
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
-Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`; the files and directory layout depend on the selected workflow, parameters and publication settings. Run metadata is normally placed in `<outdir>/pipeline_info/` (execution report, software versions), when those outputs are enabled. The pinned tree includes MultiQC support; a report is produced only when its workflow step runs. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/detaxizer/blob/1.3.0/docs/output.md
 
@@ -92,7 +92,7 @@ Check a run — in the foreground or the background — with `nfclaw status <out
 Run detaxizer as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges detaxizer`.
 
 Feeds into:
-- `mag` — detaxizer, with --generate-downstream-samplesheets, writes downstream_samplesheets/mag-pe.csv for its filtered paired-end reads, in the column layout of mag 3.x; every sample goes into co-assembly group 0 and gets the read platforms mag 5 requires (short reads ILLUMINA, long reads OXFORD_NANOPORE, as detaxizer labels them for taxprofiler).
+- `mag` — detaxizer, with --generate-downstream-samplesheets, writes downstream_samplesheets/mag-pe.csv for its filtered paired-end reads, in the column layout of mag 3.x; each sample gets its own group and the read platforms mag 5 requires (short reads ILLUMINA, long reads OXFORD_NANOPORE, as detaxizer labels them for taxprofiler). Different samples are not pooled for binning or assembly; use an inline handoff to supply study-specific pooling groups.
 - `taxprofiler` — detaxizer, with --generate-downstream-samplesheets, writes downstream_samplesheets/taxprofiler.csv for its filtered reads (paths into filter/filtered/).
 
 ## Tools this pipeline runs

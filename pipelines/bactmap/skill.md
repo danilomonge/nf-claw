@@ -7,7 +7,7 @@ description: A mapping-based pipeline for creating a phylogeny from bacterial wh
 summary: nf-core/bactmap is a bioinformatics best-practice analysis pipeline for mapping short reads from bacterial WGS to a reference sequence, creating filtered VCF files, making pseudogenomes based on high quality positions in the VCF files and optionally creating a phylogeny from an alignment of the pseudogenomes.
 has_samplesheet: false
 input: --input (no samplesheet schema)
-output: --outdir/ (per-module results); pipeline_info/ (reports, versions)
+output: --outdir/ (configured results); pipeline_info/ (run metadata when enabled)
 tools: ["bcftools", "BWA", "fastp", "FastQC", "FastTree2", "Gubbins", "IQ-TREE2", "Mash", "MultiQC", "RapidNJ", "RAxML-NG", "Rasusa", "samtools", "SNP-sites"]
 ---
 # bactmap
@@ -62,7 +62,7 @@ nfclaw run bactmap ... --nxf-ver 21.04.0
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
-Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`; the files and directory layout depend on the selected workflow, parameters and publication settings. Run metadata is normally placed in `<outdir>/pipeline_info/` (execution report, software versions), when those outputs are enabled. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/bactmap/blob/1.0.0/docs/output.md
 

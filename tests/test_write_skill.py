@@ -138,6 +138,26 @@ def test_multiqc_detection_and_output_summary(tmp_path):
     assert "pipeline_info/" in out and "MultiQC" not in out
 
 
+def test_vendored_multiqc_is_catalogued_as_conditional(tmp_path):
+    # Vendoring a module does not prove a report is made: rnaseq legally skips it with skip_multiqc.
+    up = tmp_path / "upstream"
+    (up / "modules" / "nf-core" / "multiqc").mkdir(parents=True)
+    summary = write_skill._output_summary(up)
+    assert "MultiQC report (conditional)" in summary
+    assert "run metadata when enabled" in summary
+
+
+def test_outputs_surface_the_declared_multiqc_skip_option(tmp_path):
+    pdir = _seed_with_schema(tmp_path, "qc", {"properties": {
+        "skip_multiqc": {"type": "boolean", "description": "Skip MultiQC."}}})
+    (pdir / "qc" / "upstream" / "modules" / "nf-core" / "multiqc").mkdir(parents=True)
+    text = write_skill.generate("qc", pipelines_dir=pdir)[0].read_text()
+    output = text.split("## Outputs\n", 1)[1].split("\n## ", 1)[0]
+    assert "--skip-multiqc true" in output
+    assert "only when" in output
+    assert "one sub-directory per pipeline step/module" not in output
+
+
 def test_skill_frontmatter_has_input_output(tmp_path):
     pdir = _seed(tmp_path, "mini")
     skill, _ = write_skill.generate("mini", pipelines_dir=pdir)
@@ -483,6 +503,53 @@ def test_no_reference_section_without_a_genome_parameter(tmp_path):
                        "igenomes_ignore": {"type": "boolean"}}}}})
     text = write_skill.generate("nogenome", pipelines_dir=pdir)[0].read_text()
     assert "## Reference genome" not in text and "--genome" not in text
+
+
+def test_reference_source_is_not_invented_from_a_genome_name(tmp_path):
+    # marsseq uses a genome key for local ERCC references and GENCODE URLs; the name alone
+    # cannot identify a provider, network dependency, download size or genome assembly.
+    pdir = _seed_with_schema(tmp_path, "localrefs", {"properties": {
+        "genome": {"type": "string", "default": "mm10"},
+        "genomes_base": {"type": "string", "format": "directory-path"},
+        "fasta": {"type": "string", "format": "file-path"}}})
+    text = write_skill.generate("localrefs", pipelines_dir=pdir)[0].read_text()
+    reference = text.split("## Reference genome\n", 1)[1].split("\n## ", 1)[0]
+    assert "mm10" in reference and "upstream/nextflow.config" in reference
+    assert "AWS" not in reference and "S3" not in reference
+    assert "remotely by default" not in reference
+
+
+def test_local_igenomes_base_does_not_claim_remote_downloads(tmp_path):
+    pdir = _seed_with_schema(tmp_path, "localigenomes", {"properties": {
+        "genome": {"type": "string", "default": "GRCh38"},
+        "igenomes_base": {"type": "string", "default": "/reference/igenomes"}}})
+    text = write_skill.generate("localigenomes", pipelines_dir=pdir)[0].read_text()
+    reference = text.split("## Reference genome\n", 1)[1].split("\n## ", 1)[0]
+    assert "/reference/igenomes" in reference
+    assert "AWS" not in reference and "S3" not in reference
+    assert "remotely by default" not in reference
+
+
+def test_custom_remote_igenomes_base_names_the_declared_source(tmp_path):
+    pdir = _seed_with_schema(tmp_path, "customrefs", {"properties": {
+        "genome": {"type": "string", "default": "GRCh38"},
+        "igenomes_base": {"type": "string", "default": "https://reference.example/igenomes"}}})
+    text = write_skill.generate("customrefs", pipelines_dir=pdir)[0].read_text()
+    reference = text.split("## Reference genome\n", 1)[1].split("\n## ", 1)[0]
+    assert "https://reference.example/igenomes" in reference
+    assert "AWS" not in reference and "S3" not in reference
+    assert "remotely by default" in reference
+
+
+def test_disabled_igenomes_lookup_does_not_claim_remote_resolution(tmp_path):
+    pdir = _seed_with_schema(tmp_path, "ignoredrefs", {"properties": {
+        "genome": {"type": "string", "default": "GRCh38"},
+        "igenomes_base": {"type": "string", "default": "s3://ngi-igenomes/igenomes/"},
+        "igenomes_ignore": {"type": "boolean", "default": True}}})
+    text = write_skill.generate("ignoredrefs", pipelines_dir=pdir)[0].read_text()
+    reference = text.split("## Reference genome\n", 1)[1].split("\n## ", 1)[0]
+    assert "disabled by default" in reference
+    assert "remotely by default" not in reference
 
 
 # --- tools: names are kept whole, and only software sections count ---

@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss" source("../");
+@config "../../tailwind.config.ts";
 
 :root {
   /* Premium system font stacks — deterministic, no build-time font fetch. */

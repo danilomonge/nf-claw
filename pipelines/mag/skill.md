@@ -7,7 +7,7 @@ description: Assembly, binning and annotation of metagenomes
 summary: nf-core/mag is a bioinformatics best-practice analysis pipeline for assembly, binning and annotation of metagenomes.
 has_samplesheet: true
 input: samplesheet (sample, run, group, short_reads_1, short_reads_2, short_reads_platform, long_reads, long_reads_platform)
-output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
+output: --outdir/ (configured results); pipeline_info/ (run metadata when enabled); MultiQC report (conditional)
 tools: ["AdapterRemoval2", "ALE", "BBnorm/BBTools", "BCFtools", "Bowtie2", "BUSCO", "CAT", "CheckM", "CheckM2", "Chopper", "COMEBin", "CONCOCT", "MetaBinner", "SemiBin2", "DAS Tool", "FastP", "FastQC", "Filtlong", "Flye", "Freebayes", "geNomad", "GTDB-Tk", "GUNC", "BIgMAG", "MaxBin2", "MEGAHIT", "MetaBAT2", "MetaEuk", "metaMDBG", "minimap2", "MMseqs2", "MultiQC", "NanoLyse", "NanoPlot", "Nanoq", "Porechop", "Porechop-abi", "Prodigal", "Prokka", "PyDamage", "pypolca", "SAMtools", "Seqtk", "SPAdes", "Tiara", "Trimmomatic"]
 ---
 # mag
@@ -93,7 +93,7 @@ nfclaw run mag ... --nxf-ver 26.04.0
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
-Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`; the files and directory layout depend on the selected workflow, parameters and publication settings. Run metadata is normally placed in `<outdir>/pipeline_info/` (execution report, software versions), when those outputs are enabled. The pinned tree includes MultiQC support; a report is produced only when its workflow step runs. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/mag/blob/5.5.0/docs/output.md
 
@@ -103,8 +103,8 @@ Check a run — in the foreground or the background — with `nfclaw status <out
 Run mag as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges mag`.
 
 Fed by:
-- `detaxizer` — detaxizer, with --generate-downstream-samplesheets, writes downstream_samplesheets/mag-pe.csv for its filtered paired-end reads, in the column layout of mag 3.x; every sample goes into co-assembly group 0 and gets the read platforms mag 5 requires (short reads ILLUMINA, long reads OXFORD_NANOPORE, as detaxizer labels them for taxprofiler).
-- `fetchngs` — fetchngs writes a mag samplesheet whose read columns predate mag's short_reads_1/short_reads_2; the columns are renamed, every sample goes into co-assembly group 0, and each run keeps its own run id.
+- `detaxizer` — detaxizer, with --generate-downstream-samplesheets, writes downstream_samplesheets/mag-pe.csv for its filtered paired-end reads, in the column layout of mag 3.x; each sample gets its own group and the read platforms mag 5 requires (short reads ILLUMINA, long reads OXFORD_NANOPORE, as detaxizer labels them for taxprofiler). Different samples are not pooled for binning or assembly; use an inline handoff to supply study-specific pooling groups.
+- `fetchngs` — fetchngs writes a mag samplesheet whose read columns predate mag's short_reads_1/short_reads_2; the columns are renamed, each sample gets its own group, and each run keeps its own run id. Different samples are not pooled for binning or assembly; use an inline handoff to supply study-specific pooling groups.
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: AdapterRemoval2, ALE, BBnorm/BBTools, BCFtools, Bowtie2, BUSCO, CAT, CheckM, CheckM2, Chopper, COMEBin, CONCOCT, MetaBinner, SemiBin2, DAS Tool, FastP, FastQC, Filtlong, Flye, Freebayes, geNomad, GTDB-Tk, GUNC, BIgMAG, MaxBin2, MEGAHIT, MetaBAT2, MetaEuk, metaMDBG, minimap2, MMseqs2, MultiQC, NanoLyse, NanoPlot, Nanoq, Porechop, Porechop-abi, Prodigal, Prokka, PyDamage, pypolca, SAMtools, Seqtk, SPAdes, Tiara, Trimmomatic.

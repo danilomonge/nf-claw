@@ -1,5 +1,5 @@
 {
-  "description": "detaxizer, with --generate-downstream-samplesheets, writes downstream_samplesheets/mag-pe.csv for its filtered paired-end reads, in the column layout of mag 3.x; every sample goes into co-assembly group 0 and gets the read platforms mag 5 requires (short reads ILLUMINA, long reads OXFORD_NANOPORE, as detaxizer labels them for taxprofiler).",
+  "description": "detaxizer, with --generate-downstream-samplesheets, writes downstream_samplesheets/mag-pe.csv for its filtered paired-end reads, in the column layout of mag 3.x; each sample gets its own group and the read platforms mag 5 requires (short reads ILLUMINA, long reads OXFORD_NANOPORE, as detaxizer labels them for taxprofiler). Different samples are not pooled for binning or assembly; use an inline handoff to supply study-specific pooling groups.",
   "upstream_params": {
     "generate_downstream_samplesheets": true,
     "generate_pipeline_samplesheets": "mag"
@@ -16,7 +16,7 @@
         "long_reads"
       ],
       "set": {
-        "group": "0",
+        "group": "{sample}",
         "short_reads_platform": "ILLUMINA",
         "long_reads_platform": "OXFORD_NANOPORE"
       }

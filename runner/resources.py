@@ -52,6 +52,9 @@ def parse_nxf_env(items: list[str] | dict[str, str]) -> dict[str, str]:
         if not isinstance(value, str):
             raise NfclawError(ErrorCode.PARAMS_INVALID,
                               f"--nxf-env {key} must be a string (got {value!r}).")
+        if "\x00" in value:
+            raise NfclawError(ErrorCode.PARAMS_INVALID,
+                              f"--nxf-env {key} contains a NUL character.")
         env[key] = value
     return env
 
@@ -128,6 +131,9 @@ def parse(cpus: int | None, memory: str | None, time: str | None) -> ResourceLim
             ErrorCode.PARAMS_INVALID,
             f"--limit-time is not a Nextflow duration value: {time!r}.",
             fix="Use a number and a unit, e.g. 1.h, 90.min or 2.d.")
+    for flag, value in (("--limit-memory", memory), ("--limit-time", time)):
+        if value is not None and float(re.match(r"\d+(?:\.\d+)?", value.strip()).group()) <= 0:
+            raise NfclawError(ErrorCode.PARAMS_INVALID, f"{flag} must be greater than zero.")
     return ResourceLimits(
         cpus=cpus,
         memory=memory.strip() if memory else None,
