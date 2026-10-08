@@ -148,6 +148,22 @@ Seen in chains on Nextflow 26.04.3: `atacseq` 2.1.2 (`def check_max`) and `viral
 (`Invalid include source: conf/test_full_sispa.config`, a profile file missing at the pinned
 commit) — both parse with `"nxf_ver": "25.10.4"`.
 
+### BUSCO finishes, then the task hangs until its time limit (IPv6-only host)
+**Symptom:** a `BUSCO_BUSCO` task (mag, and any pipeline running BUSCO 6) is killed at its time limit
+— Nextflow reports `process hasn't exited` — although its `.command.log` shows BUSCO's results and
+"Total running time: 6 seconds" hours earlier.
+**Why:** BUSCO 6 sends anonymous run statistics when it ends ("You may opt out with
+--opt-out-run-stats"); on a host without IPv4 that upload never completes, and the task waits on it.
+**Fix:** opt out through a config given with `--config` (in a chain: the stage's `"config"`):
+```groovy
+process {
+    withName: 'BUSCO_BUSCO' {
+        ext.args = { (params.busco_db ? '--offline ' : '') + '--opt-out-run-stats' }
+    }
+}
+```
+(mag's own `ext.args` is `--offline` when `--busco_db` is given; the closure keeps it.)
+
 ### Docker bridge network has no DNS (IPv6-only host)
 **Symptom:** containers can't resolve hostnames; downloads inside a container fail even though the
 host has connectivity. Docker's bridge uses the IPv4 DNS `8.8.8.8`, unreachable on an IPv6-only host.
