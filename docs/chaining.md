@@ -52,7 +52,7 @@ over the chain's; the others replace it). Each means what the `nfclaw run` flag 
 | `params` | the stage's own pipeline parameters, as on the command line (`skip-busco` = `skip_busco`) — look them up in its `reference.md` |
 | `params_file` | a params file for the stage |
 | `pipeline_version` | a release, or `dev` (as `--pipeline-version`) |
-| `demo` | add the release's `test` profile (its small references and resource ceiling); the handed-over `--input` still wins, because a params file beats a profile. That ceiling is sized for the test data — often 1 h per task (mag's BUSCO on a real metagenome takes longer): give the stage its own `limits`, which replace it |
+| `demo` | add the release's `test` profile (its small references and resource ceiling); the handed-over `--input` still wins, because a params file beats a profile. That ceiling is sized for the test data — often 1 h per task: on real data give the stage its own `limits`, which replace it |
 | `retries` | relaunch the stage (with Nextflow's `-resume`) after a pipeline failure — never after a validation error or a timeout. Default 0 |
 | `handoff` | an inline rule (or a path to a rule file) used *into* this stage instead of the registry's |
 
@@ -66,7 +66,10 @@ setting it to something else is refused before anything runs.
    checked against both pipelines' schemas, every stage's own parameters are validated as
    `nfclaw run --check` would (the ones a handoff will supply are deferred), and `nextflow config`
    parses every stage's configuration with the engine it will run under. A typo in the last
-   stage, or a release the engine cannot parse, fails here — not after the first stage ran for hours.
+   stage, or a release whose config the engine cannot parse, fails here — not after the first stage
+   ran for hours. (A *script* the engine rejects — detaxizer 1.3.0 on Nextflow 26 — still shows only
+   when its stage launches: give that stage an `nxf_ver` and `--resume`; the stages before it are
+   not re-run.)
 2. Stage 1 runs in `<outdir>/01-<id>/`. Only when it **succeeded** (Nextflow exited 0 and its
    provenance bundle says `"outcome": "success"`) does the chain continue.
 3. The handoff writes the next stage's inputs into `<outdir>/chain/handoffs/02-<id>/` — a samplesheet
@@ -118,10 +121,26 @@ downstream parameter to one source:
 
 | source | meaning | example |
 |---|---|---|
-| `samplesheet` | **direct handoff**: a sheet the upstream wrote for the target, copied. `provides` lists the columns it is guaranteed to have (the static check uses them); optional `rename` `{old: new}` and `set` `{column: template}`, where `{column}` is that row's value, `add_empty` `[column, …]`: add a column the sheet lacks, empty (a release that checks its header literally), `require_values` `[column, …]`: every row must have a value there (sarek reads paired-end FastQ only, though its schema leaves `fastq_2` optional) — said before the downstream launches, and `drop_rows_not_allowed` `[column, …]`: drop the rows whose value in those columns the downstream's schema does not allow (recorded and reported). Path columns (per the downstream's samplesheet schema) are made absolute against the upstream outdir, and the columns are written in the order that schema declares them. | fetchngs → rnaseq; fetchngs → mag (`rename` + `set`) |
+| `samplesheet` | **direct handoff**: a sheet the upstream wrote for the target, copied — with the options below. `provides` lists the columns it is guaranteed to have (the static check uses them). | fetchngs → rnaseq; fetchngs → mag (`rename` + `set`) |
 | `build` | **mapping**: a sheet built from output files. `rows` is a pattern with `{placeholders}` — one row per matching file; `columns` maps each column to a template. A path column's template names a file under the upstream outdir, which must exist unless it ends in `?` (then it is left empty). Optional `format`: `csv` or `tsv`. | bamtofastq → rnaseq |
 | `file` | one result file: a glob that must match exactly one, or an ordered list of globs (the first that matches anything wins) | rnaseq → differentialabundance `--matrix` |
 | `upstream_param` | a value the upstream run used: from its `pipeline_info/params_*.json` (every resolved parameter, including a profile's), else its `provenance/params.json` | rnaseq `--gtf` → differentialabundance `--gtf` |
+
+Options of a `samplesheet` source, applied in this order:
+- `rename` `{old: new}` — a column the target names differently (fetchngs's `fastq_1` is mag's
+  `short_reads_1`);
+- `set` `{column: template}` — a value for every row; `{column}` is that row's value
+  (`"lane": "{run_accession}"` for sarek);
+- `add_empty` `[column, …]` — a column the sheet lacks, added empty (atacseq 2.1.2 checks its header
+  literally and wants `fastq_2` even for single-end data);
+- `drop_rows_not_allowed` `[column, …]` — drop the rows whose value there the downstream's schema does
+  not allow (createtaxdb builds a sourmash database taxprofiler cannot use); recorded and reported;
+- `require_values` `[column, …]` — every row must have a value there, said before the downstream
+  launches (sarek reads paired-end FastQ only, though its schema leaves `fastq_2` optional).
+
+Whatever the source, a sheet is written with the columns the downstream's schema declares first, in
+its order; its path columns are made absolute against the upstream outdir; and it is validated
+against that schema before the next stage launches.
 
 Any source may be `"optional": true`: a source that cannot be produced leaves the parameter unset
 instead of failing. Paths and patterns stay inside the upstream outdir (relative, no `..`).
