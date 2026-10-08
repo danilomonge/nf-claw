@@ -35,30 +35,71 @@ jobs:
         run: |
           nfclaw run demo --demo --outdir "$RUNNER_TEMP/demo" --nxf-ver 25.10.4 \
             --limit-cpus 2 --limit-memory 2.GB --limit-time 15.min --timeout 900
-      - name: Independently validate FastQC statistics and all plot exports
+      - name: Replay the recorded command into a fresh directory
+        run: '"$RUNNER_TEMP/demo/provenance/commands.sh" "$RUNNER_TEMP/demo-replay"'
+      - name: Independently validate statistics, scientific replay and all plot exports
         run: |
           python docs/validation/check_demo_fastqc_metrics.py "$RUNNER_TEMP/demo" \
             --output "$RUNNER_TEMP/demo-metrics.json"
+          python docs/validation/check_demo_fastqc_metrics.py "$RUNNER_TEMP/demo-replay" \
+            --output "$RUNNER_TEMP/demo-replay-metrics.json" --against "$RUNNER_TEMP/demo-metrics.json"
           python - <<'PY'
+          import gzip
+          import json
           import os
+          import re
           from pathlib import Path
           from xml.etree import ElementTree
-          root = Path(os.environ["RUNNER_TEMP"]) / "demo/multiqc/multiqc_plots"
-          for suffix in ("png", "svg", "pdf"):
-              files = sorted(root.rglob(f"*.{suffix}"))
-              if len(files) != 12:
-                  raise SystemExit(f"Expected 12 {suffix} plot exports, found {len(files)}")
-              for path in files:
-                  content = path.read_bytes()
-                  if not content:
-                      raise SystemExit(f"Empty plot export: {path}")
-                  if suffix == "png" and not content.startswith(b"\x89PNG\r\n\x1a\n"):
-                      raise SystemExit(f"Invalid PNG header: {path}")
-                  if suffix == "pdf" and not content.startswith(b"%PDF-"):
-                      raise SystemExit(f"Invalid PDF header: {path}")
-                  if suffix == "svg" and ElementTree.fromstring(content).tag != "{http://www.w3.org/2000/svg}svg":
-                      raise SystemExit(f"Invalid SVG root: {path}")
-          print("All 36 PNG/SVG/PDF plot exports are present, nonempty and have valid format headers.")
+          from runner.outputs import result_files
+          original = Path(os.environ["RUNNER_TEMP"]) / "demo"
+          replay = original.with_name("demo-replay")
+          inventories = [{p.relative_to(root).as_posix() for p in result_files(root)}
+                         for root in (original, replay)]
+          missing, extra = inventories[0] - inventories[1], inventories[1] - inventories[0]
+          metadata = r"pipeline_info/params_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.json"
+          if len(missing) != len(extra) or len(missing) > 1 or not all(re.fullmatch(metadata, p) for p in missing | extra):
+              raise SystemExit(f"Unclassified replay inventory differences: missing={missing}, extra={extra}")
+          parameter_files = [[p for p in inventory if re.fullmatch(metadata, p)] for inventory in inventories]
+          if any(len(files) != 1 for files in parameter_files):
+              raise SystemExit(f"Expected one upstream parameter report per run: {parameter_files}")
+          parameters = [json.loads((root / name).read_text())
+                        for root, name in ((original, parameter_files[0][0]), (replay, parameter_files[1][0]))]
+          for params in parameters:
+              params.pop("outdir")
+          if parameters[0] != parameters[1]:
+              raise SystemExit("Replay changed upstream parameters beyond its output directory")
+          reads = sorted(p for p in inventories[0] if p.startswith("fq/") and p.endswith(".fastq.gz"))
+          if len(reads) != 6:
+              raise SystemExit(f"Expected six trimmed read outputs, found {len(reads)}")
+          for name in reads:
+              with gzip.open(original / name, "rb") as a, gzip.open(replay / name, "rb") as b:
+                  if a.read() != b.read():
+                      raise SystemExit(f"Replay changed trimmed reads: {name}")
+          if (original / "cowpy/cowpy.txt").read_bytes() != (replay / "cowpy/cowpy.txt").read_bytes():
+              raise SystemExit("Replay changed cowpy output")
+          multiqc = [json.loads((root / "multiqc/multiqc_data/multiqc_data.json").read_text())
+                     for root in (original, replay)]
+          for key in ("report_saved_raw_data", "report_general_stats_data"):
+              if multiqc[0][key] != multiqc[1][key]:
+                  raise SystemExit(f"Replay changed MultiQC scientific data: {key}")
+          for base in (original, replay):
+              root = base / "multiqc/multiqc_plots"
+              for suffix in ("png", "svg", "pdf"):
+                  files = sorted(root.rglob(f"*.{suffix}"))
+                  if len(files) != 12:
+                      raise SystemExit(f"Expected 12 {suffix} exports in {base}, found {len(files)}")
+                  for path in files:
+                      content = path.read_bytes()
+                      if not content:
+                          raise SystemExit(f"Empty plot export: {path}")
+                      if suffix == "png" and not content.startswith(b"\x89PNG\r\n\x1a\n"):
+                          raise SystemExit(f"Invalid PNG header: {path}")
+                      if suffix == "pdf" and not content.startswith(b"%PDF-"):
+                          raise SystemExit(f"Invalid PDF header: {path}")
+                      if suffix == "svg" and ElementTree.fromstring(content).tag != "{http://www.w3.org/2000/svg}svg":
+                          raise SystemExit(f"Invalid SVG root: {path}")
+          print("Scientific data match; both runs produced all 36 valid plot exports.")
+          print(f"Timestamped parameter reports differ by filename: {missing} -> {extra}")
           PY
       - name: Retain native execution evidence
         if: always()
@@ -68,6 +109,8 @@ jobs:
           path: |
             ${{ runner.temp }}/demo
             ${{ runner.temp }}/demo-metrics.json
+            ${{ runner.temp }}/demo-replay
+            ${{ runner.temp }}/demo-replay-metrics.json
             work/**/.command.*
           include-hidden-files: true
           retention-days: 14

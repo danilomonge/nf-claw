@@ -38,8 +38,9 @@ def host_identity() -> str | None:
         try:
             result = subprocess.run(["/usr/sbin/ioreg", "-rd1", "-c", "IOPlatformExpertDevice"],
                                     capture_output=True, text=True, timeout=2)
-            match = re.search(r'"IOPlatformUUID"\s*=\s*"([0-9A-Fa-f-]{36})"', result.stdout)
-            if result.returncode == 0 and match:
+            match = re.search(r'"IOPlatformUUID"\s*=\s*"([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-'
+                              r'[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})"', result.stdout)
+            if result.returncode == 0 and match and match.group(1).replace("-", "") != "0" * 32:
                 identity = match.group(1).lower()
         except (OSError, subprocess.SubprocessError):
             pass

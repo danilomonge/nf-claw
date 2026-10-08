@@ -52,6 +52,9 @@ the historical Linux/cloud evidence in [the earlier audit](2026-10-08-audit.md).
   identity before consulting process IDs, while older logs retain hostname-based
   compatibility. Two regressions failed before the fix. Stable-ID probing failures
   fall back conservatively rather than inventing an identifier.
+  A further regression proved that foreign log PIDs were being probed in the local
+  namespace; readers now establish host identity before probing unfinished runs,
+  and final outcomes are read without checking potentially reused process IDs.
 
 Every defect above was reproduced by a failing regression before its implementation
 fix. Existing tests exposed an internal-directory handoff regression during development;
@@ -134,6 +137,11 @@ process creation and terminated their preview task monitors, but retained active
 dataflow operators until the 900-second SIGTERM. The exact operator dependency
 causing each wait remains unproven; the logs do not show these as task-execution
 failures or establish that a longer timeout would fix them.
+An independent `nextflow inspect` on createpanelrefs with Nextflow 26.04.0 returned
+exit zero and process/container JSON. It is additional configuration evidence,
+not a completed `-preview` or an analysis run; it does not replace the failed gate.
+The [per-pipeline verdict table](2026-10-08-nextflow-acceptance.tsv) accounts for
+all 91 pipelines exactly once: 86 accepted, four rejected, one staging-unverified.
 
 Further bactmap inspection found that its dataset branch now supplies Bacteroides
 fragilis reads while the removed reference was Neisseria gonorrhoeae. The original
@@ -168,15 +176,31 @@ An independent standard-library FASTQ oracle checked all six FastQC 0.12.1 repor
 from the completed fresh demo. Exact read counts, min/max length ranges and integer
 GC percentages matched the staged reads. [The evidence](2026-10-08-demo-fastqc-metrics.json)
 records input/report digests and computed values; [the checker](check_demo_fastqc_metrics.py)
-can reproduce them while the work directories remain available. Nine tests verify
+can reproduce them while the work directories remain available. Tests verify
 that the oracle rejects altered statistics, malformed reads and unsupported filtering.
 This validates those basic statistics, not all FastQC modules or biological accuracy.
 
 A dedicated native Linux Docker workflow now executes the pinned demo, applies that
 oracle and requires all 36 PNG/SVG/PDF plot exports to be present and nonempty with
 valid format headers. It retains outputs and task logs for further inspection.
-That workflow has not yet completed; the local replay remained active in an emulated
-FastQC JVM after writing reports, and its JVM attach probe did not respond.
+Its initial [native run at `334f8df`](https://github.com/danilomonge/nf-claw/actions/runs/37821731848)
+passed: all eight tasks completed with exit zero, all 76 published files matched
+their recorded checksums after artifact download, and all 36 plot exports passed
+the presence/nonempty/format-header checks. All six oracle input hashes and metrics
+matched the completed macOS run. Two PNG exports were also visually inspected.
+This does not independently validate the meaning of every plotted value.
+
+The full local suite at `334f8df` passed 923 tests with two Linux-only skips;
+its six software-validation CI jobs passed. The subsequent native workflow extension
+also replays the run and checks complete FastQC data tables, decoded trimmed reads,
+MultiQC scientific data and upstream parameters (allowing only the new output
+directory). It classifies the timestamped parameter-report filename pair explicitly
+and requires all plot exports from both runs. That extension is not yet validated.
+
+The macOS replay reached its 30-minute FastQC task limit and failed with exit one;
+the task's JVM attach probe had not responded. It was not restarted or counted as a
+passing reproduction. Its recorded error and task logs remain available, and Docker
+reported no remaining containers after termination.
 
 ## Scientific limits
 

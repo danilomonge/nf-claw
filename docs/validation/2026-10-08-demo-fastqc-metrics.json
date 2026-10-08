@@ -2,6 +2,7 @@
   "reports_checked": 6,
   "results": [
     {
+      "data_sha256": "d90c0d064d000c2f34585e905bdc3a6506c9d94164ac1296b1b59f2d5572998c",
       "expected": {
         "gc_percent": 38,
         "length": "35-301",
@@ -19,6 +20,7 @@
       "report_sha256": "6af99073770cfe57d8366b9dbf7dc22fd528e73ce7f0ee1832c08d92c6c1d788"
     },
     {
+      "data_sha256": "4d9f9901557c07e4b91a123fedb3893ac2aa36dd916608e1cefcb315d2469579",
       "expected": {
         "gc_percent": 38,
         "length": "35-301",
@@ -36,6 +38,7 @@
       "report_sha256": "450d0a861b419842a12dc6e708552ea2b772380f95addc5b0c1989e7e7d9e40a"
     },
     {
+      "data_sha256": "045bb4ebfa93e87059add4f3b8aaf5b82be90439d2de609b814a023d7f7ccd3b",
       "expected": {
         "gc_percent": 38,
         "length": "35-301",
@@ -53,6 +56,7 @@
       "report_sha256": "a56172f544d5d72645b05543865ccaf72abfda77ffa58e9a59711c711c67c689"
     },
     {
+      "data_sha256": "18a9afae96557a4b6f66f041456b709516f30c1bb6d6e1d613e9bb7109297aed",
       "expected": {
         "gc_percent": 38,
         "length": "35-301",
@@ -70,6 +74,7 @@
       "report_sha256": "5017074a213db54a0869d24e97c6397fd3a4e705710f65e5c1d1e7c2d8da951e"
     },
     {
+      "data_sha256": "735cb0160be4fac0658fe2511915c295066940529eea624a17677b90759fab33",
       "expected": {
         "gc_percent": 38,
         "length": "35-301",
@@ -87,6 +92,7 @@
       "report_sha256": "cb8e98d3e89ef888e1efbf93c132099f5743755ef9a7c6ce180100c86f1f2ebb"
     },
     {
+      "data_sha256": "0be6be74a9aeacb3695055fa6d037855aea29a5c5563af167b10e40b27479d1d",
       "expected": {
         "gc_percent": 38,
         "length": "35-301",
