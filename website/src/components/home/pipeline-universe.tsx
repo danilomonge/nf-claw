@@ -30,6 +30,13 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 const ORDER = [...CATEGORIES.map((c) => c.name), OTHER_CATEGORY.name];
 const MAX_COMPARE = 4;
 
+/** Where a wedge label's colour dot goes: just before the text, on the side facing the disc. */
+function labelDotX(label: { x: number; anchor: "start" | "middle" | "end" }, text: string): number {
+  if (label.anchor === "start") return label.x - 10;
+  if (label.anchor === "end") return label.x + 10;
+  return label.x - (text.length * 7.3) / 2 - 10;
+}
+
 /** Short wedge label: the domain's first word ("Microbial & metagenomics" → "Microbial"). */
 function shortLabel(category: string): string {
   if (category === "Data & utilities") return "Utilities";
@@ -283,26 +290,36 @@ export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }
                             d={w.path}
                             fill={color}
                             initial={reduce ? false : { opacity: 0 }}
-                            animate={{ opacity: !inView ? 0 : lit ? 0.11 : faded ? 0.015 : 0.035 }}
+                            animate={{ opacity: !inView ? 0 : lit ? 0.14 : faded ? 0.02 : 0.05 }}
                             transition={{ duration: 0.5, delay: inView && !lit && !faded ? 0.1 + i * 0.05 : 0 }}
                           />
-                          <motion.text
-                            x={w.label.x}
-                            y={w.label.y}
-                            textAnchor={w.label.anchor}
-                            fontSize="11"
-                            fontWeight={lit ? 600 : 500}
-                            fill={lit ? "#F4F5F6" : "#9AA0AA"}
+                          <motion.g
                             initial={reduce ? false : { opacity: 0 }}
                             animate={{ opacity: !inView ? 0 : faded ? 0.35 : 1 }}
                             transition={{ duration: 0.5, delay: inView && !faded && !lit ? 0.4 + i * 0.05 : 0 }}
                           >
-                            {shortLabel(w.category)}
-                            <tspan fill="#7C838E" fontWeight={400}>
-                              {" "}
-                              {w.count}
-                            </tspan>
-                          </motion.text>
+                            {/* a dot in the domain colour, on the rim side of the label */}
+                            <circle
+                              cx={labelDotX(w.label, `${shortLabel(w.category)} ${w.count}`)}
+                              cy={w.label.y - 4.5}
+                              r={3.5}
+                              fill={color}
+                            />
+                            <text
+                              x={w.label.x}
+                              y={w.label.y}
+                              textAnchor={w.label.anchor}
+                              fontSize="13"
+                              fontWeight={lit ? 600 : 500}
+                              fill={lit ? "#F4F5F6" : "#B9BEC6"}
+                            >
+                              {shortLabel(w.category)}
+                              <tspan fill="#7C838E" fontWeight={400}>
+                                {" "}
+                                {w.count}
+                              </tspan>
+                            </text>
+                          </motion.g>
                         </g>
                       );
                     })}
@@ -410,26 +427,11 @@ export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }
                             strokeWidth={isSel ? 2 : 1.5}
                             style={{ transition: "r 0.2s ease" }}
                           />
-                          {isSel && (
-                            <text
-                              x={n.x}
-                              y={n.y - n.r - 9}
-                              textAnchor="middle"
-                              fontSize="11.5"
-                              fontWeight="600"
-                              fill="#F4F5F6"
-                              stroke="#0A0B0E"
-                              strokeWidth={3}
-                              paintOrder="stroke"
-                              style={{ fontFamily: "var(--font-mono)" }}
-                              pointerEvents="none"
-                            >
-                              {n.name}
-                            </text>
-                          )}
                         </motion.g>
                       );
                     })}
+                    {/* the selected pipeline's name, drawn last so no neighbouring node covers it */}
+                    {selected && nodeByName.get(selected) && <SelectedLabel node={nodeByName.get(selected)!} reduce={!!reduce} />}
                   </svg>
 
                   {/* hover tooltip */}
@@ -560,6 +562,46 @@ export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }
   );
 }
 
+function SelectedLabel({ node, reduce }: { node: { name: string; category: string; x: number; y: number; r: number }; reduce: boolean }) {
+  const w = node.name.length * 7 + 20;
+  const h = 22;
+  // above the node, or below it when the top edge is too close
+  const above = node.y - node.r - h - 8 > 4;
+  const y = above ? node.y - node.r - h - 7 : node.y + node.r + 7;
+  return (
+    <motion.g
+      key={node.name}
+      pointerEvents="none"
+      initial={reduce ? false : { opacity: 0, y: above ? 4 : -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: EASE }}
+    >
+      <rect
+        x={node.x - w / 2}
+        y={y}
+        width={w}
+        height={h}
+        rx={h / 2}
+        fill="#0A0B0E"
+        fillOpacity={0.94}
+        stroke={colorForCategory(node.category)}
+        strokeOpacity={0.55}
+      />
+      <text
+        x={node.x}
+        y={y + 15}
+        textAnchor="middle"
+        fontSize="12"
+        fontWeight="600"
+        fill="#F4F5F6"
+        style={{ fontFamily: "var(--font-mono)" }}
+      >
+        {node.name}
+      </text>
+    </motion.g>
+  );
+}
+
 function Inspector({
   p,
   inCompare,
@@ -622,7 +664,7 @@ function Inspector({
       <div className="mt-auto grid grid-cols-2 gap-2 pt-6">
         <Link
           href={`/pipelines/${p.name}/`}
-          className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl bg-claw-500 px-4 py-3 text-sm font-semibold text-ink-950 transition hover:bg-claw-400 hover:shadow-[0_10px_30px_-12px_rgba(57,211,83,0.7)]"
+          className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl bg-claw-500 px-4 py-3 text-sm font-semibold text-ink-950 transition hover:bg-claw-400 hover:shadow-[0_10px_30px_-12px_rgba(57,211,83,0.7)] active:scale-[0.97]"
         >
           Inspect pipeline
           <ArrowUpRight className="h-4 w-4" />

@@ -27,6 +27,7 @@ import { InlineMarkdown } from "@/components/ui/inline-markdown";
 import { ParameterExplorer } from "@/components/pipeline/parameter-explorer";
 import { Reveal } from "@/components/ui/reveal";
 import { SectionNav, type SectionLink } from "@/components/ui/section-nav";
+import { RememberVisit } from "@/components/pipeline/remember-visit";
 import { OG_IMAGE, siteUrl } from "@/lib/site";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -99,6 +100,7 @@ export default async function PipelinePage({ params }: { params: Promise<{ name:
 
   return (
     <div className="container-site pt-24 md:pt-28">
+      <RememberVisit name={pipeline.name} />
       {/* breadcrumb */}
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-sm text-fog-dim">
         <Link href="/pipelines/" className="inline-flex items-center gap-1.5 transition hover:text-fog">

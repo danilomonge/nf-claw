@@ -5,6 +5,7 @@ import { LiveStatus } from "@/components/home/activity";
 import { SkillsExplorer } from "@/components/home/skills-explorer";
 import { ReleaseTimeline, type TimelineItem } from "@/components/home/release-timeline";
 import { DocsHub } from "@/components/home/docs-hub";
+import { HowItWorks } from "@/components/home/how-it-works";
 import { SectionHeading } from "@/components/ui/section-heading";
 import {
   getPipelines,
@@ -14,6 +15,7 @@ import {
   getTimeline,
   getDocs,
   getLiveRuns,
+  getQuickstart,
 } from "@/lib/data";
 import { toSummary, toSkillCard, categorize, colorForCategory } from "@/lib/derive";
 
@@ -28,6 +30,7 @@ export default async function HomePage() {
   const workflows = getWorkflows();
   const docs = getDocs();
   const liveRuns = await getLiveRuns();
+  const quickstart = getQuickstart();
 
   // latest release across pinned pipelines
   const dated = [...pipelines]
@@ -55,6 +58,17 @@ export default async function HomePage() {
       <Hero meta={meta} latest={latest} />
 
       <Manifesto pipelines={summaries} />
+
+      {quickstart && (
+        <section id="how" className="section container-site">
+          <SectionHeading
+            eyebrow="How an agent uses it"
+            title="Find it. Read it. Run it."
+            description="Three commands, straight from the repository's agent guide: the catalog narrows the library to one pipeline, its generated skill.md gives the exact command and inputs, and nfclaw runs the pinned release and records the run."
+          />
+          <HowItWorks quickstart={quickstart} />
+        </section>
+      )}
 
       <section id="pipelines" className="section container-site">
         <SectionHeading

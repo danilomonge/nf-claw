@@ -120,14 +120,14 @@ export function Hero({
         <motion.div {...fade(0.32)} className="mt-10 flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
           <Link
             href="/#pipelines"
-            className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-claw-500 px-7 py-3.5 text-sm font-semibold text-ink-950 transition hover:bg-claw-400 hover:shadow-[0_12px_40px_-12px_rgba(57,211,83,0.6)] sm:w-auto"
+            className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-claw-500 px-7 py-3.5 text-sm font-semibold text-ink-950 transition hover:bg-claw-400 hover:shadow-[0_12px_40px_-12px_rgba(57,211,83,0.6)] sm:w-auto active:scale-[0.97]"
           >
             Explore the universe
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
           <Link
             href="/docs/"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-7 py-3.5 text-sm font-semibold text-fog transition hover:border-white/20 hover:bg-white/[0.06] sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-7 py-3.5 text-sm font-semibold text-fog transition hover:border-white/20 hover:bg-white/[0.06] active:scale-[0.97] sm:w-auto"
           >
             Read the docs
           </Link>

@@ -7,6 +7,7 @@ import { ArrowRight, CornerDownLeft, FileText, Hash, Search, X } from "lucide-re
 import { Highlight } from "@/components/ui/highlight";
 import { colorForCategory } from "@/lib/derive";
 import { lockScroll } from "@/lib/scroll-lock";
+import { readRecent } from "@/lib/recent";
 import { cn } from "@/lib/utils";
 
 export interface PaletteData {
@@ -20,6 +21,7 @@ type Item =
   | { kind: "doc"; id: string; label: string; hint: string; href: string };
 
 export const SECTIONS = [
+  { id: "how", label: "How it works", hint: "Find, read, run — three commands" },
   { id: "pipelines", label: "Pipeline universe", hint: "Explore the constellation" },
   { id: "activity", label: "Live activity", hint: "Commits & automation" },
   { id: "skills", label: "Skills explorer", hint: "What an agent reads" },
@@ -53,6 +55,8 @@ export function CommandPalette({ data }: { data: PaletteData }) {
   const router = useRouter();
   const pathname = usePathname();
   const reduce = useReducedMotion();
+  // pipelines opened lately (this browser only), offered first while the query is empty
+  const [recent, setRecent] = useState<string[]>([]);
 
   const all = useMemo<Item[]>(
     () => [
@@ -85,10 +89,19 @@ export function CommandPalette({ data }: { data: PaletteData }) {
   const groups = useMemo(() => {
     const order: Item["kind"][] = query.trim() ? ["pipeline", "doc", "section"] : ["section", "pipeline", "doc"];
     const titles = { section: "Jump to", pipeline: "Pipelines", doc: "Documentation" };
-    return order
-      .map((kind) => ({ kind, title: titles[kind], items: results.filter((r) => r.kind === kind) }))
+    const out = order
+      .map((kind) => ({ key: kind as string, title: titles[kind], items: results.filter((r) => r.kind === kind) }))
       .filter((g) => g.items.length);
-  }, [results, query]);
+    if (!query.trim() && recent.length) {
+      const byName = new Map<string, Item>(all.filter((i) => i.kind === "pipeline").map((i) => [i.label, i]));
+      const items = recent.flatMap((name): Item[] => {
+        const item = byName.get(name);
+        return item ? [{ ...item, id: `r-${name}` }] : [];
+      });
+      if (items.length) out.unshift({ key: "recent", title: "Recent", items });
+    }
+    return out;
+  }, [results, query, recent, all]);
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
   const close = useCallback(() => setOpen(false), []);
@@ -117,6 +130,7 @@ export function CommandPalette({ data }: { data: PaletteData }) {
   useEffect(() => {
     if (!open) return;
     restoreFocus.current = document.activeElement as HTMLElement | null;
+    setRecent(readRecent());
     setQuery("");
     setActive(0);
     const unlock = lockScroll();
@@ -238,7 +252,7 @@ export function CommandPalette({ data }: { data: PaletteData }) {
               </div>
             )}
             {groups.map((g) => (
-              <div key={g.kind} className="mb-1 last:mb-0">
+              <div key={g.key} className="mb-1 last:mb-0">
                 <p className="px-3 pb-1.5 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-fog-dim">
                   {g.title}
                   <span className="ml-1.5 font-normal tracking-normal text-fog-dim">{g.items.length}</span>

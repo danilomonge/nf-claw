@@ -55,14 +55,14 @@ export function nodeRadius(parameterCount: number): number {
 export function layoutConstellation(
   items: { name: string; category: string; parameterCount: number }[],
   categoryOrder: string[],
-  { width = 800, height = 560 } = {},
+  { width = 760, height = 640 } = {},
 ): Constellation {
   const cx = width / 2;
   const cy = height / 2;
-  const rOuter = Math.min(cx, cy) - 44;
+  // ~120 units stay free at each side for the wedge labels, ~44 above and below.
+  const rOuter = Math.min(cy - 44, cx - 122);
   const rInner = 64;
-  // The disc is stretched horizontally to use the wide view box, leaving ~100 units at each side
-  // for the wedge labels.
+  // The disc is stretched horizontally only when the view box is wider than the labels need.
   const sx = Math.max(1, Math.min(1.3, (cx - 100) / (rOuter + 22)));
 
   const groups = categoryOrder
@@ -78,24 +78,37 @@ export function layoutConstellation(
   const nodes: Node[] = [];
   const wedges: Wedge[] = [];
   let angle = -Math.PI / 2 + gap / 2;
+  // Closest two node centres may sit along a ring (arc length) and between rings (radius).
+  const minArc = 26;
+  const rMin = rInner + 34;
 
   for (const g of groups) {
     const span = (usable * g.items.length) / total;
     const start = angle;
     const end = angle + span;
 
-    // Fill rings from the rim inward; tighten the spacing until the wedge holds every node.
+    // The fewest rings that hold the wedge's pipelines, then spread across the radius (up to 54
+    // apart) instead of packed at the rim, so the disc fills evenly instead of leaving a void
+    // around the hub. Each ring takes a share of the nodes proportional to its circumference.
+    const n = g.items.length;
+    const capacity = (r: number) => Math.max(1, Math.floor((span * r) / minArc));
     let rings: { r: number; count: number }[] = [];
-    for (let step = 30; step >= 8; step -= 1) {
-      rings = [];
-      let left = g.items.length;
-      for (let r = rOuter; left > 0 && r >= rInner + 6; r -= step) {
-        const cap = Math.max(1, Math.floor((span * r) / step));
-        const count = Math.min(cap, left);
-        rings.push({ r, count });
-        left -= count;
+    for (let count = 1; count <= 12; count++) {
+      const step = count === 1 ? 0 : Math.min(54, (rOuter - rMin) / (count - 1));
+      const radii = Array.from({ length: count }, (_, i) => rOuter - i * step);
+      const caps = radii.map(capacity);
+      if (caps.reduce((a, b) => a + b, 0) < n && count < 12) continue;
+      const weight = radii.reduce((a, b) => a + b, 0);
+      const counts = radii.map((r, i) => Math.min(caps[i], Math.floor((n * r) / weight)));
+      // hand out what rounding left over, outer rings first
+      for (let left = n - counts.reduce((a, b) => a + b, 0), i = 0; left > 0; i = (i + 1) % count) {
+        if (counts[i] < caps[i] || i === count - 1) {
+          counts[i] += 1;
+          left -= 1;
+        }
       }
-      if (left === 0) break;
+      rings = radii.map((r, i) => ({ r, count: counts[i] })).filter((ring) => ring.count > 0);
+      break;
     }
 
     let k = 0;
@@ -103,7 +116,7 @@ export function layoutConstellation(
       for (let j = 0; j < ring.count; j++) {
         const item = g.items[k++];
         const jitterA = (unit(item.name) - 0.5) * Math.min(0.06, span / (ring.count + 1) / 3);
-        const jitterR = (unit(item.name + "r") - 0.5) * 6;
+        const jitterR = (unit(item.name + "r") - 0.5) * 8;
         const a = start + ((j + 0.5) / ring.count) * span + jitterA;
         const r = ring.r + jitterR;
         nodes.push({

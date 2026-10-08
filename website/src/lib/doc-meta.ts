@@ -69,7 +69,12 @@ export function docHeadings(md: string): DocHeading[] {
     if (fence !== null) continue;
     const m = line.match(/^(#{2,3})\s+(.+?)\s*#*\s*$/);
     if (!m) continue;
-    const text = m[2].replace(/`([^`]*)`/g, "$1").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
+    const text = m[2]
+      .replace(/`([^`]*)`/g, "$1")
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/\*([^*\s][^*]*)\*/g, "$1") // *emphasis*
+      .replace(/(^|\s)_([^_\s][^_]*)_(?=\s|$)/g, "$1$2") // _emphasis_ (not snake_case)
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
     out.push({ depth: m[1].length as 2 | 3, text, id: uniqueId(slugify(text), seen), line: i + 1 });
   }
   return out;
