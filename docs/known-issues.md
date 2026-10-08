@@ -264,21 +264,26 @@ must leave the output directory exactly as it found it. It used to create `--out
 now go to a temp directory instead (the printed command still runs as printed, since it names them
 by absolute path).
 
-### A replay produces the same files, but not the same bytes
-**Expected — and byte-equality is not the property to check.** nf-core outputs embed the moment they
-were made: the execution report and timeline carry durations and dates, gzip headers carry an mtime,
-zip entries (FastQC) carry timestamps, and MultiQC writes the run date into its HTML. Re-running the
-same pipeline on the same inputs therefore produces the same *files* with different *bytes*. No
-setting in nf-claw or Nextflow changes that; it is inside the tools.
-
-The property that **is** achievable, and that matters, is structural: did the replay produce the same
-set of files? Check it with:
+### A replay can change bytes and timestamped metadata filenames
+Some outputs embed dates or durations: execution reports, timelines, gzip headers,
+FastQC ZIP entries and MultiQC HTML can differ between runs. A changed checksum
+does not identify the cause; inspect scientific results with a format-aware comparison.
+Matching file inventories alone does not establish analytical agreement. Check both with:
 ```bash
 nfclaw verify results.replay --against results
 ```
-It compares the two bundles' `outputs.sha256` **by path** and reports `identical` / `changed` /
-`missing` / `extra`, exiting non-zero only when a file is missing or extra — that means the replay
-did different work. Differing bytes in a file both runs produced are reported, not failed.
+It hashes the replay's live files and compares them with the original recorded checksums
+**by path**, reporting `identical` / `changed` / `missing` / `extra`. Missing or extra
+files fail the structural check; add `--strict` to fail on any changed bytes as well.
+
+nfclaw pins the schema's `trace_report_suffix` where available, but some upstream
+code generates other filenames directly from the clock. For example, demo 1.2.0's
+`dumpParametersToJSON()` independently names `pipeline_info/params_<timestamp>.json`.
+Its replay produces a missing/extra metadata pair even when the analysis outputs
+match. A resumed run can also retain reports from earlier attempts. Classify these
+differences explicitly; do not erase metadata or treat all missing/extra files as
+proof that the analysis changed. The upstream tree is preserved, and the verifier
+reports the actual inventory without silently excluding these files.
 
 **Do not diff the two `outputs.sha256` files directly.** Each line is `hash  path`, so a file whose
 content merely changed has a different line in each bundle and shows up as *both* "missing" and
@@ -506,6 +511,13 @@ on it — `nfclaw show <name> --pipeline-version X.Y.Z` prints that release's do
 These are not bugs — just a flag or samplesheet value that a constrained environment or a strict
 schema requires:
 
+- **`demo` 1.2.0 on macOS arm64 with amd64 containers** — MultiQC 1.34 can
+  return exit zero and write its HTML/data while Kaleido/Chromium fails to export
+  plots under QEMU. Fresh and resumed local runs both reported `0/36 completed`,
+  with `qemu: unknown option 'type=utility'` and Chromium sandbox/GPU crashes.
+  Check the task's `.command.err` and required plot files even when pipeline status
+  is success. Validate required exports on a compatible native execution platform;
+  this session has not established an arm64 image or an emulation workaround.
 - **`fetchngs`** — if accessions have no ENA FTP URL, the pipeline falls back to `SRATOOLS_PREFETCH`
   (needs NCBI SRA Cloud). With no such access, run metadata-only: `--skip_fastq_download`. On an
   IPv6-only (NAT64) host, `prefetch` inside Docker failed with `cannot resolve remote location of

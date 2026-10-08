@@ -77,8 +77,9 @@ the final comparison excludes run metadata consistently with the output manifest
   real wrapper preflight with Docker running (`check_only=True`); these checks did not
   execute analysis tasks or validate their Nextflow configs at runtime.
 - Full local suite at `9e65baa`: 904 passed, 2 skipped (Linux `/proc` and
-  `PR_SET_PDEATHSIG` tests). The subsequent acceptance-log retention change passed
-  all 25 acceptance/workflow tests. Statement coverage at `9e65baa`: 90.37%;
+  `PR_SET_PDEATHSIG` tests). At `60539d8`, the full local suite passed 905 tests
+  with the same two skips; all six GitHub software-validation jobs also passed.
+  Statement coverage at `9e65baa`: 90.37%;
   branch coverage: 85.71%; combined coverage: 89.07%. Coverage is a measurement of
   exercised code, not a correctness guarantee; subprocess execution of the copied
   replay guard is checked by behavior but is not counted in parent-process coverage.
@@ -119,9 +120,17 @@ A real Docker `demo` run on macOS arm64 completed after a timeout and resume,
 publishing 45 files and a MultiQC HTML report. It does not establish complete
 component success: MultiQC's Chromium image-export subprocesses failed under QEMU
 (0/36 exports completed), while MultiQC itself returned zero. The initial failed
-attempt and the successful resumed attempt remain in the run log. A fresh run and
-replay are being checked separately; the resumed run is not reported as a clean
-reproduction or as validation of all exported plots.
+attempt and the successful resumed attempt remain in the run log. A fresh run
+completed with 40 files and reproduced the same plot-export failure. The five
+additional files in the resumed run are metadata from its earlier attempt. Its
+fresh replay is being checked separately; neither run establishes successful
+static plot export.
+
+Source inspection also disproved the known-issues claim that replay always produces
+the same filenames: demo's `dumpParametersToJSON()` independently timestamps its
+parameter report, outside the pinned `trace_report_suffix`. The verifier retains
+such files and reports their missing/extra paths. The guide now explains this
+limitation and distinguishes inventory equality from analytical agreement.
 
 ## Scientific limits
 
