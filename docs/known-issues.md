@@ -564,3 +564,21 @@ schema requires:
 - **`ampliseq`** — the `test` profile caps memory at 6 GB; visualisation/export steps (e.g.
   `QIIME2_EXPORT_RELTAX`) may be OOM-killed (exit 137) without failing the pipeline. In production
   raise it with `--max_memory '<N>.GB'` (or a custom `--config`).
+
+### Chains: what a `demo: true` stage hands over
+A chain stage on `demo: true` runs its release's `test` data — and that is what the next stage
+receives. Most test data chain fine; these do not without help (seen on the de.NBI instance):
+- **`detaxizer`** — its `test` profile filters `tax2filter = 'unclassified'` with a kraken2 database
+  that classifies nothing, so every read is removed and `filter/filtered/` holds empty FastQ files
+  (the next stage then fails on them). Give the stage real filtering: e.g.
+  `"params": {"classification_kraken2": false, "classification_bbduk": true, "fasta_bbduk": "<host fasta>"}`,
+  or a `tax2filter` your `--kraken2db` contains.
+- **`demultiplex`** — its `test` / `test_pe` flowcell is a *human amplicon panel* (BRCA1, MUTYH, …),
+  so a downstream stage on its own `test` references (yeast, a chr22 slice) aligns nothing. Give that
+  stage a human reference (`fasta`/`gtf`). Amplicon reads also need, for **atacseq**, `keep_dups`,
+  `clip_r1` (a ~40 nt prefix) and a `bamtools_filter_pe_config` without its soft-clip rule; for
+  **rnaseq** on auto strandedness, `fq subsample` panics on the small run — set demultiplex's own
+  `"strandedness": "unstranded"`. `sarek` takes paired-end reads only: use `"profile": "test_pe,docker"`.
+- **`taxprofiler`** on reads its test databases do not know: `ganon`, `kmcp`, krakentools'
+  `combine_kreports` and MultiQC's MetaPhlAn module fail on zero hits — run the profilers that
+  tolerate them (`run_kraken2`, `run_kaiju`) and `"run_profile_standardisation": false`.
