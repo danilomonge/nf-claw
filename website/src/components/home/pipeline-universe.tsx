@@ -30,13 +30,6 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 const ORDER = [...CATEGORIES.map((c) => c.name), OTHER_CATEGORY.name];
 const MAX_COMPARE = 4;
 
-/** Where a wedge label's colour dot goes: just before the text, on the side facing the disc. */
-function labelDotX(label: { x: number; anchor: "start" | "middle" | "end" }, text: string): number {
-  if (label.anchor === "start") return label.x - 10;
-  if (label.anchor === "end") return label.x + 10;
-  return label.x - (text.length * 7.3) / 2 - 10;
-}
-
 /** Short wedge label: the domain's first word ("Microbial & metagenomics" → "Microbial"). */
 function shortLabel(category: string): string {
   if (category === "Data & utilities") return "Utilities";
@@ -112,6 +105,7 @@ export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }
       layoutConstellation(
         pipelines.map((p) => ({ name: p.name, category: p.category, parameterCount: p.parameterCount })),
         ORDER,
+        { labelName: shortLabel },
       ),
     [pipelines],
   );
@@ -253,10 +247,6 @@ export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }
                         <stop offset="0%" stopColor="rgba(57,211,83,0.28)" />
                         <stop offset="100%" stopColor="rgba(57,211,83,0)" />
                       </radialGradient>
-                      <linearGradient id="sweep" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="rgba(57,211,83,0)" />
-                        <stop offset="100%" stopColor="rgba(57,211,83,0.10)" />
-                      </linearGradient>
                     </defs>
 
                     {/* guide rings */}
@@ -293,54 +283,47 @@ export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }
                             animate={{ opacity: !inView ? 0 : lit ? 0.14 : faded ? 0.02 : 0.05 }}
                             transition={{ duration: 0.5, delay: inView && !lit && !faded ? 0.1 + i * 0.05 : 0 }}
                           />
+                          {/* the wedge's tag: leader, dot on the bisector, name and count */}
                           <motion.g
                             initial={reduce ? false : { opacity: 0 }}
                             animate={{ opacity: !inView ? 0 : faded ? 0.35 : 1 }}
                             transition={{ duration: 0.5, delay: inView && !faded && !lit ? 0.4 + i * 0.05 : 0 }}
                           >
-                            {/* a dot in the domain colour, on the rim side of the label */}
-                            <circle
-                              cx={labelDotX(w.label, `${shortLabel(w.category)} ${w.count}`)}
-                              cy={w.label.y - 4.5}
-                              r={3.5}
-                              fill={color}
+                            <line
+                              x1={w.label.leader.x1}
+                              y1={w.label.leader.y1}
+                              x2={w.label.leader.x2}
+                              y2={w.label.leader.y2}
+                              stroke={color}
+                              strokeOpacity={lit ? 0.9 : 0.5}
+                              strokeWidth={1.25}
+                              strokeLinecap="round"
                             />
+                            <circle cx={w.label.dot.x} cy={w.label.dot.y} r={lit ? 5 : 4} fill={color} />
+                            <circle cx={w.label.dot.x} cy={w.label.dot.y} r={8} fill={color} opacity={lit ? 0.22 : 0.12} />
                             <text
-                              x={w.label.x}
-                              y={w.label.y}
+                              x={w.label.nameAt.x}
+                              y={w.label.nameAt.y}
                               textAnchor={w.label.anchor}
-                              fontSize="13"
+                              fontSize="13.5"
                               fontWeight={lit ? 600 : 500}
-                              fill={lit ? "#F4F5F6" : "#B9BEC6"}
+                              fill={lit ? "#F4F5F6" : "#C9CDD3"}
                             >
-                              {shortLabel(w.category)}
-                              <tspan fill="#7C838E" fontWeight={400}>
-                                {" "}
-                                {w.count}
-                              </tspan>
+                              {w.label.name}
+                            </text>
+                            <text
+                              x={w.label.subAt.x}
+                              y={w.label.subAt.y}
+                              textAnchor={w.label.anchor}
+                              fontSize="11.5"
+                              fill="#8A919B"
+                            >
+                              {w.label.sub}
                             </text>
                           </motion.g>
                         </g>
                       );
                     })}
-
-                    {/* slow radar sweep */}
-                    {!reduce && inView && (
-                      <g
-                        style={{
-                          transformOrigin: `${cx}px ${cy}px`,
-                          transformBox: "view-box",
-                          animation: "orbit-spin 40s linear infinite",
-                        }}
-                        pointerEvents="none"
-                      >
-                        <path
-                          d={`M ${cx} ${cy} L ${cx + layout.rOuter * 1.25} ${cy} A ${layout.rOuter * 1.25} ${layout.rOuter * 1.25} 0 0 0 ${cx + layout.rOuter * 1.25 * Math.cos(-0.5)} ${cy + layout.rOuter * 1.25 * Math.sin(-0.5)} Z`}
-                          fill="url(#sweep)"
-                          opacity={0.6}
-                        />
-                      </g>
-                    )}
 
                     {/* the selected / hovered pipeline's link to the hub */}
                     {[selected, hovered !== selected ? hovered : null].map((name, i) => {

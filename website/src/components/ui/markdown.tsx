@@ -24,7 +24,8 @@ function CodeBlock({ children, lang }: { children: string; lang: string }) {
         <span className="font-mono text-[11px] text-fog-dim">{lang || "text"}</span>
         <CopyButton text={children} />
       </div>
-      <pre className="overflow-x-auto px-4 py-4 font-mono text-[13px] leading-relaxed text-fog-muted">
+      {/* focusable, so a keyboard can scroll a long line into view */}
+      <pre tabIndex={0} className="overflow-x-auto px-4 py-4 font-mono text-[13px] leading-relaxed text-fog-muted">
         <code>
           {SHELL.has(lang)
             ? children.split("\n").map((line, i) => (
@@ -65,7 +66,11 @@ export function Markdown({
       function Heading({ children, node }: HeadingProps) {
         const id = ids.get(node?.position?.start.line ?? -1) ?? slugify(textOf(children));
         return (
-          <Tag id={id} className={cn("group/h relative scroll-mt-6", className)}>
+          <Tag
+            id={id}
+            data-progress={Tag === "h2" ? textOf(children) : undefined}
+            className={cn("group/h relative scroll-mt-6", className)}
+          >
             <a
               href={`#${id}`}
               aria-label="Link to this section"
@@ -117,11 +122,22 @@ export function Markdown({
       ),
       hr: () => <div className="hairline my-10" />,
       strong: ({ children }) => <strong className="font-semibold text-fog">{children}</strong>,
-      table: ({ children }) => (
-        <div className="my-6 overflow-x-auto rounded-2xl border border-white/[0.07]">
-          <table className="w-full text-sm">{children}</table>
-        </div>
-      ),
+      table: ({ children, node }: { children?: ReactNode; node?: { position?: { start: { line: number } } } }) => {
+        // a focusable, labelled region so a keyboard can scroll a wide table; the label names the
+        // table by its columns and source line, which keeps it unique on the page
+        const head = textOf(Children.toArray(children)[0]).replace(/\s+/g, " ").trim().slice(0, 60);
+        const line = node?.position?.start.line;
+        return (
+          <div
+            tabIndex={0}
+            role="region"
+            aria-label={`Table${head ? `: ${head}` : ""}${line ? ` (line ${line})` : ""}`}
+            className="my-6 overflow-x-auto rounded-2xl border border-white/[0.07]"
+          >
+            <table className="w-full text-sm">{children}</table>
+          </div>
+        );
+      },
       thead: ({ children }) => <thead className="bg-white/[0.03]">{children}</thead>,
       th: ({ children }) => (
         <th className="border-b border-white/[0.07] px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-fog-dim">

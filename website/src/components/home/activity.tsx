@@ -34,7 +34,7 @@ export function LiveStatus({
   const gh = repo ? `https://github.com/${repo}` : null;
 
   return (
-    <section id="activity" className="section container-site">
+    <section id="activity" data-progress="Activity" className="section container-site">
       <SectionHeading
         eyebrow="Always in sync"
         title="Live repository status"

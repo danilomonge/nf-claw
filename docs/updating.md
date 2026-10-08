@@ -1,28 +1,95 @@
-# Updating pipelines
+# Automated Updating & Maintenance
 
-Versions track upstream **release tags** (`latest-release` in `sources.tsv`).
-`.github/workflows/auto-update.yml` runs daily: it finds the newest release per pipeline with
-`git ls-remote --tags` (pure git, no API), checks out that tag, regenerates
-`skill.md`/`reference.md`/`catalog.*`, and opens a PR. Every changed pipeline first passes Nextflow
-acceptance, then the full unit suite and a final drift gate run **in the job** (a PR opened with
-`GITHUB_TOKEN` would not trigger the `drift-check`/`tests` workflows on its own). Only then is the PR
-**auto-merged** and `deploy-pages` dispatched, so an incompatible release or stale context cannot
-land without review.
-Every source is attempted, but any tag lookup, fetch or checkout failure makes the maintenance job
-fail after the scan instead of silently treating an unreachable upstream as “no new release.”
-Manual: `make update`.
+nf-claw maintains synchronization with upstream nf-core pipeline releases through fully automated workflows and a strict, bidirectional schema drift gate. No context file (`skill.md`, `reference.md`, or `catalog.*`) is ever edited manually.
 
-New pipelines are onboarded separately by `discover-pipelines.yml` (weekly): it finds DSL2 nf-core
-pipelines not yet tracked, scaffolds each, drops any Nextflow rejects, and — if the unit tests, the
-drift gate and the `-preview` acceptance check all pass — auto-merges the batch. See
-[`compatibility.md`](compatibility.md) for the version/engine rules.
+---
 
-Both update paths treat pipeline names as path components and git submodule identifiers, so the
-librarian validates every name from `sources.tsv` and from remote discovery metadata before using it.
-Only letters, numbers, dots, underscores and dashes are accepted, and every name must start and end
-with a letter or number. Malformed names are skipped during discovery or rejected while reading the
-source list.
-Discovery also derives every remote as `https://github.com/nf-core/<validated-name>.git`; mutable
-catalog metadata cannot redirect the write-capable automation to an unrelated repository.
-The drift gate checks that `sources.tsv`, `.gitmodules`, and the pipeline directories contain the
-same names and URLs, so maintenance and runtime code cannot silently use different remotes.
+### Navigation
+
+[Version Policy](#1-version-policy--upstream-tracking) • [Daily Updates](#2-automated-daily-updates-auto-updateyml) • [Weekly Discovery](#3-automated-weekly-discovery-discover-pipelinesyml) • [Schema Drift Gate](#4-the-schema-drift-gate-librariancheck_driftpy) • [Maintenance Commands](#5-manual-maintenance-commands)
+
+---
+
+## 1. Version Policy & Upstream Tracking
+
+Tracking policies are declared in `sources.tsv`:
+- Each row contains `name<TAB>url<TAB>version-policy`.
+- The primary policy is `latest-release`, directing automation to track the newest official git release tag.
+- Submodules pin immutable release tags (e.g. `tags/3.18.0`), never moving branches (`master`, `main`, `dev`).
+
+---
+
+## 2. Automated Daily Updates (`auto-update.yml`)
+
+The `.github/workflows/auto-update.yml` workflow executes daily:
+
+```
+┌─────────────────────────┐     ┌───────────────────────────┐     ┌─────────────────────────┐
+│ 1. Git Tag Discovery    │ ──► │ 2. Submodule Checkout     │ ──► │ 3. Context Generation   │
+│ git ls-remote --tags    │     │ Pinned to latest tag      │     │ make build              │
+└─────────────────────────┘     └───────────────────────────┘     └─────────────────────────┘
+                                                                               │
+                                ┌───────────────────────────┐                  ▼
+                                │ 5. Automated Merge        │ ◄── ┌─────────────────────────┐
+                                │ Fast-forward to main      │     │ 4. Validation Gate      │
+                                └───────────────────────────┘     │ Nextflow + Tests + Drift│
+                                                                  └─────────────────────────┘
+```
+
+1. **Tag Discovery:** Queries upstream remotes via `git ls-remote --tags` (using standard git protocol to bypass GitHub REST API rate limits).
+2. **Deterministic Bumping:** When a newer release tag is discovered for a `latest-release` pipeline, the workflow checks out that tag in `pipelines/<name>/upstream`.
+3. **Context Regeneration:** Invokes `librarian/write_skill.py` and `librarian/write_catalog.py` to regenerate all parameter tables, input schemas, tool lists, and catalog manifests.
+4. **Comprehensive In-Job Validation:**
+   - Runs `scripts/nextflow_accept.sh` (`nextflow -preview`) to verify pipeline compilation, profile resolution, and parameter validation.
+   - Executes the complete pytest suite.
+   - Runs the drift gate (`python3 -m librarian.check_drift`).
+5. **Automated Merging:** Only when all validation checks pass with exit code 0 is the PR automatically merged into `main`, which dispatches `deploy-pages.yml` to refresh the live site.
+6. **Error Resiliency:** If any remote repository cannot be reached, the maintenance scan fails immediately rather than silently treating the failure as "no new releases."
+
+---
+
+## 3. Automated Weekly Discovery (`discover-pipelines.yml`)
+
+The `.github/workflows/discover-pipelines.yml` workflow runs weekly to onboard newly created nf-core pipelines:
+
+1. **DSL2 Filtering:** Inspects the nf-core pipeline registry, onboarding only **DSL2** pipelines (legacy DSL1 workflows are permanently ignored).
+2. **Name Sanitization & Security:**
+   - Every candidate pipeline name is strictly validated: must consist solely of alphanumeric characters, dots, hyphens, and underscores, bounded by alphanumeric characters:
+     ```regex
+     ^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$
+     ```
+   - Remotes are deterministically constructed as `https://github.com/nf-core/<validated-name>.git`. Mutable catalog metadata cannot redirect automation to external repositories.
+3. **Scaffolding:** Adds the submodule, pins its newest release tag, and generates initial context files.
+4. **Strict Acceptance Gate:** Evaluates each candidate via `scripts/nextflow_accept.sh`.
+   - Nextflow must compile, resolve configurations, and validate schema with **strict exit code 0**.
+   - Any failure, timeout, or unresolved remote test data staging results in rejection (`staging-unverified`).
+   - Rejected pipelines are pruned before committing.
+5. **Batch Auto-Merge:** Validated additions that pass tests and drift checks are committed and merged.
+
+---
+
+## 4. The Schema Drift Gate (`librarian/check_drift.py`)
+
+The drift gate guards against divergence between pinned code and documentation:
+
+| Audit Check | Component Validated | Validation Mechanism |
+|---|---|---|
+| **Manifest Equivalence** | `sources.tsv`, `.gitmodules`, `pipelines/` | Asserts exact equality of pipeline inventory and git remote URLs. |
+| **Context Parity** | `skill.md`, `reference.md`, `catalog.*` | Recompiles context in memory and verifies character-for-character equality against disk. |
+| **Handoff Verification** | `handoffs/*.json` rules | Validates that parameter mappings and column transformations fit pinned upstream and downstream schemas. |
+| **Agent Guidelines Parity** | `AGENTS.md` and `CLAUDE.md` | `tests/test_agent_docs.py` enforces 100% byte-for-byte identity. |
+
+If any upstream pipeline is updated without regenerating context, or if a manual edit is introduced, `make check` fails immediately.
+
+---
+
+## 5. Manual Maintenance Commands
+
+Developers can run maintenance tasks locally:
+
+| Command | Action |
+|---|---|
+| `make update` | Queries remotes, bumps submodules to newest tags, and regenerates context files. |
+| `make build` | Regenerates `skill.md`, `reference.md`, and `catalog.*` from current submodules. |
+| `make check` | Runs the schema drift gate followed by the full pytest suite. |
+| `make test` | Executes all unit, integration, and regression tests. |

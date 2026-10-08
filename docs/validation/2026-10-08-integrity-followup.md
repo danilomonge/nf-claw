@@ -1,8 +1,10 @@
 # Integrity audit follow-up
 
 Date: 2026-10-08. Baseline: `e689896` (main). Environment: macOS arm64,
-Python 3.13.13, Nextflow 25.10.4. This audit distinguishes fresh observations from
-the historical Linux/cloud evidence in [the earlier audit](2026-10-08-audit.md).
+Python 3.13.13, Nextflow 25.10.4. Historical Linux/cloud experiments have not been
+independently rerun here. Main advanced to `17c9527` during this audit; its website
+and documentation changes have been integrated, preserving deletion of the prior
+audit report and retaining fresh evidence in this follow-up.
 
 ## Reproduced defects and fixes
 
