@@ -12,7 +12,7 @@ DSL1 pipeline cannot run on any currently-supported engine. nf-claw only include
   not DSL2, so DSL1 pipelines are never onboarded.
 - If you add a pipeline by hand, it must be DSL2.
 
-## Each pipeline runs with the Nextflow version it declares
+## Match the engine to the pinned release
 
 There is **no single Nextflow version that runs every pipeline**. Each nf-core release declares
 a minimum in its manifest (`nextflowVersion`, e.g. `!>=23.04.0` or `!>=26.04.0`) and is written
@@ -22,7 +22,8 @@ for the configuration parser that ships with that version:
 - Newer releases (Nextflow **26.x** onward, where the **strict** parser became the default)
   use syntax the legacy parser rejects, and may require that newer engine outright.
 
-So the only correct version for a given pipeline is the one **it declares**. nf-claw honours this:
+The declared version is a minimum, not proof that only that exact engine works. Check compatibility
+with the engine and configuration parser used for the intended analysis. nf-claw supports this:
 
 - **`nfclaw run`** invokes the pinned pipeline directly. Run it with a Nextflow that satisfies the
   release's declared minimum **and isn't so new that its stricter config parser rejects the
@@ -54,10 +55,11 @@ over any single global assumption.
 - **`nextflow-validate.yml`** runs each pipeline through `nextflow -preview`: Nextflow compiles
   it, resolves its config/profile, validates parameters and builds the task DAG, then stops
   before executing. A pipeline is **accepted** when it compiles, its config resolves and its
-  parameters validate; a real **rejection** is a parse/version/parameter/DSL error. (`-preview`
-  does not stage remote test inputs, so the rare pipeline that reads files while building its
-  graph is still counted as accepted — staging data is part of running the analysis, which is
-  left to nf-core's own per-release CI.)
+  parameters validate and the preview exits **zero**. Every nonzero exit fails the gate, including
+  timeouts, initialization failures and failed remote staging. Identifiable remote staging errors
+  are labelled **staging-unverified**, which is not accepted for automatic merging. Some pipelines
+  read or download inputs while constructing their graph; preview is not guaranteed to be offline.
+  A successful preview executes no analysis tasks and provides no analytical validation.
 
 ## Environment
 

@@ -211,6 +211,9 @@ def _main(argv: list[str] | None = None) -> int:
     p_verify.add_argument("replay", help="--outdir of the replayed run")
     p_verify.add_argument("--against", dest="against", required=True,
                           help="--outdir of the original run it should reproduce")
+    p_verify.add_argument("--strict", action="store_true",
+                          help="also fail when any output bytes differ; inspect timestamped "
+                               "reports separately from analytical results")
     # Several pipelines in sequence, each started only after the previous one succeeded, with its
     # inputs prepared from that one's outputs (runner.chain; rules in handoffs/).
     p_chain = sub.add_parser("chain")
@@ -343,9 +346,9 @@ def _main(argv: list[str] | None = None) -> int:
             print(str(exc), file=sys.stderr)
             return 1
         print(verify.report(cmp), end="")
-        # A file the replay did not make (or made and the original did not) means it did different
-        # work — that is a failure. Differing bytes in the same file are expected and are not.
-        return 0 if cmp.structurally_equal else 1
+        # The default compares file presence. Strict verification additionally checks every byte;
+        # neither comparison by itself establishes analytical accuracy.
+        return 0 if cmp.structurally_equal and (not args.strict or not cmp.changed) else 1
 
     if args.cmd == "status":
         log = _run_log_path(args.outdir)
@@ -409,7 +412,8 @@ def _main(argv: list[str] | None = None) -> int:
                     on_warning=warn)
         except NfclawError as exc:
             print(str(exc), file=sys.stderr)
-            unlaunched("refused before launch", str(exc))
+            if not exc.details.get("active_run"):
+                unlaunched("refused before launch", str(exc))
             return 1
         except (execution.Terminated, KeyboardInterrupt) as exc:
             code = _stopped(exc, log_path)

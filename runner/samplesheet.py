@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import csv
+import math
 import re
+from collections import Counter
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -40,7 +42,11 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
             return []
         with path.open(newline="", encoding="utf-8-sig") as fh:
             reader = csv.DictReader(fh, delimiter=delimiter)
-            header = set(reader.fieldnames or [])
+            fields = reader.fieldnames or []
+            duplicates = sorted(name for name, count in Counter(fields).items() if count > 1)
+            if duplicates:
+                return [f"duplicate samplesheet column '{name}'" for name in duplicates]
+            header = set(fields)
             for col in named:
                 if col.required and col.name not in header:
                     issues.append(f"missing required column '{col.name}'")
@@ -59,6 +65,8 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
     if not rows:
         issues.append("samplesheet has no data rows")
     for i, row in enumerate(rows, start=2):
+        if None in row:
+            issues.append(f"row {i}: extra values beyond the samplesheet header")
         for col in named:
             val = (row.get(col.name) or "").strip()
             if col.required and not val:
@@ -129,6 +137,9 @@ def _value_issues(row_num: int, col, value: str) -> list[str]:
     elif col.type == "number":
         try:
             numeric = float(value)
+            if not math.isfinite(numeric):
+                issues.append(f"{prefix} expects a finite number, got {value!r}")
+                numeric = None
         except ValueError:
             issues.append(f"{prefix} expects a number, got {value!r}")
     if col.pattern:

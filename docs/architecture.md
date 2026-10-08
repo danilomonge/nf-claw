@@ -27,18 +27,27 @@ Four zones:
   (`--nxf-ver`, `--nxf-env`) and those inherited from the shell (e.g. an exported `NXF_OFFLINE`),
   since Nextflow reads all of them. Values that look like credentials are redacted from the
   manifest and replay script; the script names those variables to supply externally.
-  Replay is *strict*: the nf-core template defaults `trace_report_suffix` to a timestamp evaluated
+  Replay preserves the declared launch settings: the nf-core template defaults `trace_report_suffix` to a timestamp evaluated
   afresh on every launch, and interpolates it into the execution report/timeline/trace/DAG
   filenames. nfclaw pins it in `params.json` (only where the pinned release declares the parameter,
   and never over a caller's value), so replaying the bundle reproduces the run's outputs instead of
   writing a second, differently-named set of reports beside them.
   A resource ceiling (`--limit-cpus`/`--limit-memory`/`--limit-time`) is likewise materialised into
   the bundle as `resource_limits.config` and passed with `-c`, so it too replays.
+  Before launch, provenance snapshots local inputs (including schema-declared CSV/TSV data paths),
+  configuration files, generated parameters, and tracked pipeline source bytes. A standalone Python
+  guard refuses replay if these dependencies, their inventories or the pipeline commit changed.
+  The replay pins the observed Nextflow version. Bundle files are replaced atomically and the
+  manifest is published last; incomplete bundles cannot replay. Remote data, indirect configuration
+  includes, non-tabular referenced payloads, untracked pipeline files and container image digests
+  are not frozen. Identical launch settings do not guarantee identical scientific results.
   `commands.sh` reproduces the run into a **fresh** output directory (default `<outdir>.replay`,
   overridable by argument) and refuses a target that already holds files: an nf-core pipeline
   publishes into `--outdir` and cannot re-publish over a previous run's files, so replaying in place
   fails on contact. `--check` is side-effect-free for the same reason — it stages its params file in
   a temp directory, never in `--outdir`, so a dry run cannot spoil the directory the real run needs.
+  Real runs hold a persistent sibling file lock on POSIX systems, preventing overlapping launches
+  into the same output directory from replacing an active run's parameters or provenance.
   `--pipeline-version` selects another release (materialized as a git worktree of that tag under
   the git-ignored `pipelines/<name>/.versions/<tag>/`) or `dev`, nf-core's development branch. A
   branch moves, so `dev` is resolved to its head commit on every request and materialized per commit

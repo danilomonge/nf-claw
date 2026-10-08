@@ -274,6 +274,8 @@ def materialize_dev(name: str, *, pipelines_dir: Path, repo_root: Path) -> Submo
                 if not st.complete:
                     _add_worktree(upstream, dest, commit)
                     st = submod.resolve_at(name, dest)
+            if st.complete:
+                _check_cache_commit(st, commit, f"{DEV_BRANCH} commit {commit}")
             if fresh and st.complete:
                 _record_dev_head(upstream, commit)
     except (subprocess.SubprocessError, FileNotFoundError, OSError) as exc:
@@ -345,6 +347,18 @@ def _add_worktree(upstream: Path, dest: Path, rev: str) -> None:
         check=True, capture_output=True, text=True, timeout=_GIT_TIMEOUT)
 
 
+def _check_cache_commit(st: SubmoduleStatus, expected: str, label: str) -> None:
+    """A complete cache is reusable only when its own Git HEAD is the requested revision.
+    Preserve a mismatched tree: replacing it could discard the user's local changes."""
+    if not expected or st.commit != expected:
+        raise NfclawError(
+            ErrorCode.SUBMODULE_INCOMPLETE,
+            f"Version cache {st.path} does not match nf-core/{st.name}@{label}: "
+            f"expected {expected or '(unresolved commit)'}, found {st.commit or '(no Git HEAD)'}.",
+            fix="Preserve any local changes, move this version's cache directory aside, then retry. "
+                "nfclaw will recreate the requested revision without overwriting that tree.")
+
+
 def materialize(name: str, tag: str, *, pipelines_dir: Path, repo_root: Path) -> SubmoduleStatus:
     """Ensure `tag` is checked out at `cache_dir(name, tag)/upstream` and return its status.
     Reuses the submodule's object store; fetches the tag only if it isn't present yet."""
@@ -357,11 +371,14 @@ def materialize(name: str, tag: str, *, pipelines_dir: Path, repo_root: Path) ->
     try:
         with submod._init_lock(repo_root):
             st = submod.resolve_at(name, dest)
+            if not _has_tag(upstream, tag):
+                _fetch_tag(upstream, tag)
+            expected = submod._git(upstream, "rev-parse", "-q", "--verify", f"refs/tags/{tag}^{{commit}}")
             if not st.complete:
-                if not _has_tag(upstream, tag):
-                    _fetch_tag(upstream, tag)
                 _add_worktree(upstream, dest, f"tags/{tag}")
                 st = submod.resolve_at(name, dest)
+            if st.complete:
+                _check_cache_commit(st, expected, tag)
     except (subprocess.SubprocessError, FileNotFoundError, OSError) as exc:
         detail = getattr(exc, "stderr", "") or str(exc)
         raise NfclawError(

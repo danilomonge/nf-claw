@@ -7,7 +7,7 @@ description: Amplicon sequencing analysis workflow using DADA2 and QIIME2
 summary: nfcore/ampliseq is a bioinformatics analysis pipeline used for amplicon sequencing, supporting denoising of any amplicon and supports a variety of taxonomic databases for taxonomic assignment including 16S, ITS, CO1 and 18S. Phylogenetic placement is also possible. Multiple region analysis such as 5R is implemented. Supported is paired-end Illumina or single-end Illumina, PacBio and IonTorrent data. Default is the analysis of 16S rRNA gene amplicons sequenced paired-end with Illumina.
 has_samplesheet: true
 input: samplesheet (sampleID, forwardReads, reverseReads, sample, fastq_1, fastq_2, run, control, quant_reading)
-output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
+output: --outdir/ (configured results); pipeline_info/ (run metadata when enabled); MultiQC report (conditional)
 tools: ["FastQC", "Cutadapt", "Barrnap", "DADA2", "Greengenes2", "PR2 - Protist Reference Ribosomal Database", "GTDB - Genome Taxonomy Database", "SBDI-GTDB", "RDP - Ribosomal Database Project", "UNITE - eukaryotic nuclear ribosomal ITS region", "MIDORI2 - a collection of reference databases", "COIDB - CO1 Taxonomy Database", "PhytoRef plastid 16S rRNA database for photosynthetic eukaryotes", "Zehr lab nifH database", "BOLD Plantae", "nf-core/phyloplace", "HMMER", "MAFFT", "EPA-NG", "Gappa", "q2-sidle", "SMURF", "RESCRIPt", "SEPP", "QIIME2", "ANCOM", "ANCOM-BC", "ANCOM-BC2", "Adonis", "Phyloseq", "TreeSummarizedExperiment", "ITSx", "ITSxRust", "PICRUSt2", "VSEARCH", "decontam", "Kraken2", "MultiQC"]
 ---
 # ampliseq
@@ -95,7 +95,7 @@ nfclaw run ampliseq ... --nxf-ver 25.10.4
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
-Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`; the files and directory layout depend on the selected workflow, parameters and publication settings. Run metadata is normally placed in `<outdir>/pipeline_info/` (execution report, software versions), when those outputs are enabled. The pinned tree includes MultiQC support; a report is produced only when its workflow step runs. `--skip-multiqc true` disables that report. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/ampliseq/blob/2.18.0/docs/output.md
 

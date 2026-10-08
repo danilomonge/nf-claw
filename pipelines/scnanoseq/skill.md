@@ -7,7 +7,7 @@ description: Single-cell/nuclei pipeline for data derived from Oxford Nanopore
 summary: nf-core/scnanoseq is a bioinformatics best-practice analysis pipeline for 10X Genomics single-cell/nuclei RNA-seq data derived from Oxford Nanopore Q20+ chemistry (R10.4 flow cells (>Q20)). Due to the expectation of >Q20 quality, the input data for the pipeline does not depend on Illumina paired data. Please note scnanoseq can also process Oxford data with older chemistry, but we encourage usage of the Q20+ chemistry when possible.
 has_samplesheet: true
 input: samplesheet (sample, fastq, cell_count)
-output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
+output: --outdir/ (configured results); pipeline_info/ (run metadata when enabled); MultiQC report (conditional)
 tools: ["BLAZE", "FastQC", "IsoQuant", "Minimap2", "MultiQC", "NanoComp", "Chopper", "NanoPlot", "oarfish", "pigz", "SAMtools", "ToulligQC", "UMI-tools", "Picard", "UCSC tools", "R", "ggplot2", "optparse", "Seurat", "Biopython", "NumPy", "Pandas", "Pysam"]
 ---
 # scnanoseq
@@ -49,7 +49,7 @@ sample,fastq,cell_count
 | `--quantifier` | string |  |  | matches ^(oarfish\|isoquant)(,(oarfish\|isoquant))*$ | Provide a comma-delimited options of quantifiers for the pipeline to use. Available tools: isoquant, oarfish |
 
 ## Reference genome
-No reference genome is set by default: supply your own (the `reference_genome_options` group in [reference.md](reference.md) lists the reference options). Passing `--genome <id>` instead resolves the references from AWS iGenomes at `s3://ngi-igenomes/igenomes/`, which needs access to that bucket and downloads them. Set `--igenomes-ignore true` to disable the lookup entirely.
+No reference genome is set by default: supply your own reference. The iGenomes lookup is disabled by default (`--igenomes-ignore true`). Configure your reference explicitly (the `reference_genome_options` group in [reference.md](reference.md) lists the reference options). Confirm the selected reference's paths and source in the pinned `upstream/nextflow.config` and `upstream/conf/` before running.
 
 ## Other parameters
 Every parameter not listed above is optional as far as the schema is concerned. [reference.md](reference.md) documents them all — type, default, allowed values and constraints — organised into these groups (counts are full group sizes, so they include any parameter already listed above):
@@ -84,7 +84,7 @@ nfclaw run scnanoseq ... --nxf-ver 25.04.2
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
-Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`; the files and directory layout depend on the selected workflow, parameters and publication settings. Run metadata is normally placed in `<outdir>/pipeline_info/` (execution report, software versions), when those outputs are enabled. The pinned tree includes MultiQC support; a report is produced only when its workflow step runs. `--skip-multiqc true` disables that report. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/scnanoseq/blob/1.3.0/docs/output.md
 

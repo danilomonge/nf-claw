@@ -3,6 +3,7 @@ import subprocess
 import pytest
 
 from runner import versions
+from runner import submodule as submod
 from runner.errors import ErrorCode, NfclawError
 
 
@@ -169,6 +170,37 @@ def test_materialize_is_idempotent(tmp_path):
     first = versions.materialize("p", "1.2.0", pipelines_dir=pdir, repo_root=tmp_path)
     second = versions.materialize("p", "1.2.0", pipelines_dir=pdir, repo_root=tmp_path)
     assert first.path == second.path and second.complete is True
+
+
+def test_materialize_refuses_a_complete_cache_at_the_wrong_release(tmp_path):
+    pdir = tmp_path / "pipelines"
+    up = _upstream_repo_with_tag(pdir, "p", "1.2.0")
+    first = versions.materialize("p", "1.2.0", pipelines_dir=pdir, repo_root=tmp_path)
+    other = _commit_tree(up, "other release", {"main.nf": "workflow { /* different */ }\n"})
+    _git(up, "tag", "2.0.0")
+    _git(first.path, "checkout", "--detach", other)
+    marker = first.path / "user-notes.txt"
+    marker.write_text("preserve my changes")
+    with pytest.raises(NfclawError) as exc:
+        versions.materialize("p", "1.2.0", pipelines_dir=pdir, repo_root=tmp_path)
+    assert exc.value.code == ErrorCode.SUBMODULE_INCOMPLETE
+    assert "does not match" in str(exc.value)
+    assert marker.read_text() == "preserve my changes"
+    assert submod.resolve_at("p", first.path).commit == other
+
+
+def test_materialize_refuses_complete_copied_files_without_cache_git_metadata(tmp_path):
+    pdir = tmp_path / "pipelines"
+    _upstream_repo_with_tag(pdir, "p", "1.2.0")
+    dest = versions.cache_dir("p", "1.2.0", pdir) / "upstream"
+    dest.mkdir(parents=True)
+    for filename in submod.REQUIRED_FILES:
+        (dest / filename).write_text("copied user file")
+    with pytest.raises(NfclawError) as exc:
+        versions.materialize("p", "1.2.0", pipelines_dir=pdir, repo_root=tmp_path)
+    assert exc.value.code == ErrorCode.SUBMODULE_INCOMPLETE
+    assert "does not match" in str(exc.value)
+    assert (dest / "main.nf").read_text() == "copied user file"
 
 
 def test_materialize_rebuilds_a_partial_cache(tmp_path):
@@ -364,6 +396,21 @@ def test_materialize_dev_offline_falls_back_to_last_fetched_head(tmp_path, monke
     # the stale-head risk is said first, then the unreleased-code advisory
     assert "could not reach" in offline.notes[0] and dev[:12] in offline.notes[0]
     assert any("unreleased" in n for n in offline.notes)
+
+
+def test_materialize_dev_refuses_a_cache_at_a_different_commit(tmp_path):
+    url, release, dev = _nfcore_remote(tmp_path)
+    root, pdir = _library(tmp_path, url)
+    first = versions.materialize_dev("p", pipelines_dir=pdir, repo_root=root)
+    _git(first.path, "checkout", "--detach", release)
+    marker = first.path / "user-notes.txt"
+    marker.write_text("keep this file")
+    with pytest.raises(NfclawError) as exc:
+        versions.materialize_dev("p", pipelines_dir=pdir, repo_root=root)
+    assert exc.value.code == ErrorCode.SUBMODULE_INCOMPLETE
+    assert "does not match" in str(exc.value) and dev in str(exc.value)
+    assert submod.resolve_at("p", first.path).commit == release
+    assert marker.read_text() == "keep this file"
 
 
 def test_materialize_dev_offline_with_nothing_fetched_is_a_clear_error(tmp_path, monkeypatch):

@@ -7,7 +7,7 @@ description: nf-core/magmap is a bioinformatics best-practice analysis pipeline 
 summary: nf-core/magmap is a bioinformatics best-practice analysis pipeline that maps reads to (large) collections of genomes. Its main output are tables with quantification of features (genes) in genomes which can be analyzed in R, Python or by other pipelines such as nf-core/differentialabundance. It is mainly meant for metatranscriptomes and metagenomes, but can be used for other types of samples where mapping to contigs is relevant. The nf-core/rnaseq pipeline is similar in purpose, but meant for single organisms with reference genomes and annotations, in practice eukaryotic model organisms.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2)
-output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
+output: --outdir/ (configured results); pipeline_info/ (run metadata when enabled); MultiQC report (conditional)
 tools: ["FastQC", "Trim Galore!", "sourmash", "Prokka", "Bakta", "gffread", "BBmap", "samtools", "gtdbtk", "checkm", "FeatureCounts", "R", "Tidyverse", "data.table", "DuckDB", "MultiQC"]
 ---
 # magmap
@@ -77,7 +77,7 @@ nfclaw run magmap ... --nxf-ver 26.04.0
 `--nxf-ver` is recorded in `<outdir>/provenance/`, so the replay uses the same engine. See [known-issues](../../docs/known-issues.md).
 
 ## Outputs
-Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
+Results land in `--outdir`; the files and directory layout depend on the selected workflow, parameters and publication settings. Run metadata is normally placed in `<outdir>/pipeline_info/` (execution report, software versions), when those outputs are enabled. The pinned tree includes MultiQC support; a report is produced only when its workflow step runs. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/magmap/blob/1.3.0/docs/output.md
 

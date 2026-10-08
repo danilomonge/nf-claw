@@ -5,8 +5,8 @@
 # nf-claw
 
 A self-maintaining, token-minimal library of [nf-core](https://nf-co.re) pipelines for AI agents.
-Each pipeline is a git submodule plus an auto-generated `skill.md` an agent reads to run it
-correctly — no external lookups, no hallucinated flags.
+Each pipeline is a git submodule plus an auto-generated `skill.md` describing its declared
+inputs, parameters and run command. The pinned pipeline validates and executes the analysis.
 
 **🌐 Live site: [danilomonge.github.io/nf-claw](https://danilomonge.github.io/nf-claw/)** — a data-driven
 interface to the whole library (pipelines, parameters, docs and automation), rebuilt from the repository on every push.
@@ -16,15 +16,15 @@ interface to the whole library (pipelines, parameters, docs and automation), reb
 - `runner/` — the `nfclaw` runtime (run a pipeline); the agent's tool
 - `librarian/` — builds the context files and bumps submodules (run via `make`)
 - `catalog.md` / `catalog.json` — the index of available pipelines, with each one's `input`
-  (derived from its samplesheet schema), `output` (the guaranteed output contract), `summary`
+  (derived from its samplesheet schema), `output` (possible outputs, conditional on run settings), `summary`
   (the authors' own one-paragraph description from the pipeline README; in `skill.md` and
   `catalog.json`) and `tools` (the methods it runs, from the pipeline's own `CITATIONS.md`)
 - `sources.tsv` — the source list (name, url, version policy)
 - `handoffs/` — the rules for chaining pipelines (`handoffs/<upstream>/<downstream>.json`), checked
   against the pinned schemas by the drift gate
 
-Design details (the three zones and how generation stays drift-free): [`docs/architecture.md`](docs/architecture.md).
-Version/engine compatibility (DSL2-only; each release runs with the Nextflow version it declares): [`docs/compatibility.md`](docs/compatibility.md).
+Design details (the four zones and how generation stays drift-free): [`docs/architecture.md`](docs/architecture.md).
+Version/engine compatibility (DSL2-only; engines must satisfy the release's requirements): [`docs/compatibility.md`](docs/compatibility.md).
 Run-time errors (space-in-path, IPv6 host, no-network, Nextflow-version parse errors, known upstream-pipeline bugs): [`docs/known-issues.md`](docs/known-issues.md).
 
 ## Use
@@ -101,11 +101,23 @@ Five workflows keep the library — and the site — up to date with no manual e
 - **`nextflow-validate.yml`** (nightly + on pipeline changes): runs each pipeline through Nextflow
   with `-profile test,docker -preview`, so Nextflow compiles it, resolves the config/profile, runs
   the nf-schema parameter validation and builds the full task DAG — then stops before launching any
-  task. This proves every pinned pipeline is accepted and runnable up to the point of execution; the
-  analysis itself is already covered by nf-core's own CI before a release is tagged.
+  task. Only previews that exit successfully are accepted; staging failures and timeouts fail the
+  gate. This checks workflow construction in the tested environment. It does not establish task
+  execution, analytical accuracy, or suitability for a particular scientific dataset.
 
-The drift gate guarantees committed context always matches the pinned submodule. More detail:
+The drift gate checks committed context against the pinned submodule. More detail:
 [`docs/updating.md`](docs/updating.md).
+
+## Scientific validation
+
+nf-claw checks declared inputs, assembles commands, and records provenance. Successful validation,
+workflow completion, or matching output filenames alone does not establish biological accuracy.
+Validate the chosen pipeline, reference data, parameters and scientific endpoints using appropriate
+truth datasets before relying on results. `nfclaw verify ... --strict` requires byte agreement;
+the default comparison checks file structure and reports changed bytes for inspection.
+
+The [release audit](docs/validation/2026-10-08-audit.md) records tested scope, known-truth results,
+compatibility failures and remaining reproducibility limits.
 
 ## Citation & attribution
 **The pipelines themselves are the work of the [nf-core](https://nf-co.re) community** — the heart of the library — and are wrapped **unmodified** as pinned git submodules; each keeps its own authors, license and citation. **nf-claw** (the wrapper/runtime) was created by **Danilo Monge** (Eberhard Karls Universität Tübingen), and **adapts some files and its repository structure from [ClawBio](https://clawbio.ai)** — created by **Manuel Corpas** (MIT; copyright retained in [`LICENSE`](LICENSE), provenance in [`NOTICE`](NOTICE)).

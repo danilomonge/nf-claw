@@ -25,6 +25,9 @@ def validate_params(cli_overrides: dict[str, Any], schema: ParamSchema) -> list[
     known = schema.known_params()
     errors: list[str] = []
     for key, value in cli_overrides.items():
+        if not isinstance(key, str):
+            errors.append(f"parameter name must be a string, got {key!r}")
+            continue
         flag = f"--{key.replace('_', '-')}"
         if key not in known:
             errors.append(f"unknown parameter '{flag}' (not in the pipeline schema)")
@@ -209,7 +212,11 @@ def load_params_file(path: Path, *, label: str = "--params-file") -> dict:
                 fix="Use a .json params file, or `pip install pyyaml`.",
             ) from exc
         try:
-            data = yaml.safe_load(text) or {}
+            data = yaml.safe_load(text)
+            # Only an empty YAML document means an empty map. Falsy scalars and sequences are
+            # malformed params files too; `or {}` silently discarded them.
+            if data is None and yaml.compose(text) is None:
+                data = {}
         except yaml.YAMLError as exc:
             raise NfclawError(
                 ErrorCode.PARAMS_INVALID,
@@ -224,6 +231,10 @@ def load_params_file(path: Path, *, label: str = "--params-file") -> dict:
             ErrorCode.PARAMS_INVALID,
             f"{label} must contain an object{what}, got {type(data).__name__}: {path}",
             fix='Use a top-level object like {"param": value}, not a list or a bare scalar.')
+    if any(not isinstance(key, str) for key in data):
+        raise NfclawError(
+            ErrorCode.PARAMS_INVALID, f"{label} parameter names must be strings: {path}",
+            fix="Use named parameters as object keys, such as aligner: star.")
     return data
 
 
@@ -280,6 +291,11 @@ def write_params_file(params: dict[str, Any], dest: Path) -> Path:
         raise NfclawError(ErrorCode.PARAMS_INVALID,
                           f"Parameters cannot be written as JSON: {exc}",
                           fix="Use finite numbers only (no NaN or Infinity).") from exc
+    except TypeError as exc:
+        raise NfclawError(ErrorCode.PARAMS_INVALID,
+                          f"Parameters cannot be written as JSON: {exc}",
+                          fix="Use JSON-compatible values; quote YAML dates as strings and use "
+                              "lists rather than sets.") from exc
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(text + "\n", encoding="utf-8")
     return dest

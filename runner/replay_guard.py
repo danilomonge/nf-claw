@@ -1,0 +1,163 @@
+"""Standalone checksum handling, copied into each provenance bundle for replay guards.
+
+This module deliberately needs only Python's standard library: a recorded replay must not import
+whatever version of nfclaw happens to be installed later.
+"""
+from __future__ import annotations
+
+import glob
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+
+def read_checksums(path: Path, *, relative: bool = True) -> dict[str, str]:
+    """Read a manifest; malformed/duplicate paths raise ValueError, I/O retains OSError."""
+    out: dict[str, str] = {}
+    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        digest, separator, name = line.partition("  ")
+        parts = name.split("/")
+        absolute = name.startswith("/")
+        valid_path = bool(name) and "\x00" not in name and not any(
+            p in (".", "..", "") for p in (parts[1:] if absolute else parts)
+        ) and not (relative and absolute)
+        if not separator or not re.fullmatch(r"[0-9a-fA-F]{64}", digest) or not valid_path:
+            raise ValueError(f"invalid checksum record in {path} at line {number}")
+        if name in out:
+            raise ValueError(f"duplicate checksum path {name!r} in {path} at line {number}")
+        out[name] = digest.lower()
+    return out
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _glob_patterns(pattern: str) -> list[str]:
+    """Expand Java/Nextflow brace alternatives and its recursive ``**.ext`` shorthand."""
+    if match := re.search(r"\{([^{}]+)\}", pattern):
+        return [expanded for option in match[1].split(",")
+                for expanded in _glob_patterns(pattern[:match.start()] + option + pattern[match.end():])]
+    return [re.sub(r"(?<=/)\*\*(?=[^/])", "**/*", pattern)]
+
+
+def input_files(paths: list[Path]) -> list[Path]:
+    """Expand explicit files, directories and globs, with cycle-safe symlink traversal."""
+    files: set[Path] = set()
+    for source in paths:
+        source = source.expanduser().absolute()
+        pattern = str(source)
+        if source.exists():
+            matches = [source]
+        elif glob.has_magic(pattern) or "{" in pattern:
+            matches = sorted({Path(p) for expanded in _glob_patterns(pattern)
+                              for p in glob.glob(expanded, recursive=True)})
+        else:
+            matches = [source]
+        if not matches:
+            raise FileNotFoundError(f"input pattern matches no files: {source}")
+        for path in matches:
+            if path.is_file():
+                files.add(path)
+            elif path.is_dir():
+                seen: set[Path] = set()
+
+                def fail(error):
+                    raise error
+
+                for root, dirs, names in os.walk(path, followlinks=True, onerror=fail):
+                    directory = Path(root)
+                    real = directory.resolve()
+                    if real in seen:
+                        dirs[:] = []
+                        continue
+                    seen.add(real)
+                    for name in names:
+                        item = directory / name
+                        if not item.is_file():
+                            raise FileNotFoundError(f"input is missing or not a regular file: {item}")
+                        files.add(item)
+            else:
+                raise FileNotFoundError(f"input is missing or not a regular file: {path}")
+    return sorted(files)
+
+
+def hash_inputs(paths: list[Path]) -> dict[str, str]:
+    """Content snapshot of local sources, including directory and glob contents."""
+    return {str(path): _sha256(path) for path in input_files(paths)}
+
+
+def pipeline_head(repo: Path) -> str | None:
+    """HEAD only when repo is the exact working-tree root, never a surrounding repository."""
+    try:
+        result = subprocess.run(["git", "-C", str(repo), "rev-parse", "--show-toplevel", "HEAD"],
+                                capture_output=True, text=True, check=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    lines = result.stdout.strip().splitlines()
+    if len(lines) == 2 and Path(lines[0]).resolve() == repo.resolve():
+        return lines[1]
+    return None
+
+
+def hash_pipeline(repo: Path) -> dict[str, str]:
+    """Snapshot every tracked source file's working bytes, including dirty modifications.
+
+    For fixtures without their own git repository, snapshot the directory contents except .git.
+    Tracked inventory changes are detected even if HEAD stays unchanged.
+    """
+    if pipeline_head(repo) is not None:
+        result = subprocess.run(["git", "-C", str(repo), "ls-files", "--cached", "-z"],
+                                capture_output=True, text=True, check=True, timeout=30)
+        paths = [repo / name for name in result.stdout.split("\x00") if name]
+    else:
+        paths = [path for path in input_files([repo]) if ".git" not in path.relative_to(repo).parts]
+    return {path.relative_to(repo).as_posix(): _sha256(path) for path in sorted(set(paths))}
+
+
+def verify_dependencies(bundle: Path) -> None:
+    """Require the recorded local input inventory and config bytes before replay starts."""
+    manifest = json.loads((bundle / "run_manifest.json").read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict) or not isinstance(manifest.get("outcome"), str):
+        raise ValueError(f"provenance bundle is incomplete: {bundle}")
+    if pipeline_path := manifest.get("pipeline_path"):
+        repo = Path(pipeline_path)
+        if (expected_head := manifest.get("pipeline_git_head")) is not None \
+                and pipeline_head(repo) != expected_head:
+            raise ValueError(f"pipeline revision changed: {repo} (expected {expected_head})")
+        expected = read_checksums(bundle / "pipeline.sha256")
+        current = hash_pipeline(repo)
+        if current.keys() != expected.keys():
+            raise ValueError(f"pipeline source inventory changed: {repo}")
+        for name, digest in expected.items():
+            if current[name] != digest:
+                raise ValueError(f"pipeline source content changed: {repo / name}")
+    for kind in ("inputs", "configs"):
+        expected = read_checksums(bundle / f"{kind}.sha256", relative=False)
+        sources = json.loads((bundle / f"{kind}.sources.json").read_text(encoding="utf-8"))
+        if not isinstance(sources, list) or not all(isinstance(p, str) for p in sources):
+            raise ValueError(f"invalid {kind} sources in {bundle}")
+        current_files = {str(p): p for p in input_files([Path(p) for p in sources])}
+        missing = sorted(expected.keys() - current_files.keys())
+        extra = sorted(current_files.keys() - expected.keys())
+        if missing or extra:
+            raise ValueError(f"{kind} inventory changed; missing: {missing}; extra: {extra}")
+        for name, path in current_files.items():
+            if _sha256(path) != expected[name]:
+                raise ValueError(f"recorded {kind} content changed: {name}")
+
+
+if __name__ == "__main__":
+    try:
+        verify_dependencies(Path(sys.argv[1]))
+    except (OSError, ValueError, IndexError) as exc:
+        print(f"nfclaw replay: dependency check failed: {exc}", file=sys.stderr)
+        sys.exit(1)

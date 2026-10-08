@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Any
 
 from runner import (discovery, engine_version, execution, handoff, inputs, nextflow_command,
-                    orchestration, parameters, preflight, resources, runlog, versions)
+                    orchestration, parameters, preflight, provenance, resources, runlog, versions)
 from runner import schema as schema_mod
 from runner.errors import ErrorCode, NfclawError
 from runner.submodule import SubmoduleStatus
@@ -40,6 +40,7 @@ except ImportError:                              # pragma: no cover — Windows 
 
 RECORD_DIRNAME = "chain"
 LOG_NAME = "chain.log"
+FINGERPRINT_VERSION = 2
 _ID = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 _OPTION_KEYS = {"profile", "nxf_ver", "nxf_env", "config", "limits"}
 _CHAIN_KEYS = {"stages", "allow_spaces"} | _OPTION_KEYS
@@ -296,13 +297,21 @@ def _file_sha256(path: Path | None) -> str | None:
     return handoff.sha256_file(path) if path is not None and path.is_file() else None
 
 
-def fingerprint(p: Planned) -> str:
+def fingerprint(p: Planned, spec: ChainSpec | None = None) -> str:
     """What a stage would do. A stage that succeeded is frozen: resuming with a spec that changes
     its fingerprint is refused (no silent re-run, no stale results under a new definition)."""
     s = p.stage
-    body = {"pipeline": s.pipeline, "pipeline_version": s.pipeline_version, "input": p.input,
+    opts = options(spec, s) if spec is not None else options(ChainSpec(stages=(s,)), s)
+    body = {"fingerprint_version": FINGERPRINT_VERSION,
+            "pipeline": s.pipeline, "pipeline_version": s.pipeline_version,
+            "commit": p.tree.commit, "input": p.input,
+            "input_sha256": _file_sha256(Path(p.input)) if isinstance(p.input, str) else None,
             "params": p.params, "params_file": _file_sha256(s.params_file), "demo": s.demo,
-            "handoff": p.rule.sha256() if p.rule else None}
+            "handoff": p.rule.sha256() if p.rule else None,
+            "options": _options_json({"profile": opts.profile, "nxf_ver": opts.nxf_ver,
+                                      "nxf_env": opts.nxf_env, "configs": opts.configs,
+                                      "limits": opts.limits}),
+            "config_sha256": {c: _file_sha256(Path(c)) for c in opts.configs}}
     text = json.dumps(body, sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
@@ -420,7 +429,7 @@ def _check(spec: ChainSpec, planned: list[Planned], *, repo_root: Path, outdir: 
             pipeline_version=p.stage.pipeline_version, nxf_ver=opts.nxf_ver,
             nxf_env=opts.nxf_env, allow_spaces=spec.allow_spaces, configs=opts.configs,
             limits=opts.limits, on_warning=_warner(on_warning, p.stage),
-            deferred_params=_deferred(p))
+            deferred_params=_deferred(p), resolved_tree=p.tree)
         if not keep and res.staging is not None:
             shutil.rmtree(res.staging, ignore_errors=True)
         label = p.stage.dirname
@@ -431,7 +440,7 @@ def _check(spec: ChainSpec, planned: list[Planned], *, repo_root: Path, outdir: 
     return commands
 
 
-def _probe_config(spec: ChainSpec, p: Planned) -> list[str]:
+def _probe_config(spec: ChainSpec, p: Planned, *, timeout_seconds: float | None = None) -> list[str]:
     """Whether the stage's Nextflow configuration parses with the engine it will run under.
 
     `nextflow config` resolves the pipeline's config and profiles without running anything (a few
@@ -455,7 +464,9 @@ def _probe_config(spec: ChainSpec, p: Planned) -> list[str]:
     with tempfile.TemporaryDirectory(prefix="nfclaw-probe-") as scratch:
         try:
             r = subprocess.run(cmd, cwd=scratch, env={**os.environ, **overlay},
-                               capture_output=True, text=True, timeout=_PROBE_TIMEOUT)
+                               capture_output=True, text=True,
+                               timeout=min(_PROBE_TIMEOUT, timeout_seconds)
+                               if timeout_seconds is not None else _PROBE_TIMEOUT)
         except (OSError, subprocess.SubprocessError):
             return []
     if r.returncode == 0:
@@ -478,17 +489,25 @@ def _probe_config(spec: ChainSpec, p: Planned) -> list[str]:
             f"configuration{hint}:\n" + "\n".join(f"      {line}" for line in report)]
 
 
-def _check_frozen(state: dict, planned: list[Planned]) -> None:
+def _check_frozen(state: dict, planned: list[Planned], spec: ChainSpec) -> None:
     problems = []
+    if not isinstance(state.get("stages"), list) or any(
+            not _valid_entry(s) for s in state["stages"]):
+        raise _bad("the recorded chain stages are malformed")
     for i, old in enumerate(state.get("stages", [])):
         if old.get("status") != "success":
+            continue
+        if old.get("fingerprint_version") != FINGERPRINT_VERSION:
+            problems.append(f"stage '{old.get('id')}' uses an older fingerprint format that did "
+                            "not preserve its code and run options as immutable evidence; keep "
+                            "this chain's outputs and start a new chain in a fresh --outdir")
             continue
         if i >= len(planned) or planned[i].stage.id != old.get("id"):
             problems.append(f"stage '{old.get('id')}' already succeeded as stage {i + 1}; a "
                             "resumed chain keeps its succeeded stages, in order")
-        elif fingerprint(planned[i]) != old.get("fingerprint"):
+        elif fingerprint(planned[i], spec) != old.get("fingerprint"):
             problems.append(f"stage '{old.get('id')}' already succeeded with a different definition "
-                            "(its pipeline, version, input, params or handoff changed — including "
+                            "(its code, run options, input, params or handoff changed — including "
                             "what the handoff to the next stage sets on it)")
     if problems:
         raise NfclawError(ErrorCode.PARAMS_INVALID,
@@ -508,6 +527,7 @@ def run_chain(spec: ChainSpec | None, *, repo_root: Path, outdir: Path, check_on
     config parsed by its own engine — so a mistake in the last stage never surfaces after the first
     has run for hours. `resume` continues the chain
     recorded in `outdir` (with `spec`, or the recorded one when it is None)."""
+    deadline = None if timeout_seconds is None else time.monotonic() + timeout_seconds
     record = outdir / RECORD_DIRNAME
     state = _read_json(record / "state.json") if resume else None
     if resume and not isinstance(state, dict):
@@ -525,13 +545,25 @@ def run_chain(spec: ChainSpec | None, *, repo_root: Path, outdir: Path, check_on
                                                             "to continue that chain")]})
     planned = plan(spec, repo_root=repo_root)
     if state is not None:
-        _check_frozen(state, planned)
+        _check_frozen(state, planned, spec)
     done = {s.get("id") for s in (state or {}).get("stages", []) if s.get("status") == "success"}
     # A real run says each stage's advisories when that stage launches; only --check says them here.
     todo = [p for p in planned if p.stage.id not in done]
     commands = _check(spec, todo, repo_root=repo_root, outdir=outdir,
                       on_warning=on_warning if check_only else None, keep=check_only)
-    if unparsable := [issue for p in todo for issue in _probe_config(spec, p)]:
+    unparsable = []
+    for p in todo:
+        remaining = None if deadline is None else deadline - time.monotonic()
+        if remaining is not None and remaining <= 0:
+            raise NfclawError(
+                ErrorCode.EXECUTION_FAILED, "The chain's --timeout ran out during validation.",
+                details={"timeout_seconds": timeout_seconds})
+        unparsable += _probe_config(spec, p, timeout_seconds=remaining)
+    if deadline is not None and time.monotonic() >= deadline:
+        raise NfclawError(
+            ErrorCode.EXECUTION_FAILED, "The chain's --timeout ran out during validation.",
+            details={"timeout_seconds": timeout_seconds})
+    if unparsable:
         raise NfclawError(
             ErrorCode.ENVIRONMENT, "A stage could not start: its Nextflow engine cannot set it up.",
             fix=("Nothing was launched. Give that stage an engine that runs here and parses its "
@@ -541,21 +573,42 @@ def run_chain(spec: ChainSpec | None, *, repo_root: Path, outdir: Path, check_on
     if check_only:
         return ChainResult(outdir=outdir, outcome="checked", stages=[], commands=commands)
     return _execute(spec, planned, state, repo_root=repo_root, outdir=outdir,
-                    timeout_seconds=timeout_seconds, on_warning=on_warning)
+                    timeout_seconds=timeout_seconds, on_warning=on_warning, deadline=deadline)
 
 
-def _new_entry(p: Planned, outdir: Path) -> dict:
+def _new_entry(p: Planned, outdir: Path, spec: ChainSpec) -> dict:
     return {"id": p.stage.id, "pipeline": p.stage.pipeline, "index": p.stage.index,
             "outdir": str(outdir / p.stage.dirname), "status": "pending",
-            "fingerprint": fingerprint(p), "version": None, "commit": None, "handoff": None,
+            "fingerprint": fingerprint(p, spec), "version": None, "commit": None, "handoff": None,
+            "fingerprint_version": FINGERPRINT_VERSION,
             "attempts": []}
 
 
 def _execute(spec: ChainSpec, planned: list[Planned], state: dict | None, *, repo_root: Path,
-             outdir: Path, timeout_seconds: int | None, on_warning) -> ChainResult:
+             outdir: Path, timeout_seconds: int | None, on_warning,
+             deadline: float | None = None) -> ChainResult:
     record = outdir / RECORD_DIRNAME
     outdir.mkdir(parents=True, exist_ok=True)
     with _lock(record, outdir):
+        current = _read_json(record / "state.json")
+        if state is None:
+            if (record / "state.json").exists() or any(p.name != RECORD_DIRNAME
+                                                       for p in outdir.iterdir()):
+                raise NfclawError(ErrorCode.ENVIRONMENT,
+                                  f"{outdir} was populated by another run before launch",
+                                  fix="Use --resume for its recorded chain, or a fresh --outdir.")
+        else:
+            if not isinstance(current, dict):
+                raise NfclawError(ErrorCode.ENVIRONMENT,
+                                  f"the chain record in {outdir} changed before launch",
+                                  fix="Restore the recorded chain before resuming it.")
+            state = current
+            _check_frozen(state, planned, spec)
+            if issues := _integrity_problems(state, only_succeeded=True):
+                raise NfclawError(
+                    ErrorCode.ENVIRONMENT, "The succeeded stages of this chain no longer verify.",
+                    fix="Restore their recorded files and provenance, or use a fresh --outdir.",
+                    details={"issues": issues})
         previous = {s.get("id"): s for s in (state or {}).get("stages", [])}
         stages = []
         for p in planned:
@@ -563,7 +616,8 @@ def _execute(spec: ChainSpec, planned: list[Planned], state: dict | None, *, rep
             if old and old.get("status") == "success":
                 stages.append(old)                            # frozen (see _check_frozen)
             else:                                             # keep the attempt history
-                stages.append({**_new_entry(p, outdir), "attempts": (old or {}).get("attempts", [])})
+                stages.append({**_new_entry(p, outdir, spec),
+                               "attempts": (old or {}).get("attempts", [])})
         state = {"chain_id": (state or {}).get("chain_id") or uuid.uuid4().hex,
                  "created": (state or {}).get("created") or runlog.now(),
                  "outcome": "running", "stages": stages}
@@ -578,7 +632,6 @@ def _execute(spec: ChainSpec, planned: list[Planned], state: dict | None, *, rep
         log.note(f"    pid: {os.getpid()}")
         log.note(f"    {len(planned)} stages: " + " → ".join(p.stage.dirname for p in planned))
         print(f"nfclaw: logging this chain to {log.path}", file=sys.stderr, flush=True)
-        deadline = None if timeout_seconds is None else time.monotonic() + timeout_seconds
         try:
             for i, p in enumerate(planned):
                 entry = state["stages"][i]
@@ -628,8 +681,12 @@ def _run_stage(p: Planned, prev: Planned | None, entry: dict, state: dict, *, sp
         _say(log, f"{stage.dirname}: preparing its input from {prev.stage.dirname} "
                   f"({p.rule.origin})")
         try:
+            explicit = frozenset(name for name in p.rule.params
+                                 if (p.input if name == "input" else p.stage.params.get(name))
+                                 not in (None, ""))
             hand = handoff.materialize(p.rule, upstream_outdir=outdir / prev.stage.dirname,
-                                       downstream_tree=p.tree.path, dest=dest)
+                                       downstream_tree=p.tree.path, dest=dest,
+                                       exclude_params=explicit)
         except NfclawError:
             entry["status"] = "failed"
             state["outcome"] = f"failed at stage {stage.dirname}: handoff"
@@ -637,6 +694,10 @@ def _run_stage(p: Planned, prev: Planned | None, entry: dict, state: dict, *, sp
         hand_path = _write_json(dest / "handoff.json",
                                 {**hand.record, "from_stage": prev.stage.id, "to_stage": stage.id})
         entry["handoff"] = str(hand_path)
+        if warn:
+            for name in sorted(explicit):
+                warn(f"--{name} is set by this stage itself; the value handed over from "
+                     f"'{prev.stage.id}' is not used")
         for name, item in hand.record["params"].items():
             if dropped := item.get("dropped_rows"):
                 _say(log, f"{stage.dirname}: {len(dropped)} row(s) of the {name} samplesheet "
@@ -682,7 +743,8 @@ def _run_stage(p: Planned, prev: Planned | None, entry: dict, state: dict, *, sp
                 resume=resume, demo=stage.demo, check_only=False, write_provenance=True,
                 timeout_seconds=remaining, pipeline_version=stage.pipeline_version,
                 nxf_ver=opts.nxf_ver, nxf_env=opts.nxf_env, allow_spaces=spec.allow_spaces,
-                configs=opts.configs, limits=opts.limits, on_warning=warn, chain_link=link)
+                configs=opts.configs, limits=opts.limits, on_warning=warn, chain_link=link,
+                resolved_tree=p.tree)
         except NfclawError as exc:
             entry["attempts"][-1].update(finished=runlog.now(), outcome=_short(exc))
             if _retryable(exc) and attempt <= stage.retries:
@@ -721,18 +783,10 @@ def _record_for(path: Path) -> Path:
                       fix="Pass a chain's --outdir, or the outdir of one of its stages.")
 
 
-def _digests(path: Path) -> dict[str, str]:
+def _digests(path: Path, *, relative: bool = True) -> dict[str, str]:
     """`hash  name` lines (outputs.sha256 names are relative, inputs.sha256 absolute) as
     {name: hash}."""
-    out: dict[str, str] = {}
-    try:
-        for line in path.read_text(encoding="utf-8").splitlines():
-            digest, _, name = line.partition("  ")
-            if digest and name:
-                out[name] = digest
-    except OSError:
-        pass
-    return out
+    return provenance.read_checksums(path, relative=relative)
 
 
 def _sha(path: Path) -> str | None:
@@ -742,6 +796,150 @@ def _sha(path: Path) -> str | None:
         return None
 
 
+def _valid_entry(entry: Any) -> bool:
+    return (isinstance(entry, dict)
+            and all(isinstance(entry.get(k), str) for k in ("id", "pipeline", "outdir", "status"))
+            and isinstance(entry.get("index"), int) and not isinstance(entry["index"], bool)
+            and entry["index"] > 0)
+
+
+def _integrity_problems(state: dict, *, only_succeeded: bool = False) -> list[str]:
+    """Verify recorded stage outcomes and the current bytes behind every completed link."""
+    problems: list[str] = []
+    entries = state.get("stages")
+    if not isinstance(entries, list) or not entries:
+        return ["chain state has no valid stages list"]
+    manifests: dict[str, dict] = {}
+    output_indices: dict[str, dict[str, str]] = {}
+    current_outputs: dict[str, dict[str, str | None]] = {}
+    for i, entry in enumerate(entries, start=1):
+        if not _valid_entry(entry):
+            problems.append("chain state contains a malformed stage record")
+            continue
+        if entry["index"] != i:
+            problems.append(f"{entry['id']}: its recorded index does not match its chain position")
+        if state.get("outcome") == "success" and entry["status"] != "success":
+            problems.append(f"{entry['id']}: the chain reports success but this stage has not succeeded")
+        if entry["status"] != "success":
+            continue
+        sid, down = entry["id"], Path(entry["outdir"])
+        manifest = _read_json(down / "provenance" / "run_manifest.json")
+        if not isinstance(manifest, dict) or manifest.get("outcome") != "success":
+            problems.append(f"{sid}: recorded as succeeded, but its provenance bundle no longer "
+                            f"says so ({down})")
+            continue
+        manifests[sid] = manifest
+        link = manifest.get("chain")
+        if (not isinstance(link, dict) or link.get("id") != state.get("chain_id")
+                or link.get("stage") != sid or link.get("index") != entry["index"]):
+            problems.append(f"{sid}: its stage manifest does not belong to this chain")
+        for key in ("version", "commit"):
+            if entry.get(key) != manifest.get(key):
+                problems.append(f"{sid}: its recorded {key} does not match its stage manifest")
+        try:
+            outputs = _digests(down / "provenance" / "outputs.sha256")
+        except (OSError, ValueError) as exc:
+            problems.append(f"{sid}: cannot verify its output checksums: {exc}")
+            continue
+        output_indices[str(down)] = outputs
+        current_outputs[str(down)] = {}
+        for rel, digest in outputs.items():
+            actual = current_outputs[str(down)][rel] = _sha(down / rel)
+            if actual != digest:
+                problems.append(f"{sid}: upstream result {rel} changed or is missing since the "
+                                "recorded run")
+    for i, entry in enumerate(entries):
+        if not _valid_entry(entry):
+            continue
+        succeeded = entry["status"] == "success"
+        if only_succeeded and not succeeded:
+            continue
+        if not entry.get("handoff"):
+            if succeeded and i:
+                problems.append(f"{entry['id']}: its handoff record is missing")
+            continue
+        sid = entry["id"]
+        if not isinstance(entry["handoff"], str):
+            problems.append(f"{sid}: its handoff path is malformed")
+            continue
+        hand_path = Path(entry["handoff"])
+        rec = _read_json(hand_path)
+        if not isinstance(rec, dict):
+            problems.append(f"{sid}: its handoff record is missing or unreadable ({hand_path})")
+            continue
+        params, upstream = rec.get("params"), rec.get("upstream")
+        if (not isinstance(params, dict) or not isinstance(upstream, dict)
+                or not isinstance(upstream.get("outdir"), str)):
+            problems.append(f"{sid}: its handoff record is malformed ({hand_path})")
+            continue
+        previous = entries[i - 1] if i else None
+        if not isinstance(previous, dict) or upstream["outdir"] != previous.get("outdir"):
+            problems.append(f"{sid}: its handoff does not name the preceding stage")
+        down = Path(entry["outdir"])
+        manifest = manifests.get(sid, {})
+        chain_link = manifest.get("chain")
+        link = chain_link.get("upstream") if isinstance(chain_link, dict) else None
+        if succeeded and (not isinstance(link, dict)
+                          or link.get("handoff_sha256") != _sha(hand_path)):
+            problems.append(f"{sid}: the handoff record is not the one this stage ran with")
+        up_dir = Path(upstream["outdir"])
+        up_out = output_indices.get(str(up_dir))
+        if up_out is None:
+            try:
+                up_out = _digests(up_dir / "provenance" / "outputs.sha256")
+            except (OSError, ValueError) as exc:
+                problems.append(f"{sid}: cannot verify upstream output checksums: {exc}")
+                up_out = {}
+        down_in: dict[str, str] = {}
+        if succeeded and any(isinstance(item, dict) and ("sha256" in item
+                                                        or item.get("input_dependencies"))
+                             for item in params.values()):
+            try:
+                down_in = _digests(down / "provenance" / "inputs.sha256", relative=False)
+            except (OSError, ValueError) as exc:
+                problems.append(f"{sid}: cannot verify its input checksums: {exc}")
+        for name, item in params.items():
+            if not isinstance(item, dict) or not isinstance(item.get("derived_from"), dict):
+                problems.append(f"{sid}: --{name} has a malformed handoff source record")
+                continue
+            if "sha256" in item:
+                value = item.get("value")
+                if not isinstance(value, str) or _sha(Path(value)) != item["sha256"]:
+                    problems.append(f"{sid}: --{name} snapshot {value} changed since the handoff")
+                if succeeded and (not isinstance(value, str)
+                                  or down_in.get(value) != item["sha256"]):
+                    problems.append(f"{sid}: --{name} is not the snapshot this stage hashed")
+            for rel, digest in item["derived_from"].items():
+                if (not isinstance(rel, str) or not handoff._relative(rel)
+                        or not isinstance(digest, str) or len(digest) != 64
+                        or up_out.get(rel) != digest):
+                    problems.append(f"{sid}: --{name}: {rel} is not what the upstream run "
+                                    "produced")
+                elif (current_outputs[str(up_dir)].get(rel) if str(up_dir) in current_outputs
+                      else _sha(up_dir / rel)) != digest:
+                    problems.append(f"{sid}: --{name}: upstream result {rel} changed or is "
+                                    "missing since the handoff")
+            dependencies = item.get("input_dependencies", {})
+            if not isinstance(dependencies, dict):
+                problems.append(f"{sid}: --{name} has malformed input dependencies")
+                continue
+            if dependencies:
+                try:
+                    up_in = _digests(up_dir / "provenance" / "inputs.sha256", relative=False)
+                except (OSError, ValueError) as exc:
+                    problems.append(f"{sid}: cannot verify upstream input checksums: {exc}")
+                    up_in = {}
+                for value, digest in dependencies.items():
+                    if (not isinstance(value, str) or not Path(value).is_absolute()
+                            or up_in.get(value) != digest or _sha(Path(value)) != digest):
+                        problems.append(f"{sid}: --{name}: external reference {value} changed "
+                                        "or has no matching upstream input record")
+                    if succeeded and down_in.get(value) != digest:
+                        problems.append(f"{sid}: --{name}: external reference {value} is not "
+                                        "the input this stage hashed")
+    return problems
+
+
 def status(path: Path) -> tuple[dict, list[str]]:
     """The chain recorded at (or for) `path`, and every broken link in it.
 
@@ -749,39 +947,13 @@ def status(path: Path) -> tuple[dict, list[str]]:
     handoff's hash), the snapshot is unchanged and is the input the downstream hashed, and every
     upstream file the handoff drew on is what the upstream run recorded producing."""
     record = _record_for(path.expanduser().resolve())
-    state = _read_json(record / "state.json") or {}
+    state = _read_json(record / "state.json")
+    if not isinstance(state, dict):
+        raise NfclawError(ErrorCode.ENVIRONMENT, f"chain state is missing or malformed in {record}",
+                          fix="Restore the chain record before checking or resuming it.")
     live = runlog.read_state(record / "logs" / LOG_NAME)
     state["log_state"], state["log_pid"], state["log_host"] = live.state, live.pid, live.host
-    problems: list[str] = []
-    for entry in state.get("stages", []):
-        if not entry.get("handoff"):
-            continue
-        sid, hand_path = entry["id"], Path(entry["handoff"])
-        rec = _read_json(hand_path)
-        if not isinstance(rec, dict):
-            problems.append(f"{sid}: its handoff record is missing or unreadable ({hand_path})")
-            continue
-        down = Path(entry["outdir"])
-        succeeded = entry.get("status") == "success"
-        manifest = _read_json(down / "provenance" / "run_manifest.json") or {}
-        link = ((manifest.get("chain") or {}).get("upstream") or {}) if isinstance(manifest, dict) \
-            else {}
-        if succeeded and link.get("handoff_sha256") != _sha(hand_path):
-            problems.append(f"{sid}: the handoff record is not the one this stage ran with")
-        up_out = _digests(Path((rec.get("upstream") or {}).get("outdir", "")) / "provenance"
-                          / "outputs.sha256")
-        down_in = _digests(down / "provenance" / "inputs.sha256")
-        for name, item in (rec.get("params") or {}).items():
-            if "sha256" in item:
-                if _sha(Path(item["value"])) != item["sha256"]:
-                    problems.append(f"{sid}: --{name} snapshot {item['value']} changed since the "
-                                    "handoff")
-                if name == "input" and succeeded and down_in.get(item["value"]) != item["sha256"]:
-                    problems.append(f"{sid}: --input is not the snapshot this stage hashed")
-            for rel, digest in (item.get("derived_from") or {}).items():
-                if digest is not None and up_out.get(rel) != digest:
-                    problems.append(f"{sid}: --{name}: {rel} is not what the upstream run "
-                                    "produced")
+    problems = _integrity_problems(state)
     return state, problems
 
 
@@ -804,11 +976,14 @@ def format_status(state: dict, problems: list[str]) -> str:
                    "restart); resume it with --resume")
     lines = [f"chain {state.get('chain_id', '?')}: {outcome}"]
     stages = state.get("stages", [])
+    stages = stages if isinstance(stages, list) else []
     for i, s in enumerate(stages):
+        if not _valid_entry(s):
+            continue
         ver = f"{s.get('version') or '?'} ({(s.get('commit') or '')[:12]})"
         lines.append(f"  {s['index']:02d}-{s['id']:<18} {s['pipeline']} {ver}  {s['status']}  "
                      f"{s['outdir']}")
-        if s.get("handoff") and i:
+        if s.get("handoff") and i and _valid_entry(stages[i - 1]):
             prev = stages[i - 1]
             lines.append(f"      input ← {prev['index']:02d}-{prev['id']}  ({s['handoff']})")
     lines += ["", "lineage: verified" if not problems else "lineage: BROKEN"]

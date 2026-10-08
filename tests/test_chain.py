@@ -74,7 +74,7 @@ def fake_runs(monkeypatch, finished_run):
                                        checked_only=False, outputs_report=None)
 
     monkeypatch.setattr(chain.orchestration, "run_pipeline", fake)
-    monkeypatch.setattr(chain, "_probe_config", lambda spec, p: [])   # no Nextflow here
+    monkeypatch.setattr(chain, "_probe_config", lambda spec, p, **kw: [])   # no Nextflow here
     return runs
 
 
@@ -331,7 +331,7 @@ def test_an_unparsable_stage_config_stops_the_chain_before_anything_runs(library
                                                                          monkeypatch, tmp_path):
     root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
     monkeypatch.setattr(chain, "_probe_config",
-                        lambda spec, p: ["02-mini (mini): cannot parse"] if p.stage.index == 2
+                        lambda spec, p, **kw: ["02-mini (mini): cannot parse"] if p.stage.index == 2
                         else [])
     with pytest.raises(NfclawError, match="its Nextflow engine cannot set it up") as err:
         chain.run_chain(_spec(), repo_root=root, outdir=tmp_path / "c")
@@ -468,8 +468,18 @@ def test_timeout_is_a_budget_for_the_whole_chain(library, fake_runs, tmp_path):
 
 def test_a_spent_budget_stops_before_the_next_stage(library, fake_runs, tmp_path, monkeypatch):
     root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
-    clock = iter([0.0, 0.0, 999.0, 999.0, 999.0])
-    monkeypatch.setattr(chain.time, "monotonic", lambda: next(clock))
+    clock = 0.0
+    run = chain.orchestration.run_pipeline
+
+    def timed_run(name, **kw):
+        nonlocal clock
+        result = run(name, **kw)
+        if name == "mini_up" and not kw["check_only"]:
+            clock = 999.0
+        return result
+
+    monkeypatch.setattr(chain.time, "monotonic", lambda: clock)
+    monkeypatch.setattr(chain.orchestration, "run_pipeline", timed_run)
     with pytest.raises(NfclawError, match="--timeout ran out before stage 02-mini"):
         chain.run_chain(_spec(), repo_root=root, outdir=tmp_path / "c", timeout_seconds=600)
     assert [c["name"] for c in fake_runs.calls] == ["mini_up"]
@@ -608,7 +618,7 @@ def test_status_detects_a_tampered_link(library, fake_runs, tmp_path):
     out = tmp_path / "c"
     chain.run_chain(_spec(), repo_root=root, outdir=out)
     (out / "01-mini_up" / "provenance" / "outputs.sha256").write_text(
-        "deadbeef  fastq/A_1.fastq.gz\n")
+        "d" * 64 + "  fastq/A_1.fastq.gz\n")
     snap = out / "chain" / "handoffs" / "02-mini" / "input.csv"
     snap.write_text(snap.read_text() + "B,x,y\n")
     _, problems = chain.status(out)

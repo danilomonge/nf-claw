@@ -22,11 +22,12 @@ import hashlib
 import json
 import os
 import re
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 
-from runner import inputs, parameters, samplesheet
+from runner import inputs, parameters, provenance, samplesheet
 from runner import schema as schema_mod
 from runner.errors import ErrorCode, NfclawError
 from runner.outputs import is_result
@@ -260,12 +261,7 @@ def _bundle_text(outdir: Path, name: str) -> str:
 
 def recorded_outputs(outdir: Path) -> dict[str, str]:
     """A run's results as {path relative to its outdir: sha256}, as its bundle recorded them."""
-    out: dict[str, str] = {}
-    for line in _bundle_text(outdir, "outputs.sha256").splitlines():
-        digest, _, rel = line.partition("  ")
-        if digest and rel:
-            out[rel] = digest
-    return out
+    return provenance.read_checksums(outdir / "provenance" / "outputs.sha256")
 
 
 def _recorded_params(outdir: Path) -> tuple[dict[str, Any], str | None]:
@@ -377,6 +373,11 @@ def _direct(src: Source, root: Path, sheet_schema, dest: Path, downstream: str
             header, rows = list(reader.fieldnames or []), list(reader)
     except (OSError, UnicodeDecodeError, csv.Error) as exc:
         raise _Unresolved(f"cannot read {sheet}: {exc}") from exc
+    duplicates = [name for name, count in Counter(header).items() if count > 1]
+    if duplicates:
+        raise _Unresolved(f"{sheet.name} has duplicate columns: {', '.join(duplicates)}")
+    if extra := [str(i) for i, row in enumerate(rows, start=2) if None in row]:
+        raise _Unresolved(f"{sheet.name} has values beyond its header on row(s) {', '.join(extra[:5])}")
     rename = src.spec.get("rename", {})
     if missing := [old for old in rename if old not in header]:
         raise _Unresolved(f"{sheet.name} has no column {', '.join(missing)} to rename")
@@ -384,6 +385,9 @@ def _direct(src: Source, root: Path, sheet_schema, dest: Path, downstream: str
         raise _Unresolved(f"{sheet.name} already has column {', '.join(clash)}; renaming onto it "
                           "would lose data")
     header = [rename.get(h, h) for h in header]
+    if len(header) != len(set(header)):
+        raise _Unresolved(f"{sheet.name}: rename maps several columns onto one column and would "
+                          "lose data")
     rows = [{rename.get(k, k): v for k, v in r.items() if k is not None} for r in rows]
     for col, template in src.spec.get("set", {}).items():
         if col not in header:
@@ -448,6 +452,7 @@ def _build(src: Source, root: Path, sheet_schema, dest: Path, downstream: str
         m = rx.match(match.relative_to(root).as_posix())
         if m is None:
             continue
+        derived.append(match.relative_to(root).as_posix())
         row: dict[str, str] = {}
         for col, template in spec["columns"].items():
             optional = template.endswith("?")
@@ -497,13 +502,43 @@ def _resolve(rule: Rule, target: str, src: Source, *, upstream_outdir: Path,
     if value is None or value == "" or value is False:
         raise _Unresolved(f"the {rule.upstream} run did not set "
                           f"{_flag(src.spec['upstream_param'])}")
+    extra: dict[str, Any] = {}
+    if isinstance(value, str) and "://" not in value:
+        target_param = schema_mod.load_param_schema(downstream_tree).params.get(target)
+        if target_param is not None and target_param.fmt in ("file-path", "directory-path"):
+            value = _absolute(value, upstream_outdir)
+        path = Path(value)
+        if path.is_absolute() and not path.is_dir():
+            remedy = (f"Supply {_flag(target)} directly in the downstream stage to choose this "
+                      "reference explicitly, or rerun the upstream with current provenance.")
+            if not path.is_file():
+                raise NfclawError(ErrorCode.HANDOFF_FAILED,
+                                  f"{rule.origin}: local upstream reference {value} is missing.",
+                                  fix=remedy)
+            if _under(path, upstream_outdir) is None:
+                try:
+                    historical = provenance.read_checksums(
+                        upstream_outdir / "provenance" / "inputs.sha256", relative=False)
+                    digest = historical.get(str(path))
+                    actual = sha256_file(path)
+                except (OSError, ValueError) as exc:
+                    raise NfclawError(
+                        ErrorCode.HANDOFF_FAILED,
+                        f"{rule.origin}: cannot verify local upstream reference {value}: {exc}",
+                        fix=remedy) from exc
+                if digest is None or actual != digest:
+                    raise NfclawError(
+                        ErrorCode.HANDOFF_FAILED,
+                        f"{rule.origin}: local upstream reference {value} has no historical input "
+                        "hash or changed since the upstream launch.", fix=remedy)
+                extra["input_dependencies"] = {str(path): digest}
     rel = _under(Path(value), upstream_outdir) if isinstance(value, str) else None
-    derived = [r for r in (recorded_in, rel) if r]
-    return value, derived, {}
+    derived = [r for r in (recorded_in, rel) if r and (upstream_outdir / r).is_file()]
+    return value, derived, extra
 
 
 def materialize(rule: Rule, *, upstream_outdir: Path, downstream_tree: Path,
-                dest: Path) -> Handoff:
+                dest: Path, exclude_params: frozenset[str] = frozenset()) -> Handoff:
     """Produce the downstream parameters `rule` promises from a finished upstream run.
 
     Samplesheets are written into `dest` (a snapshot nfclaw keeps, never the downstream's outdir),
@@ -511,10 +546,20 @@ def materialize(rule: Rule, *, upstream_outdir: Path, downstream_tree: Path,
     the next pipeline would reject fails the handoff, naming the rule and the file, before the next
     launch. Every upstream file a value points into is recorded with the digest the upstream run's
     own `outputs.sha256` gives it: that is what links the two runs."""
-    outputs, used = recorded_outputs(upstream_outdir), _recorded_params(upstream_outdir)
+    try:
+        outputs = recorded_outputs(upstream_outdir)
+    except (OSError, ValueError) as exc:
+        raise NfclawError(
+            ErrorCode.HANDOFF_FAILED,
+            f"{rule.origin}: cannot verify the {rule.upstream} output records: {exc}",
+            fix="Restore the upstream provenance bundle, or run the chain in a fresh --outdir.") \
+            from exc
+    used = _recorded_params(upstream_outdir)
     values: dict[str, Any] = {}
     traced: dict[str, dict] = {}
     for target, src in rule.params.items():
+        if target in exclude_params:
+            continue
         try:
             value, derived, extra = _resolve(rule, target, src, upstream_outdir=upstream_outdir,
                                              downstream_tree=downstream_tree, dest=dest, used=used)
@@ -527,6 +572,22 @@ def materialize(rule: Rule, *, upstream_outdir: Path, downstream_tree: Path,
                 fix=(f"Check the {rule.upstream} results in {upstream_outdir}; set "
                      f"{_flag(target)} in the stage's params, or give the stage an inline handoff."),
                 details={"upstream_outdir": str(upstream_outdir)}) from None
+        for rel in dict.fromkeys(derived):
+            digest = outputs.get(rel)
+            try:
+                actual = sha256_file(upstream_outdir / rel)
+            except OSError as exc:
+                raise NfclawError(
+                    ErrorCode.HANDOFF_FAILED,
+                    f"{rule.origin}: cannot verify upstream result {rel}: {exc}",
+                    fix="Restore the upstream result before resuming the chain.") from exc
+            if digest is None or actual != digest:
+                reason = ("was not recorded as an output" if digest is None
+                          else "changed since the upstream run")
+                raise NfclawError(
+                    ErrorCode.HANDOFF_FAILED,
+                    f"{rule.origin}: upstream result {rel} {reason}.",
+                    fix="Restore the recorded upstream result, or use a fresh --outdir.")
         values[target] = value
         traced[target] = {"kind": src.kind, "value": value, **extra,
                           "derived_from": {rel: outputs.get(rel)
@@ -534,5 +595,6 @@ def materialize(rule: Rule, *, upstream_outdir: Path, downstream_tree: Path,
     record = {"rule": {"origin": rule.origin, "sha256": rule.sha256(), "body": rule.raw},
               "upstream": {"pipeline": rule.upstream, "outdir": str(upstream_outdir)},
               "downstream": {"pipeline": rule.downstream},
-              "upstream_params": dict(rule.upstream_params), "params": traced}
+              "upstream_params": dict(rule.upstream_params), "params": traced,
+              "overridden_params": sorted(exclude_params & rule.params.keys())}
     return Handoff(values, record)

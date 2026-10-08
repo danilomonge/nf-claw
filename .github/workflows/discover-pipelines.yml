@@ -2,7 +2,7 @@ name: discover-pipelines
 # Find nf-core pipelines not yet in the library, scaffold each (pinned submodule
 # + generated skill.md/reference.md + catalog), then VALIDATE them: unit tests,
 # the drift gate and Nextflow acceptance (`-preview`). Pipelines that Nextflow
-# rejects are dropped from the batch; if any survive and all checks pass, the PR
+# cannot fully validate are dropped from the batch; if any survive and all checks pass, the PR
 # is opened and auto-merged (which rebuilds the site).
 on:
   schedule:
@@ -65,14 +65,22 @@ jobs:
           export NFCLAW_RESULT_FILE="$RUNNER_TEMP/accept.tsv"
           bash scripts/nextflow_accept.sh $added || true
           kept=0
-          while IFS=$'\t' read -r name verdict; do
-            if [ "$verdict" = "rejected" ]; then
-              echo "::warning::$name rejected by Nextflow — dropping it from this batch"
-              python -m librarian.discover_pipelines --repo-root . --rollback "$name"
-            else
-              kept=$((kept + 1))
-            fi
-          done < "$NFCLAW_RESULT_FILE"
+          # Require an explicit completed acceptance for EVERY added pipeline. A partial result
+          # file, an unknown verdict or a staging failure cannot silently count as accepted.
+          for name in $added; do
+            verdict=$(awk -F '\t' -v pipeline="$name" '$1 == pipeline { print $2 }' "$NFCLAW_RESULT_FILE")
+            case "$verdict" in
+              accepted) kept=$((kept + 1)) ;;
+              rejected|staging-unverified)
+                echo "::warning::$name $verdict — dropping it from this batch"
+                python -m librarian.discover_pipelines --repo-root . --rollback "$name"
+                ;;
+              *)
+                echo "::error::$name has no unique recognized acceptance verdict"
+                exit 1
+                ;;
+            esac
+          done
           python -m librarian.write_catalog
           echo "kept=$kept" >> "$GITHUB_OUTPUT"
       - name: Unit tests + drift gate
