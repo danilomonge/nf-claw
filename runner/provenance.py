@@ -152,6 +152,8 @@ echo "nfclaw replay: logging this replay to $log" >&2
   echo "==> nfclaw replay started $(date -u +%Y-%m-%dT%H:%M:%S+00:00)"
   echo "    replay of: $original"
   echo "    host: $(hostname)"
+  _host_id=$(python3 "$_script_dir/replay_guard.py" --host-id)
+  if [ -n "$_host_id" ]; then echo "    host id: $_host_id"; fi
   echo "    pid: $$"
 } >>"$log"
 console="$target/provenance/logs/.replay-console"

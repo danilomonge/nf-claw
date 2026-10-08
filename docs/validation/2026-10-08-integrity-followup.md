@@ -46,6 +46,12 @@ the historical Linux/cloud evidence in [the earlier audit](2026-10-08-audit.md).
   directory and removed an existing `prev-<pipeline>` directory. Use private scratch
   space with cleanup. Also reject failed/partial pipeline inventories and support
   macOS bash 3.2 without `mapfile`.
+- An actual hostname change during this audit made unfinished local runs appear to
+  be running on another host. New run, chain and replay headers include a hashed
+  stable machine identity; Linux includes the PID namespace. Readers use that
+  identity before consulting process IDs, while older logs retain hostname-based
+  compatibility. Two regressions failed before the fix. Stable-ID probing failures
+  fall back conservatively rather than inventing an identifier.
 
 Every defect above was reproduced by a failing regression before its implementation
 fix. Existing tests exposed an internal-directory handoff regression during development;
@@ -121,6 +127,27 @@ including failures and timeouts, to make subsequent diagnosis possible. No failu
 is converted to acceptance, and no placeholder input is substituted to satisfy a
 path check. All upstream gitlinks and source trees remain unchanged.
 
+The evidence-retaining repeat at `60539d8`,
+[run 37817499770](https://github.com/danilomonge/nf-claw/actions/runs/37817499770),
+reproduced the same five failures. The three timed-out pipelines had completed
+process creation and terminated their preview task monitors, but retained active
+dataflow operators until the 900-second SIGTERM. The exact operator dependency
+causing each wait remains unproven; the logs do not show these as task-execution
+failures or establish that a longer timeout would fix them.
+
+Further bactmap inspection found that its dataset branch now supplies Bacteroides
+fragilis reads while the removed reference was Neisseria gonorrhoeae. The original
+matched dataset/reference can be recovered at test-datasets commit
+`02195cfa96ca496173e9d63dd58e34bf02fcf55a`; the downloaded reference matched Git blob
+`bfbb85d8130840514d001354e3b8792ec9b03830` and SHA-256
+`bc20093321e4ada0e08e59f40a6c5d2ffb8e6630d471d12d0bf8dd46c6604261`.
+Restoring those matched inputs exposed `Cannot get property 'args' on null object`:
+the test profile replaces the complete module-options map with two entries. Config
+inspection confirmed that `modules.multiqc` exists under `docker` but disappears
+under `test,docker` on Nextflow 24.10.5. Restoring the full map while retaining test
+overrides passed that point but its preview timed out after 180 seconds. This is
+diagnosis, not a validated workaround or a change to the bundled test data.
+
 A real Docker `demo` run on macOS arm64 completed after a timeout and resume,
 publishing 45 files and a MultiQC HTML report. It does not establish complete
 component success: MultiQC's Chromium image-export subprocesses failed under QEMU
@@ -136,6 +163,20 @@ the same filenames: demo's `dumpParametersToJSON()` independently timestamps its
 parameter report, outside the pinned `trace_report_suffix`. The verifier retains
 such files and reports their missing/extra paths. The guide now explains this
 limitation and distinguishes inventory equality from analytical agreement.
+
+An independent standard-library FASTQ oracle checked all six FastQC 0.12.1 reports
+from the completed fresh demo. Exact read counts, min/max length ranges and integer
+GC percentages matched the staged reads. [The evidence](2026-10-08-demo-fastqc-metrics.json)
+records input/report digests and computed values; [the checker](check_demo_fastqc_metrics.py)
+can reproduce them while the work directories remain available. Nine tests verify
+that the oracle rejects altered statistics, malformed reads and unsupported filtering.
+This validates those basic statistics, not all FastQC modules or biological accuracy.
+
+A dedicated native Linux Docker workflow now executes the pinned demo, applies that
+oracle and requires all 36 PNG/SVG/PDF plot exports to be present and nonempty with
+valid format headers. It retains outputs and task logs for further inspection.
+That workflow has not yet completed; the local replay remained active in an emulated
+FastQC JVM after writing reports, and its JVM attach probe did not respond.
 
 ## Scientific limits
 

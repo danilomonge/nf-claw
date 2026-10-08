@@ -642,6 +642,7 @@ def test_the_chain_log_is_read_like_a_run_log(library, fake_runs, tmp_path):
     st = runlog.read_state(out / "chain" / "logs" / "chain.log")
     assert (st.state, st.kind, st.outcome) == ("success", "chain", "success")
     assert st.pid == __import__("os").getpid() and st.host
+    assert st.host_id == runlog.host_identity()
 
 
 def test_status_tells_a_chain_whose_nfclaw_was_killed(library, fake_runs, tmp_path):

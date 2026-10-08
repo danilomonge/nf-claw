@@ -1,0 +1,108 @@
+{
+  "reports_checked": 6,
+  "results": [
+    {
+      "expected": {
+        "gc_percent": 38,
+        "length": "35-301",
+        "reads": 27721,
+        "total_bases": 8285732
+      },
+      "input_sha256": "b7469350e3167dcdeab6a498984030b09af4bbf17e5b5a9e8f95dc3ee352b031",
+      "matches": true,
+      "observed": {
+        "gc_percent": 38,
+        "length": "35-301",
+        "reads": 27721
+      },
+      "report": "SAMPLE3_SE_1_fastqc.zip",
+      "report_sha256": "6af99073770cfe57d8366b9dbf7dc22fd528e73ce7f0ee1832c08d92c6c1d788"
+    },
+    {
+      "expected": {
+        "gc_percent": 38,
+        "length": "35-301",
+        "reads": 21481,
+        "total_bases": 6416734
+      },
+      "input_sha256": "a13f40afead347e42431eb9b845e2dacd915e092ee0e23b1e72dab829370eb44",
+      "matches": true,
+      "observed": {
+        "gc_percent": 38,
+        "length": "35-301",
+        "reads": 21481
+      },
+      "report": "SAMPLE3_SE_2_fastqc.zip",
+      "report_sha256": "450d0a861b419842a12dc6e708552ea2b772380f95addc5b0c1989e7e7d9e40a"
+    },
+    {
+      "expected": {
+        "gc_percent": 38,
+        "length": "35-301",
+        "reads": 21481,
+        "total_bases": 6416734
+      },
+      "input_sha256": "a13f40afead347e42431eb9b845e2dacd915e092ee0e23b1e72dab829370eb44",
+      "matches": true,
+      "observed": {
+        "gc_percent": 38,
+        "length": "35-301",
+        "reads": 21481
+      },
+      "report": "SAMPLE2_PE_1_fastqc.zip",
+      "report_sha256": "a56172f544d5d72645b05543865ccaf72abfda77ffa58e9a59711c711c67c689"
+    },
+    {
+      "expected": {
+        "gc_percent": 38,
+        "length": "35-301",
+        "reads": 21481,
+        "total_bases": 6416265
+      },
+      "input_sha256": "c645546def1e66f89d414e022c3abd60d4e70088932b3b0b3bbe35a65eb3fa72",
+      "matches": true,
+      "observed": {
+        "gc_percent": 38,
+        "length": "35-301",
+        "reads": 21481
+      },
+      "report": "SAMPLE2_PE_2_fastqc.zip",
+      "report_sha256": "5017074a213db54a0869d24e97c6397fd3a4e705710f65e5c1d1e7c2d8da951e"
+    },
+    {
+      "expected": {
+        "gc_percent": 38,
+        "length": "35-301",
+        "reads": 27721,
+        "total_bases": 8285732
+      },
+      "input_sha256": "b7469350e3167dcdeab6a498984030b09af4bbf17e5b5a9e8f95dc3ee352b031",
+      "matches": true,
+      "observed": {
+        "gc_percent": 38,
+        "length": "35-301",
+        "reads": 27721
+      },
+      "report": "SAMPLE1_PE_1_fastqc.zip",
+      "report_sha256": "cb8e98d3e89ef888e1efbf93c132099f5743755ef9a7c6ce180100c86f1f2ebb"
+    },
+    {
+      "expected": {
+        "gc_percent": 38,
+        "length": "35-301",
+        "reads": 27721,
+        "total_bases": 8285900
+      },
+      "input_sha256": "1fcbddf6dbb6d6508755477859161fa63be14246a85d4a4f75683da3f461e153",
+      "matches": true,
+      "observed": {
+        "gc_percent": 38,
+        "length": "35-301",
+        "reads": 27721
+      },
+      "report": "SAMPLE1_PE_2_fastqc.zip",
+      "report_sha256": "df69e28e54910178541229acc61064f39b117e8eae826a04c26cfc223d9f0107"
+    }
+  ],
+  "scope": "FastQC 0.12.1 basic statistics for bundled demo"
+}

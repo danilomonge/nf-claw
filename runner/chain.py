@@ -16,7 +16,6 @@ import json
 import os
 import re
 import shutil
-import socket
 import subprocess
 import sys
 import tempfile
@@ -649,7 +648,8 @@ def _execute(spec: ChainSpec, planned: list[Planned], state: dict | None, *, rep
         # running from one whose nfclaw was killed outright (the only way it ends without a last line).
         log.note(f"==> nfclaw chain started {runlog.now()}")
         log.note(f"    launch dir: {outdir}")
-        log.note(f"    host: {socket.gethostname()}")
+        for line in runlog.host_header():
+            log.note(line)
         log.note(f"    pid: {os.getpid()}")
         log.note(f"    {len(planned)} stages: " + " → ".join(p.stage.dirname for p in planned))
         print(f"nfclaw: logging this chain to {log.path}", file=sys.stderr, flush=True)

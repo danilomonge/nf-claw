@@ -1,0 +1,73 @@
+name: demo-validation
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "runner/**"
+      - "pipelines/demo/upstream"
+      - "docs/validation/check_demo_fastqc_metrics.py"
+      - ".github/workflows/demo-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  native-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NXF_ANSI_LOG: "false"
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.11"
+      - run: pip install -e .
+      - uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5.5.0
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: ./.github/actions/setup-nextflow
+      - run: git submodule update --init --depth 1 pipelines/demo/upstream
+      - name: Execute the pinned demo on native amd64
+        run: |
+          nfclaw run demo --demo --outdir "$RUNNER_TEMP/demo" --nxf-ver 25.10.4 \
+            --limit-cpus 2 --limit-memory 2.GB --limit-time 15.min --timeout 900
+      - name: Independently validate FastQC statistics and all plot exports
+        run: |
+          python docs/validation/check_demo_fastqc_metrics.py "$RUNNER_TEMP/demo" \
+            --output "$RUNNER_TEMP/demo-metrics.json"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from xml.etree import ElementTree
+          root = Path(os.environ["RUNNER_TEMP"]) / "demo/multiqc/multiqc_plots"
+          for suffix in ("png", "svg", "pdf"):
+              files = sorted(root.rglob(f"*.{suffix}"))
+              if len(files) != 12:
+                  raise SystemExit(f"Expected 12 {suffix} plot exports, found {len(files)}")
+              for path in files:
+                  content = path.read_bytes()
+                  if not content:
+                      raise SystemExit(f"Empty plot export: {path}")
+                  if suffix == "png" and not content.startswith(b"\x89PNG\r\n\x1a\n"):
+                      raise SystemExit(f"Invalid PNG header: {path}")
+                  if suffix == "pdf" and not content.startswith(b"%PDF-"):
+                      raise SystemExit(f"Invalid PDF header: {path}")
+                  if suffix == "svg" and ElementTree.fromstring(content).tag != "{http://www.w3.org/2000/svg}svg":
+                      raise SystemExit(f"Invalid SVG root: {path}")
+          print("All 36 PNG/SVG/PDF plot exports are present, nonempty and have valid format headers.")
+          PY
+      - name: Retain native execution evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-demo-evidence
+          path: |
+            ${{ runner.temp }}/demo
+            ${{ runner.temp }}/demo-metrics.json
+            work/**/.command.*
+          include-hidden-files: true
+          retention-days: 14

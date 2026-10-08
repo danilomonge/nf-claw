@@ -16,6 +16,37 @@ import sys
 from pathlib import Path
 
 
+def host_identity() -> str | None:
+    """A hashed machine identity independent of DHCP/DNS hostname changes.
+
+    Linux also includes the PID namespace, since a copied container log's PID
+    cannot be inspected from a different namespace. Unknown systems fall back
+    to the legacy hostname check; never invent an identity when probing fails.
+    """
+    identity = None
+    if sys.platform == "linux":
+        for name in ("/etc/machine-id", "/var/lib/dbus/machine-id"):
+            try:
+                machine = Path(name).read_text(encoding="ascii").strip().lower()
+                namespace = Path("/proc/self/ns/pid").stat().st_ino
+            except (OSError, UnicodeError):
+                continue
+            if re.fullmatch(r"[0-9a-f]{32}", machine) and machine != "0" * 32:
+                identity = f"{machine}:{namespace}"
+                break
+    elif sys.platform == "darwin":
+        try:
+            result = subprocess.run(["/usr/sbin/ioreg", "-rd1", "-c", "IOPlatformExpertDevice"],
+                                    capture_output=True, text=True, timeout=2)
+            match = re.search(r'"IOPlatformUUID"\s*=\s*"([0-9A-Fa-f-]{36})"', result.stdout)
+            if result.returncode == 0 and match:
+                identity = match.group(1).lower()
+        except (OSError, subprocess.SubprocessError):
+            pass
+    return (hashlib.sha256(f"nfclaw-host-v1:{sys.platform}:{identity}".encode()).hexdigest()
+            if identity is not None else None)
+
+
 def read_checksums(path: Path, *, relative: bool = True) -> dict[str, str]:
     """Read a manifest; malformed/duplicate paths raise ValueError, I/O retains OSError."""
     out: dict[str, str] = {}
@@ -196,7 +227,9 @@ def lock_replay(target: Path, script: Path) -> None:
 
 if __name__ == "__main__":
     try:
-        if sys.argv[1] == "--lock":
+        if sys.argv[1] == "--host-id":
+            print(host_identity() or "")
+        elif sys.argv[1] == "--lock":
             lock_replay(Path(sys.argv[2]), Path(sys.argv[3]))
         else:
             verify_dependencies(Path(sys.argv[1]))
