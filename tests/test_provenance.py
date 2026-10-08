@@ -1,7 +1,14 @@
 import json
+import pytest
 
 from runner import provenance
 from runner.submodule import SubmoduleStatus
+
+
+@pytest.fixture(autouse=True)
+def _no_engine_probe(monkeypatch):
+    # Bundle unit tests must not download engines. Real probe cleanup is exercised separately.
+    monkeypatch.setattr(provenance, "_nextflow_version", lambda env_extra=None: "test engine")
 
 
 def _st(path):

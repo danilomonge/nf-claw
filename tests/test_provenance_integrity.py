@@ -284,3 +284,46 @@ def test_replay_keeps_writer_lock_until_stopped_and_releases_it(tmp_path):
         if process.poll() is None:
             process.kill()
             process.communicate(timeout=10)
+
+
+def test_replay_cannot_skip_writer_lock_with_inherited_pid_marker(tmp_path):
+    import fcntl
+    target = tmp_path / "fresh"
+    prov = _write(tmp_path / "out", input_paths=[])
+    with (tmp_path / ".fresh.nfclaw.lock").open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        result = subprocess.run(
+            ["bash", "-c", 'export NFCLAW_REPLAY_LOCK_PID=$$; exec bash "$1" "$2"',
+             "replay", str(prov / "commands.sh"), str(target)],
+            capture_output=True, text=True, timeout=15)
+    assert result.returncode != 0
+    assert "REPLAY_RAN" not in result.stdout
+    assert not target.exists()
+    assert "active" in result.stderr
+
+
+@pytest.mark.parametrize("descriptor", ["", "not-a-fd", "-1", "1", "999999999999999999999999"])
+def test_replay_lock_rejects_invalid_inherited_descriptors(tmp_path, monkeypatch, descriptor):
+    from runner.replay_guard import replay_lock_held
+    monkeypatch.setenv("NFCLAW_REPLAY_LOCK_PID", "123")
+    monkeypatch.setenv("NFCLAW_REPLAY_LOCK_FD", descriptor)
+    assert not replay_lock_held(tmp_path / "fresh", "123")
+
+
+def test_replay_lock_checks_descriptor_identity_and_ownership(tmp_path, monkeypatch):
+    import fcntl
+    from runner.replay_guard import replay_lock_held
+    target = tmp_path / "fresh"
+    monkeypatch.setenv("NFCLAW_REPLAY_LOCK_PID", "123")
+    with (tmp_path / ".fresh.nfclaw.lock").open("w") as holder, \
+            (tmp_path / ".fresh.nfclaw.lock").open("r+") as contender, \
+            (tmp_path / "unrelated").open("w") as unrelated:
+        fcntl.flock(holder, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        for descriptor in (contender.fileno(), unrelated.fileno()):
+            monkeypatch.setenv("NFCLAW_REPLAY_LOCK_FD", str(descriptor))
+            assert not replay_lock_held(target, "123")
+        monkeypatch.setenv("NFCLAW_REPLAY_LOCK_FD", str(holder.fileno()))
+        assert replay_lock_held(target, "123")
+        assert not replay_lock_held(target, "456")
+        with pytest.raises(BlockingIOError):
+            fcntl.flock(contender, fcntl.LOCK_EX | fcntl.LOCK_NB)

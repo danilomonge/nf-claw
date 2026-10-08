@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 from pathlib import Path
@@ -224,10 +225,44 @@ def lock_replay(target: Path, script: Path) -> None:
         except BlockingIOError:
             raise ValueError(f"another nfclaw run or replay is active in {target}") from None
         os.set_inheritable(fd, True)
-        env = {**os.environ, "NFCLAW_REPLAY_LOCK_PID": str(os.getpid())}
+        env = {**os.environ, "NFCLAW_REPLAY_LOCK_PID": str(os.getpid()),
+               "NFCLAW_REPLAY_LOCK_FD": str(fd)}
         os.execvpe("bash", ["bash", str(script), str(target)], env)
     finally:
         os.close(fd)
+
+
+def replay_lock_held(target: Path, shell_pid: str) -> bool:
+    """Validate the inherited lock itself; an environment PID is not ownership proof."""
+    import fcntl
+
+    if os.environ.get("NFCLAW_REPLAY_LOCK_PID") != shell_pid:
+        return False
+    probe = None
+    try:
+        fd = int(os.environ.get("NFCLAW_REPLAY_LOCK_FD", ""))
+        if fd < 3:
+            return False
+        target = target.expanduser().resolve()
+        lock = target.parent / f".{target.name}.nfclaw.lock"
+        probe = os.open(lock, os.O_RDWR | getattr(os, "O_NOFOLLOW", 0))
+        inherited, expected = os.fstat(fd), os.fstat(probe)
+        if not stat.S_ISREG(inherited.st_mode) or (inherited.st_dev, inherited.st_ino) != (
+                expected.st_dev, expected.st_ino):
+            return False
+        # A competing writer blocks the inherited descriptor. A separately opened descriptor
+        # must then conflict with our inherited lock, even within the same process.
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return True
+        return False
+    except (OSError, ValueError, OverflowError):
+        return False
+    finally:
+        if probe is not None:
+            os.close(probe)
 
 
 if __name__ == "__main__":
@@ -236,6 +271,8 @@ if __name__ == "__main__":
             print(host_identity() or "")
         elif sys.argv[1] == "--lock":
             lock_replay(Path(sys.argv[2]), Path(sys.argv[3]))
+        elif sys.argv[1] == "--check-lock":
+            sys.exit(0 if replay_lock_held(Path(sys.argv[2]), sys.argv[3]) else 1)
         else:
             verify_dependencies(Path(sys.argv[1]))
     except (OSError, ValueError, IndexError) as exc:

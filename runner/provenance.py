@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from runner.outputs import result_files
+from runner.probes import capture
 from runner.replay_guard import (MissingInputSource as MissingInputSource,
                                  hash_inputs, hash_pipeline as hash_pipeline,
                                  input_files as input_files,
@@ -80,8 +81,7 @@ def _nextflow_version(env_extra: dict[str, str] | None = None) -> str:
     # actually ran, not the launcher default.
     env = {**os.environ, **env_extra} if env_extra else None
     try:
-        r = subprocess.run(["nextflow", "-version"], capture_output=True,
-                           text=True, timeout=30, env=env)
+        r = capture(["nextflow", "-version"], timeout=30, env=env)
         return (r.stdout or r.stderr).strip()
     except (subprocess.SubprocessError, FileNotFoundError, OSError):
         return ""
@@ -329,7 +329,7 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         # expansion the shell would treat shlex's quotes as literal characters of the path.
         f"default_target={default_target}\n"
         "target=\"${1:-$default_target}\"\n"
-        'if [ "${NFCLAW_REPLAY_LOCK_PID:-}" != "$$" ]; then\n'
+        'if ! python3 "$_script_dir/replay_guard.py" --check-lock "$target" "$$"; then\n'
         '  exec python3 "$_script_dir/replay_guard.py" --lock "$target" "$_script_dir/commands.sh"\n'
         'fi\n'
         "mkdir -p -- \"$target\"\n"
