@@ -39,7 +39,11 @@ every node fits, and the explorers page, group and search rather than render eve
 
 ## Navigating it
 
-- **⌘K / Ctrl K or `/`** opens a command palette over every pipeline, doc and home section.
+- **⌘K / Ctrl K or `/`** opens a command palette over every pipeline, doc and home section; with
+  an empty query it offers the pipelines this browser opened last.
+- **How it works** types out the agent's three steps with real repository content — the
+  `catalog.md` lines a grep returns, an excerpt of a `skill.md`, its run and demo commands
+  (`src/lib/data/quickstart.ts`).
 - The header marks the section being read (scroll-spy on the home page, the route elsewhere)
   and shows reading progress; pipeline pages add a sticky "on this page" bar, docs a
   table of contents, and both have previous/next links.

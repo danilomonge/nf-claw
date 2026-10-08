@@ -6,12 +6,16 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Link2 } from "lucide-react";
 import { CopyButton } from "@/components/ui/copy-button";
+import { highlightShell } from "@/components/ui/code-block";
 import { resolveDocLink, type LinkContext } from "@/lib/links";
 import { docHeadings, slugify } from "@/lib/doc-meta";
 import { cn } from "@/lib/utils";
 
 const LINK_CLASS =
   "font-medium text-claw-300 underline decoration-claw-400/30 underline-offset-[3px] transition-colors hover:text-claw-200 hover:decoration-claw-300";
+
+/** Fence languages rendered with shell accents (program, flags, placeholders, comments). */
+const SHELL = new Set(["bash", "sh", "shell", "console", "zsh"]);
 
 function CodeBlock({ children, lang }: { children: string; lang: string }) {
   return (
@@ -21,7 +25,15 @@ function CodeBlock({ children, lang }: { children: string; lang: string }) {
         <CopyButton text={children} />
       </div>
       <pre className="overflow-x-auto px-4 py-4 font-mono text-[13px] leading-relaxed text-fog-muted">
-        <code>{children}</code>
+        <code>
+          {SHELL.has(lang)
+            ? children.split("\n").map((line, i) => (
+                <div key={i} className="whitespace-pre">
+                  {highlightShell(line)}
+                </div>
+              ))
+            : children}
+        </code>
       </pre>
     </div>
   );

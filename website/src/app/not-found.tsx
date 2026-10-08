@@ -19,7 +19,7 @@ export default function NotFound() {
         pipeline or a doc instead.
       </p>
       <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
-        <SearchButton className="inline-flex items-center gap-2 rounded-full bg-claw-500 px-6 py-3 text-sm font-semibold text-ink-950 transition hover:bg-claw-400">
+        <SearchButton className="inline-flex items-center gap-2 rounded-full bg-claw-500 px-6 py-3 text-sm font-semibold text-ink-950 transition hover:bg-claw-400 active:scale-[0.97]">
           Search the library
         </SearchButton>
         <Link

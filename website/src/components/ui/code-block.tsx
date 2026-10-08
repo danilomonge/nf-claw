@@ -5,7 +5,7 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { cn } from "@/lib/utils";
 
 /** Shell-flavoured accents for a command line: program, subcommand, flags, placeholders, comment. */
-function highlight(line: string) {
+export function highlightShell(line: string) {
   if (!line.trim()) return <span>&nbsp;</span>;
   if (/^\s*#/.test(line)) return <span className="italic text-fog-dim">{line}</span>;
 
@@ -65,7 +65,7 @@ export function CodeBlock({
         <code>
           {code.split("\n").map((line, i) => (
             <div key={i} className={cn(wrap && "pl-[2ch] -indent-[2ch]")}>
-              {highlight(line)}
+              {highlightShell(line)}
             </div>
           ))}
         </code>
