@@ -20,7 +20,7 @@ const PRINCIPLES = [
   {
     icon: ShieldCheck,
     title: "Drift-gated",
-    body: "A CI gate guarantees the published context always matches the pinned submodule — this site included.",
+    body: "CI regenerates the context from pinned schemas and checks for drift. This site builds from the same repository.",
   },
 ];
 

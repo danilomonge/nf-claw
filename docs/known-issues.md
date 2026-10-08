@@ -66,7 +66,7 @@ When a run fails, nfclaw's error diagnostic quotes Nextflow's own error report (
     --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h
   ```
   nfclaw writes these as Nextflow's [`process.resourceLimits`](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources) and passes the generated config with `-c` — the mechanism nf-core prescribes, and the same one its own `test` profiles use (which is why `--demo` never hits this and a real run does). The ceiling applies to **every** process *and every retry*, so one flag covers whatever the pipeline asks for next; the generated config is kept in `<outdir>/provenance/resource_limits.config`, so `commands.sh` replays the run under the same ceiling.
-  
+
   Do **not** cap by naming processes (`withName: 'STAR_GENOMEGENERATE' { memory = '15.GB' }`) unless you mean to re-size that one step: `withName` changes a single process's *initial* request, so you must name every step that might exceed the host — miss one and the run dies there instead (`STAR_GENOMEGENERATE`, then `BBMAP_BBSPLIT`, then the next). It also does not cap the retry, which asks for more. Use `withName` (via `--config`) only to tune one specific step, e.g. giving a tool *less* than its label implies:
   ```groovy
   // tune-one-step.config
@@ -80,9 +80,9 @@ When a run fails, nfclaw's error diagnostic quotes Nextflow's own error report (
 - **Symptom:** `Unexpected input: ':'`, `Unexpected token`, `Invalid include source`, or `import ...` rejected — on Nextflow **26.x**, whose strict parser rejects older Groovy config syntax (typed declarations, functions with params, `manifest.*`/`validation.*` accessed at parse time, `import` in `.nf`). Many older releases hit this.
 - **Fix:** Pin an engine the release was written for: `--nxf-ver 25.10.2` (must still satisfy the pipeline's declared `nextflowVersion` minimum). If you hit it on most pipelines, set it once for the shell: `export NXF_VER=25.10.2` (nfclaw passes it through). See [`compatibility.md`](compatibility.md).
   Confirmed-affected releases that **do** run with `--nxf-ver 25.10.2` include `epitopeprediction`, `hgtseq`, `callingcards`, `coproid`, `denovotranscript` 1.2.1, `chipseq` 2.1.0, `fastqrepair` 1.0.0, `atacseq` 2.1.2, `circdna` 1.1.0, `genomeassembler` 1.1.0, `detaxizer` 1.3.0, `cutandrun` 3.2.2 and `marsseq` 1.0.3 (newer releases such as `fetchngs` 1.13.0, `sarek` 3.10.0, and `scrnaseq` 4.2.0 declare `!>=25.10.4`, so use `--nxf-ver 25.10.4` to avoid Nextflow 26 strict parser failures on them).
-  
+
   Examples of what NF 26 rejects:
-  - chipseq's **and** marsseq's `def check_max(obj, type)` in `nextflow.config` (marsseq 1.0.3 declares only `!>=23.04.0`, so unpinned it parses under NF 26 and fails at launch with a `nextflow.cli.Launcher` error — `--nxf-ver 25.10.2` fixes it; note its `test` profile also sets `genome = 'mm10'`, which pulls the mm10 reference from AWS iGenomes and needs network).
+  - chipseq's **and** marsseq's `def check_max(obj, type)` in `nextflow.config` (marsseq 1.0.3 declares only `!>=23.04.0`, so unpinned it parses under NF 26 and fails at launch with a `nextflow.cli.Launcher` error — `--nxf-ver 25.10.2` fixes it; note its `test` profile also sets `genome = 'mm10'`, which expects prebuilt local references; its configuration maps that key to GRCm39/M27, not AWS iGenomes).
   - scrnaseq 4.1.0's `Invalid include source: conf/test_multiome.config` (the `test_multiome` profile `includeConfig`s a file not committed at the tag — NF 26 validates it at parse time even though the profile is unused, while the legacy parser skips it and the `--demo` run completes).
   - cutandrun 3.2.2's `Cannot invoke method optional() on null object`, from deprecated output syntax `emit: html optional true` in `modules/local/for_patch/trimgalore/main.nf` (sibling modules already use current `emit: …, optional: true`).
 - **Exception — some releases need a _newer_ engine:** `funcscan` 4.0.0 and `lsmquant` 1.0.2 declare `nextflowVersion = '!>=25.10.4'`, so `--nxf-ver 25.10.2` is rejected at the version gate (the symptom can read as a parameter/validation failure); use `--nxf-ver 25.10.4`. (`bactmap` 1.0.0 hits the parser issue *and* further bugs and can't run in demo here — see the upstream table).
@@ -146,13 +146,32 @@ When a run fails, nfclaw's error diagnostic quotes Nextflow's own error report (
 ### `--check` never writes into `--outdir`
 - **Status: Fixed.** `--check` validates parameters and prints the command without launching, staging parameters in a temporary directory and leaving `--outdir` untouched.
 
-### A replay produces the same files, but not the same bytes
-- **Expected Behavior:** nf-core outputs embed generation timestamps: execution traces, gzip headers, FastQC zip archives, and MultiQC HTML reports embed timestamps and run dates. Re-running on identical inputs produces identical *files* with differing *bytes*.
-- **Verification:** Check structural equivalence via:
-  ```bash
-  nfclaw verify results.replay --against results
-  ```
-  Compares `outputs.sha256` manifests **by path** and reports `identical` / `changed` / `missing` / `extra`. Nonzero exits occur only when files are missing or extra.
+### A replay can change bytes and timestamped metadata filenames
+Some outputs embed dates or durations: execution reports, timelines, gzip headers,
+FastQC ZIP entries and MultiQC HTML can differ between runs. A changed checksum
+does not identify the cause; inspect scientific results with a format-aware comparison.
+Matching file inventories alone does not establish analytical agreement. Check both with:
+```bash
+nfclaw verify results.replay --against results
+```
+It hashes the replay's live files and compares them with the original recorded checksums
+**by path**, reporting `identical` / `changed` / `missing` / `extra`. Missing or extra
+files fail the structural check; add `--strict` to fail on any changed bytes as well.
+
+nfclaw pins the schema's `trace_report_suffix` where available, but some upstream
+code generates other filenames directly from the clock. For example, demo 1.2.0's
+`dumpParametersToJSON()` independently names `pipeline_info/params_<timestamp>.json`.
+Its replay produces a missing/extra metadata pair even when the analysis outputs
+match. A resumed run can also retain reports from earlier attempts. Classify these
+differences explicitly; do not erase metadata or treat all missing/extra files as
+proof that the analysis changed. The upstream tree is preserved, and the verifier
+reports the actual inventory without silently excluding these files.
+
+**Do not diff the two `outputs.sha256` files directly.** Each line is `hash  path`, so a file whose
+content merely changed has a different line in each bundle and shows up as *both* "missing" and
+"extra" — one changed report is counted twice, and a run whose reports simply carry a new timestamp
+reads as hundreds of missing and extra files. That is an artefact of the comparison, not a defect in
+the replay; `nfclaw verify` keys on the path precisely to separate the two questions.
 
 ### Chains: `[handoff_failed]` — the next stage's input could not be prepared
 - **Symptom:** `nfclaw chain run` stops after a stage succeeded, with `[handoff_failed]` and the chain log ending `failed at stage NN-<stage>: handoff`.
@@ -182,7 +201,7 @@ These appear in a **normal run and in its replay alike** — the replay executes
 
 ### `WARN: Unrecognized config option 'validation.defaultIgnoreParams'` / `'validation.monochromeLogs'`
 - **Cause:** Running a Nextflow engine *newer* than the release targets. Harmless and avoidable.
-  
+
   | Nextflow Version | Output / Result |
   |---|---|
   | **25.10.4** (declared minimum `!>=25.10.4`) | **No warnings emitted** |
@@ -244,11 +263,21 @@ These are defects in specific pinned releases. Workarounds are implemented via C
 | `hgtseq` 1.1.0 | `a column named input1 ... is mandatory!` | Schema requires `sample,fastq_1[,fastq_2]`, but custom parser `workflows/hgtseq.nf` expects `sample,input1[,input2]`. | Supply a samplesheet matching `sample,input1[,input2]` using `--input`; avoid relying on `--demo`. |
 | `funcscan` 2.1.0 – 4.0.0 (DRAMP DB only) | `TypeError` in `ampcombi_download.py` when downloading DRAMP database | DRAMP download loop regex matches NaN float values when rows contain empty sequence fields. APD database unaffected. (Requires `--nxf-ver 25.10.4`). | Pre-build DRAMP database with NaN rows removed and pass `--amp_ampcombi_db /path/to/db`. |
 | `taxprofiler` 2.x (MultiQC 1.34) | `MULTIQC` fails: `AttributeError: module 'rich' has no attribute 'panel'` | MultiQC raises `IndexError` on empty MetaPhlAn profiles, followed by a secondary failure in error reporting. | Profile reads that match database content, or disable MetaPhlAn: `--run_metaphlan false`. |
-| `bactmap` 1.0.0 | Fails `--demo` execution across Nextflow versions | Chained defects: NF 26 parser rejects `def check_max`; NF 25 mishandles remote `file()` URLs; NF 23 fails Maven resolution. | Not runnable in demo mode; wait for upstream release fix or pin alternative version via `--pipeline-version`. |
+| `bactmap` 1.0.0 | bundled `--demo` reference cannot be read | its `conf/test.config` points to `https://raw.githubusercontent.com/nf-core/test-datasets/bactmap/genome/NCTC13799.fna`, which returned HTTP 404 on 2026-10-08; the dataset branch at `59053751cc57c3f27d085090e10f1c2a6ecd2749` contains no `genome/` directory. The fresh Linux preview failed on Nextflow 24.10.5. This is a missing remote file, not evidence that Nextflow interpreted the URL as a local path. NF 26 also rejects the release's old config syntax. | provide a scientifically appropriate existing reference with `--reference` and an engine that accepts this release's syntax. The dataset branch now carries *Bacteroides fragilis* reads, while the removed reference was *Neisseria gonorrhoeae*; the matched pair is recoverable at test-datasets commit `02195cfa96ca496173e9d63dd58e34bf02fcf55a`. Even with matched inputs, the `test` profile replaces the whole module-options map, so the preview fails with `Cannot get property 'args' on null object` (`modules.multiqc` is absent under `test,docker`). No replacement reference or complete analysis has been validated |
+| `createpanelrefs`, `proteinfamilies`, `multiplesequencealign` (pinned releases) | `-preview` acceptance times out after 900 s | Preview completes process creation and stops its task monitors, but active dataflow operators keep waiting for task results that `-preview` never produces. The exact operator dependency has not been isolated, and a longer timeout is not known to help. An independent `nextflow inspect` of createpanelrefs exits zero. | Treat these as `rejected` by the preview gate, not as execution failures; validate with a real test-profile run before relying on them. |
+| `marsseq` 1.0.3 | bundled `test` analysis preview fails with a missing `references/mm10/GRCm39.fa` | `test.config` selects `mm10` but supplies no prebuilt references; `genomes_base` defaults to the fresh output directory's `references/`. The workflow requires FASTA, GTF, Bowtie2 and STAR paths to exist before analysis. `main.nf` chooses either reference building or analysis, not both in sequence. | supply a populated reference base with `--genomes-base`, or build references separately with `--build-references true` and then point analysis at their location. The reference-building DAG preview passed on Nextflow 25.10.4; building the data and the subsequent analysis remain unverified. The config key `mm10` actually points to GRCm39/M27 URLs: inspect the assembly and annotation rather than inferring them from the key. |
 
 ---
 
 ## Pipeline-specific run notes
+
+- **`demo` 1.2.0 on macOS arm64 with amd64 containers** — MultiQC 1.34 can
+  return exit zero and write its HTML/data while Kaleido/Chromium fails to export
+  plots under QEMU. Fresh and resumed local runs both reported `0/36 completed`,
+  with `qemu: unknown option 'type=utility'` and Chromium sandbox/GPU crashes.
+  Check the task's `.command.err` and required plot files even when pipeline status
+  is success. Validate required exports on a compatible native execution platform;
+  no arm64 image or emulation workaround has been established yet.
 
 - **`fetchngs`** — If accessions lack ENA FTP links, the pipeline falls back to `SRATOOLS_PREFETCH` (requiring NCBI SRA Cloud access). In network-restricted environments, run metadata-only via `--skip_fastq_download`. (Accepts `.csv`, `.tsv`, or `.txt` accession lists at pinned 1.13.0 and `dev`).
 - **`coproid`** — Requires **two** samplesheets: `--input` (FASTQ sheet) and a separate required `--genome_sheet`. Each row in `--genome_sheet` requires `genome_name,taxid,genome_size` plus **exactly one** of `igenome` or `fasta` (mutually exclusive `oneOf` schema). `--kraken2_db` is mandatory and must point to a valid Kraken2 database.

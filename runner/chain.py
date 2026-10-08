@@ -16,7 +16,6 @@ import json
 import os
 import re
 import shutil
-import socket
 import subprocess
 import sys
 import tempfile
@@ -128,14 +127,14 @@ def _parse_options(raw: dict, where: str) -> dict:
             raise _bad(f"{where}: 'profile' must be a profile name such as \"docker\"")
         out["profile"] = raw["profile"]
     if "limits" in raw:
-        limits = raw["limits"] or {}
+        limits = {} if raw["limits"] is None else raw["limits"]
         if not isinstance(limits, dict) or set(limits) - _LIMIT_KEYS:
             raise _bad(f"{where}: 'limits' takes only: {', '.join(sorted(_LIMIT_KEYS))}")
         cpus = limits.get("cpus")
         if cpus is not None and (not isinstance(cpus, int) or isinstance(cpus, bool)):
             raise _bad(f"{where}: 'limits.cpus' must be a whole number")
     if "config" in raw:
-        configs = raw["config"] or []
+        configs = [] if raw["config"] is None else raw["config"]
         if not isinstance(configs, list) or not all(isinstance(c, str) for c in configs):
             raise _bad(f"{where}: 'config' must list Nextflow config file paths")
         out["configs"] = tuple(_abs(c) for c in configs)
@@ -194,12 +193,17 @@ def parse_spec(data: dict) -> ChainSpec:
         if sid in seen:
             raise _bad(f"duplicate stage id '{sid}' (give one of them its own 'id')")
         seen.add(sid)
-        retries = raw.get("retries") or 0
+        retries = raw.get("retries", 0)
         if not isinstance(retries, int) or isinstance(retries, bool) or retries < 0:
             raise _bad(f"stage '{sid}': 'retries' must be a whole number >= 0")
-        params = raw.get("params") or {}
+        params = raw.get("params", {})
+        if params is None:
+            params = {}
         if not isinstance(params, dict):
             raise _bad(f"stage '{sid}': 'params' must be an object of pipeline parameters")
+        demo = raw.get("demo", False)
+        if not isinstance(demo, bool):
+            raise _bad(f"stage '{sid}': 'demo' must be true or false")
         version = raw.get("pipeline_version")
         if version is not None and not isinstance(version, str):
             raise _bad(f"stage '{sid}': 'pipeline_version' must be a string such as \"3.27.0\"")
@@ -221,14 +225,17 @@ def parse_spec(data: dict) -> ChainSpec:
             params=params,
             params_file=Path(_abs(params_file)) if params_file else None,
             pipeline_version=version or None, retries=retries,
-            demo=bool(raw.get("demo", False)),
+            demo=demo,
             handoff=Path(_abs(hand)) if isinstance(hand, str) else hand,
             options=_parse_options(raw, f"stage '{sid}'")))
     chain_opts = _parse_options(data, "chain")
+    allow_spaces = data.get("allow_spaces", False)
+    if not isinstance(allow_spaces, bool):
+        raise _bad("'allow_spaces' must be true or false")
     return ChainSpec(stages=tuple(stages), profile=chain_opts.get("profile", "docker"),
                      nxf_ver=chain_opts.get("nxf_ver"), nxf_env=chain_opts.get("nxf_env", {}),
                      configs=chain_opts.get("configs", ()), limits=chain_opts.get("limits"),
-                     allow_spaces=bool(data.get("allow_spaces", False)))
+                     allow_spaces=allow_spaces)
 
 
 # --- the plan: every stage and handoff resolved and checked before anything runs ------------
@@ -460,10 +467,13 @@ def _probe_config(spec: ChainSpec, p: Planned, *, timeout_seconds: float | None 
     seconds). It catches the one failure no schema can predict: a release whose config the engine
     rejects outright — an older release on Nextflow 26's strict parser — which would otherwise
     surface only when that stage launches, after every stage before it has run. Run from a scratch
-    directory so nothing lands anywhere; a probe that cannot run, or does not finish, is no verdict."""
+    directory so nothing lands in the output directory. A probe that cannot run or does not
+    finish cannot establish configuration validity and blocks the chain before any launch."""
     opts = options(spec, p.stage)
+    engine = f"Nextflow {opts.nxf_ver}" if opts.nxf_ver else "the installed Nextflow"
+    label = f"{p.stage.dirname} ({p.stage.pipeline})"
     if shutil.which("nextflow") is None:
-        return []                                         # preflight reports a missing nextflow
+        return [f"{label}: configuration could not be verified — nextflow is not on PATH"]
     overlay = dict(opts.nxf_env)
     if opts.nxf_ver:
         overlay["NXF_VER"] = opts.nxf_ver
@@ -474,17 +484,21 @@ def _probe_config(spec: ChainSpec, p: Planned, *, timeout_seconds: float | None 
         cmd += ["-c", cfg]
     cmd += ["config", str(p.tree.path),
             "-profile", nextflow_command.compose_profile(opts.profile, demo=p.stage.demo)]
+    probe_timeout = (min(_PROBE_TIMEOUT, timeout_seconds)
+                     if timeout_seconds is not None else _PROBE_TIMEOUT)
     with tempfile.TemporaryDirectory(prefix="nfclaw-probe-") as scratch:
         try:
             r = subprocess.run(cmd, cwd=scratch, env={**os.environ, **overlay},
                                capture_output=True, text=True,
-                               timeout=min(_PROBE_TIMEOUT, timeout_seconds)
-                               if timeout_seconds is not None else _PROBE_TIMEOUT)
-        except (OSError, subprocess.SubprocessError):
-            return []
+                               timeout=probe_timeout)
+        except subprocess.TimeoutExpired:
+            return [f"{label}: configuration could not be verified — {engine} did not finish "
+                    f"its configuration probe within {probe_timeout:g} seconds"]
+        except (OSError, subprocess.SubprocessError) as exc:
+            return [f"{label}: configuration could not be verified — {engine}'s "
+                    f"configuration probe could not run: {exc}"]
     if r.returncode == 0:
         return []
-    engine = f"Nextflow {opts.nxf_ver}" if opts.nxf_ver else "the installed Nextflow"
     report = (runlog.error_excerpt(r.stdout or "")
               + runlog.stderr_excerpt(r.stderr or "")) or [f"exit status {r.returncode}"]
     if _ENGINE_DOWN.search((r.stdout or "") + (r.stderr or "")):
@@ -579,8 +593,9 @@ def run_chain(spec: ChainSpec | None, *, repo_root: Path, outdir: Path, check_on
     if unparsable:
         raise NfclawError(
             ErrorCode.ENVIRONMENT, "A stage could not start: its Nextflow engine cannot set it up.",
-            fix=("Nothing was launched. Give that stage an engine that runs here and parses its "
-                 "release — its \"nxf_ver\" in the spec entry (see 'Nextflow too new for an older "
+            fix=("Nothing was launched. Resolve the reported engine, configuration, network or "
+                 "probe timeout issue and retry. Give each stage an engine that runs here and "
+                 "parses its release — its \"nxf_ver\" in the spec entry (see 'Nextflow too new for an older "
                  f"release' in {runlog.known_issues_path()}) — and run the chain again."),
             details={"issues": unparsable})
     if check_only:
@@ -641,7 +656,8 @@ def _execute(spec: ChainSpec, planned: list[Planned], state: dict | None, *, rep
         # running from one whose nfclaw was killed outright (the only way it ends without a last line).
         log.note(f"==> nfclaw chain started {runlog.now()}")
         log.note(f"    launch dir: {outdir}")
-        log.note(f"    host: {socket.gethostname()}")
+        for line in runlog.host_header():
+            log.note(line)
         log.note(f"    pid: {os.getpid()}")
         log.note(f"    {len(planned)} stages: " + " → ".join(p.stage.dirname for p in planned))
         print(f"nfclaw: logging this chain to {log.path}", file=sys.stderr, flush=True)
@@ -905,7 +921,8 @@ def _integrity_problems(state: dict, *, only_succeeded: bool = False) -> list[st
                 up_out = {}
         down_in: dict[str, str] = {}
         if succeeded and any(isinstance(item, dict) and ("sha256" in item
-                                                        or item.get("input_dependencies"))
+                                                        or item.get("input_dependencies")
+                                                        or item.get("output_dependencies"))
                              for item in params.values()):
             try:
                 down_in = _digests(down / "provenance" / "inputs.sha256", relative=False)
@@ -936,6 +953,50 @@ def _integrity_problems(state: dict, *, only_succeeded: bool = False) -> list[st
             if not isinstance(dependencies, dict):
                 problems.append(f"{sid}: --{name} has malformed input dependencies")
                 continue
+            if "directory_reference" in item:
+                reference = item["directory_reference"]
+                expected = dependencies
+                if item.get("output_dependencies"):
+                    outputs = item["output_dependencies"]
+                    if not isinstance(outputs, dict):
+                        problems.append(f"{sid}: --{name} has malformed output dependencies")
+                        continue
+                    if any(not isinstance(rel, str) or not handoff._relative(rel)
+                           for rel in outputs):
+                        problems.append(f"{sid}: --{name} has malformed output dependencies")
+                        continue
+                    expected = {str(up_dir / rel): digest for rel, digest in outputs.items()}
+                try:
+                    current = None
+                    if isinstance(reference, str) and Path(reference).is_absolute():
+                        if item.get("output_dependencies"):
+                            current = {str(up_dir / rel): digest for rel, digest in
+                                       provenance.output_checksums(up_dir).items()
+                                       if (up_dir / rel).is_relative_to(reference)}
+                        else:
+                            current = provenance.hash_inputs([Path(reference)])
+                except (OSError, ValueError):
+                    current = None
+                if not expected or current != expected:
+                    problems.append(f"{sid}: --{name}: reference directory {reference} changed "
+                                    "or has no matching historical inventory")
+                if succeeded:
+                    consumed = normalized_expected = None
+                    if isinstance(reference, str) and Path(reference).is_absolute():
+                        try:
+                            # Parameters resolve the reference root before launch. Rebase the
+                            # published inventory to that root, preserving aliases beneath it.
+                            normalized_root = Path(reference).resolve()
+                            normalized_expected = {
+                                str(normalized_root / Path(path).relative_to(reference)): digest
+                                for path, digest in expected.items()}
+                            consumed = {path: digest for path, digest in down_in.items()
+                                        if Path(path).is_relative_to(normalized_root)}
+                        except (OSError, ValueError, RuntimeError):
+                            pass
+                    if consumed is None or consumed != normalized_expected:
+                        problems.append(f"{sid}: --{name}: reference directory {reference} is "
+                                        "not the input inventory this stage hashed")
             if dependencies:
                 try:
                     up_in = _digests(up_dir / "provenance" / "inputs.sha256", relative=False)

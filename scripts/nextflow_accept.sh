@@ -15,6 +15,7 @@
 # Env:
 #   NFCLAW_RESULT_FILE      if set, write "<name>\t(accepted|staging-unverified|rejected)" per line
 #   NFCLAW_KEEP_SUBMODULES  if "1", do not deinit submodules after checking
+#   NFCLAW_LOG_DIR         if set, retain console and engine logs per pipeline
 #
 # Exits non-zero unless every pipeline completed its preview successfully.
 set -uo pipefail
@@ -33,7 +34,15 @@ _run_with_timeout() {
 
 names=("$@")
 if [ "${#names[@]}" -eq 0 ]; then
-  mapfile -t names < <(nfclaw list | cut -f1)
+  # A failed inventory is a failed gate, even if it printed a partial list. Compatible with
+  # macOS bash 3.2, which has no mapfile builtin.
+  if ! inventory=$(nfclaw list); then
+    echo "::error::could not list pipelines"
+    exit 1
+  fi
+  while IFS=$'\t' read -r name _; do
+    [ -z "$name" ] || names+=("$name")
+  done <<< "$inventory"
   # An empty list would "accept" nothing and exit 0 — a vacuous green check.
   if [ "${#names[@]}" -eq 0 ]; then
     echo "::error::no pipelines found (nfclaw list returned nothing)"
@@ -41,10 +50,15 @@ if [ "${#names[@]}" -eq 0 ]; then
   fi
 fi
 
-tmp="${RUNNER_TEMP:-/tmp}"
+tmp=$(mktemp -d "${RUNNER_TEMP:-/tmp}/nfclaw-accept.XXXXXXXX") || exit 1
+trap 'rm -rf -- "$tmp"' EXIT
 summary="${GITHUB_STEP_SUMMARY:-/dev/null}"
 result="${NFCLAW_RESULT_FILE:-/dev/null}"
-: > "$result"
+: > "$result" || exit 1
+logs="${NFCLAW_LOG_DIR:-}"
+if [ -n "$logs" ]; then
+  mkdir -p -- "$logs" || exit 1
+fi
 
 cfg="$tmp/no-reports.config"
 # -preview builds the DAG but produces no trace; disable the report/timeline/
@@ -70,6 +84,9 @@ for name in "${names[@]}"; do
   work="$tmp/work-$name"
   if ! git submodule update --init --depth 1 "$up" >"$tmp/$name-submodule.out" 2>&1; then
     cat "$tmp/$name-submodule.out"
+    if [ -n "$logs" ]; then
+      cp -- "$tmp/$name-submodule.out" "$logs/$name-submodule.log" || exit 1
+    fi
     echo "::error::Could not initialize $name submodule"
     echo "| \`$name\` | n/a | ❌ |" >> "$summary"
     printf '%s\trejected\n' "$name" >> "$result"
@@ -84,8 +101,14 @@ for name in "${names[@]}"; do
   fi
   echo "::group::$name (nextflow $ver)"
   log="$tmp/$name.out"
-  NXF_VER="$ver" _run_with_timeout 900 nextflow run "$up" -profile test,docker \
+  NXF_VER="$ver" _run_with_timeout 900 nextflow -log "$tmp/$name.nextflow.log" run "$up" -profile test,docker \
     -c "$cfg" --outdir "$out" -work-dir "$work" -preview > "$log" 2>&1 && rc=0 || rc=$?
+  if [ -n "$logs" ]; then
+    cp -- "$log" "$logs/$name.console.log" || exit 1
+    if [ -f "$tmp/$name.nextflow.log" ]; then
+      cp -- "$tmp/$name.nextflow.log" "$logs/$name.nextflow.log" || exit 1
+    fi
+  fi
   if [ "$rc" = 0 ]; then
     tail -6 "$log"
     echo "| \`$name\` | $ver | ✅ |" >> "$summary"

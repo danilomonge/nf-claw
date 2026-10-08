@@ -208,8 +208,79 @@ def test_default_engine_is_pinned_for_replay_without_falsifying_recorded_environ
     assert result.stdout == "25.10.4"
 
 
-def test_commands_sh_resolves_dynamically_when_run_bundle_is_relocated(tmp_path):
+@pytest.mark.parametrize("relative_script", [False, True])
+def test_relocated_bundle_replays_its_own_params_and_configs(tmp_path, relative_script):
+    import shlex
+
+    out = tmp_path / "out"
+    (out / "provenance").mkdir(parents=True)
+    params = out / "provenance/params.json"
+    params.write_text('{"threshold": 0.01}\n')
+    config = out / "provenance/resource_limits.config"
+    config.write_text("process.cpus = 2\n")
+    reader = tmp_path / "reader"
+    reader.write_text('#!/bin/sh\ncat "$1" "$2"\n')
+    reader.chmod(0o755)
+    _write(out, input_paths=[], config_paths=(config,),
+           command_str=f"{reader} {shlex.quote(str(params))} {shlex.quote(str(config))}")
+    moved = tmp_path / "archived run with 'quotes' and $dollars"
+    out.rename(moved)
+    script = moved / "provenance/commands.sh"
+    invocation = str(script.relative_to(tmp_path)) if relative_script else str(script)
+    result = subprocess.run(["bash", invocation, "fresh"], cwd=tmp_path,
+                            capture_output=True, text=True, timeout=15)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == '{"threshold": 0.01}\nprocess.cpus = 2\n'
+
+
+def test_relative_script_path_survives_changing_into_replay_target(tmp_path):
+    _write(tmp_path / "out", input_paths=[])
+    result = subprocess.run(["bash", "out/provenance/commands.sh", "fresh"], cwd=tmp_path,
+                            capture_output=True, text=True, timeout=15)
+    assert result.returncode == 0, result.stderr
+    assert "REPLAY_RAN" in result.stdout
+
+
+def test_replay_obeys_the_same_single_writer_lock_as_nfclaw_runs(tmp_path):
+    import fcntl
+    target = tmp_path / "fresh"
     prov = _write(tmp_path / "out", input_paths=[])
-    script = (prov / "commands.sh").read_text()
-    assert "_script_dir" in script
-    assert "replay_guard.py" in script
+    with (tmp_path / ".fresh.nfclaw.lock").open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        result = subprocess.run([str(prov / "commands.sh"), str(target)],
+                                capture_output=True, text=True, timeout=15)
+    assert result.returncode != 0
+    assert "REPLAY_RAN" not in result.stdout
+    assert not target.exists()
+    assert "active" in result.stderr
+
+
+def test_replay_keeps_writer_lock_until_stopped_and_releases_it(tmp_path):
+    import fcntl
+    import shlex
+    import signal
+    import time
+    reader = tmp_path / "reader"
+    marker = tmp_path / "ready"
+    reader.write_text('#!/bin/sh\ntouch "$1"\nexec sleep 60\n')
+    reader.chmod(0o755)
+    prov = _write(tmp_path / "out", input_paths=[],
+                  command_str=f"{shlex.quote(str(reader))} {shlex.quote(str(marker))}")
+    process = subprocess.Popen([str(prov / "commands.sh"), str(tmp_path / "fresh")],
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        deadline = time.monotonic() + 10
+        while not marker.exists() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert marker.exists()
+        with (tmp_path / ".fresh.nfclaw.lock").open("r+") as lock:
+            with pytest.raises(BlockingIOError):
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            process.send_signal(signal.SIGTERM)
+            process.communicate(timeout=10)
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        assert process.returncode != 0
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.communicate(timeout=10)

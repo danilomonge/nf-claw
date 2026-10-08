@@ -707,7 +707,7 @@ def test_report_suffix_is_pinned_so_the_replay_reproduces_the_run(tmp_path, monk
     assert suffix and suffix != ""
     # commands.sh replays through the same params file, so the replay reuses this exact suffix.
     replay = (tmp_path / "out" / "provenance" / "commands.sh").read_text()
-    assert str(tmp_path / "out" / "provenance" / "params.json") in replay
+    assert '"$_script_dir"/params.json' in replay
 
 
 def test_a_release_without_the_report_suffix_param_is_untouched(tmp_path, monkeypatch):

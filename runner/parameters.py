@@ -15,6 +15,36 @@ from runner.schema import Param, ParamSchema, json_scalar
 _REPORT_SUFFIX = "trace_report_suffix"
 
 
+def _unique_pairs(pairs):
+    out = {}
+    for key, value in pairs:
+        if key in out:
+            raise ValueError(f"duplicate parameter key {key!r}")
+        out[key] = value
+    return out
+
+
+def _reject_cycles(value: Any) -> None:
+    """YAML aliases may share values, but recursive aliases have no JSON representation."""
+    active, completed = set(), set()
+    pending = [(value, False)]
+    while pending:
+        item, leaving = pending.pop()
+        if not isinstance(item, (Mapping, list, tuple)):
+            continue
+        identity = id(item)
+        if leaving:
+            active.remove(identity)
+            completed.add(identity)
+        elif identity in active:
+            raise ValueError("cyclic parameter value (recursive YAML alias)")
+        elif identity not in completed:
+            active.add(identity)
+            pending.append((item, True))
+            pending.extend((child, False) for child in
+                           (item.values() if isinstance(item, Mapping) else item))
+
+
 def validate_params(cli_overrides: dict[str, Any], schema: ParamSchema) -> list[str]:
     """Deterministic, schema-driven validation of agent-supplied flags (errors, not heuristics).
 
@@ -196,8 +226,8 @@ def load_params_file(path: Path, *, label: str = "--params-file") -> dict:
             fix="Pass a params file you can read.") from exc
     if path.suffix.lower() == ".json":
         try:
-            data = json.loads(text)
-        except json.JSONDecodeError as exc:
+            data = json.loads(text, object_pairs_hook=_unique_pairs)
+        except (ValueError, RecursionError) as exc:
             raise NfclawError(
                 ErrorCode.PARAMS_INVALID,
                 f"{label} is not valid JSON: {path} ({exc})",
@@ -212,12 +242,33 @@ def load_params_file(path: Path, *, label: str = "--params-file") -> dict:
                 fix="Use a .json params file, or `pip install pyyaml`.",
             ) from exc
         try:
-            data = yaml.safe_load(text)
+            class UniqueLoader(yaml.SafeLoader):
+                def construct_mapping(self, node, deep=False):
+                    # Check explicit keys before expanding valid YAML merge overrides.
+                    keys = set()
+                    for key_node, _ in node.value:
+                        if key_node.tag == "tag:yaml.org,2002:merge":
+                            continue
+                        key = self.construct_object(key_node, deep=deep)
+                        try:
+                            if key in keys:
+                                raise yaml.constructor.ConstructorError(
+                                    None, None, f"duplicate parameter key {key!r}", key_node.start_mark)
+                            keys.add(key)
+                        except TypeError:
+                            pass  # SafeLoader reports unhashable keys with a source location.
+                    return super().construct_mapping(node, deep=deep)
+
+            loader = UniqueLoader(text)
+            try:
+                data = loader.get_single_data()
+            finally:
+                loader.dispose()
             # Only an empty YAML document means an empty map. Falsy scalars and sequences are
             # malformed params files too; `or {}` silently discarded them.
             if data is None and yaml.compose(text) is None:
                 data = {}
-        except yaml.YAMLError as exc:
+        except (yaml.YAMLError, RecursionError) as exc:
             raise NfclawError(
                 ErrorCode.PARAMS_INVALID,
                 f"{label} is not valid YAML: {path} ({exc})",
@@ -235,6 +286,11 @@ def load_params_file(path: Path, *, label: str = "--params-file") -> dict:
         raise NfclawError(
             ErrorCode.PARAMS_INVALID, f"{label} parameter names must be strings: {path}",
             fix="Use named parameters as object keys, such as aligner: star.")
+    try:
+        _reject_cycles(data)
+    except ValueError as exc:
+        raise NfclawError(ErrorCode.PARAMS_INVALID, f"{label}: {exc}: {path}",
+                          fix="Replace recursive aliases with finite JSON-compatible values.") from exc
     return data
 
 

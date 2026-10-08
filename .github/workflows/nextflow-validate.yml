@@ -3,9 +3,9 @@ name: nextflow-validate
 # pipeline this runs `nextflow run <upstream> -profile test,docker -preview`,
 # which compiles the pipeline, resolves config + the test profile, runs the
 # nf-schema parameter validation and builds the full task DAG — then stops
-# before launching any task. It confirms each pinned pipeline is runnable up to
-# the moment of execution; the analysis itself is covered by nf-core's own
-# per-release CI. Submodules are initialised one at a time and cleaned up, so
+# before launching any task. It validates configuration and the preview DAG;
+# it does not establish task execution or biological accuracy. Upstream release
+# CI is separate evidence. Submodules are initialised one at a time and cleaned up, so
 # disk stays bounded as the library grows.
 on:
   schedule:
@@ -26,6 +26,10 @@ permissions:
 
 jobs:
   validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
     runs-on: ubuntu-latest
     env:
       NXF_ANSI_LOG: "false"
@@ -42,4 +46,38 @@ jobs:
           java-version: "17"
       - uses: ./.github/actions/setup-nextflow
       - name: Preview every pipeline through Nextflow (no task execution)
-        run: bash scripts/nextflow_accept.sh
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+          SHARD_COUNT: "8"
+          NFCLAW_RESULT_FILE: ${{ runner.temp }}/acceptance.tsv
+          NFCLAW_LOG_DIR: ${{ runner.temp }}/acceptance-logs
+        run: |
+          set -euo pipefail
+          inventory=$(nfclaw list)
+          if [ -z "$inventory" ]; then
+            echo "::error::no pipelines found"
+            exit 1
+          fi
+          names=()
+          index=0
+          while IFS=$'\t' read -r name _; do
+            [ -n "$name" ] || continue
+            if (( index % SHARD_COUNT == SHARD_INDEX )); then
+              names+=("$name")
+            fi
+            index=$((index + 1))
+          done <<< "$inventory"
+          if (( ${#names[@]} )); then
+            bash scripts/nextflow_accept.sh "${names[@]}"
+          else
+            echo "No pipelines assigned to this shard."
+          fi
+      - name: Retain acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: nextflow-acceptance-${{ matrix.shard }}
+          path: |
+            ${{ runner.temp }}/acceptance.tsv
+            ${{ runner.temp }}/acceptance-logs
+          retention-days: 14

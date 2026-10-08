@@ -4,8 +4,6 @@ import re
 import subprocess
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parent.parent
 WF = ROOT / ".github" / "workflows"
 
@@ -56,9 +54,6 @@ def test_pages_and_oidc_permissions_are_scoped_to_the_deploy_job():
         assert scope in deploy
 
 
-@pytest.mark.skipif(
-    subprocess.run(["bash", "-c", "type mapfile"], capture_output=True).returncode != 0,
-    reason="needs bash >= 4 (mapfile), as on the CI runners")
 def test_acceptance_script_fails_when_it_finds_no_pipelines(tmp_path):
     # With no arguments it validates `nfclaw list`; an empty list must fail, not pass vacuously.
     fake = tmp_path / "bin"
@@ -71,3 +66,46 @@ def test_acceptance_script_fails_when_it_finds_no_pipelines(tmp_path):
                        env=env, capture_output=True, text=True)
     assert r.returncode != 0
     assert "no pipelines" in (r.stdout + r.stderr).lower()
+
+
+def test_acceptance_script_rejects_a_failed_partial_pipeline_inventory(tmp_path):
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    (fake / "nfclaw").write_text("#!/bin/sh\necho mini\nexit 1\n")
+    (fake / "nfclaw").chmod(0o755)
+    env = {**os.environ, "PATH": f"{fake}{os.pathsep}{os.environ['PATH']}",
+           "RUNNER_TEMP": str(tmp_path)}
+    result = subprocess.run(["bash", str(ROOT / "scripts/nextflow_accept.sh")], cwd=tmp_path,
+                            env=env, capture_output=True, text=True)
+    assert result.returncode != 0
+    assert "could not list" in result.stdout
+
+
+def test_parallel_acceptance_checks_every_pipeline_exactly_once(tmp_path):
+    text = _text("nextflow-validate.yml")
+    count = int(re.search(r'SHARD_COUNT: "(\d+)"', text).group(1))
+    shards = [int(n) for n in re.search(r"shard: \[([^]]+)\]", text).group(1).split(",")]
+    assert shards == list(range(count))
+    raw = text.split("- name: Preview every pipeline", 1)[1].split("        run: |\n", 1)[1].split("\n      - name:", 1)[0]
+    script = "\n".join(line[10:] for line in raw.splitlines())
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    (fake / "nfclaw").write_text('#!/bin/sh\ncat "$INVENTORY"\nexit "${LIST_EXIT:-0}"\n')
+    (fake / "bash").write_text('#!/bin/sh\nshift\nprintf "%s\\n" "$@" >> "$CHECKED"\n')
+    for path in fake.iterdir():
+        path.chmod(0o755)
+    inventory, checked = tmp_path / "inventory", tmp_path / "checked"
+    names = [f"pipeline-{n}" for n in range(91)]
+    inventory.write_text("".join(f"{name}\tmetadata\n" for name in names))
+    env = {**os.environ, "PATH": f"{fake}{os.pathsep}{os.environ['PATH']}",
+           "INVENTORY": str(inventory), "CHECKED": str(checked), "SHARD_COUNT": str(count)}
+    for shard in shards:
+        result = subprocess.run(["/bin/bash", "-c", script], cwd=tmp_path,
+                                env={**env, "SHARD_INDEX": str(shard)}, capture_output=True)
+        assert result.returncode == 0, result.stderr
+    assert sorted(checked.read_text().splitlines()) == sorted(names)
+    checked.unlink()
+    result = subprocess.run(["/bin/bash", "-c", script], cwd=tmp_path,
+                            env={**env, "SHARD_INDEX": "0", "LIST_EXIT": "1"},
+                            capture_output=True)
+    assert result.returncode != 0 and not checked.exists()

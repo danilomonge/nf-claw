@@ -246,10 +246,9 @@ def test_last_paragraph_fallback_reaches_above_a_trailing_check_line():
 
 # --- the state of a run, read from its log alone (`nfclaw status`) -------------------------------
 
-_HOST = _socket.gethostname()
-
-
-def _block(*, pid, host=_HOST, body="", end=None, kind="run", nextflow_pid=None):
+def _block(*, pid, host=None, body="", end=None, kind="run", nextflow_pid=None):
+    if host is None:
+        host = _socket.gethostname()
     lines = [f"==> nfclaw {kind} started 2026-10-06T10:00:00+00:00", "    command: nextflow run x",
              f"    host: {host}", f"    pid: {pid}"]
     if nextflow_pid is not None:
@@ -327,6 +326,33 @@ def test_a_dead_run_reports_a_nextflow_still_running(tmp_path, named_process):
 def test_an_unfinished_run_on_another_host_is_not_judged_here(tmp_path):
     st = runlog.read_state(_log(tmp_path, _block(pid=1, host="some-other-node")))
     assert st.state == "elsewhere" and st.host == "some-other-node"
+
+
+def test_matching_host_identity_survives_a_hostname_change(tmp_path, monkeypatch):
+    monkeypatch.setattr(runlog, "host_identity", lambda: "a" * 64, raising=False)
+    monkeypatch.setattr(runlog.socket, "gethostname", lambda: "new-hostname")
+    monkeypatch.setattr(runlog, "_is_process", lambda pid, names: pid == 123)
+    text = _block(pid=123, host="old-hostname").replace(
+        "    host: old-hostname\n", "    host: old-hostname\n    host id: " + "a" * 64 + "\n")
+    assert runlog.read_state(_log(tmp_path, text)).state == "running"
+
+
+def test_matching_hostname_does_not_override_a_different_host_identity(tmp_path, monkeypatch):
+    monkeypatch.setattr(runlog, "host_identity", lambda: "a" * 64, raising=False)
+    monkeypatch.setattr(runlog, "_is_process", lambda pid, names: True)
+    text = _block(pid=123).replace("    pid: 123\n", "    host id: " + "b" * 64 + "\n    pid: 123\n")
+    assert runlog.read_state(_log(tmp_path, text)).state == "elsewhere"
+
+
+def test_foreign_host_pids_are_not_probed_in_the_local_namespace(tmp_path, monkeypatch):
+    monkeypatch.setattr(runlog, "host_identity", lambda: "a" * 64)
+    calls = []
+    monkeypatch.setattr(runlog, "_is_process", lambda pid, names: calls.append(pid) or True)
+    text = _block(pid=123, nextflow_pid=456).replace(
+        "    pid: 123\n", "    host id: " + "b" * 64 + "\n    pid: 123\n")
+    state = runlog.read_state(_log(tmp_path, text))
+    assert calls == []
+    assert state.state == "elsewhere" and state.nextflow_alive is False
 
 
 def test_a_finished_run_is_final_on_any_host(tmp_path):

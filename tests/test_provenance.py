@@ -347,6 +347,9 @@ def test_replay_header_records_who_runs_it(tmp_path):
     subprocess.run([str(prov / "commands.sh"), str(target)], capture_output=True, check=True)
     log = (target / "provenance" / "logs" / "run.log").read_text()
     assert f"    host: {socket.gethostname()}\n" in log and "    pid: " in log
+    from runner import runlog
+    if identity := runlog.host_identity():
+        assert f"    host id: {identity}\n" in log
 
 
 def test_a_stopped_replay_stops_nextflow_and_logs_the_outcome(tmp_path):

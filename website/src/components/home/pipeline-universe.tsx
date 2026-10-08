@@ -38,6 +38,7 @@ function shortLabel(category: string): string {
 
 export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }) {
   const reduce = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("All");
   const [hoverCategory, setHoverCategory] = useState<string | null>(null);
@@ -52,6 +53,7 @@ export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }
 
   // On a phone the disc is too small to tap, so the list is the better default there.
   useEffect(() => {
+    setMounted(true);
     if (window.matchMedia("(max-width: 767px)").matches) setView("grid");
   }, []);
 
@@ -388,7 +390,9 @@ export function PipelineUniverse({ pipelines }: { pipelines: PipelineSummary[] }
                         >
                           {/* generous invisible hit target */}
                           <circle cx={n.x} cy={n.y} r={Math.max(n.r + 6, 12)} fill="transparent" />
-                          {isSel && !reduce && (
+                          {/* The server cannot observe the motion preference. Add this optional
+                              element only after hydration so both initial trees agree. */}
+                          {isSel && mounted && !reduce && (
                             <motion.circle
                               cx={n.x}
                               cy={n.y}

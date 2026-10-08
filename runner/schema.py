@@ -31,6 +31,8 @@ class Param:
     min_length: int | None = None
     max_length: int | None = None
     deprecated: bool = False
+    # A path format alone does not require an existing input: output/cache directories use it too.
+    exists: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -167,6 +169,7 @@ def load_param_schema(repo: Path) -> ParamSchema:
                 min_length=pobj.get("minLength"),
                 max_length=pobj.get("maxLength"),
                 deprecated=bool(pobj.get("deprecated", False)),
+                exists=pobj.get("exists") if isinstance(pobj.get("exists"), bool) else None,
             )
     return ParamSchema(
         title=str(data.get("title") or repo.name),

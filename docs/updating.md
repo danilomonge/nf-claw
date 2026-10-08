@@ -15,7 +15,8 @@ nf-claw maintains synchronization with upstream nf-core pipeline releases throug
 Tracking policies are declared in `sources.tsv`:
 - Each row contains `name<TAB>url<TAB>version-policy`.
 - The primary policy is `latest-release`, directing automation to track the newest official git release tag.
-- Submodules pin immutable release tags (e.g. `tags/3.18.0`), never moving branches (`master`, `main`, `dev`).
+- Submodules pin exact commits resolved from release tags. Tags can be moved upstream, but a
+  committed gitlink remains tied to its recorded commit until deliberately updated.
 
 ---
 
@@ -44,7 +45,7 @@ The `.github/workflows/auto-update.yml` workflow executes daily:
    - Executes the complete pytest suite.
    - Runs the drift gate (`python3 -m librarian.check_drift`).
 5. **Automated Merging:** Only when all validation checks pass with exit code 0 is the PR automatically merged into `main`, which dispatches `deploy-pages.yml` to refresh the live site.
-6. **Error Resiliency:** If any remote repository cannot be reached, the maintenance scan fails immediately rather than silently treating the failure as "no new releases."
+6. **Error Reporting:** The maintenance scan attempts every source and returns failure after the scan if any remote could not be reached, rather than reporting that failure as "no new releases."
 
 ---
 
@@ -54,15 +55,16 @@ The `.github/workflows/discover-pipelines.yml` workflow runs weekly to onboard n
 
 1. **DSL2 Filtering:** Inspects the nf-core pipeline registry, onboarding only **DSL2** pipelines (legacy DSL1 workflows are permanently ignored).
 2. **Name Sanitization & Security:**
-   - Every candidate pipeline name is strictly validated: must consist solely of alphanumeric characters, dots, hyphens, and underscores, bounded by alphanumeric characters:
+   - Every candidate pipeline name is strictly validated: alphanumeric characters, dots, hyphens, and underscores, bounded by alphanumeric characters:
      ```regex
-     ^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$
+     ^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?$
      ```
    - Remotes are deterministically constructed as `https://github.com/nf-core/<validated-name>.git`. Mutable catalog metadata cannot redirect automation to external repositories.
 3. **Scaffolding:** Adds the submodule, pins its newest release tag, and generates initial context files.
 4. **Strict Acceptance Gate:** Evaluates each candidate via `scripts/nextflow_accept.sh`.
    - Nextflow must compile, resolve configurations, and validate schema with **strict exit code 0**.
-   - Any failure, timeout, or unresolved remote test data staging results in rejection (`staging-unverified`).
+   - A recognized remote-input staging failure is labelled `staging-unverified`; other failures
+     and timeouts are `rejected`. Both verdicts fail the gate.
    - Rejected pipelines are pruned before committing.
 5. **Batch Auto-Merge:** Validated additions that pass tests and drift checks are committed and merged.
 
