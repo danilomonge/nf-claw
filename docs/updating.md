@@ -1,8 +1,12 @@
 # Automated Updating & Maintenance
 
-nf-claw maintains synchronization with upstream nf-core pipeline releases through fully automated
-workflows and a strict, bidirectional schema drift gate. No context file (`skill.md`, `reference.md`,
-or `catalog.*`) is ever edited manually.
+nf-claw maintains synchronization with upstream nf-core pipeline releases through fully automated workflows and a strict, bidirectional schema drift gate. No context file (`skill.md`, `reference.md`, or `catalog.*`) is ever edited manually.
+
+---
+
+### Navigation
+
+[Version Policy](#1-version-policy--upstream-tracking) • [Daily Updates](#2-automated-daily-updates-auto-updateyml) • [Weekly Discovery](#3-automated-weekly-discovery-discover-pipelinesyml) • [Schema Drift Gate](#4-the-schema-drift-gate-librariancheck_driftpy) • [Maintenance Commands](#5-manual-maintenance-commands)
 
 ---
 
@@ -19,21 +23,28 @@ Tracking policies are declared in `sources.tsv`:
 
 The `.github/workflows/auto-update.yml` workflow executes daily:
 
-1. **Tag Discovery:** Queries upstream remotes via `git ls-remote --tags` (using standard git protocol to
-   bypass GitHub REST API rate limits).
-2. **Deterministic Bumping:** When a newer release tag is discovered for a `latest-release` pipeline, the
-   workflow checks out that tag in `pipelines/<name>/upstream`.
-3. **Context Regeneration:** Invokes `librarian/write_skill.py` and `librarian/write_catalog.py` to regenerate
-   all parameter tables, input schemas, tool lists, and catalog manifests.
+```
+┌─────────────────────────┐     ┌───────────────────────────┐     ┌─────────────────────────┐
+│ 1. Git Tag Discovery    │ ──► │ 2. Submodule Checkout     │ ──► │ 3. Context Generation   │
+│ git ls-remote --tags    │     │ Pinned to latest tag      │     │ make build              │
+└─────────────────────────┘     └───────────────────────────┘     └─────────────────────────┘
+                                                                               │
+                                ┌───────────────────────────┐                  ▼
+                                │ 5. Automated Merge        │ ◄── ┌─────────────────────────┐
+                                │ Fast-forward to main      │     │ 4. Validation Gate      │
+                                └───────────────────────────┘     │ Nextflow + Tests + Drift│
+                                                                  └─────────────────────────┘
+```
+
+1. **Tag Discovery:** Queries upstream remotes via `git ls-remote --tags` (using standard git protocol to bypass GitHub REST API rate limits).
+2. **Deterministic Bumping:** When a newer release tag is discovered for a `latest-release` pipeline, the workflow checks out that tag in `pipelines/<name>/upstream`.
+3. **Context Regeneration:** Invokes `librarian/write_skill.py` and `librarian/write_catalog.py` to regenerate all parameter tables, input schemas, tool lists, and catalog manifests.
 4. **Comprehensive In-Job Validation:**
-   - Runs `scripts/nextflow_accept.sh` (`nextflow -preview`) to verify pipeline compilation, profile resolution,
-     and parameter validation.
+   - Runs `scripts/nextflow_accept.sh` (`nextflow -preview`) to verify pipeline compilation, profile resolution, and parameter validation.
    - Executes the complete pytest suite.
    - Runs the drift gate (`python3 -m librarian.check_drift`).
-5. **Automated Merging:** Only when all validation checks pass with exit code 0 is the PR automatically merged
-   into `main`, which dispatches `deploy-pages.yml` to refresh the live site.
-6. **Error Resiliency:** If any remote repository cannot be reached, the maintenance scan fails immediately
-   rather than silently treating the failure as "no new releases."
+5. **Automated Merging:** Only when all validation checks pass with exit code 0 is the PR automatically merged into `main`, which dispatches `deploy-pages.yml` to refresh the live site.
+6. **Error Resiliency:** If any remote repository cannot be reached, the maintenance scan fails immediately rather than silently treating the failure as "no new releases."
 
 ---
 
@@ -41,13 +52,13 @@ The `.github/workflows/auto-update.yml` workflow executes daily:
 
 The `.github/workflows/discover-pipelines.yml` workflow runs weekly to onboard newly created nf-core pipelines:
 
-1. **DSL2 Filtering:** Inspects the nf-core pipeline registry, onboarding only **DSL2** pipelines (legacy DSL1
-   workflows are permanently ignored).
+1. **DSL2 Filtering:** Inspects the nf-core pipeline registry, onboarding only **DSL2** pipelines (legacy DSL1 workflows are permanently ignored).
 2. **Name Sanitization & Security:**
-   - Every candidate pipeline name is strictly validated: must consist solely of alphanumeric characters,
-     dots, hyphens, and underscores, bounded by alphanumeric characters (`^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$`).
-   - Remotes are deterministically constructed as `https://github.com/nf-core/<validated-name>.git`. Mutable
-     catalog metadata cannot redirect automation to external repositories.
+   - Every candidate pipeline name is strictly validated: must consist solely of alphanumeric characters, dots, hyphens, and underscores, bounded by alphanumeric characters:
+     ```regex
+     ^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$
+     ```
+   - Remotes are deterministically constructed as `https://github.com/nf-core/<validated-name>.git`. Mutable catalog metadata cannot redirect automation to external repositories.
 3. **Scaffolding:** Adds the submodule, pins its newest release tag, and generates initial context files.
 4. **Strict Acceptance Gate:** Evaluates each candidate via `scripts/nextflow_accept.sh`.
    - Nextflow must compile, resolve configurations, and validate schema with **strict exit code 0**.
@@ -61,17 +72,14 @@ The `.github/workflows/discover-pipelines.yml` workflow runs weekly to onboard n
 
 The drift gate guards against divergence between pinned code and documentation:
 
-- **Manifest Equivalence:** Verifies that `sources.tsv`, `.gitmodules`, and filesystem directories in
-  `pipelines/` describe the exact same pipeline set and remote URLs.
-- **Context Parity:** Recompiles `skill.md`, `reference.md`, `catalog.json`, and `catalog.md` in memory and
-  asserts character-for-character equivalence with committed files on disk.
-- **Handoff Schema Verification:** Validates that every parameter mapping and column transformation in
-  `handoffs/*.json` remains valid against the schemas of both participating pipelines.
-- **Agent Guidelines Sync:** `tests/test_agent_docs.py` verifies that `AGENTS.md` and `CLAUDE.md` remain
-  100% byte-identical.
+| Audit Check | Component Validated | Validation Mechanism |
+|---|---|---|
+| **Manifest Equivalence** | `sources.tsv`, `.gitmodules`, `pipelines/` | Asserts exact equality of pipeline inventory and git remote URLs. |
+| **Context Parity** | `skill.md`, `reference.md`, `catalog.*` | Recompiles context in memory and verifies character-for-character equality against disk. |
+| **Handoff Verification** | `handoffs/*.json` rules | Validates that parameter mappings and column transformations fit pinned upstream and downstream schemas. |
+| **Agent Guidelines Parity** | `AGENTS.md` and `CLAUDE.md` | `tests/test_agent_docs.py` enforces 100% byte-for-byte identity. |
 
-If any upstream pipeline is updated without regenerating context, or if a manual edit is introduced,
-`make check` fails immediately.
+If any upstream pipeline is updated without regenerating context, or if a manual edit is introduced, `make check` fails immediately.
 
 ---
 
@@ -79,9 +87,9 @@ If any upstream pipeline is updated without regenerating context, or if a manual
 
 Developers can run maintenance tasks locally:
 
-```bash
-make update    # Check remotes, bump submodules to latest tags, and regenerate context
-make build     # Regenerate skill.md, reference.md, and catalog.* from current submodules
-make check     # Run schema drift gate and complete test suite
-make test      # Run full pytest suite
-```
+| Command | Action |
+|---|---|
+| `make update` | Queries remotes, bumps submodules to newest tags, and regenerates context files. |
+| `make build` | Regenerates `skill.md`, `reference.md`, and `catalog.*` from current submodules. |
+| `make check` | Runs the schema drift gate followed by the full pytest suite. |
+| `make test` | Executes all unit, integration, and regression tests. |

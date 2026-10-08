@@ -1,13 +1,11 @@
 # Chaining Pipelines
 
-`nfclaw chain run` executes multiple nf-core pipelines in sequence (e.g. `fetchngs` → `rnaseq` → `differentialabundance`),
-initiating each subsequent stage only after the preceding stage has **succeeded**, and automatically preparing
-downstream inputs from upstream outputs.
+`nfclaw chain run` executes multiple nf-core pipelines in sequence (e.g. `fetchngs` → `rnaseq` → `differentialabundance`), initiating each subsequent stage only after the preceding stage has **succeeded**, and automatically preparing downstream inputs from upstream outputs.
 
 It functions as a linear orchestrator:
-- No complex DAG syntax, no daemon, no external scheduler.
-- Every stage executes as a full, standard `nfclaw run` inside `<outdir>/NN-<stage>/`, with its own preflight parameter validation, sibling directory locking, run log, and provenance bundle.
-- Durable chain state, handoff snapshots, and unified logs are maintained in `<outdir>/chain/`.
+- **No Complex Daemons:** No complex DAG syntax, no daemon processes, and no external scheduler dependencies.
+- **Stage Isolation:** Every stage executes as a full, standard `nfclaw run` inside `<outdir>/NN-<stage>/`, with its own preflight parameter validation, sibling directory locking, run log, and provenance bundle.
+- **Durable Orchestration:** Durable chain state, handoff snapshots, and unified logs are maintained in `<outdir>/chain/`.
 
 ```bash
 nfclaw chain edges                                       # list all registered pipeline handoffs
@@ -19,11 +17,15 @@ nfclaw chain status /abs/chain                           # inspect stage outcome
 
 ---
 
+### Navigation
+
+[Specification Format](#1-the-specification-file-specjson) • [Execution Lifecycle](#2-execution-lifecycle) • [Handoff Rules](#3-handoff-rules-and-transformations) • [Failure & Resume](#4-failure-recovery-and-resume) • [Cryptographic Lineage](#5-provenance-and-cryptographic-lineage)
+
+---
+
 ## 1. The Specification File (`spec.json`)
 
-The chain spec is written in JSON (or YAML if `pyyaml` is installed). Relative file paths in the spec
-resolve against the directory where `nfclaw` was invoked. The spec recorded in `<outdir>/chain/chain.json`
-is normalized to absolute paths.
+The chain spec is authored in JSON (or YAML if `pyyaml` is installed). Relative file paths in the spec resolve against the caller's working directory. The specification recorded in `<outdir>/chain/chain.json` is normalized to absolute paths.
 
 ```json
 {
@@ -48,14 +50,14 @@ is normalized to absolute paths.
 ### Chain-Level Options
 These settings apply globally to all stages unless overridden by an individual stage:
 
-| Option | Type | Description |
-|---|---|---|
-| `profile` | string | Nextflow profile (default: `docker`). |
-| `nxf_ver` | string | Pin the Nextflow engine version (`NXF_VER`) across all stages. |
-| `nxf_env` | object | Environment variables passed to Nextflow (e.g., `{"NXF_OFFLINE": "true"}`). |
-| `config` | array of strings | Extra Nextflow configuration files passed via `-c`. |
-| `limits` | object | Global resource ceiling: `{"cpus": N, "memory": "SIZE", "time": "DURATION"}`. Translates to Nextflow's `process.resourceLimits`. |
-| `allow_spaces` | boolean | Allow paths containing spaces (default: `false`). |
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `profile` | string | `"docker"` | Nextflow execution profile. |
+| `nxf_ver` | string | `null` | Pin Nextflow engine version (`NXF_VER`) across all stages. |
+| `nxf_env` | object | `{}` | Environment variables passed to Nextflow (e.g. `{"NXF_OFFLINE": "true"}`). |
+| `config` | array | `[]` | Additional Nextflow configuration files passed via `-c`. |
+| `limits` | object | `null` | Global resource ceiling: `{"cpus": N, "memory": "SIZE", "time": "DURATION"}`. |
+| `allow_spaces` | boolean | `false` | Allow filesystem paths containing spaces. |
 
 ### Stage-Level Keys
 Options set on a stage override or merge with chain-level options:
@@ -64,16 +66,16 @@ Options set on a stage override or merge with chain-level options:
 |---|---|---|---|
 | `pipeline` | string | Yes | Name of a tracked pipeline in the library. |
 | `id` | string | No | Unique stage identifier (default: pipeline name; must match `^[a-z0-9][a-z0-9_-]*$`). |
-| `input` | string | No | Explicit `--input` for the stage (typically only passed for stage 1; overrides handoff input if provided). |
-| `params` | object | No | Pipeline-specific parameters (e.g., `{"genome": "GRCh38", "aligner": "star_salmon"}`). Look up allowed flags in the pipeline's `reference.md`. |
-| `params_file` | string | No | Path to a parameter JSON/YAML file. |
-| `pipeline_version` | string | No | Pinned release tag (e.g., `3.14.0`) or `dev`. |
+| `input` | string | No | Explicit `--input` for the stage (typically passed for stage 1; overrides handoff input if provided). |
+| `params` | object | No | Pipeline-specific parameters (e.g. `{"genome": "GRCh38", "aligner": "star_salmon"}`). |
+| `params_file` | string | No | Path to an external parameter JSON or YAML file. |
+| `pipeline_version` | string | No | Pinned release tag (e.g. `3.14.0`) or unreleased `dev`. |
 | `demo` | boolean | No | Appends the pipeline's bundled `test` profile. |
-| `retries` | integer | No | Maximum automatic retries (using Nextflow `-resume`) upon task or pipeline failure (default: `0`). Never retries on parameter or schema validation errors. |
-| `handoff` | object or string | No | Custom inline handoff rule object or path to a custom rule JSON file, replacing the library registry rule. |
+| `retries` | integer | No | Maximum automatic retries (using Nextflow `-resume`) upon task or pipeline failure (default: `0`). Never retries on schema errors. |
+| `handoff` | object/string | No | Custom inline handoff rule object or path to a custom rule JSON file, replacing the library registry rule. |
 | `nxf_ver` | string | No | Overrides engine version for this specific stage (essential when chaining an older pipeline release with a modern one). |
 | `nxf_env` | object | No | Merges stage-specific `NXF_*` environment variables over chain-level variables. |
-| `config` | array of strings | No | Additional stage-specific configuration files passed via `-c`. |
+| `config` | array | No | Additional stage-specific configuration files passed via `-c`. |
 | `limits` | object | No | Stage-specific resource ceilings overriding chain-level limits. |
 
 ---
@@ -121,13 +123,12 @@ Before starting any process, `nfclaw chain run` validates:
 
 ## 3. Handoff Rules and Transformations
 
-Handoff rules describe how outputs published by an upstream pipeline are adapted into inputs for
-a downstream pipeline. Registered rules reside in `handoffs/<upstream>/<downstream>.json`.
+Handoff rules describe how outputs published by an upstream pipeline are adapted into inputs for a downstream pipeline. Registered rules reside in `handoffs/<upstream>/<downstream>.json`.
 
 Example: `handoffs/fetchngs/rnaseq.json`:
 ```json
 {
-  "description": "feed fetched FASTQ samplesheet into rnaseq",
+  "description": "Feed fetched FASTQ samplesheet into rnaseq",
   "upstream_params": {
     "nf_core_pipeline": "rnaseq"
   },
@@ -141,6 +142,7 @@ Example: `handoffs/fetchngs/rnaseq.json`:
 ```
 
 ### Parameter Source Types
+
 | Source Type | Description | Example |
 |---|---|---|
 | `samplesheet` | Copies and adapts an upstream samplesheet. `provides` declares guaranteed columns checked during static drift checks. | `fetchngs` → `rnaseq`, `fetchngs` → `mag` |
@@ -156,38 +158,40 @@ When `samplesheet` is used, transformations are applied in a strict, predictable
 4. `drop_rows_not_allowed`: Filter out rows containing values rejected by the downstream schema.
 5. `require_values`: Assert that specific columns must contain non-empty values before launch.
 
-### Metagenomic Co-Assembly Safety
-In metagenomic workflows (`fetchngs` → `mag`, `detaxizer` → `mag`), nf-core/mag treats identical sample `group` identifiers as an instruction to pool reads across samples for co-assembly. To preserve biological integrity:
-- The default registered rules assign each sample its own independent group: `"group": "{sample}"`.
-- Pooling samples requires an explicit custom inline handoff rule accompanied by domain justification.
+> [!IMPORTANT]
+> **Metagenomic Co-Assembly Safety:**
+> In metagenomic workflows (`fetchngs` → `mag`, `detaxizer` → `mag`), nf-core/mag treats identical sample `group` identifiers as an instruction to pool reads across samples for co-assembly. To preserve biological integrity:
+> - The default registered rules assign each sample its own independent group: `"group": "{sample}"`.
+> - Pooling samples requires an explicit custom inline handoff rule accompanied by domain justification.
 
 ---
 
 ## 4. Failure, Recovery and Resume
 
-| Condition | Behavior |
-|---|---|
-| Preflight check failure | No processes launched; exits with code `1`. |
-| Pipeline failure with `retries > 0` | The failed stage is automatically relaunched using Nextflow `-resume`. |
-| Exhausted retries or non-retryable failure | Chain execution halts immediately; downstream stages remain `pending`; exits with code `1`. |
-| Handoff generation failure (`[handoff_failed]`) | Upstream stage is marked succeeded; downstream stage is not launched; exits with code `1`. |
-| Interrupt signal (`SIGINT`, `SIGTERM`, `SIGHUP`) | Running stage shuts down Nextflow cleanly; exits with code `128 + signal` or `130`. |
+| Condition | Engine Behavior | Exit Code |
+|---|---|---|
+| **Preflight check failure** | No processes launched; detailed error diagnostic printed. | `1` |
+| **Pipeline failure with `retries > 0`** | The failed stage is automatically relaunched using Nextflow `-resume`. | — |
+| **Exhausted retries or non-retryable failure** | Chain execution halts immediately; downstream stages remain `pending`. | `1` |
+| **Handoff generation failure (`[handoff_failed]`)** | Upstream stage marked succeeded; downstream stage not launched. | `1` |
+| **Interrupt signal (`SIGINT`, `SIGTERM`, `SIGHUP`)** | Running stage shuts down Nextflow cleanly; logs finalized. | `128 + signal` / `130` |
 
 ### Resuming a Failed Chain
 To continue a chain after fixing a parameter or environmental issue:
 ```bash
 nfclaw chain run spec.json --outdir /abs/chain --resume
 ```
+
 When resuming:
-1. Succeeded stages are frozen and verified: modifying the spec for an already-succeeded stage is rejected.
-2. The failed stage resumes execution using Nextflow's cached intermediate tasks.
-3. New stages may be appended to the end of a completed chain to extend an existing analysis.
+1. **Succeeded Stages Frozen:** Succeeded stages are frozen and verified; modifying the spec for an already-succeeded stage is rejected.
+2. **Cached Retries:** The failed stage resumes execution using Nextflow's cached intermediate tasks.
+3. **Pipeline Extension:** New stages may be appended to the end of a completed chain to extend an existing analysis.
 
 ---
 
 ## 5. Provenance and Cryptographic Lineage
 
-Chaining maintains complete cryptographic lineage:
+Chaining maintains complete cryptographic lineage across workflows:
 - Each stage's `run_manifest.json` contains a `chain` block recording chain ID, stage index, and upstream dependencies.
 - Downstream stages record the SHA-256 digest of the handoff specification and input samplesheet in `inputs.sha256`.
 - Upstream outputs are verified against `outputs.sha256` before ingestion by downstream handoffs.
@@ -196,6 +200,7 @@ Chaining maintains complete cryptographic lineage:
 ```bash
 nfclaw chain status /abs/chain
 ```
+
 The status command:
 1. Validates that every completed stage manifest matches the recorded chain state.
 2. Checks that live stage outputs on disk match their original `outputs.sha256` digests.
