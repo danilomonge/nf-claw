@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Sparkles, Boxes, Workflow, SlidersHorizontal, Puzzle, ChevronDown } from "lucide-react";
+import { ArrowRight, Sparkles, Boxes, Workflow, SlidersHorizontal, Puzzle, ChevronDown, Github } from "lucide-react";
 import { Counter } from "@/components/ui/counter";
 import { logoSrc } from "@/components/ui/logo";
 import { InlineMarkdown } from "@/components/ui/inline-markdown";
@@ -25,6 +25,25 @@ export function Hero({
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.9, ease: EASE, delay },
   });
+
+  const repoUrl = meta.remote ? `https://github.com/${meta.remote}` : null;
+  const mark = (
+    <motion.div
+      className="relative overflow-hidden rounded-[28px] shadow-glow ring-1 ring-white/10 transition-shadow duration-300 group-hover:ring-claw-400/40"
+      whileHover={reduce ? undefined : { scale: 1.04, rotate: -2 }}
+      whileTap={reduce ? undefined : { scale: 0.97 }}
+      transition={{ type: "spring", stiffness: 300, damping: 18 }}
+    >
+      <Image
+        src={asset(logoSrc(144))}
+        alt="nf-claw"
+        width={132}
+        height={132}
+        priority
+        className="h-[104px] w-[104px] object-cover sm:h-[112px] sm:w-[112px] md:h-[132px] md:w-[132px]"
+      />
+    </motion.div>
+  );
 
   const stats = [
     { label: "Pipelines", value: meta.stats.pipelines, icon: Workflow, href: "/pipelines/" },
@@ -79,23 +98,30 @@ export function Hero({
           </motion.div>
         )}
 
-        {/* brand mark */}
+        {/* brand mark — opens the repository */}
         <motion.div {...fade(0.05)} className="relative mb-9">
           <div className="absolute inset-0 -z-10 animate-pulse-ring rounded-3xl bg-claw-500/20 blur-2xl" />
-          <motion.div
-            className="relative overflow-hidden rounded-[28px] shadow-glow ring-1 ring-white/10"
-            whileHover={reduce ? undefined : { scale: 1.04, rotate: -2 }}
-            transition={{ type: "spring", stiffness: 300, damping: 18 }}
-          >
-            <Image
-              src={asset(logoSrc(144))}
-              alt="nf-claw"
-              width={132}
-              height={132}
-              priority
-              className="h-[104px] w-[104px] object-cover sm:h-[112px] sm:w-[112px] md:h-[132px] md:w-[132px]"
-            />
-          </motion.div>
+          {repoUrl ? (
+            <a
+              href={repoUrl}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="nf-claw on GitHub (opens in a new tab)"
+              title="View nf-claw on GitHub"
+              className="group relative block rounded-[28px] focus-visible:outline-offset-4"
+            >
+              {mark}
+              {/* where the click goes, shown on hover and keyboard focus */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -bottom-2 -right-2 inline-flex h-9 w-9 scale-75 items-center justify-center rounded-full border border-white/15 bg-ink-900 text-fog opacity-0 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.9)] transition duration-300 ease-out group-hover:scale-100 group-hover:border-claw-400/40 group-hover:opacity-100 group-focus-visible:scale-100 group-focus-visible:opacity-100"
+              >
+                <Github className="h-4 w-4" />
+              </span>
+            </a>
+          ) : (
+            mark
+          )}
         </motion.div>
 
         <motion.p {...fade(0.1)} className="eyebrow mb-5">
