@@ -9,6 +9,7 @@ has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2, strandedness, seq_platform, seq_center, genome_bam, transcriptome_bam, percent_mapped)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
 tools: ["BBMap", "BEDTools", "Bowtie2", "Bracken", "fastp", "FastQC", "featureCounts", "fq", "GffRead", "HISAT2", "Kallisto", "Kraken2", "MultiQC", "picard-tools", "preseq", "Qualimap 2", "RiboDetector", "RSEM", "RustQC", "RSeQC", "Salmon", "SeqKit", "SAMtools", "SortMeRNA", "STAR", "StringTie2", "Sylph", "Trim Galore!", "tximport", "UCSC tools", "UMI-tools", "UMICollapse", "R", "DESeq2", "dupRadar", "ggplot2", "optparse", "pheatmap", "RColorBrewer", "SummarizedExperiment", "Tximeta"]
+feeds: ["differentialabundance"]
 ---
 # rnaseq
 
@@ -94,6 +95,17 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/rnaseq/blob/3.27.0/docs/output.md
 
 Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
+
+## Chaining
+Run rnaseq as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges rnaseq`.
+
+Feeds into:
+- `differentialabundance` — rnaseq's merged gene counts (and gene lengths) become differentialabundance's --matrix and --feature-length-matrix — from the alignment-based quantification when rnaseq ran one, otherwise its pseudo-aligner — with the GTF the rnaseq run used. The experimental design (--input, sample names as in rnaseq) and --contrasts describe your study and go in the stage's own params.
+
+Fed by:
+- `bamtofastq` — bamtofastq publishes converted paired-end reads as reads/<sample>_1.merged.fastq.gz and _2; one rnaseq row per sample, strandedness detected by rnaseq (auto). Single-end conversions (reads/<sample>.merged.fastq.gz) need an inline handoff.
+- `demultiplex` — demultiplex writes samplesheet/rnaseq_samplesheet.csv for its demultiplexed FastQ files (strandedness from its --strandedness, default auto).
+- `fetchngs` — fetchngs downloads the FastQ files and, with --nf-core-pipeline rnaseq, writes samplesheet/samplesheet.csv for rnaseq (absolute FastQ paths; strandedness from --nf-core-rnaseq-strandedness, default auto).
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: BBMap, BEDTools, Bowtie2, Bracken, fastp, FastQC, featureCounts, fq, GffRead, HISAT2, Kallisto, Kraken2, MultiQC, picard-tools, preseq, Qualimap 2, RiboDetector, RSEM, RustQC, RSeQC, Salmon, SeqKit, SAMtools, SortMeRNA, STAR, StringTie2, Sylph, Trim Galore!, tximport, UCSC tools, UMI-tools, UMICollapse, R, DESeq2, dupRadar, ggplot2, optparse, pheatmap, RColorBrewer, SummarizedExperiment, Tximeta.

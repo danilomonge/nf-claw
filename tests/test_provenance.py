@@ -323,6 +323,17 @@ def test_replay_log_is_not_counted_as_a_replayed_output(tmp_path):
     assert provenance.output_checksums(target) == {}
 
 
+def test_manifest_records_the_chain_link_only_when_given(tmp_path):
+    # A plain run's manifest is unchanged; a chain stage's names the chain and the run feeding it.
+    provenance.write(outdir=tmp_path / "a", pipeline="mini", command_str="nextflow run x",
+                     submodule=_st(tmp_path / "up"), input_paths=[])
+    assert "chain" not in json.loads((tmp_path / "a/provenance/run_manifest.json").read_text())
+    link = {"id": "c1", "stage": "mini", "index": 2, "upstream": {"stage": "up"}}
+    provenance.write(outdir=tmp_path / "b", pipeline="mini", command_str="nextflow run x",
+                     submodule=_st(tmp_path / "up"), input_paths=[], chain=link)
+    assert json.loads((tmp_path / "b/provenance/run_manifest.json").read_text())["chain"] == link
+
+
 def test_replay_header_records_who_runs_it(tmp_path):
     import socket
     import subprocess

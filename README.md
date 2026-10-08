@@ -20,6 +20,8 @@ interface to the whole library (pipelines, parameters, docs and automation), reb
   (the authors' own one-paragraph description from the pipeline README; in `skill.md` and
   `catalog.json`) and `tools` (the methods it runs, from the pipeline's own `CITATIONS.md`)
 - `sources.tsv` — the source list (name, url, version policy)
+- `handoffs/` — the rules for chaining pipelines (`handoffs/<upstream>/<downstream>.json`), checked
+  against the pinned schemas by the drift gate
 
 Design details (the three zones and how generation stays drift-free): [`docs/architecture.md`](docs/architecture.md).
 Version/engine compatibility (DSL2-only; each release runs with the Nextflow version it declares): [`docs/compatibility.md`](docs/compatibility.md).
@@ -46,6 +48,13 @@ nfclaw run  rnaseq --pipeline-version dev --input samplesheet.csv --outdir resul
 # pin the Nextflow engine / set NXF_* for one run (both recorded in provenance)
 nfclaw run rnaseq --nxf-ver 25.10.2 --input ss.csv --outdir results -profile docker  # if a newer Nextflow breaks the release
 nfclaw run rnaseq --nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true ...      # IPv6-only host (JVM → GitHub)
+
+# chain pipelines: each starts only after the previous one succeeded, its inputs prepared from
+# that one's outputs (spec format, rules and failure modes: docs/chaining.md)
+nfclaw chain edges fetchngs                              # what fetchngs can feed
+nfclaw chain run spec.json --outdir /abs/chain --check   # validate every stage + handoff, run nothing
+nfclaw chain run spec.json --outdir /abs/chain           # run; --resume continues a failed chain
+nfclaw chain status /abs/chain                           # stages, versions, verified lineage
 
 # cap what the run may request, for a machine smaller than nf-core's server-sized defaults
 nfclaw run rnaseq --input ss.csv --outdir results -profile docker \

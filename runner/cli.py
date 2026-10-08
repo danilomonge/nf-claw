@@ -2,18 +2,13 @@ from __future__ import annotations
 
 import argparse
 import os
-import re
 import shlex
 import sys
 from pathlib import Path
 
-from runner import (discovery, execution, nextflow_command, orchestration, resources, runlog,
-                    verify, versions)
+from runner import (chain, discovery, execution, handoff, nextflow_command, orchestration,
+                    resources, runlog, verify, versions)
 from runner.errors import ErrorCode, NfclawError
-
-
-_ENV_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-_NXF_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:-edge)?$")
 
 
 def _repo_root() -> Path:
@@ -28,26 +23,8 @@ def _repo_root() -> Path:
 
 
 def _parse_nxf_env(items: list[str]) -> dict[str, str]:
-    """Parse repeatable `--nxf-env KEY=VALUE` into a dict, restricted to `NXF_*` variables.
-
-    Restricting to NXF_* keeps the knob focused on Nextflow's own runtime (and the provenance
-    record meaningful); any other environment a run needs is still inherited from the shell."""
-    env: dict[str, str] = {}
-    for item in items:
-        key, sep, value = item.partition("=")
-        key = key.strip()
-        if not sep:
-            raise NfclawError(ErrorCode.PARAMS_INVALID,
-                              f"--nxf-env must be KEY=VALUE (got {item!r}).")
-        if not key.startswith("NXF_"):
-            raise NfclawError(ErrorCode.PARAMS_INVALID,
-                              f"--nxf-env only accepts NXF_* variables (got {key!r}); "
-                              "other environment is inherited from the shell.")
-        if not _ENV_NAME_RE.fullmatch(key):
-            raise NfclawError(ErrorCode.PARAMS_INVALID,
-                              f"--nxf-env has an invalid environment variable name: {key!r}.")
-        env[key] = value
-    return env
+    """Repeatable `--nxf-env KEY=VALUE` into a dict of `NXF_*` variables (see resources)."""
+    return resources.parse_nxf_env(items)
 
 
 def _positive_int(raw: str) -> int:
@@ -58,11 +35,10 @@ def _positive_int(raw: str) -> int:
 
 
 def _nxf_version(raw: str) -> str:
-    if not _NXF_VERSION_RE.fullmatch(raw):
-        raise argparse.ArgumentTypeError(
-            "must be a full Nextflow version such as 25.10.2 or 25.10.2-edge"
-        )
-    return raw
+    try:
+        return resources.check_nxf_version(raw)
+    except NfclawError as exc:
+        raise argparse.ArgumentTypeError(exc.message) from None
 
 
 def _collect_overrides(extras: list[str]) -> dict:
@@ -91,6 +67,61 @@ def _collect_overrides(extras: list[str]) -> dict:
                 fix="Pipeline parameters must be passed as --param value or --param=value.",
             )
     return out
+
+
+def _stop_words(exc: BaseException) -> str:
+    return f"stopped by {exc.name}" if isinstance(exc, execution.Terminated) else "interrupted"
+
+
+def _stopped(exc: BaseException, log: Path) -> int:
+    """Say that a stop signal (or Ctrl-C) ended the run, and return the shell's exit status for it."""
+    print(f"nfclaw: {_stop_words(exc)}; any Nextflow run it had started was shut down."
+          + (f" Log: {log}" if log.is_file() else ""), file=sys.stderr)
+    return 128 + exc.signum if isinstance(exc, execution.Terminated) else 130
+
+
+def _chain(args: argparse.Namespace, parser: argparse.ArgumentParser, root: Path, warn) -> int:
+    if args.chain_cmd == "edges":
+        try:
+            rules = handoff.load_registry(root)
+        except NfclawError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        for (up, down), rule in sorted(rules.items()):
+            if args.name in (None, up, down):
+                print(f"{up}\t{down}\t{rule.description}")
+        return 0
+    if args.chain_cmd == "status":
+        try:
+            state, problems = chain.status(Path(args.outdir))
+        except NfclawError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        print(chain.format_status(state, problems), end="")
+        return chain.status_exit_code(state, problems)
+    if args.spec is None and not args.resume:
+        parser.error("chain run needs a spec file (or --resume an existing chain)")
+    outdir = Path(args.outdir).expanduser().resolve()
+    try:
+        spec = chain.load_spec(Path(args.spec).expanduser()) if args.spec else None
+        # As for `run`: `kill` or a closing terminal stop the running stage the way Ctrl-C does.
+        with execution.stop_on_signals():
+            res = chain.run_chain(spec, repo_root=root, outdir=outdir, check_only=args.check,
+                                  resume=args.resume, timeout_seconds=args.timeout,
+                                  on_warning=warn)
+    except NfclawError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    except (execution.Terminated, KeyboardInterrupt) as exc:
+        return _stopped(exc, outdir / chain.RECORD_DIRNAME / "logs" / chain.LOG_NAME)
+    for dirname, command in res.commands:                     # --check
+        print(f"# {dirname}\n{command}")
+    print(f"chain: {res.outcome} — {outdir}")
+    for s in res.stages:
+        print(f"  {s['index']:02d}-{s['id']}\t{s['status']}\t{s['outdir']}")
+    if res.log_path is not None:
+        print(f"log: {res.log_path}")
+    return 0
 
 
 # What a shell reports for a command killed by SIGPIPE (128 + 13).
@@ -180,6 +211,26 @@ def _main(argv: list[str] | None = None) -> int:
     p_verify.add_argument("replay", help="--outdir of the replayed run")
     p_verify.add_argument("--against", dest="against", required=True,
                           help="--outdir of the original run it should reproduce")
+    # Several pipelines in sequence, each started only after the previous one succeeded, with its
+    # inputs prepared from that one's outputs (runner.chain; rules in handoffs/).
+    p_chain = sub.add_parser("chain")
+    chain_sub = p_chain.add_subparsers(dest="chain_cmd", required=True)
+    pc_run = chain_sub.add_parser("run", allow_abbrev=False)
+    pc_run.add_argument("spec", nargs="?",
+                        help="chain spec (JSON, or YAML with pyyaml); optional with --resume, "
+                             "which then re-reads the recorded one")
+    pc_run.add_argument("--outdir", required=True,
+                        help="the chain's directory: one NN-<stage>/ per stage, plus chain/")
+    pc_run.add_argument("--check", action="store_true",
+                        help="validate every stage and handoff, print the commands, run nothing")
+    pc_run.add_argument("--resume", action="store_true",
+                        help="continue the chain recorded in --outdir")
+    pc_run.add_argument("--timeout", type=_positive_int, default=None, metavar="SECONDS",
+                        help="stop the whole chain after SECONDS (default: no limit)")
+    pc_status = chain_sub.add_parser("status")
+    pc_status.add_argument("outdir", help="a chain's --outdir, or the outdir of one of its stages")
+    pc_edges = chain_sub.add_parser("edges")
+    pc_edges.add_argument("name", nargs="?", help="only the handoffs from or to this pipeline")
     # allow_abbrev=False: `run` forwards every unknown flag to the pipeline (via parse_known_args
     # → _collect_overrides). With abbreviation on, a pipeline flag that is a prefix of a reserved
     # nfclaw flag (e.g. `--res`, `--time`) would be silently swallowed as `--resume`/`--timeout`
@@ -297,12 +348,28 @@ def _main(argv: list[str] | None = None) -> int:
         return 0 if cmp.structurally_equal else 1
 
     if args.cmd == "status":
-        st = runlog.read_state(_run_log_path(args.outdir))
+        log = _run_log_path(args.outdir)
+        chain_log = (Path(args.outdir).expanduser().resolve() / chain.RECORD_DIRNAME / "logs"
+                     / chain.LOG_NAME)
+        if not log.is_file() and chain_log.is_file():       # the --outdir of a chain
+            log = chain_log
+        st = runlog.read_state(log)
         print(_status_report(st), end="")
+        if st.kind == "chain":
+            print(f"chain: `nfclaw chain status {args.outdir}` lists its stages and verifies "
+                  "their lineage")
         return 0 if st.state == "success" else 3 if st.state == "running" else 1
 
+    shown: list[str] = []
+
+    def warn(message: str) -> None:                           # advisory, non-blocking
+        shown.append(message)
+        print(f"warning: {message}", file=sys.stderr, flush=True)
+
+    if args.cmd == "chain":
+        return _chain(args, parser, root, warn)
+
     if args.cmd == "run":
-        shown: list[str] = []
         log_path = _run_log_path(args.outdir)
         size_before = log_path.stat().st_size if log_path.is_file() else None
 
@@ -320,10 +387,6 @@ def _main(argv: list[str] | None = None) -> int:
                 return
             runlog.record_unlaunched(log_path, command=shlex.join(["nfclaw", *argv]),
                                      outcome=outcome, error=error)
-
-        def warn(message: str) -> None:                       # advisory, non-blocking
-            shown.append(message)
-            print(f"warning: {message}", file=sys.stderr, flush=True)
 
         try:
             # `kill` (SIGTERM) or a closing terminal (SIGHUP) stop the run the way Ctrl-C does —
@@ -349,13 +412,10 @@ def _main(argv: list[str] | None = None) -> int:
             unlaunched("refused before launch", str(exc))
             return 1
         except (execution.Terminated, KeyboardInterrupt) as exc:
-            stopped = (f"stopped by {exc.name}" if isinstance(exc, execution.Terminated)
-                       else "interrupted")
-            print(f"nfclaw: {stopped}; any Nextflow run it had started was shut down."
-                  + (f" Log: {log_path}" if log_path.is_file() else ""), file=sys.stderr)
+            code = _stopped(exc, log_path)
             unlaunched(f"{execution.stop_outcome(exc)} before launch",
-                       f"nfclaw: {stopped} before launching")
-            return 128 + exc.signum if isinstance(exc, execution.Terminated) else 130
+                       f"nfclaw: {_stop_words(exc)} before launching")
+            return code
         for w in res.warnings:                                # any not already said before launch
             if w not in shown:
                 warn(w)

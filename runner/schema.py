@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator
@@ -237,3 +238,49 @@ def _dependent_required(obj: Any) -> tuple[tuple[str, tuple[str, ...]], ...]:
             if reqs:
                 out.append((str(key), reqs))
     return tuple(out)
+
+
+_ASSIGNMENT = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$")
+
+
+def _strip_comment(text: str) -> str:
+    """`text` without a trailing `//` comment — one outside quotes (a URL's `//` is not a comment)."""
+    quote = None
+    for i, ch in enumerate(text):
+        if quote:
+            if ch == quote and text[i - 1] != "\\":
+                quote = None
+        elif ch in "'\"":
+            quote = ch
+        elif text.startswith("//", i):
+            return text[:i].rstrip()
+    return text.rstrip()
+
+
+def config_param_defaults(repo: Path) -> dict[str, str]:
+    """The defaults the pipeline's own `nextflow.config` assigns in its top-level `params { }` block,
+    as {name: value as written}. nf-schema validates the value a parameter ends up with, so a required
+    parameter this config sets is supplied even though the schema gives it no default
+    (differentialabundance's `filtering_min_abundance = 1`). Only direct assignments at the block's
+    first level are read — the block nf-core's template declares every default in."""
+    try:
+        text = (repo / "nextflow.config").read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    out: dict[str, str] = {}
+    depth = 0
+    inside = False
+    for raw in text.splitlines():
+        line = _strip_comment(raw)
+        if not inside:
+            if depth == 0 and re.match(r"^\s*params\s*\{\s*$", line):
+                inside, depth = True, 1
+                continue
+            depth += line.count("{") - line.count("}")
+            continue
+        if depth == 1 and (m := _ASSIGNMENT.match(line)) and "{" not in m.group(2):
+            out.setdefault(m.group(1), m.group(2).strip())
+        depth += line.count("{") - line.count("}")
+        if depth <= 0:
+            break
+    return out

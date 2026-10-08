@@ -1,0 +1,14 @@
+{
+  "description": "demultiplex writes samplesheet/rnaseq_samplesheet.csv for its demultiplexed FastQ files (strandedness from its --strandedness, default auto).",
+  "params": {
+    "input": {
+      "samplesheet": "samplesheet/rnaseq_samplesheet.csv",
+      "provides": [
+        "sample",
+        "fastq_1",
+        "fastq_2",
+        "strandedness"
+      ]
+    }
+  }
+}

@@ -64,3 +64,27 @@ def test_catalog_keeps_tool_names_that_contain_commas(tmp_path):
     out_md, out_json = tmp_path / "c.md", tmp_path / "c.json"
     write_catalog.generate(pipelines_dir=tmp_path, out_md=out_md, out_json=out_json)
     assert json.loads(out_json.read_text())[0]["tools"] == ["pRESTO", "SHazaM, Change-O"]
+
+
+def test_catalog_lists_feeds(tmp_path):
+    d = tmp_path / "fetchngs"
+    (d / "upstream").mkdir(parents=True)
+    d.joinpath("skill.md").write_text(
+        '---\nname: fetchngs\nversion: 1\ndescription: x\nfeeds: ["mag", "rnaseq"]\n---\n')
+    e = tmp_path / "rnaseq"
+    (e / "upstream").mkdir(parents=True)
+    e.joinpath("skill.md").write_text("---\nname: rnaseq\nversion: 1\ndescription: y\n---\n")
+    out_md, out_json = tmp_path / "c.md", tmp_path / "c.json"
+    write_catalog.generate(pipelines_dir=tmp_path, out_md=out_md, out_json=out_json)
+    rows = json.loads(out_json.read_text())
+    assert rows[0]["feeds"] == ["mag", "rnaseq"] and rows[1]["feeds"] == []
+    assert "- `fetchngs` → `mag`, `rnaseq`" in out_md.read_text()
+
+
+def test_catalog_without_chains_has_no_chains_section(tmp_path):
+    d = tmp_path / "rnaseq"
+    (d / "upstream").mkdir(parents=True)
+    d.joinpath("skill.md").write_text("---\nname: rnaseq\nversion: 1\ndescription: y\n---\n")
+    out_md, out_json = tmp_path / "c.md", tmp_path / "c.json"
+    write_catalog.generate(pipelines_dir=tmp_path, out_md=out_md, out_json=out_json)
+    assert "## Chains" not in out_md.read_text()

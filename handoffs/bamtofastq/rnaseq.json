@@ -1,0 +1,16 @@
+{
+  "description": "bamtofastq publishes converted paired-end reads as reads/<sample>_1.merged.fastq.gz and _2; one rnaseq row per sample, strandedness detected by rnaseq (auto). Single-end conversions (reads/<sample>.merged.fastq.gz) need an inline handoff.",
+  "params": {
+    "input": {
+      "build": {
+        "rows": "reads/{sample}_1.merged.fastq.gz",
+        "columns": {
+          "sample": "{sample}",
+          "fastq_1": "reads/{sample}_1.merged.fastq.gz",
+          "fastq_2": "reads/{sample}_2.merged.fastq.gz?",
+          "strandedness": "auto"
+        }
+      }
+    }
+  }
+}

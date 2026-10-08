@@ -70,3 +70,25 @@ def test_drift_reports_manifest_set_and_remote_mismatches(tmp_path):
     drift = check_drift.check(pdir)
     assert "sources.tsv has unknown pipelines: extra" in drift
     assert any(item.startswith("mini remote differs:") for item in drift)
+
+
+def test_drift_gate_reports_an_incompatible_handoff(library):
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): {
+        "params": {"input": {"samplesheet": "s.csv", "provides": ["sample"]}}}})
+    assert check_drift._handoff_drift(root, root / "pipelines") == [
+        "handoffs/mini_up/mini.json: mini samplesheet: missing required column 'fastq_1'"]
+
+
+def test_drift_gate_reports_a_handoff_naming_an_unknown_pipeline(library):
+    root = library("mini_up", rules={("mini_up", "gone"): {
+        "params": {"x": {"file": "a.tsv"}}}})
+    assert check_drift._handoff_drift(root, root / "pipelines") == [
+        "handoffs/mini_up/gone.json: unknown pipeline(s): gone"]
+
+
+def test_drift_gate_reports_an_unreadable_handoff(library):
+    root = library("mini_up")
+    (root / "handoffs" / "mini_up").mkdir(parents=True)
+    (root / "handoffs" / "mini_up" / "mini.json").write_text("{nope")
+    [drift] = check_drift._handoff_drift(root, root / "pipelines")
+    assert "handoffs/mini_up/mini.json cannot be read" in drift

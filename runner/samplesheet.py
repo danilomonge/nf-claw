@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import re
+from collections.abc import Iterable
 from pathlib import Path
 
 from runner.schema import InputSchema
@@ -16,7 +17,7 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
     named = [c for c in input_schema.columns if c.name]
     # nf-schema picks the parser from the file extension; mirror that exactly so a `.tsv`
     # (e.g. nf-core/airrflow, which mandates `.tsv`) is split on TAB, not read as one CSV column.
-    delimiter = "\t" if path.suffix.lower() == ".tsv" else ","
+    delimiter = delimiter_for(path)
     kind = "TSV" if delimiter == "\t" else "CSV"
     # Read as utf-8-sig so a leading UTF-8 BOM (common in spreadsheet-exported CSVs) is stripped:
     # otherwise a leading BOM stays glued to the first header (it reads as `\ufeffsample`) and a
@@ -84,6 +85,33 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
         branches = input_schema.any_of_dependent_required
         if branches and not _any_branch_satisfied(values, branches):
             issues.append(f"row {i}: {_any_of_message(branches)}")
+    return issues
+
+
+def delimiter_for(path: Path) -> str:
+    """nf-schema picks the parser from the file extension: TAB for `.tsv`, comma for anything else."""
+    return "\t" if path.suffix.lower() == ".tsv" else ","
+
+
+def header_issues(columns: Iterable[str], input_schema: InputSchema) -> list[str]:
+    """Why a samplesheet with exactly these `columns`, every one filled, could not satisfy the schema.
+
+    The column-level half of `validate`, for judging a sheet before any row of it exists — a chain's
+    handoff, checked before the pipeline that writes the sheet has run. Rows are assumed filled, so
+    only what the header alone decides is reported: required columns, a `oneOf` column group,
+    `dependentRequired` and its `anyOf` branches."""
+    have = set(columns)
+    issues = [f"missing required column '{c.name}'" for c in input_schema.columns
+              if c.name and c.required and c.name not in have]
+    if input_schema.one_of and not any(set(group) <= have for group in input_schema.one_of):
+        issues.append("needs one of these column sets: "
+                      + "; ".join(", ".join(group) for group in input_schema.one_of))
+    for trigger, required in input_schema.dependent_required:
+        if trigger in have:
+            issues += [f"'{trigger}' requires '{req}'" for req in required if req not in have]
+    branches = input_schema.any_of_dependent_required
+    if branches and not _any_branch_satisfied({c: "x" for c in have}, branches):
+        issues.append(_any_of_message(branches))
     return issues
 
 

@@ -40,6 +40,12 @@ export interface RequiredParam {
   description: string;
 }
 
+/** One end of a chaining rule (handoffs/<upstream>/<downstream>.json). */
+export interface ChainEdge {
+  pipeline: string; // the pipeline at the other end
+  description: string; // the rule's own one-line description
+}
+
 export interface Pipeline {
   name: string; // "rnaseq"
   pipeline: string; // "nf-core/rnaseq"
@@ -62,6 +68,8 @@ export interface Pipeline {
   usageUrl: string | null;
   releaseDate: string | null; // date of the pinned release commit
   moduleCount: number; // distinct nf-core modules in the upstream
+  feeds: ChainEdge[]; // pipelines `nfclaw chain run` can hand this one's outputs to
+  fedBy: ChainEdge[]; // pipelines whose outputs it can be handed
 }
 
 export interface Commit {

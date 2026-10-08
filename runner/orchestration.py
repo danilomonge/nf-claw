@@ -46,6 +46,9 @@ class RunResult:
     log_path: Path | None = None            # the run log; None for --check, which launches nothing
     # The NXF_* overlay `command` runs under (--nxf-ver, --nxf-env): part of the command as shown.
     env: dict[str, str] = field(default_factory=dict)
+    # --check only: the temp directory holding the files the printed command names. It outlives the
+    # process so the command stays runnable; a caller that only validates (a chain) removes it.
+    staging: Path | None = None
 
 
 def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
@@ -58,7 +61,17 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                  allow_spaces: bool = False,
                  configs: tuple[str, ...] | list[str] = (),
                  limits: "resources.ResourceLimits | None" = None,
-                 on_warning: Callable[[str], None] | None = None) -> RunResult:
+                 on_warning: Callable[[str], None] | None = None,
+                 chain_link: dict | None = None,
+                 deferred_params: frozenset[str] = frozenset()) -> RunResult:
+    """Validate, launch and record one pipeline run.
+
+    Two arguments exist for a chain (runner.chain) and change nothing otherwise: `chain_link` is
+    recorded in the run's manifest (which chain this stage belongs to, which run fed it), and
+    `deferred_params` — for `check_only` alone — names parameters a handoff will supply once the
+    stage feeding this one has run, so they count as neither missing nor invalid yet."""
+    if deferred_params and not check_only:
+        raise ValueError("deferred_params is only meaningful with check_only")
     pipelines_dir = repo_root / "pipelines"
     discovery.find(name, pipelines_dir)                       # 404 if unknown
     # Extra Nextflow config files passed straight through as `-c` (e.g. a docker host-network or
@@ -105,7 +118,10 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # the params file's `input` (as in the merge below), and whichever supplies the value, it is
     # interpreted the same way — a params-file `input: false` or relative samplesheet means exactly
     # what `--input false` or `--input sheet.csv` does.
-    raw_input = input_path if input_path is not None else file_params.get("input")
+    # A chain's --check judges a later stage before the stage feeding it has run: an --input a
+    # handoff will write does not exist yet, so it is neither resolved nor pre-checked.
+    raw_input = (None if "input" in deferred_params
+                 else input_path if input_path is not None else file_params.get("input"))
     resolved_input = inputs.resolve(raw_input, st.path)
     if resolved_input is not None and resolved_input.local_path is not None:
         input_schema = (schema_mod.load_input_schema(st.path, resolved_input.samplesheet_schema)
@@ -140,7 +156,10 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # that nf-schema then sees — nf-core's own `-profile test,docker` sets --input — so then (and for
     # --demo, which adds `test`) nf-schema judges required-ness at launch instead.
     if not extra_configs and not nextflow_command.may_set_params(composed_profile):
-        param_errors.extend(parameters.missing_required_params(merged, param_schema))
+        supplied_later = {n: "<from handoff>" for n in deferred_params if n not in merged}
+        param_errors.extend(parameters.missing_required_params(
+            {**merged, **supplied_later}, param_schema,
+            configured=schema_mod.config_param_defaults(st.path)))
     if param_errors:
         raise NfclawError(ErrorCode.PARAMS_INVALID,
                           "Parameters failed validation (fix before running).",
@@ -225,7 +244,7 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                                           work_dir=work_dir, extra_configs=tuple(extra_configs))
     if check_only:
         return RunResult(command=cmd_str, outdir=outdir, checked_only=True,
-                         outputs_report=None, warnings=warnings, env=nxf_overlay)
+                         outputs_report=None, warnings=warnings, env=nxf_overlay, staging=staging)
 
     refs = param_schema.reference_path_params()
     prov_inputs = [Path(v) for k, v in resolved.items()
@@ -236,7 +255,8 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
 
     def record(outcome: str) -> None:
         provenance.write(outdir=outdir, pipeline=name, command_str=cmd_str, submodule=st,
-                         input_paths=prov_inputs, env_extra=nxf_overlay, outcome=outcome)
+                         input_paths=prov_inputs, env_extra=nxf_overlay, outcome=outcome,
+                         chain=chain_link)
 
     # Launch from the outdir so each run owns its `.nextflow/` history and cache: `-resume` then
     # resumes THIS run, never another pipeline's session. Paths in the command are absolute, so

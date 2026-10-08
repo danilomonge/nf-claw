@@ -140,6 +140,29 @@ use the current `emit: …, optional: true`).
 version gate (the symptom can read as a parameter/validation failure); use `--nxf-ver 25.10.4`.
 (`bactmap` 1.0.0 hits the parser issue *and* further bugs and can't run in demo here — see the
 upstream table.)
+**In a chain** (`nfclaw chain run`), pin the engine on that stage only — `"nxf_ver": "25.10.4"` in its
+spec entry — since the other stages may need a newer one (fetchngs 1.13.0 requires `>=25.10.4`, mag
+5.5.0 `>=26.04.0`). The chain parses every stage's config with its own engine (`nextflow config`)
+before the first stage launches, so this fails up front, not after the stages before it have run.
+Seen in chains on Nextflow 26.04.3: `atacseq` 2.1.2 (`def check_max`) and `viralrecon` 3.0.0
+(`Invalid include source: conf/test_full_sispa.config`, a profile file missing at the pinned
+commit) — both parse with `"nxf_ver": "25.10.4"`.
+
+### BUSCO finishes, then the task hangs until its time limit (IPv6-only host)
+**Symptom:** a `BUSCO_BUSCO` task (mag, and any pipeline running BUSCO 6) is killed at its time limit
+— Nextflow reports `process hasn't exited` — although its `.command.log` shows BUSCO's results and
+"Total running time: 6 seconds" hours earlier.
+**Why:** BUSCO 6 sends anonymous run statistics when it ends ("You may opt out with
+--opt-out-run-stats"); on a host without IPv4 that upload never completes, and the task waits on it.
+**Fix:** opt out through a config given with `--config` (in a chain: the stage's `"config"`):
+```groovy
+process {
+    withName: 'BUSCO_BUSCO' {
+        ext.args = { (params.busco_db ? '--offline ' : '') + '--opt-out-run-stats' }
+    }
+}
+```
+(mag's own `ext.args` is `--offline` when `--busco_db` is given; the closure keeps it.)
 
 ### Docker bridge network has no DNS (IPv6-only host)
 **Symptom:** containers can't resolve hostnames; downloads inside a container fail even though the
@@ -262,6 +285,24 @@ content merely changed has a different line in each bundle and shows up as *both
 "extra" — one changed report is counted twice, and a run whose reports simply carry a new timestamp
 reads as hundreds of missing and extra files. That is an artefact of the comparison, not a defect in
 the replay; `nfclaw verify` keys on the path precisely to separate the two questions.
+
+### Chains: `[handoff_failed]` — the next stage's input could not be prepared
+**Symptom:** `nfclaw chain run` stops after a stage succeeded, with `[handoff_failed]` and the chain
+log ending `failed at stage NN-<stage>: handoff`.
+**Why:** the rule (`handoffs/<upstream>/<downstream>.json`, or the stage's inline `handoff`) expected
+an output the upstream run did not produce — a file a pattern matches 0 or several times (rnaseq's
+merged counts sit under whichever quantifier ran), a column the upstream sheet lacks — or the
+samplesheet it prepared would be rejected by the next pipeline (the error lists the rows and names
+the snapshot under `<outdir>/chain/handoffs/`).
+**Fix:** inspect the snapshot and the upstream's results; set the parameter in the stage's own
+`params` (it wins over the handed-over value), give the stage an inline `handoff`, or change the
+upstream stage's options — then `nfclaw chain run spec.json --outdir DIR --resume` (the upstream is
+not re-run). See [`chaining.md`](chaining.md).
+
+### Chains: `another nfclaw chain is running in …`
+One `nfclaw chain` process per `--outdir`: a second would race on the same stages and state. Wait for
+the first (`tail -n 1 <outdir>/chain/logs/chain.log`) or stop it with `kill <pid>`; the lock is
+released when that process exits, however it exits.
 
 ## Warnings a run prints that are not faults
 
@@ -453,6 +494,7 @@ is the nf-claw-side workaround.
 | `bacass` 2.6.1 (Unicycler) | `SyntaxWarning: invalid escape sequence '\d'` then failure on Python 3.12 | the `unicycler:0.5.1` container ships Python code not updated for 3.12 | choose another assembler: `--assembler megahit` |
 | `hgtseq` 1.1.0 | `a column named input1 ... is mandatory!` | the release contradicts itself: its `assets/schema_input.json` (and the schema-valid demo CSV) use `sample,fastq_1[,fastq_2]`, but the custom parser `create_input_channel` in `workflows/hgtseq.nf` instead requires `sample` + `input1` (+ optional `input2`), where `input1`/`input2` hold the fastq/bam paths (the `group` column in its comment is vestigial — unused) | supply a `sample,input1[,input2]` sheet via `--input` — the bundled `assets/samplesheet_fastq.csv` is the correct shape; don't rely on `--demo` |
 | `funcscan` 2.1.0 – 4.0.0 (current pin), **DRAMP DB only** | `TypeError` in `ampcombi_download.py` when AMPcombi downloads the **DRAMP** database (`amp_ampcombi_db_id='DRAMP'`, the pipeline-wide default) — **not** hit by `--demo`, whose `test` profile overrides the id to `APD` (verified by source inspection through 4.0.0; funcscan 4.0.0 declares `!>=25.10.4`, so run it with `--nxf-ver 25.10.4` — `25.10.2` is rejected at the version gate) | the DRAMP loop in `bin/ampcombi_download.py` calls `valid_sequence_pattern.match(row['Sequence'])` with no NaN guard; rows with an empty `Sequence` are read as `NaN` (a float), so the regex match raises. The APD code path parses FASTA records (always strings), so it has no such call on a `NaN` | for a production DRAMP run, pre-build the DB with the NaN rows filtered and pass `--amp_ampcombi_db /path/to/amp_DRAMP_database` |
+| `taxprofiler` 2.x (MultiQC 1.34 container), reads its `test` MetaPhlAn database finds nothing in | `MULTIQC` fails: `AttributeError: module 'rich' has no attribute 'panel'` (seen chaining fetchngs → taxprofiler with a mouse gut metagenome on the `--demo` databases) | MultiQC's `metaphlan` module raises `IndexError` in `general_stats_cols` on an empty MetaPhlAn profile, and MultiQC's own error report then fails on `rich.panel` — the second traceback hides the first (`.command.log` of the MULTIQC task shows both) | profile reads the databases can classify, or skip the profiler whose result is empty — `--run_metaphlan false` (in a chain: `"params": {"run_metaphlan": false}` on the taxprofiler stage) |
 | `bactmap` 1.0.0 | won't run in `--demo` on any Nextflow here | three chained issues: NF 26 strict parser rejects `def check_max(obj, type)`; NF 25 treats `file("https://…", checkIfExists: true)` (bactmap.nf:13) as a local path → `No such file or directory: https://…`; NF 23's CAPSULE bootstrapper can't resolve Maven deps on this host | not runnable in demo — wait for an upstream fix / report; pin a different release with `--pipeline-version` if one works |
 
 When a workaround relies on a different release, confirm the symptom is gone there before relying
@@ -522,3 +564,21 @@ schema requires:
 - **`ampliseq`** — the `test` profile caps memory at 6 GB; visualisation/export steps (e.g.
   `QIIME2_EXPORT_RELTAX`) may be OOM-killed (exit 137) without failing the pipeline. In production
   raise it with `--max_memory '<N>.GB'` (or a custom `--config`).
+
+### Chains: what a `demo: true` stage hands over
+A chain stage on `demo: true` runs its release's `test` data — and that is what the next stage
+receives. Most test data chain fine; these do not without help (seen on the de.NBI instance):
+- **`detaxizer`** — its `test` profile filters `tax2filter = 'unclassified'` with a kraken2 database
+  that classifies nothing, so every read is removed and `filter/filtered/` holds empty FastQ files
+  (the next stage then fails on them). Give the stage real filtering: e.g.
+  `"params": {"classification_kraken2": false, "classification_bbduk": true, "fasta_bbduk": "<host fasta>"}`,
+  or a `tax2filter` your `--kraken2db` contains.
+- **`demultiplex`** — its `test` / `test_pe` flowcell is a *human amplicon panel* (BRCA1, MUTYH, …),
+  so a downstream stage on its own `test` references (yeast, a chr22 slice) aligns nothing. Give that
+  stage a human reference (`fasta`/`gtf`). Amplicon reads also need, for **atacseq**, `keep_dups`,
+  `clip_r1` (a ~40 nt prefix) and a `bamtools_filter_pe_config` without its soft-clip rule; for
+  **rnaseq** on auto strandedness, `fq subsample` panics on the small run — set demultiplex's own
+  `"strandedness": "unstranded"`. `sarek` takes paired-end reads only: use `"profile": "test_pe,docker"`.
+- **`taxprofiler`** on reads its test databases do not know: `ganon`, `kmcp`, krakentools'
+  `combine_kreports` and MultiQC's MetaPhlAn module fail on zero hits — run the profilers that
+  tolerate them (`run_kraken2`, `run_kaiju`) and `"run_profile_standardisation": false`.

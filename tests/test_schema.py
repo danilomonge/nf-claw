@@ -88,3 +88,27 @@ def test_boolean_enum_default_are_json_literals(tmp_path):
     assert ps.params["flag"].default is True               # raw value kept; rendered later
     assert schema.json_scalar(True) == "true" and schema.json_scalar(False) == "false"
     assert schema.json_scalar(0) == "0" and schema.json_scalar("x") == "x"   # non-bools via str()
+
+
+def test_config_param_defaults_reads_the_params_block(tmp_path):
+    # A required parameter the schema gives no default can still get one from nextflow.config
+    # (differentialabundance's filtering_min_abundance = 1); nf-schema sees that value.
+    (tmp_path / "nextflow.config").write_text(
+        "// header // comment\n"
+        "params {\n"
+        "    // Options\n"
+        "    filtering_min_abundance = 1       // trailing comment\n"
+        "    fasta_file = \"s3://bucket/x.fa\"   // a URL is not a comment\n"
+        "    method     = 'a,b//c'\n"
+        "    genome     = null\n"
+        "    nested { inner = 2 }\n"
+        "}\n"
+        "process { cpus = 4 }\n"
+        "outside = 3\n")
+    assert schema.config_param_defaults(tmp_path) == {
+        "filtering_min_abundance": "1", "fasta_file": '"s3://bucket/x.fa"',
+        "method": "'a,b//c'", "genome": "null"}
+
+
+def test_config_param_defaults_without_a_config(tmp_path):
+    assert schema.config_param_defaults(tmp_path) == {}

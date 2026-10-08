@@ -84,6 +84,37 @@ unknown flags, invalid allowed values and unambiguous scalar/shape errors before
 `nf-schema` remains authoritative for the complete schema (especially conditionals and complex
 constraints) at runtime. Only read `upstream/` for deep dives.
 
+## To chain pipelines (A, then B, then C)
+Several pipelines in sequence — each stage starts only after the previous one **succeeded**, and its
+inputs are prepared from that stage's outputs (fetchngs → rnaseq: fetchngs's samplesheet becomes
+rnaseq's `--input`). Write a spec (JSON) and run it:
+```json
+{"nxf_env": {"NXF_JVM_ARGS": "-Djava.net.preferIPv6Addresses=true"},
+ "stages": [{"pipeline": "fetchngs", "input": "/abs/ids.csv", "retries": 2},
+            {"pipeline": "rnaseq", "params": {"genome": "GRCh38"}}]}
+```
+`nfclaw chain run spec.json --outdir /abs/chain --check` first — it validates every stage, every
+handoff and that every stage's config parses with its engine, and writes nothing — then the same
+without `--check`. Which pipeline can follow which: `nfclaw chain edges [name]`, or the `## Chaining`
+section of a `skill.md`; without a rule there is no chain (or give the stage an inline `"handoff"`).
+- A stage's `params` are its own flags (look them up in its `reference.md`); the handed-over ones
+  (rnaseq's `--input`) are not yours to set. `demo: true` adds that release's `test` profile.
+- Run options (`profile`, `nxf_ver`, `nxf_env`, `config`, `limits`) go on the chain or on a stage:
+  releases of different ages can need different engines (`"nxf_ver": "25.10.4"` on an older one).
+- Each stage is an ordinary run in `<outdir>/NN-<stage>/`, with its own run log and provenance.
+  The chain logs to `<outdir>/chain/logs/chain.log`; its **last line** is
+  `==> nfclaw chain finished <time>: <outcome>` — poll it with `tail -n 1` for a background chain
+  (`nohup nfclaw chain run ... &`); `kill <pid>` stops it cleanly. Per-stage state:
+  `<outdir>/chain/state.json`.
+- A failed chain continues with `nfclaw chain run [spec.json] --outdir /abs/chain --resume`:
+  succeeded stages are skipped (and frozen), the failed one — which you may edit in the spec —
+  resumes with Nextflow's cache. `"retries": N` relaunches a stage automatically after a pipeline
+  failure (never after a validation error).
+- `nfclaw chain status <outdir>` reconstructs the chain and verifies every link by SHA-256 (which
+  run's outputs became which run's inputs); like `nfclaw status` (which also reads a chain's
+  `--outdir`) it exits 0 succeeded, 3 still running, 1 otherwise — a chain whose nfclaw was killed
+  outright is reported "stopped without an outcome". Spec, rules and failure modes: `docs/chaining.md`.
+
 ## To run a specific (non-latest) version
 The default is always the pinned latest release. To run any other published release instead:
 1. List the releases: `nfclaw versions <name>` (the pinned latest is flagged).

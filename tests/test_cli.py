@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from runner import cli
 
 
@@ -496,6 +498,111 @@ def test_run_interrupted_by_ctrl_c_exits_cleanly(tmp_path, monkeypatch, capsys):
     assert "nfclaw: interrupted" in capsys.readouterr().err
 
 
+# --- nfclaw chain ---------------------------------------------------------------------------
+
+def _chain_spec(tmp_path):
+    import json
+    spec = tmp_path / "spec.json"
+    spec.write_text(json.dumps({"stages": [{"pipeline": "fetchngs", "input": "/x/ids.csv"},
+                                           {"pipeline": "rnaseq"}]}))
+    return spec
+
+
+def test_chain_run_threads_its_flags(tmp_path, monkeypatch, capsys):
+    from runner import chain
+    seen = {}
+
+    def fake(spec, **kw):
+        seen.update(kw, spec=spec)
+        return chain.ChainResult(outdir=kw["outdir"], outcome="success",
+                                 stages=[{"index": 1, "id": "fetchngs", "status": "success",
+                                          "outdir": str(kw["outdir"] / "01-fetchngs")}],
+                                 log_path=tmp_path / "chain.log")
+
+    monkeypatch.setattr(cli.chain, "run_chain", fake)
+    assert cli.main(["chain", "run", str(_chain_spec(tmp_path)), "--outdir",
+                     str(tmp_path / "o"), "--timeout", "60", "--check", "--resume"]) == 0
+    assert seen["timeout_seconds"] == 60 and seen["outdir"] == (tmp_path / "o").resolve()
+    assert seen["check_only"] and seen["resume"]
+    assert [s.pipeline for s in seen["spec"].stages] == ["fetchngs", "rnaseq"]
+    out = capsys.readouterr().out
+    assert "chain: success" in out and "01-fetchngs\tsuccess" in out and "log: " in out
+
+
+def test_chain_check_prints_each_stages_command(tmp_path, monkeypatch, capsys):
+    from runner import chain
+    monkeypatch.setattr(cli.chain, "run_chain", lambda spec, **kw: chain.ChainResult(
+        outdir=kw["outdir"], outcome="checked", stages=[],
+        commands=[("01-fetchngs", "nextflow run a"), ("02-rnaseq", "nextflow run b")]))
+    assert cli.main(["chain", "run", str(_chain_spec(tmp_path)), "--outdir",
+                     str(tmp_path / "o"), "--check"]) == 0
+    out = capsys.readouterr().out
+    assert "# 01-fetchngs\nnextflow run a\n# 02-rnaseq\nnextflow run b" in out
+
+
+def test_chain_resume_may_omit_the_spec(tmp_path, monkeypatch):
+    from runner import chain
+    seen = {}
+    monkeypatch.setattr(cli.chain, "run_chain", lambda spec, **kw: seen.update(spec=spec, **kw)
+                        or chain.ChainResult(outdir=kw["outdir"], outcome="success", stages=[]))
+    assert cli.main(["chain", "run", "--outdir", str(tmp_path / "o"), "--resume"]) == 0
+    assert seen["spec"] is None and seen["resume"]
+
+
+def test_chain_run_needs_a_spec_unless_resuming(tmp_path):
+    with pytest.raises(SystemExit):
+        cli.main(["chain", "run", "--outdir", str(tmp_path / "o")])
+
+
+def test_chain_run_rejects_pipeline_flags(tmp_path):
+    # Stage parameters belong in the spec; a stray flag must not be silently dropped.
+    with pytest.raises(SystemExit):
+        cli.main(["chain", "run", str(_chain_spec(tmp_path)), "--outdir", str(tmp_path),
+                  "--genome", "GRCh38"])
+
+
+def test_chain_errors_are_reported_cleanly(tmp_path, capsys):
+    bad = tmp_path / "spec.json"
+    bad.write_text("{nope")
+    assert cli.main(["chain", "run", str(bad), "--outdir", str(tmp_path / "o")]) == 1
+    assert "chain spec is not valid JSON" in capsys.readouterr().err
+
+
+def test_chain_stop_signal_exit_code(tmp_path, monkeypatch, capsys):
+    import signal
+
+    def stopped(*a, **k):
+        raise cli.execution.Terminated(signal.SIGTERM)
+
+    monkeypatch.setattr(cli.chain, "run_chain", stopped)
+    assert cli.main(["chain", "run", str(_chain_spec(tmp_path)), "--outdir",
+                     str(tmp_path / "o")]) == 128 + signal.SIGTERM
+    assert "stopped by SIGTERM" in capsys.readouterr().err
+
+
+def test_chain_edges_lists_the_registry(tmp_path, monkeypatch, capsys, library):
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): {
+        "description": "mini_up writes a mini sheet",
+        "params": {"input": {"samplesheet": "s.csv", "provides": ["sample", "fastq_1"]}}}})
+    monkeypatch.setattr(cli, "_repo_root", lambda: root)
+    assert cli.main(["chain", "edges"]) == 0
+    assert capsys.readouterr().out == "mini_up\tmini\tmini_up writes a mini sheet\n"
+    assert cli.main(["chain", "edges", "other"]) == 0
+    assert capsys.readouterr().out == ""
+
+
+def test_chain_status_exit_code_reflects_the_lineage(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli.chain, "status", lambda p: ({"chain_id": "c", "outcome": "success",
+                                                          "stages": []}, ["a broken link"]))
+    assert cli.main(["chain", "status", str(tmp_path)]) == 1
+    assert "lineage: BROKEN" in capsys.readouterr().out
+    monkeypatch.setattr(cli.chain, "status", lambda p: ({"stages": [], "outcome": "success"}, []))
+    assert cli.main(["chain", "status", str(tmp_path)]) == 0
+    monkeypatch.setattr(cli.chain, "status", lambda p: ({"stages": [], "outcome": "failed at x"},
+                                                        []))
+    assert cli.main(["chain", "status", str(tmp_path)]) == 1          # as `nfclaw status`
+
+
 # --- `nfclaw status`: the state of a run, without reading its log ---------------------------------
 
 def _write_run_log(outdir, text):
@@ -633,3 +740,15 @@ def test_a_launched_run_is_not_recorded_twice(tmp_path, monkeypatch):
     monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
     assert cli.main(["run", "x", "--outdir", str(tmp_path / "out")]) == 1
     assert log.read_text().count("==> nfclaw run started") == 2
+
+
+def test_status_of_a_chain_outdir_points_at_chain_status(tmp_path, monkeypatch, capsys,
+                                                         library):
+    log = tmp_path / "c" / "chain" / "logs" / "chain.log"
+    log.parent.mkdir(parents=True)
+    log.write_text("==> nfclaw chain started 2026-01-01T00:00:00+00:00\n"
+                   "    launch dir: /x\n    host: h\n    pid: 1\n"
+                   "==> nfclaw chain finished 2026-01-01T01:00:00+00:00: success\n")
+    assert cli.main(["status", str(tmp_path / "c")]) == 0
+    out = capsys.readouterr().out
+    assert "status: success" in out and "nfclaw chain status" in out

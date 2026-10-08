@@ -1,6 +1,6 @@
 # Architecture
 
-Three zones:
+Four zones:
 - **`pipelines/`** — the library content. One folder per nf-core pipeline: `upstream/` (submodule,
   pinned to a release tag) + a generated `skill.md` (run command, inputs and the schema's required
   parameters — each with its allowed values and value constraints — plus a map of its parameter
@@ -46,10 +46,25 @@ Three zones:
   replays faithful and lets two runs on different `dev` heads proceed side by side. The run warns
   that the code is unreleased, provenance records `version: dev` with the exact commit, and the
   last-resolved head is kept as `origin/dev` in the submodule clone as the offline fallback.
+  `nfclaw chain run` (`runner/chain.py`) runs several pipelines in sequence: every stage is an
+  ordinary run in `<outdir>/NN-<stage>/`, started only after the one before it succeeded, and
+  `runner/handoff.py` prepares its parameters from that run's outputs — a samplesheet snapshot with
+  absolute paths, validated against the next pipeline's samplesheet schema, each value traced to the
+  digests in the upstream's `outputs.sha256`. Before the first stage launches, every stage's
+  parameters, every handoff and every stage's config (`nextflow config`, with its own engine) are
+  checked. The chain's record — spec, state, snapshots, a log whose last line is the outcome — lives
+  in `<outdir>/chain/`; each stage's manifest links back to it. See [`chaining.md`](chaining.md).
+- **`handoffs/`** — the rules for chaining: `handoffs/<upstream>/<downstream>.json`, hand-written data
+  like `sources.tsv`. Each says where the upstream publishes what the downstream reads (fetchngs's
+  `samplesheet/samplesheet.csv`) and how to adapt it; the drift gate checks every rule against both
+  pipelines' pinned schemas, and the generated docs list them.
 - **`librarian/`** — maintenance (run via `make`): generates `skill.md`/`reference.md`/`catalog.*`
   from each submodule, and bumps submodules to the latest release.
 
-Key invariant: **no code knows any pipeline specifics** — every fact derives from
+Key invariant: **no code knows any pipeline specifics** — every fact about one pipeline derives from
 `nextflow_schema.json` / `assets/schema_input.json`, so a pipeline can change without breaking nf-claw.
+The one kind of fact no schema carries — where one pipeline publishes input for another — lives as
+data in `handoffs/`, and every claim it makes about parameters and samplesheet columns is checked
+against the pinned schemas.
 
 macOS note: keep the repo on a space-free, non-iCloud path (iCloud sync breaks git speed and Docker).

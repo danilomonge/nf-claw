@@ -154,3 +154,20 @@ def test_empty_input_is_not_resolved_to_the_working_directory(tmp_path, monkeypa
     for raw in ("", "   "):
         res = inputs.resolve(raw, repo)
         assert res.value == raw and res.local_path is None and res.samplesheet_schema is None
+
+
+def test_samplesheet_schema_for_a_named_parameter(tmp_path):
+    # A samplesheet can feed a parameter other than --input (taxprofiler's --databases names its own
+    # schema); a chain's handoff must find it the same way.
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "databases.json").write_text("{}")
+    (tmp_path / "assets" / "schema_input.json").write_text("{}")
+    (tmp_path / "nextflow_schema.json").write_text(json.dumps({"properties": {
+        "input": {"type": "string", "format": "file-path"},
+        "fasta": {"type": "string", "format": "file-path"},
+        "databases": {"type": "string", "format": "file-path",
+                      "schema": "assets/databases.json"}}}))
+    assert inputs.samplesheet_schema(tmp_path, param="databases") == "assets/databases.json"
+    assert inputs.samplesheet_schema(tmp_path) == "assets/schema_input.json"   # legacy convention
+    assert inputs.samplesheet_schema(tmp_path, param="fasta") is None          # ...is input-only
+    assert inputs.samplesheet_schema(tmp_path, param="missing") is None

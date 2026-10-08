@@ -95,3 +95,14 @@
 | `viralintegration` | 0.1.1 | samplesheet (sample, fastq_1, fastq_2) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Integration of viral sequences in genomic data |
 | `viralmetagenome` | 1.2.0 | samplesheet (sample, fastq_1, fastq_2) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | A bioinformatics best-practice analysis pipeline for untargeted viral genome reconstruction and to identify intra-host variants from metagenomic sequencing data. |
 | `viralrecon` | 3.0.0 | samplesheet (sample, fastq_1, fastq_2, barcode) | --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report | Assembly and intrahost/low-frequency variant calling for viral samples |
+
+## Chains
+
+Pipelines `nfclaw chain run` can run in sequence, the first one's outputs prepared as the next one's inputs (rules in `handoffs/`, see `docs/chaining.md`):
+
+- `bamtofastq` → `rnaseq`
+- `createtaxdb` → `taxprofiler`
+- `demultiplex` → `atacseq`, `methylseq`, `rnaseq`, `sarek`, `seqinspector`, `taxprofiler`
+- `detaxizer` → `mag`, `taxprofiler`
+- `fetchngs` → `ampliseq`, `atacseq`, `mag`, `metatdenovo`, `rnaseq`, `sarek`, `taxprofiler`, `viralrecon`
+- `rnaseq` → `differentialabundance`

@@ -17,6 +17,13 @@ Pipelines must be **DSL2** (DSL1 was removed in Nextflow 22.12 and cannot run) a
 with the Nextflow version each release declares in its manifest — there is no single global
 version. See [`docs/compatibility.md`](docs/compatibility.md).
 
+## Add a handoff rule (chaining)
+1. Write `handoffs/<upstream>/<downstream>.json` — where the upstream publishes what the downstream
+   reads (its `docs/output.md`), and how to adapt it (format in [`docs/chaining.md`](docs/chaining.md)).
+2. `python3 -m librarian.check_drift` — the rule must fit both pinned schemas.
+3. `make build` — regenerates the Chaining sections of `skill.md` and the catalog.
+4. `nfclaw chain run spec.json --outdir DIR --check`, then one real chain.
+
 ## Code
 - `runner/` (runtime) and `librarian/` (maintenance) are pipeline-agnostic. Never hardcode
   pipeline names, parameter lists, or sample columns.

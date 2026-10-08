@@ -249,9 +249,10 @@ class RunLog:
     Whoever opens it closes it with `finish()`, once nfclaw is done with the run — after the
     provenance bundle is written — so the final line never announces an outcome early."""
 
-    def __init__(self, path: Path, *, nextflow_log: Path | None = None):
+    def __init__(self, path: Path, *, nextflow_log: Path | None = None, label: str = "run"):
         self.path = path
         self.nextflow_log = nextflow_log
+        self.label = label                               # what finished: a `run`, or a `chain`
         self.outcome = "failed"                          # until the run says otherwise
         path.parent.mkdir(parents=True, exist_ok=True)
         self._fh = path.open("ab")
@@ -318,11 +319,12 @@ class RunLog:
             self.note(error)
 
     def finish(self) -> None:
-        """Close the record with its last line — `==> nfclaw run finished <time>: <outcome>`."""
+        """Close the record with its last line — `==> nfclaw run finished <time>: <outcome>` (or
+        `nfclaw chain finished` for a chain's log)."""
         if self._finished:
             return
         self._finished = True
-        self.note(f"==> nfclaw run finished {now()}: {self.outcome}")
+        self.note(f"==> nfclaw {self.label} finished {now()}: {self.outcome}")
         try:
             self._fh.close()
         except OSError:
@@ -348,8 +350,8 @@ def record_unlaunched(log: Path, *, command: str, outcome: str, error: str) -> N
 
 # --- reading a run's state back (`nfclaw status`) -------------------------------------------------
 
-_STARTED = re.compile(r"^==> nfclaw (run|replay) started (\S+)")
-_FINISHED = re.compile(r"^==> nfclaw (run|replay) finished (\S+): (.*)$")
+_STARTED = re.compile(r"^==> nfclaw (run|replay|chain) started (\S+)")
+_FINISHED = re.compile(r"^==> nfclaw (run|replay|chain) finished (\S+): (.*)$")
 _HEADER = re.compile(r"^    (command|launch dir|nextflow log|replay of|host|pid|nextflow pid|"
                      r"warning): (.*)$")
 _HEAD_BYTES = 64 * 1024
@@ -357,7 +359,8 @@ _STATE_TAIL_BYTES = 512 * 1024
 _LAST_OUTPUT_LINES = 5
 # What the recorded pid must be running, so a pid reused after a restart is not taken for the run:
 # the `nfclaw` entry point (or `python -m runner`) for a run, the replay script for a replay.
-_RUN_NAMES = {"run": ("nfclaw", "runner"), "replay": ("commands.sh",)}
+_RUN_NAMES = {"run": ("nfclaw", "runner"), "replay": ("commands.sh",),
+              "chain": ("nfclaw", "runner")}
 
 
 @dataclass

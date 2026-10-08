@@ -99,6 +99,13 @@ The exact output files and directory layout for this release are documented upst
 
 Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
 
+## Chaining
+Run mag as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges mag`.
+
+Fed by:
+- `detaxizer` — detaxizer, with --generate-downstream-samplesheets, writes downstream_samplesheets/mag-pe.csv for its filtered paired-end reads, in the column layout of mag 3.x; every sample goes into co-assembly group 0 and gets the read platforms mag 5 requires (short reads ILLUMINA, long reads OXFORD_NANOPORE, as detaxizer labels them for taxprofiler).
+- `fetchngs` — fetchngs writes a mag samplesheet whose read columns predate mag's short_reads_1/short_reads_2; the columns are renamed, every sample goes into co-assembly group 0, and each run keeps its own run id.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: AdapterRemoval2, ALE, BBnorm/BBTools, BCFtools, Bowtie2, BUSCO, CAT, CheckM, CheckM2, Chopper, COMEBin, CONCOCT, MetaBinner, SemiBin2, DAS Tool, FastP, FastQC, Filtlong, Flye, Freebayes, geNomad, GTDB-Tk, GUNC, BIgMAG, MaxBin2, MEGAHIT, MetaBAT2, MetaEuk, metaMDBG, minimap2, MMseqs2, MultiQC, NanoLyse, NanoPlot, Nanoq, Porechop, Porechop-abi, Prodigal, Prokka, PyDamage, pypolca, SAMtools, Seqtk, SPAdes, Tiara, Trimmomatic.
 

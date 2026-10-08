@@ -286,3 +286,26 @@ def test_unreadable_params_file_is_a_clean_error(tmp_path, monkeypatch):
     with pytest.raises(NfclawError) as exc:
         parameters.load_params_file(pf)
     assert exc.value.code == ErrorCode.PARAMS_INVALID and "cannot be read" in str(exc.value)
+
+
+def test_load_params_file_names_the_file_by_its_label(tmp_path):
+    # A chain spec is read with the same loader; its errors must not call it a "--params-file".
+    import pytest
+    from runner.errors import NfclawError
+    bad = tmp_path / "chain.json"
+    bad.write_text("{nope")
+    with pytest.raises(NfclawError, match="chain spec is not valid JSON"):
+        parameters.load_params_file(bad, label="chain spec")
+
+
+def test_a_required_param_the_pipeline_config_sets_is_not_missing():
+    ps = schema.load_param_schema(FIX / "mini")
+    required = {n for n, p in ps.params.items() if p.required and p.default is None}
+    assert "input" in required
+    merged = {"outdir": "/o"}
+    assert any("--input" in e for e in parameters.missing_required_params(merged, ps))
+    assert not any("--input" in e for e in parameters.missing_required_params(
+        merged, ps, configured={"input": "'/data/sheet.csv'"}))
+    for unset in ("null", "''", '""'):                    # assigned, but to nothing
+        assert any("--input" in e for e in parameters.missing_required_params(
+            merged, ps, configured={"input": unset}))

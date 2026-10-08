@@ -1,0 +1,17 @@
+{
+  "description": "demultiplex writes samplesheet/atacseq_samplesheet.csv (every sample as replicate 1) for its demultiplexed FastQ files; a single-end run's sheet lacks the fastq_2 column, which atacseq's own sheet check requires, so it is added empty.",
+  "params": {
+    "input": {
+      "samplesheet": "samplesheet/atacseq_samplesheet.csv",
+      "provides": [
+        "sample",
+        "fastq_1",
+        "fastq_2",
+        "replicate"
+      ],
+      "add_empty": [
+        "fastq_2"
+      ]
+    }
+  }
+}

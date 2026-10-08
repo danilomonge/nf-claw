@@ -19,6 +19,52 @@ _TIME_RE = re.compile(
 )
 
 
+_ENV_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_NXF_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:-edge)?$")
+
+
+def parse_nxf_env(items: list[str] | dict[str, str]) -> dict[str, str]:
+    """`NXF_*` variables for one run, from repeatable `--nxf-env KEY=VALUE` (a list) or a chain
+    spec's `nxf_env` (an object).
+
+    Restricting to NXF_* keeps the knob focused on Nextflow's own runtime (and the provenance record
+    meaningful); any other environment a run needs is still inherited from the shell."""
+    pairs: list[tuple[str, object]] = []
+    if isinstance(items, dict):
+        pairs = [(str(k), v) for k, v in items.items()]
+    else:
+        for item in items:
+            key, sep, value = item.partition("=")
+            if not sep:
+                raise NfclawError(ErrorCode.PARAMS_INVALID,
+                                  f"--nxf-env must be KEY=VALUE (got {item!r}).")
+            pairs.append((key, value))
+    env: dict[str, str] = {}
+    for key, value in pairs:
+        key = key.strip()
+        if not key.startswith("NXF_"):
+            raise NfclawError(ErrorCode.PARAMS_INVALID,
+                              f"--nxf-env only accepts NXF_* variables (got {key!r}); "
+                              "other environment is inherited from the shell.")
+        if not _ENV_NAME_RE.fullmatch(key):
+            raise NfclawError(ErrorCode.PARAMS_INVALID,
+                              f"--nxf-env has an invalid environment variable name: {key!r}.")
+        if not isinstance(value, str):
+            raise NfclawError(ErrorCode.PARAMS_INVALID,
+                              f"--nxf-env {key} must be a string (got {value!r}).")
+        env[key] = value
+    return env
+
+
+def check_nxf_version(raw: str) -> str:
+    """A full Nextflow version for `--nxf-ver` (sets NXF_VER), or a clear error."""
+    if not isinstance(raw, str) or not _NXF_VERSION_RE.fullmatch(raw):
+        raise NfclawError(ErrorCode.PARAMS_INVALID,
+                          "--nxf-ver must be a full Nextflow version such as 25.10.2 or "
+                          f"25.10.2-edge (got {raw!r})")
+    return raw
+
+
 @dataclass(frozen=True)
 class ResourceLimits:
     """The ceiling a run may request, as nf-core documents it: `process.resourceLimits`.

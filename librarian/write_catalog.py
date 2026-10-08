@@ -8,9 +8,9 @@ from pathlib import Path
 from runner import discovery
 
 
-def _tools(raw: object) -> list[str]:
-    """The `tools` frontmatter value: a JSON list (names may contain commas, e.g. "SHazaM, Change-O").
-    A comma-separated string — the older form — is still read."""
+def _json_list(raw: object) -> list[str]:
+    """A list-valued frontmatter field (`tools`, `feeds`): a JSON list (names may contain commas,
+    e.g. "SHazaM, Change-O"). A comma-separated string — the older form — is still read."""
     text = str(raw or "").strip()
     if text.startswith("["):
         try:
@@ -29,7 +29,9 @@ def generate(*, pipelines_dir: Path, out_md: Path, out_json: Path) -> None:
              "summary": p.frontmatter.get("summary", ""),
              "input": p.frontmatter.get("input", ""),
              "output": p.frontmatter.get("output", ""),
-             "tools": _tools(p.frontmatter.get("tools"))}
+             "tools": _json_list(p.frontmatter.get("tools")),
+             # The pipelines it can hand its outputs to in a chain (handoffs/).
+             "feeds": _json_list(p.frontmatter.get("feeds"))}
             for p in discovery.discover(pipelines_dir)]
     out_json.write_text(json.dumps(rows, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -49,6 +51,13 @@ def generate(*, pipelines_dir: Path, out_md: Path, out_json: Path) -> None:
              "|---|---|---|---|---|"]
     lines += [f"| `{r['name']}` | {r['version']} | {_safe(r['input'])} | {_safe(r['output'])} "
               f"| {_safe(r['description'])} |" for r in rows]
+    chains = [r for r in rows if r["feeds"]]
+    if chains:
+        lines += ["", "## Chains", "",
+                  "Pipelines `nfclaw chain run` can run in sequence, the first one's outputs "
+                  "prepared as the next one's inputs (rules in `handoffs/`, see "
+                  "`docs/chaining.md`):", ""]
+        lines += [f"- `{r['name']}` → " + ", ".join(f"`{f}`" for f in r["feeds"]) for r in chains]
     out_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

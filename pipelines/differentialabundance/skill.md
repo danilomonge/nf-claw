@@ -120,6 +120,12 @@ The exact output files and directory layout for this release are documented upst
 
 Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
 
+## Chaining
+Run differentialabundance as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges differentialabundance`.
+
+Fed by:
+- `rnaseq` — rnaseq's merged gene counts (and gene lengths) become differentialabundance's --matrix and --feature-length-matrix — from the alignment-based quantification when rnaseq ran one, otherwise its pseudo-aligner — with the GTF the rnaseq run used. The experimental design (--input, sample names as in rnaseq) and --contrasts describe your study and go in the stage's own params.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: decoupler-py, GSEA, affy, DESeq2, GEOQuery, ggplot2, gprofiler2, Limma, optparse, plotly, Proteus, R, RColorBrewer, RMarkdown, shinyngs, SummarizedExperiment, variancePartition, variancePartition::dream.
 

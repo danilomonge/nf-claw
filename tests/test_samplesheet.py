@@ -231,3 +231,39 @@ def test_unreadable_sheet_is_flagged_not_crashed(tmp_path, monkeypatch):
 
     monkeypatch.setattr(pathlib.Path, "open", deny)
     assert samplesheet.validate(ss, SCH) == [f"samplesheet cannot be read: Permission denied: {ss}"]
+
+
+# --- header_issues: the column-level half of validate, for a sheet that does not exist yet ---
+
+_HEADER_SCH = InputSchema(
+    columns=(Column("sample", "string", True, None),
+             Column("fastq_1", "string", True, None, fmt="file-path"),
+             Column("fastq_2", "string", False, None, fmt="file-path"),
+             Column("lane", "string", False, None)),
+    dependent_required=(("fastq_2", ("fastq_1",)),),
+    any_of_dependent_required=((("lane", ("fastq_1",)),),),
+)
+
+
+def test_delimiter_follows_the_extension():
+    from pathlib import Path
+    assert samplesheet.delimiter_for(Path("a.tsv")) == "\t"
+    assert samplesheet.delimiter_for(Path("a.TSV")) == "\t"
+    assert samplesheet.delimiter_for(Path("a.csv")) == ","
+
+
+def test_header_issues_accepts_a_header_that_can_satisfy_the_schema():
+    assert samplesheet.header_issues(["sample", "fastq_1", "fastq_2", "extra"], _HEADER_SCH) == []
+
+
+def test_header_issues_reports_missing_required_and_dependent_columns():
+    issues = samplesheet.header_issues(["sample", "fastq_2"], _HEADER_SCH)
+    assert "missing required column 'fastq_1'" in issues
+    assert "'fastq_2' requires 'fastq_1'" in issues
+
+
+def test_header_issues_requires_one_column_group():
+    sheet = InputSchema(columns=(), one_of=(("sampleID", "forwardReads"), ("sample", "fastq_1")))
+    assert samplesheet.header_issues(["sample", "fastq_1"], sheet) == []
+    assert samplesheet.header_issues(["sample"], sheet) == [
+        "needs one of these column sets: sampleID, forwardReads; sample, fastq_1"]

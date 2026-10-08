@@ -10,6 +10,7 @@ import {
   ChevronRight,
   GitCommitHorizontal,
   Github,
+  Link2,
   Layers,
   ListChecks,
   PackageOpen,
@@ -91,6 +92,9 @@ export default async function PipelinePage({ params }: { params: Promise<{ name:
     ...(pipeline.requiredParams.length ? [{ id: "required", label: "Required", count: pipeline.requiredParams.length }] : []),
     { id: "parameters", label: "Parameters", count: pipeline.parameterCount },
     ...(pipeline.outputs ? [{ id: "outputs", label: "Outputs" }] : []),
+    ...(pipeline.feeds.length || pipeline.fedBy.length
+      ? [{ id: "chaining", label: "Chaining", count: pipeline.feeds.length + pipeline.fedBy.length }]
+      : []),
   ];
 
   return (
@@ -349,6 +353,50 @@ export default async function PipelinePage({ params }: { params: Promise<{ name:
             <p className="text-pretty leading-relaxed text-fog-muted">
               <InlineMarkdown text={pipeline.outputs} />
             </p>
+          </div>
+        </section>
+      )}
+
+      {/* chaining */}
+      {(pipeline.feeds.length > 0 || pipeline.fedBy.length > 0) && (
+        <section id="chaining" className="mt-16 scroll-mt-14">
+          <SectionTitle icon={Link2}>Chaining</SectionTitle>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-fog-muted">
+            Run {pipeline.name} as one stage of a chain: <code className="font-mono text-fog">nfclaw chain run</code> starts
+            each stage only after the one before it succeeded, and prepares its inputs from that stage&apos;s outputs. Every
+            rule is checked against both pinned schemas.
+          </p>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {(
+              [
+                ["Feeds into", pipeline.feeds],
+                ["Fed by", pipeline.fedBy],
+              ] as const
+            )
+              .filter(([, edges]) => edges.length > 0)
+              .map(([title, edges]) => (
+                <div key={title} className="glass p-5">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-fog-dim">{title}</h3>
+                  <ul className="mt-3 space-y-3">
+                    {edges.map((e) => (
+                      <li key={e.pipeline} className="text-sm leading-relaxed text-fog-muted">
+                        <Link href={`/pipelines/${e.pipeline}/`} className="font-mono font-semibold text-claw-300 hover:text-claw-200">
+                          {e.pipeline}
+                        </Link>
+                        {e.description && (
+                          <>
+                            {" — "}
+                            <InlineMarkdown text={e.description} />
+                          </>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+          </div>
+          <div className="mt-4">
+            <CodeBlock code={`nfclaw chain edges ${pipeline.name}`} label="nfclaw" />
           </div>
         </section>
       )}

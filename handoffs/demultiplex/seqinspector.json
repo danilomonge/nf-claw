@@ -1,0 +1,15 @@
+{
+  "description": "demultiplex writes samplesheet/seqinspector_samplesheet.csv for its demultiplexed FastQ files.",
+  "params": {
+    "input": {
+      "samplesheet": "samplesheet/seqinspector_samplesheet.csv",
+      "provides": [
+        "sample",
+        "fastq_1",
+        "fastq_2",
+        "rundir",
+        "tags"
+      ]
+    }
+  }
+}

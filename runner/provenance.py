@@ -150,7 +150,7 @@ exit "$status"
 def write(*, outdir: Path, pipeline: str, command_str: str,
           submodule: SubmoduleStatus, input_paths: list[Path],
           env_extra: dict[str, str] | None = None,
-          outcome: str = "success") -> Path:
+          outcome: str = "success", chain: dict | None = None) -> Path:
     prov = outdir / "provenance"
     prov.mkdir(parents=True, exist_ok=True)
 
@@ -168,6 +168,10 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         "redacted_nextflow_env": redacted_env,
         "os": platform.platform(),
     }
+    # A stage of a chain records which chain it belongs to and which run (and handoff) fed it, so
+    # the whole chain can be reconstructed from any one stage. A plain run's manifest is unchanged.
+    if chain:
+        manifest["chain"] = chain
     (prov / "run_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 

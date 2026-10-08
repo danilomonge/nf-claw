@@ -90,6 +90,15 @@ The exact output files and directory layout for this release are documented upst
 
 Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
 
+## Chaining
+Run taxprofiler as one stage of a chain: `nfclaw chain run spec.json --outdir DIR` starts each stage only after the one before it succeeded, and prepares its inputs from that stage's outputs. The rules live in `handoffs/` (format and spec in [docs/chaining.md](../../docs/chaining.md)); list them with `nfclaw chain edges taxprofiler`.
+
+Fed by:
+- `createtaxdb` — createtaxdb, with --generate-downstream-samplesheets, writes downstream_samplesheets/databases-taxprofiler.csv; it becomes taxprofiler's --databases, minus any database for a tool the pinned taxprofiler does not run (createtaxdb 3.1 also builds sourmash). The reads to profile (--input) and the --run-<tool> switches are the stage's own.
+- `demultiplex` — demultiplex writes samplesheet/taxprofiler_samplesheet.csv without run_accession or instrument_platform; each sample becomes its own run, sequenced on ILLUMINA (bcl2fastq/bclconvert data — use an inline handoff for other platforms).
+- `detaxizer` — detaxizer, with --generate-downstream-samplesheets, writes downstream_samplesheets/taxprofiler.csv for its filtered reads (paths into filter/filtered/).
+- `fetchngs` — fetchngs writes a taxprofiler samplesheet with --nf-core-pipeline taxprofiler; run_accession and instrument_platform come from the ENA metadata. The profiling databases (--databases) are the stage's own.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: FastQC, MultiQC, falco, fastp, AdapterRemoval2, Nonpareil, Porechop, Porechop_ABI, Filtlong, nanoq, BBTools, PRINSEQ++, Bowtie2, minimap2, SAMTools, Bracken, Kraken2, KrakenUniq, MetaPhlAn, MALT, MEGAN, DIAMOND, Centrifuge, Kaiju, mOTUs, KMCP, ganon, melon, Krona, TAXPASTA, sylph, MetaCache.
 
