@@ -35,7 +35,11 @@ export function DocsHub({ docs, standalone = false }: { docs: DocPage[]; standal
   const Heading = standalone ? "h1" : "h2";
   const CardHeading = standalone ? "h2" : "h3";
   return (
-    <section id="docs" className={cn("container-site", standalone ? "pb-12 pt-28 md:pt-32" : "section")}>
+    <section
+      id="docs"
+      data-progress={standalone ? undefined : "Docs"}
+      className={cn("container-site", standalone ? "pb-12 pt-28 md:pt-32" : "section")}
+    >
       <SectionHeading
         as={Heading}
         eyebrow="Single source of truth"
