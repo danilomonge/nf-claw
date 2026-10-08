@@ -201,6 +201,17 @@ lock under that outdir's state — `rm -f <outdir>/.nextflow/cache/*/LOCK` (or j
 new `--outdir`) — and `--resume` again. Because each run owns its `--outdir`'s `.nextflow/`, this only
 affects that one run.
 
+### A run in the background: is it still going, and how did it end?
+**Symptom:** a run started with `nohup nfclaw run … &` — its `run.log` has no
+`==> nfclaw run finished …` last line, or you need its outcome without reading the log.
+**Fix:** `nfclaw status <outdir>` answers from the log alone: `running (nfclaw pid … on host …)` with
+the last output; the outcome it ended with and the recorded error; `refused before launch` (a
+relaunch nfclaw rejected — the cause is shown); or `stopped without an outcome` — nfclaw itself was
+killed with SIGKILL, ran out of memory, or the machine restarted. Then re-run the same command with
+`--resume`. On Linux Nextflow stops with nfclaw even then; elsewhere `nfclaw status` names a Nextflow
+still running so it can be stopped first (`kill <pid>`). Exit code: 0 success, 3 running, 1
+otherwise. Stop a background run with `kill <nfclaw pid>` — never `kill -9` — so the log records it.
+
 ### Launching several pipelines in parallel
 **Status: fixed.** Starting 2+ pipelines at once whose submodules were uninitialised used to race on
 `.git/config` (`could not lock config file`). `nfclaw run` now serialises submodule initialisation

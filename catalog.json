@@ -391,7 +391,7 @@
       "MultiQC",
       "R"
     ],
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "description": "An nf-core demo pipeline",
@@ -1111,25 +1111,30 @@
       "FastQC",
       "MultiQC",
       "Trim Galore!",
-      "khmer",
       "Seqtk",
-      "RNAspade",
+      "SPAdes",
       "Megahit",
       "TransDecoder",
+      "MetaEuk",
       "Prokka",
       "Prodigal",
       "BBmap",
       "FeatureCounts",
+      "BEDTools",
+      "MMseqs2",
+      "SAMtools",
+      "SeqKit",
       "Eggnog",
       "Kofamscan",
+      "dbCAN",
       "HMMsearch",
       "EUKulele",
       "Diamond",
       "TaxonKit",
-      "CAT",
-      "transrate"
+      "QUAST",
+      "DuckDB"
     ],
-    "version": "1.4.1"
+    "version": "2.0.0"
   },
   {
     "description": "Extract methylation calls from long reads",

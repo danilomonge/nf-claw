@@ -43,7 +43,7 @@ const config: Config = {
         fog: {
           DEFAULT: "#F4F5F6",
           muted: "#9AA0AA",
-          dim: "#646B76",
+          dim: "#7C838E", // ≥ 4.5:1 on every surface the site uses (WCAG AA for small text)
           faint: "#3A404A",
         },
       },

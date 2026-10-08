@@ -56,19 +56,26 @@ export function getTags(): { name: string; date: string | null }[] {
     });
 }
 
+/** "owner/repo" from a GitHub URL (https or ssh), or null for any other host. */
+export function githubRepoPath(url: string): string | null {
+  const m = url.match(/github\.com[:/](.+?)(?:\.git)?\/?$/);
+  return m ? m[1] : null;
+}
+
 export function getRemote(): string | null {
   const url = git(["config", "--get", "remote.origin.url"]);
-  if (!url) return null;
-  const m = url.match(/github\.com[:/](.+?)(?:\.git)?$/);
-  return m ? m[1] : null;
+  return url ? githubRepoPath(url) : null;
 }
 
 export function getDefaultBranch(): string {
   return git(["rev-parse", "--abbrev-ref", "HEAD"]) || "main";
 }
 
-/** README + everything under docs/ (excluding images and ignored superpowers). */
+let docsCache: DocPage[] | null = null;
+
+/** README + everything under docs/ (excluding images and ignored superpowers). Read once per build. */
 export function getDocs(): DocPage[] {
+  if (docsCache) return docsCache;
   const docs: DocPage[] = [];
 
   const readme = readText("README.md");
@@ -76,13 +83,18 @@ export function getDocs(): DocPage[] {
     docs.push({ slug: "readme", title: "README", source: "README.md", content: readme });
   }
 
-  const extras = ["CONTRIBUTING.md", "AGENTS.md", "NOTICE"];
-  for (const f of extras) {
+  // Root-level guides, titled for a reader (their H1s repeat the project name).
+  const extras: [string, string][] = [
+    ["CONTRIBUTING.md", "Contributing"],
+    ["AGENTS.md", "Agent guide"],
+    ["NOTICE", "Notice & credits"],
+  ];
+  for (const [f, title] of extras) {
     const content = readText(f);
     if (content) {
       docs.push({
         slug: f.toLowerCase().replace(/\.md$/, "").replace(/[^a-z0-9]+/g, "-"),
-        title: f.replace(/\.md$/, ""),
+        title,
         source: f,
         content,
       });
@@ -108,6 +120,7 @@ export function getDocs(): DocPage[] {
     /* no docs dir */
   }
 
+  docsCache = docs;
   return docs;
 }
 

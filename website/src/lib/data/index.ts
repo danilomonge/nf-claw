@@ -10,6 +10,7 @@ export {
   getCommitCount,
   getTags,
   getRemote,
+  githubRepoPath,
   getDefaultBranch,
   getDocs,
   getDoc,

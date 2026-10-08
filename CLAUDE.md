@@ -14,6 +14,8 @@ anywhere this doc shows `nfclaw <cmd>`.
 3. Run: `nfclaw run <name> --input samplesheet.csv --outdir results -profile docker`
    (raw fallback: `nextflow run pipelines/<name>/upstream -profile docker ...` — the submodule is
    already pinned to the release, so no `-r`).
+4. Check it, foreground or background: `nfclaw status results` — `success`, `running`, or how it
+   ended with the error (exit 0 / 3 / 1). Logs: see "Where a run is logged — and how to check one".
 
 `nfclaw run` executes the pipeline for real — there is no preview/dry-run default. To see the exact
 `nextflow` command that *would* run without launching it, add `--check` (it validates inputs and

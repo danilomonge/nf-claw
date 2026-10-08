@@ -293,7 +293,10 @@ def _outputs_section(name: str, st: SubmoduleStatus, ref: str | None = None,
         "file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last "
         "line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless "
         "`--no-provenance` it adds a run manifest (pinned version, commit and exact command), "
-        f"input/output SHA-256 checksums, and a replayable `commands.sh`.{link}\n"
+        f"input/output SHA-256 checksums, and a replayable `commands.sh`.{link}\n\n"
+        "Check a run — in the foreground or the background — with `nfclaw status <outdir>`: "
+        "success, still running, how it ended (with the error), or stopped without an outcome; "
+        "exit 0 success, 3 running, 1 otherwise.\n"
     )
 
 

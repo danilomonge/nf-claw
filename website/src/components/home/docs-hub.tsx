@@ -1,61 +1,83 @@
 import Link from "next/link";
-import { ArrowUpRight, FileText } from "lucide-react";
+import {
+  ArrowUpRight,
+  Bot,
+  BookOpen,
+  Boxes,
+  FileText,
+  GitPullRequest,
+  LifeBuoy,
+  RefreshCw,
+  Scale,
+  ShieldCheck,
+  type LucideIcon,
+} from "lucide-react";
 import { StaggerGroup, StaggerItem } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { docPreview, readingMinutes } from "@/lib/doc-meta";
 import type { DocPage } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
-function preview(md: string): string {
-  const text = md
-    .replace(/^---[\s\S]*?---/m, "") // frontmatter
-    .replace(/<[^>]+>/g, "") // html
-    .replace(/```[\s\S]*?```/g, "") // code blocks
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, "") // images
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1") // links
-    .replace(/[#>*`_|-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  return text.slice(0, 180) + (text.length > 180 ? "…" : "");
+/** An icon that says what kind of document this is, from its slug. */
+function iconFor(slug: string): LucideIcon {
+  if (slug === "readme") return BookOpen;
+  if (/contribut/.test(slug)) return GitPullRequest;
+  if (/agent/.test(slug)) return Bot;
+  if (/notice|licen/.test(slug)) return Scale;
+  if (/architect/.test(slug)) return Boxes;
+  if (/compat/.test(slug)) return ShieldCheck;
+  if (/issue|trouble/.test(slug)) return LifeBuoy;
+  if (/updat/.test(slug)) return RefreshCw;
+  return FileText;
 }
 
-function readingTime(md: string): string {
-  const words = md.split(/\s+/).filter(Boolean).length;
-  const mins = Math.max(1, Math.round(words / 200));
-  return `${mins} min read`;
-}
-
-export function DocsHub({ docs }: { docs: DocPage[] }) {
+export function DocsHub({ docs, standalone = false }: { docs: DocPage[]; standalone?: boolean }) {
+  const Heading = standalone ? "h1" : "h2";
+  const CardHeading = standalone ? "h2" : "h3";
   return (
-    <section id="docs" className="container-site scroll-mt-24 py-24 md:py-32">
+    <section id="docs" className={cn("container-site", standalone ? "pb-12 pt-28 md:pt-32" : "section")}>
       <SectionHeading
+        as={Heading}
         eyebrow="Single source of truth"
         title="Documentation hub"
         description="Every page here is rendered directly from the repository — README, architecture notes, contributor guides and more. Nothing is maintained by hand; update the markdown and this hub updates itself."
       />
 
-      <StaggerGroup className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {docs.map((doc) => (
-          <StaggerItem key={doc.slug}>
-            <Link href={`/docs/${doc.slug}`} className="group block h-full">
-              <article className="glass glass-hover flex h-full flex-col p-6">
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-claw-400">
-                    <FileText className="h-5 w-5" />
-                  </span>
-                  <ArrowUpRight className="h-5 w-5 text-fog-dim transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-claw-300" />
-                </div>
-                <h3 className="mt-5 text-lg font-semibold text-fog">{doc.title}</h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-fog-muted">
-                  {preview(doc.content)}
-                </p>
-                <div className="mt-5 flex items-center gap-2 text-xs text-fog-dim">
-                  <code className="font-mono">{doc.source}</code>
-                  <span>·</span>
-                  <span>{readingTime(doc.content)}</span>
-                </div>
-              </article>
-            </Link>
-          </StaggerItem>
-        ))}
+      <StaggerGroup className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+        {docs.map((doc, i) => {
+          const Icon = iconFor(doc.slug);
+          const featured = i === 0;
+          return (
+            <StaggerItem key={doc.slug} className={cn(featured && "md:col-span-2")}>
+              <Link href={`/docs/${doc.slug}/`} className="group block h-full rounded-3xl">
+                <article
+                  className={cn(
+                    "glass glass-hover flex h-full flex-col p-6",
+                    featured && "bg-gradient-to-br from-claw-500/[0.06] to-transparent md:p-8",
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-claw-400 transition-colors group-hover:border-claw-400/30">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <ArrowUpRight className="h-5 w-5 text-fog-dim transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-claw-300" />
+                  </div>
+                  <CardHeading className={cn("mt-5 font-semibold text-fog", featured ? "text-xl md:text-2xl" : "text-lg")}>
+                    {doc.title}
+                  </CardHeading>
+                  <p className={cn("mt-2 flex-1 text-sm leading-relaxed text-fog-muted", featured && "md:text-base")}>
+                    {docPreview(doc.content, featured ? 260 : 150)}
+                  </p>
+                  <div className="mt-5 flex items-center gap-2 text-xs text-fog-dim">
+                    <code className="font-mono">{doc.source}</code>
+                    <span aria-hidden>·</span>
+                    <span>{readingMinutes(doc.content)} min read</span>
+                  </div>
+                </article>
+              </Link>
+            </StaggerItem>
+          );
+        })}
       </StaggerGroup>
     </section>
   );

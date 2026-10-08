@@ -81,6 +81,8 @@ Results land in `--outdir`, organised into one sub-directory per pipeline step/m
 
 The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/funcprofiler/blob/1.0.0/docs/output.md
 
+Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
+
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: DIAMOND, eggNOG-mapper, fmh-funprofiler, HUMAnN, mi-faser, MetaPhlAn3, MetaPhlAn4, MultiQC, RGI/CARD, seqkit.
 

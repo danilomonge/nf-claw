@@ -52,6 +52,7 @@ export interface Pipeline {
   version: string;
   commit: string;
   description: string;
+  tools: string[]; // the main tools the pipeline runs (catalog.json)
   hasSamplesheet: boolean;
   url: string; // upstream git url
   policy: string; // version policy (sources.tsv)
