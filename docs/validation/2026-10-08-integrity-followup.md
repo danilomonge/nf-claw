@@ -34,6 +34,10 @@ the historical Linux/cloud evidence in [the earlier audit](2026-10-08-audit.md).
   result walker for reporting and verification. Follow published directory symlinks,
   preserve their published paths, reject cycles and dangling links, and exclude the
   provenance/Nextflow state trees before scanning them.
+- Input snapshots globally deduplicated directory symlink targets, so adding an alias
+  could leave the checksum inventory unchanged despite adding logical sample paths.
+  Preserve every alias path, detect cycles per traversal branch, and refuse cyclic
+  directory inputs before launching.
 - The Nextflow acceptance script overwrote a fixed config in the shared temporary
   directory and removed an existing `prev-<pipeline>` directory. Use private scratch
   space with cleanup. Also reject failed/partial pipeline inventories and support

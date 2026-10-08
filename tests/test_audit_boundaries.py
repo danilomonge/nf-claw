@@ -112,6 +112,24 @@ def test_cyclic_directory_symlink_outputs_fail_explicitly(tmp_path):
         provenance.output_checksums(tmp_path)
 
 
+def test_added_directory_alias_is_a_changed_input_inventory(tmp_path):
+    data = tmp_path / "data"
+    original = data / "original"
+    original.mkdir(parents=True)
+    (original / "reads.txt").write_bytes(b"reads")
+    before = provenance.hash_inputs([data])
+    (data / "alias").symlink_to(original, target_is_directory=True)
+    after = provenance.hash_inputs([data])
+    assert set(after) == {str(original / "reads.txt"), str(data / "alias/reads.txt")}
+    assert after != before
+
+
+def test_cyclic_input_directory_is_refused_before_snapshot(tmp_path):
+    (tmp_path / "cycle").symlink_to(tmp_path, target_is_directory=True)
+    with pytest.raises(OSError, match="cyclic"):
+        provenance.hash_inputs([tmp_path])
+
+
 @pytest.mark.parametrize("internal", [False, True])
 def test_unchanged_reference_directory_has_complete_handoff_lineage(
         library, finished_run, tmp_path, internal):

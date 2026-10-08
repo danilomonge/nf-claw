@@ -6,6 +6,7 @@ whatever version of nfclaw happens to be installed later.
 from __future__ import annotations
 
 import glob
+import errno
 import hashlib
 import json
 import os
@@ -52,6 +53,21 @@ def _glob_patterns(pattern: str) -> list[str]:
 def input_files(paths: list[Path]) -> list[Path]:
     """Expand explicit files, directories and globs, with cycle-safe symlink traversal."""
     files: set[Path] = set()
+
+    def walk(directory: Path, ancestors: frozenset[Path]) -> None:
+        real = directory.resolve()
+        if real in ancestors:
+            raise OSError(errno.ELOOP, "cyclic input directory symlink", str(directory))
+        with os.scandir(directory) as entries:
+            for entry in sorted(entries, key=lambda e: e.name):
+                item = directory / entry.name
+                if entry.is_dir(follow_symlinks=True):
+                    walk(item, ancestors | {real})
+                elif entry.is_file(follow_symlinks=True):
+                    files.add(item)
+                else:
+                    raise FileNotFoundError(f"input is missing or not a regular file: {item}")
+
     for source in paths:
         source = source.expanduser().absolute()
         pattern = str(source)
@@ -68,23 +84,9 @@ def input_files(paths: list[Path]) -> list[Path]:
             if path.is_file():
                 files.add(path)
             elif path.is_dir():
-                seen: set[Path] = set()
-
-                def fail(error):
-                    raise error
-
-                for root, dirs, names in os.walk(path, followlinks=True, onerror=fail):
-                    directory = Path(root)
-                    real = directory.resolve()
-                    if real in seen:
-                        dirs[:] = []
-                        continue
-                    seen.add(real)
-                    for name in names:
-                        item = directory / name
-                        if not item.is_file():
-                            raise FileNotFoundError(f"input is missing or not a regular file: {item}")
-                        files.add(item)
+                # Track ancestors per branch, not a global set of resolved directories: a second
+                # published alias is a second logical input path and can change sample multiplicity.
+                walk(path, frozenset())
             else:
                 raise FileNotFoundError(f"input is missing or not a regular file: {path}")
     return sorted(files)
