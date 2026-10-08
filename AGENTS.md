@@ -212,8 +212,7 @@ agreement. Add `--strict` to require identical bytes and fail on any changed fil
 Replay requires Python 3 and checks the recorded local data, configurations, parameters and
 tracked pipeline source before launching. A changed dependency or incomplete bundle is refused.
 It pins the observed engine version, but remote inputs, indirect configuration includes and
-container image digests are not frozen. See the [release audit](docs/validation/2026-10-08-audit.md)
-for validation scope and limitations.
+container image digests are not frozen.
 
 ## Reference genomes
 Some releases resolve a reference **remotely by default** — sarek defaults `--genome` to
