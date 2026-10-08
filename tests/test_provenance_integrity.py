@@ -206,3 +206,10 @@ def test_default_engine_is_pinned_for_replay_without_falsifying_recorded_environ
                             capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     assert result.stdout == "25.10.4"
+
+
+def test_commands_sh_resolves_dynamically_when_run_bundle_is_relocated(tmp_path):
+    prov = _write(tmp_path / "out", input_paths=[])
+    script = (prov / "commands.sh").read_text()
+    assert "_script_dir" in script
+    assert "replay_guard.py" in script

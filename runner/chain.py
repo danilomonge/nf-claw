@@ -367,20 +367,33 @@ def _read_json(path: Path) -> Any:
 @contextlib.contextmanager
 def _lock(record: Path, outdir: Path) -> Iterator[None]:
     """One chain process per --outdir: two would race on the same stages and state."""
-    record.mkdir(parents=True, exist_ok=True)
-    fd = os.open(record / ".lock", os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0), 0o644)
+    fd = None
     try:
+        record.mkdir(parents=True, exist_ok=True)
+        fd = os.open(record / ".lock", os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0), 0o644)
         if fcntl is not None:
             try:
                 fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except BlockingIOError:
+                os.close(fd)
+                fd = None
                 raise NfclawError(
                     ErrorCode.ENVIRONMENT, f"another nfclaw chain is running in {outdir}",
                     fix=f"Wait for it (tail -n 1 {record / 'logs' / LOG_NAME}) or stop it with "
                         "kill <its pid>.") from None
+    except OSError as exc:
+        if fd is not None:
+            os.close(fd)
+            fd = None
+        raise NfclawError(
+            ErrorCode.ENVIRONMENT,
+            f"chain directory could not be created or locked: {record}: {exc.strerror or exc}",
+            fix="Use an output directory whose parent you can write to.") from exc
+    try:
         yield
     finally:
-        os.close(fd)
+        if fd is not None:
+            os.close(fd)
 
 
 def _retryable(exc: NfclawError) -> bool:

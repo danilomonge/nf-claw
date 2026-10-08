@@ -141,6 +141,10 @@ def output_checksums(outdir: Path) -> dict[str, str]:
 # and the log through a FIFO, and the last line is written after the last of that output.
 # Portable to bash 3.2 (macOS's /bin/bash).
 _REPLAY_TAIL = r"""original=__ORIGINAL__
+_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$_script_dir/replay_guard.py" ] && [ -f "$_script_dir/run_manifest.json" ]; then
+  original="$(cd "$_script_dir/.." && pwd)"
+fi
 python3 "$original/provenance/replay_guard.py" "$original/provenance"
 log="$target/provenance/logs/run.log"
 mkdir -p -- "$target/provenance/logs"

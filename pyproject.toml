@@ -23,6 +23,9 @@ packages = ["runner", "librarian"]
 testpaths = ["tests"]
 addopts = "-q"
 
+[tool.ruff]
+extend-exclude = ["pipelines", "website"]
+
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F"]
 
