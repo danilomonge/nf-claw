@@ -8,6 +8,7 @@ from runner.schema import Column, InputSchema, ParamSchema
 
 @pytest.mark.parametrize("text", ["false", "0", "[]", "null"])
 def test_falsy_yaml_scalar_or_sequence_is_not_an_empty_parameter_map(tmp_path, text):
+    pytest.importorskip("yaml")
     path = tmp_path / "params.yaml"
     path.write_text(text)
     with pytest.raises(NfclawError, match="object"):
@@ -15,6 +16,7 @@ def test_falsy_yaml_scalar_or_sequence_is_not_an_empty_parameter_map(tmp_path, t
 
 
 def test_yaml_parameter_names_must_be_strings(tmp_path):
+    pytest.importorskip("yaml")
     path = tmp_path / "params.yaml"
     path.write_text("42: star\n")
     with pytest.raises(NfclawError, match="name"):
@@ -27,6 +29,7 @@ def test_direct_parameter_validation_rejects_nonstring_names():
 
 
 def test_non_json_yaml_values_are_reported_before_writing_params(tmp_path):
+    pytest.importorskip("yaml")
     path = tmp_path / "params.yaml"
     path.write_text("object: !!set {1: null, 2: null}\n")
     values = parameters.load_params_file(path)

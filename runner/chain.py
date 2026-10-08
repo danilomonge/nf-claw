@@ -114,7 +114,7 @@ def options(spec: ChainSpec, stage: Stage) -> RunOptions:
     o = stage.options
     return RunOptions(profile=o.get("profile", spec.profile),
                       nxf_ver=o.get("nxf_ver", spec.nxf_ver),
-                      nxf_env={**spec.nxf_env, **o.get("nxf_env", {})},
+                      nxf_env=provenance.effective_nxf_env({**spec.nxf_env, **o.get("nxf_env", {})}),
                       configs=o.get("configs", spec.configs),
                       limits=o.get("limits", spec.limits))
 
