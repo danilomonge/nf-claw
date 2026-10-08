@@ -145,7 +145,20 @@ def verify_dependencies(bundle: Path) -> None:
         sources = json.loads((bundle / f"{kind}.sources.json").read_text(encoding="utf-8"))
         if not isinstance(sources, list) or not all(isinstance(p, str) for p in sources):
             raise ValueError(f"invalid {kind} sources in {bundle}")
-        current_files = {str(p): p for p in input_files([Path(p) for p in sources])}
+        # Keep original logical checksum keys, but find moved internal configs in this bundle.
+        recorded_bundle = None
+        if kind == "configs" and isinstance(manifest.get("outdir"), str):
+            recorded_bundle = Path(manifest["outdir"]) / "provenance"
+        current_files = {}
+        for source in sources:
+            path = Path(source)
+            relocated = path
+            if recorded_bundle is not None and path.is_relative_to(recorded_bundle):
+                relocated = bundle / path.relative_to(recorded_bundle)
+            for current in input_files([relocated]):
+                logical = (recorded_bundle / current.relative_to(bundle)
+                           if relocated != path else current)
+                current_files[str(logical)] = current
         missing = sorted(expected.keys() - current_files.keys())
         extra = sorted(current_files.keys() - expected.keys())
         if missing or extra:
@@ -155,9 +168,36 @@ def verify_dependencies(bundle: Path) -> None:
                 raise ValueError(f"recorded {kind} content changed: {name}")
 
 
+def lock_replay(target: Path, script: Path) -> None:
+    """Hold the runner's sibling flock across exec of the replay shell, with no extra parent.
+
+    The shell keeps the inherited descriptor until its traps, logs and tasks have finished.
+    Using exactly the runner's lock prevents replay/replay and replay/run writer races.
+    """
+    import fcntl
+
+    target = target.expanduser().resolve()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    lock = target.parent / f".{target.name}.nfclaw.lock"
+    fd = os.open(lock, os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0), 0o600)
+    try:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise ValueError(f"another nfclaw run or replay is active in {target}") from None
+        os.set_inheritable(fd, True)
+        env = {**os.environ, "NFCLAW_REPLAY_LOCK_PID": str(os.getpid())}
+        os.execvpe("bash", ["bash", str(script), str(target)], env)
+    finally:
+        os.close(fd)
+
+
 if __name__ == "__main__":
     try:
-        verify_dependencies(Path(sys.argv[1]))
+        if sys.argv[1] == "--lock":
+            lock_replay(Path(sys.argv[2]), Path(sys.argv[3]))
+        else:
+            verify_dependencies(Path(sys.argv[1]))
     except (OSError, ValueError, IndexError) as exc:
         print(f"nfclaw replay: dependency check failed: {exc}", file=sys.stderr)
         sys.exit(1)

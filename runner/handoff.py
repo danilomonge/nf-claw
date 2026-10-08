@@ -508,14 +508,50 @@ def _resolve(rule: Rule, target: str, src: Source, *, upstream_outdir: Path,
         if target_param is not None and target_param.fmt in ("file-path", "directory-path"):
             value = _absolute(value, upstream_outdir)
         path = Path(value)
-        if path.is_absolute() and not path.is_dir():
+        if path.is_absolute():
             remedy = (f"Supply {_flag(target)} directly in the downstream stage to choose this "
                       "reference explicitly, or rerun the upstream with current provenance.")
-            if not path.is_file():
+            if not path.exists():
                 raise NfclawError(ErrorCode.HANDOFF_FAILED,
                                   f"{rule.origin}: local upstream reference {value} is missing.",
                                   fix=remedy)
-            if _under(path, upstream_outdir) is None:
+            if path.is_dir():
+                # Index/database directories are scientific dependencies too. Compare their
+                # complete inventory, not just files that happen to remain after a deletion.
+                internal = _under(path, upstream_outdir)
+                try:
+                    if internal is None:
+                        historical = provenance.read_checksums(
+                            upstream_outdir / "provenance" / "inputs.sha256", relative=False)
+                        expected = {name: digest for name, digest in historical.items()
+                                    if Path(name).is_relative_to(path)}
+                    else:
+                        historical = recorded_outputs(upstream_outdir)
+                        expected = {str(upstream_outdir / name): digest
+                                    for name, digest in historical.items()
+                                    if Path(name).is_relative_to(internal)}
+                    current = (provenance.hash_inputs([path]) if internal is None else {
+                        str(upstream_outdir / name): digest
+                        for name, digest in provenance.output_checksums(upstream_outdir).items()
+                        if Path(name).is_relative_to(internal)})
+                except (OSError, ValueError) as exc:
+                    raise NfclawError(
+                        ErrorCode.HANDOFF_FAILED,
+                        f"{rule.origin}: cannot verify local upstream reference {value}: {exc}",
+                        fix=remedy) from exc
+                if not expected or current != expected:
+                    raise NfclawError(
+                        ErrorCode.HANDOFF_FAILED,
+                        f"{rule.origin}: local upstream reference {value} has no historical "
+                        "inventory or changed since the upstream launch.", fix=remedy)
+                if internal is None:
+                    extra["input_dependencies"] = expected
+                else:
+                    extra["output_dependencies"] = {
+                        Path(name).relative_to(upstream_outdir).as_posix(): digest
+                        for name, digest in expected.items()}
+                extra["directory_reference"] = str(path)
+            elif _under(path, upstream_outdir) is None:
                 try:
                     historical = provenance.read_checksums(
                         upstream_outdir / "provenance" / "inputs.sha256", relative=False)
@@ -534,6 +570,7 @@ def _resolve(rule: Rule, target: str, src: Source, *, upstream_outdir: Path,
                 extra["input_dependencies"] = {str(path): digest}
     rel = _under(Path(value), upstream_outdir) if isinstance(value, str) else None
     derived = [r for r in (recorded_in, rel) if r and (upstream_outdir / r).is_file()]
+    derived += list(extra.get("output_dependencies", {}))
     return value, derived, extra
 
 

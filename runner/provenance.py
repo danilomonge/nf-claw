@@ -12,7 +12,7 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-from runner.outputs import is_result
+from runner.outputs import result_files
 from runner.replay_guard import (hash_inputs, hash_pipeline as hash_pipeline,
                                  read_checksums as read_checksums)
 from runner.samplesheet import delimiter_for
@@ -127,8 +127,8 @@ def output_checksums(outdir: Path) -> dict[str, str]:
     """
     return {
         rel.as_posix(): _sha256(p)
-        for p in sorted(outdir.rglob("*"))
-        if p.is_file() and is_result(rel := p.relative_to(outdir))
+        for p in sorted(result_files(outdir))
+        for rel in (p.relative_to(outdir),)
     }
 
 
@@ -141,7 +141,6 @@ def output_checksums(outdir: Path) -> dict[str, str]:
 # and the log through a FIFO, and the last line is written after the last of that output.
 # Portable to bash 3.2 (macOS's /bin/bash).
 _REPLAY_TAIL = r"""original=__ORIGINAL__
-_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "$_script_dir/replay_guard.py" ] && [ -f "$_script_dir/run_manifest.json" ]; then
   original="$(cd "$_script_dir/.." && pwd)"
 fi
@@ -218,6 +217,7 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         "commit": submodule.commit,
         "command": command_str,
         "outcome": outcome,
+        "outdir": str(outdir.absolute()),
         "ran_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "nextflow": _nextflow_version(env_extra),
         "nextflow_env": recorded_env,
@@ -302,9 +302,18 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
                         f"replay: {names}\n")
     default_target = shlex.quote(f"{outdir}.replay")
     commands = prov / "commands.sh"
+    # Relocate arguments inside this bundle; external dependencies keep their recorded paths.
+    replay_command = command_str
+    bundle_prefix = str(prov.absolute()) + "/"
+    if bundle_prefix in command_str:
+        replay_command = " ".join(
+            '"$_script_dir"/' + shlex.quote(arg[len(bundle_prefix):])
+            if arg.startswith(bundle_prefix) else shlex.quote(arg)
+            for arg in shlex.split(command_str))
     _atomic_text(commands,
         "#!/usr/bin/env bash\n"
         "set -euo pipefail\n"
+        '_script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"\n'
         "# Replay of this run. Reproduces it into a FRESH output directory — an nf-core pipeline\n"
         "# publishes into --outdir and cannot re-publish over a previous run's files, so replaying\n"
         "# into the original one fails immediately. Pass a directory to choose the target:\n"
@@ -313,6 +322,9 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         # expansion the shell would treat shlex's quotes as literal characters of the path.
         f"default_target={default_target}\n"
         "target=\"${1:-$default_target}\"\n"
+        'if [ "${NFCLAW_REPLAY_LOCK_PID:-}" != "$$" ]; then\n'
+        '  exec python3 "$_script_dir/replay_guard.py" --lock "$target" "$_script_dir/commands.sh"\n'
+        'fi\n'
         "mkdir -p -- \"$target\"\n"
         # Absolute before the `cd` below: Nextflow resolves a relative --outdir against its launch
         # directory, so `./commands.sh fresh` would otherwise publish into fresh/fresh/.
@@ -325,6 +337,6 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         "cd -- \"$target\"\n"
         f"{env_exports}"
         + _REPLAY_TAIL.replace("__ORIGINAL__", shlex.quote(str(outdir)))
-                      .replace("__COMMAND__", command_str), mode=0o755)
+                      .replace("__COMMAND__", replay_command), mode=0o755)
     _atomic_text(manifest_path, json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     return prov

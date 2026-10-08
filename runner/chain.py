@@ -936,6 +936,33 @@ def _integrity_problems(state: dict, *, only_succeeded: bool = False) -> list[st
             if not isinstance(dependencies, dict):
                 problems.append(f"{sid}: --{name} has malformed input dependencies")
                 continue
+            if "directory_reference" in item:
+                reference = item["directory_reference"]
+                expected = dependencies
+                if item.get("output_dependencies"):
+                    outputs = item["output_dependencies"]
+                    if not isinstance(outputs, dict):
+                        problems.append(f"{sid}: --{name} has malformed output dependencies")
+                        continue
+                    if any(not isinstance(rel, str) or not handoff._relative(rel)
+                           for rel in outputs):
+                        problems.append(f"{sid}: --{name} has malformed output dependencies")
+                        continue
+                    expected = {str(up_dir / rel): digest for rel, digest in outputs.items()}
+                try:
+                    current = None
+                    if isinstance(reference, str) and Path(reference).is_absolute():
+                        if item.get("output_dependencies"):
+                            current = {str(up_dir / rel): digest for rel, digest in
+                                       provenance.output_checksums(up_dir).items()
+                                       if (up_dir / rel).is_relative_to(reference)}
+                        else:
+                            current = provenance.hash_inputs([Path(reference)])
+                except (OSError, ValueError):
+                    current = None
+                if not expected or current != expected:
+                    problems.append(f"{sid}: --{name}: reference directory {reference} changed "
+                                    "or has no matching historical inventory")
             if dependencies:
                 try:
                     up_in = _digests(up_dir / "provenance" / "inputs.sha256", relative=False)

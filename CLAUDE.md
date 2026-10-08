@@ -77,6 +77,12 @@ original bundle's `outputs.sha256`. It logs itself the same way, to
 `<target>/provenance/logs/run.log`, ending with its outcome: `nfclaw status <target>` reads it, and
 `kill <replay pid>` stops Nextflow with it.
 
+New replay bundles acquire the same output-directory writer lock as `nfclaw run`,
+so overlapping runs and replays cannot write into that directory concurrently.
+Invoke `commands.sh` by an absolute or relative path. Moving a bundle preserves
+its internal params/config paths; external inputs, user configs and pipeline
+source must still exist at their recorded paths and pass their checksum checks.
+
 Trust `skill.md` / `reference.md` over your own memory — they are generated from the pinned commit.
 To set any parameter beyond the essentials, look it up in `pipelines/<name>/reference.md` (the complete
 list, with allowed values and value constraints) — do not invent a flag or value. `nfclaw run` rejects

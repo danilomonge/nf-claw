@@ -33,7 +33,15 @@ _run_with_timeout() {
 
 names=("$@")
 if [ "${#names[@]}" -eq 0 ]; then
-  mapfile -t names < <(nfclaw list | cut -f1)
+  # A failed inventory is a failed gate, even if it printed a partial list. Compatible with
+  # macOS bash 3.2, which has no mapfile builtin.
+  if ! inventory=$(nfclaw list); then
+    echo "::error::could not list pipelines"
+    exit 1
+  fi
+  while IFS=$'\t' read -r name _; do
+    [ -z "$name" ] || names+=("$name")
+  done <<< "$inventory"
   # An empty list would "accept" nothing and exit 0 — a vacuous green check.
   if [ "${#names[@]}" -eq 0 ]; then
     echo "::error::no pipelines found (nfclaw list returned nothing)"
@@ -41,10 +49,11 @@ if [ "${#names[@]}" -eq 0 ]; then
   fi
 fi
 
-tmp="${RUNNER_TEMP:-/tmp}"
+tmp=$(mktemp -d "${RUNNER_TEMP:-/tmp}/nfclaw-accept.XXXXXXXX") || exit 1
+trap 'rm -rf -- "$tmp"' EXIT
 summary="${GITHUB_STEP_SUMMARY:-/dev/null}"
 result="${NFCLAW_RESULT_FILE:-/dev/null}"
-: > "$result"
+: > "$result" || exit 1
 
 cfg="$tmp/no-reports.config"
 # -preview builds the DAG but produces no trace; disable the report/timeline/

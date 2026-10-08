@@ -4,8 +4,6 @@ import re
 import subprocess
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parent.parent
 WF = ROOT / ".github" / "workflows"
 
@@ -56,9 +54,6 @@ def test_pages_and_oidc_permissions_are_scoped_to_the_deploy_job():
         assert scope in deploy
 
 
-@pytest.mark.skipif(
-    subprocess.run(["bash", "-c", "type mapfile"], capture_output=True).returncode != 0,
-    reason="needs bash >= 4 (mapfile), as on the CI runners")
 def test_acceptance_script_fails_when_it_finds_no_pipelines(tmp_path):
     # With no arguments it validates `nfclaw list`; an empty list must fail, not pass vacuously.
     fake = tmp_path / "bin"
@@ -71,3 +66,16 @@ def test_acceptance_script_fails_when_it_finds_no_pipelines(tmp_path):
                        env=env, capture_output=True, text=True)
     assert r.returncode != 0
     assert "no pipelines" in (r.stdout + r.stderr).lower()
+
+
+def test_acceptance_script_rejects_a_failed_partial_pipeline_inventory(tmp_path):
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    (fake / "nfclaw").write_text("#!/bin/sh\necho mini\nexit 1\n")
+    (fake / "nfclaw").chmod(0o755)
+    env = {**os.environ, "PATH": f"{fake}{os.pathsep}{os.environ['PATH']}",
+           "RUNNER_TEMP": str(tmp_path)}
+    result = subprocess.run(["bash", str(ROOT / "scripts/nextflow_accept.sh")], cwd=tmp_path,
+                            env=env, capture_output=True, text=True)
+    assert result.returncode != 0
+    assert "could not list" in result.stdout

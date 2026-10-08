@@ -405,6 +405,38 @@ def test_status_detects_a_changed_external_handoff_reference(
     assert chain.status_exit_code(state, problems) == 1
 
 
+def test_status_detects_added_files_in_a_reference_directory(
+        library, fake_runs, tmp_path, monkeypatch):
+    from runner import provenance
+    reference = tmp_path / "index"
+    reference.mkdir()
+    (reference / "index.bin").write_bytes(b"original")
+    hashes = provenance.hash_inputs([reference])
+    rule = {"params": {"fasta": {"upstream_param": "gtf"}}}
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): rule})
+    launch = chain.orchestration.run_pipeline
+
+    def with_reference(name, **kw):
+        result = launch(name, **kw)
+        if not kw["check_only"]:
+            prov = kw["outdir"] / "provenance"
+            if name == "mini_up":
+                (prov / "params.json").write_text(json.dumps({"gtf": str(reference)}))
+            with (prov / "inputs.sha256").open("a") as fh:
+                fh.write("".join(f"{digest}  {path}\n" for path, digest in hashes.items()))
+        return result
+
+    monkeypatch.setattr(chain.orchestration, "run_pipeline", with_reference)
+    out = tmp_path / "chain"
+    chain.run_chain(_spec(), repo_root=root, outdir=out)
+    state, problems = chain.status(out)
+    assert problems == []
+    (reference / "new.bin").write_bytes(b"extra")
+    state, problems = chain.status(out)
+    assert any("directory" in problem for problem in problems)
+    assert chain.status_exit_code(state, problems) == 1
+
+
 def test_resume_refuses_changed_inherited_nextflow_environment(
         library, fake_runs, tmp_path, monkeypatch):
     fake_runs.failures["mini"] = [_boom()]

@@ -67,6 +67,19 @@ def test_successful_preview_is_accepted(tmp_path):
     assert "-preview" in args and "-stub-run" not in args
 
 
+def test_acceptance_uses_private_scratch_and_preserves_unrelated_temp_files(tmp_path):
+    config = tmp_path / "no-reports.config"
+    config.write_text("unrelated user config\n")
+    result = tmp_path / "prev-mini"
+    result.mkdir()
+    (result / "precious.txt").write_text("previous scientific result\n")
+    process, _ = _accept(tmp_path, "* PREVIEW *\n", 0)
+    assert process.returncode == 0, process.stderr
+    assert config.read_text() == "unrelated user config\n"
+    assert (result / "precious.txt").read_text() == "previous scientific result\n"
+    assert not list(tmp_path.glob("nfclaw-accept.*"))
+
+
 def _discovery_step(tmp_path, verdict):
     raw = (ROOT / ".github" / "workflows" / "discover-pipelines.yml").read_text()
     step = raw.split("id: disc", 1)[1].split("\n      - name: Unit tests", 1)[0]
