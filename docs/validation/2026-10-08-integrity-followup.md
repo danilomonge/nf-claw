@@ -89,6 +89,11 @@ and a website dependency audit/typecheck/build job before merge. The complete en
 acceptance workflow partitions the independent pipeline checks into eight bounded
 jobs; a regression verifies that all 91 pipelines are selected exactly once and a
 failed inventory cannot produce a green check.
+The tests workflow previously ran on both every push and every pull-request update,
+launching the same six jobs twice for each PR commit (observed at `60539d8`). It now
+runs once per PR update, on main pushes, and on manual dispatch. The full matrix,
+website and real-engine jobs are retained. Workflow YAML parsing and all seven
+workflow guards passed after this trigger change.
 The Linux/macOS matrix, integration job, website job and drift check passed on
 `9e65baa` in [PR 119](https://github.com/danilomonge/nf-claw/pull/119).
 
