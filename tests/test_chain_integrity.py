@@ -415,3 +415,16 @@ def test_resume_refuses_changed_inherited_nextflow_environment(
     monkeypatch.setenv("NXF_OFFLINE", "true")
     with pytest.raises(NfclawError, match="already succeeded with a different definition"):
         chain.run_chain(None, repo_root=root, outdir=out, resume=True)
+
+
+def test_chain_lock_reports_environment_error_on_oserror(tmp_path, monkeypatch):
+    import os
+    record = tmp_path / "chain"
+    def fail_open(*args, **kwargs):
+        raise PermissionError("read-only filesystem")
+    monkeypatch.setattr(os, "open", fail_open)
+    with pytest.raises(NfclawError) as exc:
+        with chain._lock(record, tmp_path):
+            pass
+    assert exc.value.code == ErrorCode.ENVIRONMENT
+    assert "could not be created or locked" in str(exc.value)

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Living digital interface for the nf-claw pipeline library — fully data-driven from the repository.",
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
