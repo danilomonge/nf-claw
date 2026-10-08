@@ -104,7 +104,8 @@ export function getDocs(): DocPage[] {
   const docsDir = repoPath("docs");
   try {
     for (const f of fs.readdirSync(docsDir)) {
-      if (!f.endsWith(".md")) continue;
+      // Filesystem metadata (including macOS ._ sidecars) is not documentation.
+      if (f.startsWith(".") || !f.endsWith(".md")) continue;
       const content = readText("docs", f);
       if (!content) continue;
       const slug = f.replace(/\.md$/, "");

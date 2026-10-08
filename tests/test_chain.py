@@ -312,19 +312,52 @@ def test_the_probe_tells_an_engine_that_cannot_start_from_a_config_it_rejects(li
     assert "cannot parse" not in issue and "Unable to initialize" in issue
 
 
-def test_a_probe_that_cannot_run_is_no_verdict(library, monkeypatch):
+def test_a_probe_that_cannot_run_reports_unverified_configuration(library, monkeypatch):
     import subprocess
     root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
     planned = chain.plan(_spec(), repo_root=root)
     monkeypatch.setattr(chain.shutil, "which", lambda name: None)
-    assert chain._probe_config(_spec(), planned[0]) == []
+    [issue] = chain._probe_config(_spec(), planned[0])
+    assert "could not be verified" in issue and "nextflow" in issue
     monkeypatch.setattr(chain.shutil, "which", lambda name: "/usr/bin/nextflow")
 
     def slow(cmd, **kw):
         raise subprocess.TimeoutExpired(cmd, 300)
 
     monkeypatch.setattr(chain.subprocess, "run", slow)
-    assert chain._probe_config(_spec(), planned[0]) == []
+    [issue] = chain._probe_config(_spec(), planned[0])
+    assert "could not be verified" in issue and "300" in issue
+
+
+@pytest.mark.parametrize("check_only", [False, True])
+@pytest.mark.parametrize("failure", ["timeout", "oserror"])
+def test_an_inconclusive_config_probe_cannot_certify_or_start_a_chain(
+        library, monkeypatch, tmp_path, check_only, failure):
+    import subprocess
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
+    spec = _spec()
+    planned = chain.plan(spec, repo_root=root)
+    monkeypatch.setattr(chain, "plan", lambda *args, **kw: planned)
+    monkeypatch.setattr(chain.shutil, "which", lambda name: "/usr/bin/nextflow")
+    launches = []
+
+    def fake_pipeline(name, **kw):
+        if not kw["check_only"]:
+            launches.append(name)
+        return orchestration.RunResult(command=f"nextflow run {name}", outdir=kw["outdir"],
+                                       checked_only=kw["check_only"], outputs_report=None)
+
+    def unavailable(cmd, **kw):
+        if failure == "timeout":
+            raise subprocess.TimeoutExpired(cmd, 300)
+        raise OSError("engine could not execute")
+
+    monkeypatch.setattr(chain.orchestration, "run_pipeline", fake_pipeline)
+    monkeypatch.setattr(chain.subprocess, "run", unavailable)
+    with pytest.raises(NfclawError) as err:
+        chain.run_chain(spec, repo_root=root, outdir=tmp_path / "c", check_only=check_only)
+    assert "could not be verified" in str(err.value.details)
+    assert launches == [] and not (tmp_path / "c").exists()
 
 
 def test_an_unparsable_stage_config_stops_the_chain_before_anything_runs(library, fake_runs,

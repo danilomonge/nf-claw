@@ -1,12 +1,12 @@
 # Engine & Version Compatibility
 
-nf-claw wraps each nf-core pipeline **unmodified**, pinned to a validated release tag. The runtime requirements of any pipeline are therefore dictated by that pinned release and its upstream dependencies, not by nf-claw.
+nf-claw wraps each nf-core pipeline **unmodified**, pinned to a commit resolved from a release tag. The runtime requirements of any pipeline are therefore dictated by that pinned release and its upstream dependencies, not by nf-claw.
 
 ---
 
 ### Navigation
 
-[DSL2 Invariant](#1-only-dsl2-pipelines-are-supported) • [Nextflow Engine Matching](#2-matching-nextflow-engine-to-pinned-releases) • [Parser Transition](#the-parser-transition-nextflow-25-vs-26) • [Engine Controls](#runtime-engine-controls-in-nfclaw) • [Continuous Validation](#3-automated-continuous-validation) • [Host Requirements](#4-host-environment-requirements)
+[DSL2 Invariant](#1-only-dsl2-pipelines-are-supported) • [Nextflow Engine Matching](#2-matching-nextflow-engine-to-pinned-releases) • [Parser Transition](#the-parser-transition) • [Engine Controls](#runtime-engine-controls-in-nfclaw) • [Continuous Validation](#3-automated-continuous-validation) • [Host Requirements](#4-host-environment-requirements)
 
 ---
 
@@ -30,9 +30,10 @@ There is **no single Nextflow version that can run every pipeline release**. Eac
 | **Legacy Parser** | Nextflow ≤ `25.10.x` | Permissive Groovy parsing; allows `def check_max()`, unquoted dynamic inclusions, and parse-time manifest lookups. | `chipseq` 2.1.0, `atacseq` 2.1.2, `circdna` 1.1.0, `marsseq` 1.0.3, `scrnaseq` 4.2.0 | `--nxf-ver 25.10.4` |
 | **Strict Parser** | Nextflow ≥ `26.x` | Strict declarative configuration validation before plugins load; rejects Groovy functions in config. | Modern releases developed specifically for Nextflow 26 (`mag` 5.5.0) | Default host Nextflow |
 
-### The Parser Transition (Nextflow 25 vs. 26)
-- **Legacy Parser (Nextflow ≤ 25.x):** Lenient toward Groovy constructs in configuration files, such as helper functions (e.g. `def check_max(obj, type)`), dynamic property access, and non-strict include statements.
-- **Strict Parser (Nextflow ≥ 26.x):** Enforces strict declarative syntax before plugins load. Rejects Groovy function definitions, parse-time `manifest.*` / `validation.*` references, and missing include targets. Older pipeline releases (such as `chipseq` 2.1.0, `atacseq` 2.1.2, or `circdna` 1.1.0) fail at launch under Nextflow 26 with syntax errors unless an earlier engine is pinned.
+### The Parser Transition
+Nextflow 25.04 and 25.10 default to the legacy parser; the strict parser is opt-in via `NXF_SYNTAX_PARSER=v2`. Starting with 26.04, strict syntax is the default, and the legacy parser can be selected with `NXF_SYNTAX_PARSER=v1`. Strict configuration syntax rejects some Groovy constructs allowed by older releases. See the official [strict syntax guide](https://docs.seqera.io/nextflow/strict-syntax) and [26.04 migration notes](https://docs.seqera.io/nextflow/migrations/26-04).
+
+Older pinned releases such as `chipseq` 2.1.0, `atacseq` 2.1.2 and `circdna` 1.1.0 have reproduced parser failures with the default 26.04 parser. Pin an engine that works with that release; a minimum-version declaration alone is not proof of compatibility with every later engine.
 
 ### Runtime Engine Controls in `nfclaw`
 To ensure reproducible execution across releases of varying ages, nf-claw provides explicit engine controls:
@@ -46,10 +47,10 @@ To ensure reproducible execution across releases of varying ages, nf-claw provid
 2. **`--nxf-env KEY=VALUE`**: Passes `NXF_*` variables directly to Nextflow:
    - IPv6-only environments: `--nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true`
    - Air-gapped / offline runs: `--nxf-env NXF_OFFLINE=true`
-3. **Provenance Recording**: Both `--nxf-ver` and `--nxf-env` are recorded in `<outdir>/provenance/run_manifest.json`, and `commands.sh` reproduces the exact engine environment upon replay.
+3. **Provenance Recording**: Both `--nxf-ver` and `--nxf-env` are recorded in `<outdir>/provenance/run_manifest.json`. Replay restores recorded non-sensitive `NXF_*` variables and pins the observed engine version; redacted secrets must be supplied again. Other environment variables and container digests are not frozen.
 
 > [!TIP]
-> **Chaining Engine Overrides:** In pipeline chains (`nfclaw chain run`), each stage can declare its own `"nxf_ver"` in `spec.json`, allowing modern and older pipelines to coexist seamlessly within a single multi-stage workflow.
+> **Chaining Engine Overrides:** In pipeline chains (`nfclaw chain run`), each stage can declare its own `"nxf_ver"` in `spec.json`, allowing modern and older pipelines to use different compatible engines within one chain.
 
 ---
 
@@ -60,10 +61,13 @@ The repository validates engine and workflow compatibility using automated GitHu
 | Workflow | Scope & Verification Level | Failure Criteria |
 |---|---|---|
 | **`smoke.yml`** | Builds and preflights each pipeline's demo command via `nfclaw run --check --demo`. Validates schema parsing, CLI argument handling, and parameter composition without launching Nextflow tasks. | Any schema parsing exception, unknown parameter rejection, or invalid command assembly. |
-| **`nextflow-validate.yml`** | Compiles each pipeline using `nextflow run -profile test,docker -preview` under its declared minimum Nextflow version. Validates task DAG construction, nf-schema rules, and container references without scheduling compute tasks. | Any nonzero exit code, timeout (>15 min), initialization failure, or unresolvable remote staging. |
+| **`nextflow-validate.yml`** | Runs each pinned test profile with `-preview`, using the declared engine (or 24.10.5 when the declaration predates the preview-capable 22.10.0 floor). Checks configuration, applicable schema validation and DAG construction. Containers are not pulled or executed. | Any nonzero exit code, 15-minute timeout, initialization failure, or unresolvable remote staging. |
+| **`tests.yml`** | Tests the wrapper on Linux/macOS, exercises a real deterministic Nextflow run/replay/chain, and audits/builds the website. | A failing test, dependency audit or build. |
+| **`drift-check.yml`** | Regenerates all pinned pipeline context and checks catalog, manifest and handoff consistency. | Any detected drift. |
+| **`demo-validation.yml`** | Executes the pinned demo in native Linux Docker, checks basic FastQC statistics against an independent FASTQ oracle and requires its static plot exports. | Analysis failure, incorrect checked statistics or missing/invalid plot exports. |
 
 ### Strict Exit Code Gating
-Automated discovery and update workflows require **strict exit code 0** from Nextflow validation. Pipelines exhibiting remote test data staging failures or network timeouts are classified as `staging-unverified` and are excluded from automated merging.
+Automated discovery and update workflows require **strict exit code 0** from Nextflow validation. Pipelines with a recognized remote-input staging error are labelled `staging-unverified`; other errors and timeouts are `rejected`. Both block automated merging. Some upstream completion handlers wait for task results that preview never produces, so a compiled DAG can still fail the preview gate. Reduced-output previews and actual test executions must be reported separately from default-profile acceptance.
 
 > [!NOTE]
 > Successful preview and smoke verification confirms syntactic correctness and DAG construction within the tested environment; it does not constitute execution or biological verification on experimental datasets.

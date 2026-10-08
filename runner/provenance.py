@@ -13,7 +13,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from runner.outputs import result_files
-from runner.replay_guard import (hash_inputs, hash_pipeline as hash_pipeline,
+from runner.replay_guard import (MissingInputSource as MissingInputSource,
+                                 hash_inputs, hash_pipeline as hash_pipeline,
+                                 input_files as input_files,
                                  read_checksums as read_checksums)
 from runner.samplesheet import delimiter_for
 from runner.schema import InputSchema, PATH_FORMATS
@@ -203,7 +205,8 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
           input_checksums: dict[str, str] | None = None,
           config_paths: tuple[Path, ...] = (),
           config_checksums: dict[str, str] | None = None,
-          pipeline_checksums: dict[str, str] | None = None) -> Path:
+          pipeline_checksums: dict[str, str] | None = None,
+          unverified_local_paths: dict[str, str] | None = None) -> Path:
     prov = outdir / "provenance"
     prov.mkdir(parents=True, exist_ok=True)
     manifest_path = prov / "run_manifest.json"
@@ -230,6 +233,8 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
     # the whole chain can be reconstructed from any one stage. A plain run's manifest is unchanged.
     if chain:
         manifest["chain"] = chain
+    if unverified_local_paths:
+        manifest["unverified_local_paths"] = dict(unverified_local_paths)
     if pipeline_checksums is not None or submodule.path.is_dir():
         manifest["pipeline_path"] = str(submodule.path.absolute())
         manifest["pipeline_git_head"] = (

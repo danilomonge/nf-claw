@@ -63,7 +63,7 @@ Prints `status: success`, `running (…)`, the outcome it ended with (`failed (e
 - **`<outdir>/.nextflow.log`** — Nextflow's own detailed log. Nextflow runs from `--outdir`, so its console hint "Check '.nextflow.log'" means this file, not one in your working directory.
 - **`stdout.txt` / `stderr.txt` beside `run.log`** — Nextflow's two streams kept apart. Nextflow prints its error reports on stdout; stderr holds the launcher's update notice and, on a failure, the details some errors write there (nf-schema's list of invalid values).
 
-Start a long run in the background with `nohup nfclaw run ... &` and stop it with `kill <nfclaw pid>` (the `pid:` line of the run log): nfclaw then shuts Nextflow and its tasks down, writes the bundle and closes the log, as on Ctrl-C. Even `kill -9` cannot orphan Nextflow on Linux — the kernel stops it with nfclaw.
+Start a long run in the background with `nohup nfclaw run ... &` and stop it with `kill <nfclaw pid>` (the `pid:` line of the run log): nfclaw then shuts Nextflow and its tasks down, writes the bundle and closes the log, as on Ctrl-C. On Linux, parent-death signaling stops the direct Nextflow child if nfclaw is killed abruptly; detached tasks and containers still require the executor's cleanup and are not covered by that signal alone.
 
 When a run fails, nfclaw's error quotes what Nextflow reported on stdout and stderr — plus the `Caused by:` chain from `.nextflow.log` when the console alone hides the reason (e.g. "Unable to parse config file" ← "Network is unreachable") — and names these files by absolute path, along with the failing task's `.command.err` (its `.command.log` and `.command.sh` sit beside it). `--check` launches nothing and writes no log.
 
@@ -73,13 +73,9 @@ When a run fails, nfclaw's error quotes what Nextflow reported on stdout and std
 
 `<outdir>/provenance/commands.sh` re-runs the recorded command. It reproduces the run into a **fresh** directory (default `<outdir>.replay`, or pass one: `./commands.sh /path/to/fresh-dir`) and refuses a target that already holds files. That is deliberate: an nf-core pipeline publishes into `--outdir` and cannot re-publish over a previous run's files, so replaying in place fails immediately on `pipeline_info/execution_trace_*.txt` (and on sarek's `manifest_*.bco.json`). A replay re-executes the pipeline — it is a reproduction, not a `--resume` — and the result can be compared against the original bundle's `outputs.sha256`. It logs itself the same way, to `<target>/provenance/logs/run.log`, ending with its outcome: `nfclaw status <target>` reads it, and `kill <replay pid>` stops Nextflow with it.
 
-Before launching Nextflow, `commands.sh` runs `provenance/replay_guard.py` against the original bundle. The guard verifies that tracked pipeline commits/files, local input files (including paths referenced in samplesheets), and external configs (`-c`) match the recorded snapshot digests in `pipeline.sha256`, `inputs.sha256`, and `configs.sha256`. If inputs or configs have changed or disappeared, replay halts immediately rather than producing silently divergent scientific results. If the bundle has been moved, `commands.sh` dynamically resolves the relocated path.
+Before launching Nextflow, `commands.sh` runs `provenance/replay_guard.py` against the original bundle. The guard checks the recorded pipeline revision and tracked source bytes (`pipeline.sha256`), declared local input content including data paths referenced in samplesheets (`inputs.sha256`), and parameters and configuration (`configs.sha256`). Changed or missing dependencies and incomplete bundles are refused, rather than producing silently divergent scientific results. New replay bundles acquire the same output-directory writer lock as `nfclaw run`, so overlapping runs and replays cannot write into that directory concurrently.
 
-New replay bundles acquire the same output-directory writer lock as `nfclaw run`,
-so overlapping runs and replays cannot write into that directory concurrently.
-Invoke `commands.sh` by an absolute or relative path. Moving a bundle preserves
-its internal params/config paths; external inputs, user configs and pipeline
-source must still exist at their recorded paths and pass their checksum checks.
+Invoke `commands.sh` by an absolute or relative path. Moving a bundle preserves its internal params/config paths; external inputs, user configs and pipeline source must still exist at their recorded paths and pass their checksum checks.
 
 Trust `skill.md` / `reference.md` over your own memory — they are generated from the pinned commit. To set any parameter beyond the essentials, look it up in `pipelines/<name>/reference.md` (the complete list, with allowed values and value constraints) — do not invent a flag or value. `nfclaw run` rejects unknown flags, invalid allowed values and unambiguous scalar/shape errors before it starts; `nf-schema` remains authoritative for the complete schema (especially conditionals and complex constraints) at runtime. Only read `upstream/` for deep dives.
 
@@ -102,7 +98,7 @@ Preflight check first:
 ```bash
 nfclaw chain run spec.json --outdir /abs/chain --check
 ```
-It validates every stage, every handoff, and verifies that every stage's config parses with its target engine (`nextflow config`), writing nothing — then run the same without `--check`.
+It validates every stage, every handoff, and verifies that every stage's config parses with its target engine (`nextflow config`), leaving `--outdir` untouched — then run the same without `--check`. Unavailable engines and timed-out configuration probes block the chain before any stage launches.
 
 Which pipeline can follow which: `nfclaw chain edges [name]`, or the `## Chaining` section of a `skill.md`; without a rule there is no chain (or give the stage an inline `"handoff"`).
 

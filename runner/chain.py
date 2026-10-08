@@ -467,10 +467,13 @@ def _probe_config(spec: ChainSpec, p: Planned, *, timeout_seconds: float | None 
     seconds). It catches the one failure no schema can predict: a release whose config the engine
     rejects outright — an older release on Nextflow 26's strict parser — which would otherwise
     surface only when that stage launches, after every stage before it has run. Run from a scratch
-    directory so nothing lands anywhere; a probe that cannot run, or does not finish, is no verdict."""
+    directory so nothing lands in the output directory. A probe that cannot run or does not
+    finish cannot establish configuration validity and blocks the chain before any launch."""
     opts = options(spec, p.stage)
+    engine = f"Nextflow {opts.nxf_ver}" if opts.nxf_ver else "the installed Nextflow"
+    label = f"{p.stage.dirname} ({p.stage.pipeline})"
     if shutil.which("nextflow") is None:
-        return []                                         # preflight reports a missing nextflow
+        return [f"{label}: configuration could not be verified — nextflow is not on PATH"]
     overlay = dict(opts.nxf_env)
     if opts.nxf_ver:
         overlay["NXF_VER"] = opts.nxf_ver
@@ -481,17 +484,21 @@ def _probe_config(spec: ChainSpec, p: Planned, *, timeout_seconds: float | None 
         cmd += ["-c", cfg]
     cmd += ["config", str(p.tree.path),
             "-profile", nextflow_command.compose_profile(opts.profile, demo=p.stage.demo)]
+    probe_timeout = (min(_PROBE_TIMEOUT, timeout_seconds)
+                     if timeout_seconds is not None else _PROBE_TIMEOUT)
     with tempfile.TemporaryDirectory(prefix="nfclaw-probe-") as scratch:
         try:
             r = subprocess.run(cmd, cwd=scratch, env={**os.environ, **overlay},
                                capture_output=True, text=True,
-                               timeout=min(_PROBE_TIMEOUT, timeout_seconds)
-                               if timeout_seconds is not None else _PROBE_TIMEOUT)
-        except (OSError, subprocess.SubprocessError):
-            return []
+                               timeout=probe_timeout)
+        except subprocess.TimeoutExpired:
+            return [f"{label}: configuration could not be verified — {engine} did not finish "
+                    f"its configuration probe within {probe_timeout:g} seconds"]
+        except (OSError, subprocess.SubprocessError) as exc:
+            return [f"{label}: configuration could not be verified — {engine}'s "
+                    f"configuration probe could not run: {exc}"]
     if r.returncode == 0:
         return []
-    engine = f"Nextflow {opts.nxf_ver}" if opts.nxf_ver else "the installed Nextflow"
     report = (runlog.error_excerpt(r.stdout or "")
               + runlog.stderr_excerpt(r.stderr or "")) or [f"exit status {r.returncode}"]
     if _ENGINE_DOWN.search((r.stdout or "") + (r.stderr or "")):
@@ -586,8 +593,9 @@ def run_chain(spec: ChainSpec | None, *, repo_root: Path, outdir: Path, check_on
     if unparsable:
         raise NfclawError(
             ErrorCode.ENVIRONMENT, "A stage could not start: its Nextflow engine cannot set it up.",
-            fix=("Nothing was launched. Give that stage an engine that runs here and parses its "
-                 "release — its \"nxf_ver\" in the spec entry (see 'Nextflow too new for an older "
+            fix=("Nothing was launched. Resolve the reported engine, configuration, network or "
+                 "probe timeout issue and retry. Give each stage an engine that runs here and "
+                 "parses its release — its \"nxf_ver\" in the spec entry (see 'Nextflow too new for an older "
                  f"release' in {runlog.known_issues_path()}) — and run the chain again."),
             details={"issues": unparsable})
     if check_only:
@@ -913,7 +921,8 @@ def _integrity_problems(state: dict, *, only_succeeded: bool = False) -> list[st
                 up_out = {}
         down_in: dict[str, str] = {}
         if succeeded and any(isinstance(item, dict) and ("sha256" in item
-                                                        or item.get("input_dependencies"))
+                                                        or item.get("input_dependencies")
+                                                        or item.get("output_dependencies"))
                              for item in params.values()):
             try:
                 down_in = _digests(down / "provenance" / "inputs.sha256", relative=False)
@@ -971,6 +980,23 @@ def _integrity_problems(state: dict, *, only_succeeded: bool = False) -> list[st
                 if not expected or current != expected:
                     problems.append(f"{sid}: --{name}: reference directory {reference} changed "
                                     "or has no matching historical inventory")
+                if succeeded:
+                    consumed = normalized_expected = None
+                    if isinstance(reference, str) and Path(reference).is_absolute():
+                        try:
+                            # Parameters resolve the reference root before launch. Rebase the
+                            # published inventory to that root, preserving aliases beneath it.
+                            normalized_root = Path(reference).resolve()
+                            normalized_expected = {
+                                str(normalized_root / Path(path).relative_to(reference)): digest
+                                for path, digest in expected.items()}
+                            consumed = {path: digest for path, digest in down_in.items()
+                                        if Path(path).is_relative_to(normalized_root)}
+                        except (OSError, ValueError, RuntimeError):
+                            pass
+                    if consumed is None or consumed != normalized_expected:
+                        problems.append(f"{sid}: --{name}: reference directory {reference} is "
+                                        "not the input inventory this stage hashed")
             if dependencies:
                 try:
                     up_in = _digests(up_dir / "provenance" / "inputs.sha256", relative=False)

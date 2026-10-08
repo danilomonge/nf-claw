@@ -82,6 +82,10 @@ def _glob_patterns(pattern: str) -> list[str]:
     return [re.sub(r"(?<=/)\*\*(?=[^/])", "**/*", pattern)]
 
 
+class MissingInputSource(FileNotFoundError):
+    """A top-level source is absent, distinct from an incomplete source inventory."""
+
+
 def input_files(paths: list[Path]) -> list[Path]:
     """Expand explicit files, directories and globs, with cycle-safe symlink traversal."""
     files: set[Path] = set()
@@ -103,15 +107,15 @@ def input_files(paths: list[Path]) -> list[Path]:
     for source in paths:
         source = source.expanduser().absolute()
         pattern = str(source)
-        if source.exists():
+        if source.exists() or source.is_symlink():
             matches = [source]
         elif glob.has_magic(pattern) or "{" in pattern:
             matches = sorted({Path(p) for expanded in _glob_patterns(pattern)
                               for p in glob.glob(expanded, recursive=True)})
         else:
-            matches = [source]
+            raise MissingInputSource(f"input source is missing: {source}")
         if not matches:
-            raise FileNotFoundError(f"input pattern matches no files: {source}")
+            raise MissingInputSource(f"input pattern matches no files: {source}")
         for path in matches:
             if path.is_file():
                 files.add(path)

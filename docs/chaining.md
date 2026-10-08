@@ -66,8 +66,8 @@ Options set on a stage override or merge with chain-level options:
 |---|---|---|---|
 | `pipeline` | string | Yes | Name of a tracked pipeline in the library. |
 | `id` | string | No | Unique stage identifier (default: pipeline name; must match `^[a-z0-9][a-z0-9_-]*$`). |
-| `input` | string | No | Explicit `--input` for the stage (typically passed for stage 1; overrides handoff input if provided). |
-| `params` | object | No | Pipeline-specific parameters (e.g. `{"genome": "GRCh38", "aligner": "star_salmon"}`). |
+| `input` | string | No | Explicit `--input` for the stage (typically stage 1); overrides a handoff's input if provided. |
+| `params` | object | No | Pipeline-specific parameters (e.g. `{"genome": "GRCh38", "aligner": "star_salmon"}`). Look up allowed flags in the pipeline's `reference.md`. |
 | `params_file` | string | No | Path to an external parameter JSON or YAML file. |
 | `pipeline_version` | string | No | Pinned release tag (e.g. `3.14.0`) or unreleased `dev`. |
 | `demo` | boolean | No | Appends the pipeline's bundled `test` profile. |
@@ -191,9 +191,10 @@ When resuming:
 
 ## 5. Provenance and Cryptographic Lineage
 
-Chaining maintains complete cryptographic lineage across workflows:
+Chaining records checksum evidence for the links between stages:
 - Each stage's `run_manifest.json` contains a `chain` block recording chain ID, stage index, and upstream dependencies.
-- Downstream stages record the SHA-256 digest of the handoff specification and input samplesheet in `inputs.sha256`.
+- The handoff record stores its rule digest and dependency inventories. Downstream stages snapshot
+  the handed-over local files and samplesheet in `inputs.sha256`.
 - Upstream outputs are verified against `outputs.sha256` before ingestion by downstream handoffs.
 
 ### Chain Verification (`nfclaw chain status`)
@@ -204,5 +205,13 @@ nfclaw chain status /abs/chain
 The status command:
 1. Validates that every completed stage manifest matches the recorded chain state.
 2. Checks that live stage outputs on disk match their original `outputs.sha256` digests.
-3. Cryptographically proves that downstream inputs were derived directly from verified upstream outputs without tampering.
+3. Compares handoff files and reference inventories with upstream evidence and the input hashes
+   recorded by the downstream stage, including internal reference directories.
 4. Exits with code `0` if all links are verified and complete, code `3` if stages are currently executing, and code `1` if any failure or discrepancy is detected.
+
+These checks verify the recorded links and live outputs. They do not independently verify every
+initial input or configuration, prove analytical accuracy, or authenticate evidence against someone
+who can rewrite the entire bundle. Static rule checks use parameter/input schemas and declared
+published paths; the repository has no general upstream output schema. File existence and historical
+identity are checked at runtime. A configuration probe that fails to execute or times out blocks
+both `--check` and execution, rather than being treated as a passing result.
