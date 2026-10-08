@@ -169,3 +169,19 @@ def test_chain_stage_rejects_falsey_values_of_the_wrong_shape(options):
 def test_chain_run_options_reject_values_of_the_wrong_shape(options):
     with pytest.raises(NfclawError):
         chain.parse_spec({"stages": [{"pipeline": "fixture"}], **options})
+
+
+def test_repeated_handoff_placeholder_matches_one_consistent_sample(
+        library, finished_run, tmp_path):
+    import csv
+    _, down = _trees(library("mini_up", "mini"))
+    up = finished_run(tmp_path / "up", {
+        "fastq/A/A_1.fastq.gz": "A reads",
+        "fastq/B/C_1.fastq.gz": "inconsistent sample path"})
+    rule = _rule({"params": {"input": {"build": {
+        "rows": "fastq/{sample}/{sample}_1.fastq.gz",
+        "columns": {"sample": "{sample}", "fastq_1": "fastq/{sample}/{sample}_1.fastq.gz"}}}}})
+    result = handoff.materialize(rule, upstream_outdir=up, downstream_tree=down, dest=tmp_path / "h")
+    with open(result.params["input"], newline="") as stream:
+        rows = list(csv.DictReader(stream))
+    assert rows == [{"sample": "A", "fastq_1": str(up / "fastq/A/A_1.fastq.gz")}]

@@ -330,9 +330,12 @@ def _fill(template: str, values: Mapping[str, str]) -> str:
 
 def _pattern(rows: str) -> tuple[str, re.Pattern]:
     """A `{placeholder}` row pattern as a glob (to find files) and a regex (to capture values)."""
-    parts, pos = [], 0
+    parts, pos, captured = [], 0, set()
     for m in PLACEHOLDER.finditer(rows):
-        parts += [re.escape(rows[pos:m.start()]), f"(?P<{m.group(1)}>[^/]+?)"]
+        name = m.group(1)
+        capture = f"(?P={name})" if name in captured else f"(?P<{name}>[^/]+?)"
+        parts += [re.escape(rows[pos:m.start()]), capture]
+        captured.add(name)
         pos = m.end()
     parts.append(re.escape(rows[pos:]))
     return PLACEHOLDER.sub("*", rows), re.compile("^" + "".join(parts) + "$")

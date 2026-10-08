@@ -38,6 +38,10 @@ the historical Linux/cloud evidence in [the earlier audit](2026-10-08-audit.md).
   could leave the checksum inventory unchanged despite adding logical sample paths.
   Preserve every alias path, detect cycles per traversal branch, and refuse cyclic
   directory inputs before launching.
+- Handoff row patterns repeating a placeholder (for example,
+  `fastq/{sample}/{sample}_1.fastq.gz`) raised a raw regex compilation error despite
+  passing rule validation. Repeated placeholders now require the same captured value,
+  preserving sample identity across directory and filename positions.
 - The Nextflow acceptance script overwrote a fixed config in the shared temporary
   directory and removed an existing `prev-<pipeline>` directory. Use private scratch
   space with cleanup. Also reject failed/partial pipeline inventories and support
