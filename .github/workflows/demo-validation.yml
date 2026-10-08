@@ -5,7 +5,7 @@ on:
     paths:
       - "runner/**"
       - "pipelines/demo/upstream"
-      - "docs/validation/check_demo_fastqc_metrics.py"
+      - "scripts/check_demo_fastqc_metrics.py"
       - ".github/workflows/demo-validation.yml"
 
 permissions:
@@ -39,9 +39,9 @@ jobs:
         run: '"$RUNNER_TEMP/demo/provenance/commands.sh" "$RUNNER_TEMP/demo-replay"'
       - name: Independently validate statistics, scientific replay and all plot exports
         run: |
-          python docs/validation/check_demo_fastqc_metrics.py "$RUNNER_TEMP/demo" \
+          python scripts/check_demo_fastqc_metrics.py "$RUNNER_TEMP/demo" \
             --output "$RUNNER_TEMP/demo-metrics.json"
-          python docs/validation/check_demo_fastqc_metrics.py "$RUNNER_TEMP/demo-replay" \
+          python scripts/check_demo_fastqc_metrics.py "$RUNNER_TEMP/demo-replay" \
             --output "$RUNNER_TEMP/demo-replay-metrics.json" --against "$RUNNER_TEMP/demo-metrics.json"
           python - <<'PY'
           import gzip

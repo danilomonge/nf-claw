@@ -1,4 +1,4 @@
-"""Check that the independent audit oracle detects changed scientific statistics."""
+"""Check that the independent demo FastQC oracle detects changed scientific statistics."""
 import gzip
 import importlib.util
 import zipfile
@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-SCRIPT = Path(__file__).resolve().parents[1] / "docs/validation/check_demo_fastqc_metrics.py"
+SCRIPT = Path(__file__).resolve().parents[1] / "scripts/check_demo_fastqc_metrics.py"
 spec = importlib.util.spec_from_file_location("demo_metric_oracle", SCRIPT)
 oracle = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(oracle)

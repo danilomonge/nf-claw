@@ -22,12 +22,12 @@ import socket
 import subprocess
 import sys
 import threading
-from runner.replay_guard import host_identity
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
 from runner import nextflow_command
+from runner.replay_guard import host_identity
 
 RUN_LOG_NAME = "run.log"
 ERROR_MARK = "==> nfclaw error:"          # precedes the error nfclaw records, up to the last line
