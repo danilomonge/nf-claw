@@ -1,605 +1,272 @@
-# Known issues & troubleshooting
+# Known Issues & Troubleshooting
 
-Most run-time failures fall into two buckets: **environment** (your host or path — fixable with
-an `nfclaw run` flag or a setup change) and **upstream pipeline bugs** (a defect in one pinned
-nf-core release). nf-claw wraps pipelines **unmodified**, so upstream bugs are documented here and
-reported upstream, never patched into the submodule.
+Most run-time failures fall into two categories: **environment** (host, network, or path issues — fixable via `nfclaw run` flags or environment adjustments) and **upstream pipeline defects** (bugs in a specific pinned nf-core release). nf-claw wraps pipelines **unmodified**, so upstream defects are documented here and reported upstream, never patched directly into submodules.
 
-`nfclaw run` flags used below come from the runner; `--nxf-ver`, `--nxf-env` and `--config` are
-recorded in `<outdir>/provenance/` so a working invocation is reproducible. Flag names accept either
-dashes or underscores — `nfclaw` normalises `--skip-busco` and `--skip_busco` alike (the raw
-`nextflow run` needs the pipeline's exact spelling, usually underscores).
+---
 
-**Passing a value that begins with a dash** (e.g. an "extra args" pass-through such as rnaseq's
-`--extra_star_align_args`): use the `--param=value` form so the value is not mistaken for another
-flag — `--extra_star_align_args='--outFilterMismatchNmax 5'` (or put it in a `--params-file`). The
-two-token form `--extra_star_align_args '--outFilterMismatchNmax 5'` is rejected fast with an
-`unknown parameter` error rather than run incorrectly, so this is never a silent failure.
+### Navigation
 
-When a run fails for any other reason, nfclaw's error quotes Nextflow's own error report (with the
-`Caused by:` chain from Nextflow's log when the console hides it) and names, by absolute path, the
-run log (`<outdir>/provenance/logs/run.log` — the whole launch, ending with its
-outcome), Nextflow's log (`<outdir>/.nextflow.log`) and the failing task's `.command.err`, then points
-back to this file; match the symptom below and apply the fix.
+[Host Environment & Setup](#environment) • [Benign Nextflow Warnings](#warnings-a-run-prints-that-are-not-faults) • [Upstream Pipeline Defects](#upstream-pipeline-bugs-documented-not-patched) • [Pipeline Run Notes](#pipeline-specific-run-notes) • [Chaining Test Data Notes](#chains-what-a-demo-true-stage-hands-over)
+
+---
+
+> [!NOTE]
+> **Parameter Syntax & Normalization:**
+> `nfclaw run` normalizes dashes and underscores interchangeably (e.g. `--skip-busco` and `--skip_busco` are equivalent, whereas raw Nextflow requires the pipeline's exact spelling).
+>
+> **Values Starting with a Dash:** When passing parameter values that begin with a hyphen (such as tool pass-through flags like rnaseq's `--extra_star_align_args`): use the `=` syntax `--extra_star_align_args='--outFilterMismatchNmax 5'` or pass them via `--params-file`. The two-token syntax `--extra_star_align_args '--outFilterMismatchNmax 5'` is rejected fast with an `unknown parameter` error to prevent unintended flag misinterpretation.
+
+When a run fails, nfclaw's error diagnostic quotes Nextflow's own error report (including the full `Caused by:` chain from `.nextflow.log` if hidden from the console) and references absolute paths to:
+1. The unified launch log (`<outdir>/provenance/logs/run.log`), ending with the terminal outcome line.
+2. Nextflow's internal engine log (`<outdir>/.nextflow.log`).
+3. The failing task's `.command.err` (accompanied by `.command.log` and `.command.sh`).
+
+---
 
 ## Environment
 
 ### `nfclaw` aborts with `ModuleNotFoundError: No module named 'runner'`
-**Symptom:** the installed `nfclaw` command fails immediately — before doing any work — with
-`ModuleNotFoundError: No module named 'runner'` (or `'librarian'`).
-**Why:** `nfclaw` is a console script that imports the repo's `runner` package, which relies on the
-`pip install -e .` editable install being active in the **same** Python the command runs under. Two
-things break that import: **(1) a space in the install path** — Python's `site` module does not
-execute an editable install's path hook when the virtualenv/site-packages path contains a space, so
-`runner` never lands on `sys.path` (this repo already requires a space-free path for *runs*; the same
-applies to the *install*); **(2)** the editable install was done with a **different Python** than the
-one `nfclaw`'s shebang points to (e.g. a `--user` install whose site-packages isn't on that
-interpreter's path). This happens before any nfclaw code runs, so it can't be caught by the run-time
-space check.
-**Fix:**
-- Use a **space-free path** for both the repo and the virtualenv (on macOS also avoid iCloud paths),
-  and run `pip install -e .` inside the virtualenv you actually use.
-- Or skip the console script and use the **no-install equivalent from the repo root**:
-  `python3 -m runner <cmd>` (maintenance runs the same way: `make <target>`, or
-  `python3 -m librarian.<module>` — e.g. `python3 -m librarian.write_skill --all`). It needs no
-  install — the repo root is already on `sys.path` — and resolves the pinned pipelines correctly.
+- **Symptom:** The installed `nfclaw` command fails immediately — before doing any work — with `ModuleNotFoundError: No module named 'runner'` (or `'librarian'`).
+- **Why:** `nfclaw` is a console script that imports the repo's `runner` package, which relies on the `pip install -e .` editable install being active in the **same** Python the command runs under. Two things break that import:
+  1. **A space in the install path:** Python's `site` module does not execute an editable install's path hook when the virtualenv/site-packages path contains a space, so `runner` never lands on `sys.path` (this repo already requires a space-free path for *runs*; the same applies to the *install*).
+  2. **Python interpreter mismatch:** The editable install was performed with a **different Python** than the one in `nfclaw`'s shebang (e.g. a `--user` install whose site-packages is not on that interpreter's path). This occurs before nfclaw code executes, so it cannot be caught by runtime space checks.
+- **Fix:**
+  - Use a **space-free path** for both the repo and the virtualenv (on macOS also avoid iCloud paths), and run `pip install -e .` inside the virtualenv you actually use.
+  - Or skip the console script and use the **no-install equivalent from the repo root**: `python3 -m runner <cmd>` (maintenance runs the same way: `make <target>`, or `python3 -m librarian.<module>` — e.g. `python3 -m librarian.write_skill --all`). It needs no install — the repo root is already on `sys.path` — and resolves the pinned pipelines correctly.
 
 ### Path contains a space — checked before the run, fails fast
-**Symptom:** a tool fails with a split path, e.g. `cannot create /vol/draft 2/...: Permission
-denied`, `Got unexpected extra argument(s)`, or a module that builds shell commands breaks.
-**Why:** many bioinformatics tools (and Nextflow's work directory) build shell commands without
-quoting their paths, so a space splits the argument. This affects **macOS and Linux** alike.
-**How nfclaw handles it:** `nfclaw run` checks the **repo path, the Nextflow work directory and
-`--outdir`** *before* launching and **fails fast**, naming exactly which path has the space — a
-deterministic check, no guessing. Fixes:
-- move the repo to a space-free path (recommended);
-- or set a space-free work directory: `--nxf-env NXF_WORK=/a/space-free/dir`, and use a space-free
-  `--outdir`;
-- or, if you know your pipeline tolerates spaces, pass `--allow-spaces` to run anyway.
+- **Symptom:** A tool fails with a split path (e.g. `cannot create /vol/draft 2/...: Permission denied`, `Got unexpected extra argument(s)`, or a module building shell commands breaks).
+- **Why:** Many bioinformatics tools (and Nextflow's internal work directory) build shell commands without quoting paths, causing spaces to split arguments. This affects **macOS and Linux** alike.
+- **How nfclaw handles it:** `nfclaw run` checks the **repo path, the Nextflow work directory and `--outdir`** *before* launching and **fails fast**, naming exactly which path has the space — a deterministic check, no guessing.
+- **Fix:**
+  - Move the repository to a space-free path (strongly recommended).
+  - Or set a space-free work directory: `--nxf-env NXF_WORK=/a/space-free/dir`, and use a space-free `--outdir`.
+  - Or, if you know your pipeline tolerates spaces, pass `--allow-spaces` to bypass the preflight check.
 
 ### IPv6-only host — JVM can't reach GitHub
-**Symptom:** `java.net.SocketException: Network is unreachable` while Nextflow downloads
-`https://raw.githubusercontent.com/nf-core/configs/master/nfcore_custom.config`.
-**Why:** the host has no default IPv4 route; the JVM prefers IPv4 and never tries IPv6.
-**Fix:** `--nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true`. To skip remote config
-fetches entirely (offline): `--nxf-env NXF_OFFLINE=true`.
-**On an IPv6-only host you usually need BOTH this *and* the Docker host-network config (next
-section), together:** the JVM flag fixes Nextflow's own GitHub download, while host-network fixes
-DNS *inside* containers — neither alone is enough.
-```bash
-nfclaw run <name> --nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true \
-                  --config host-net.config …
-```
+- **Symptom:** `java.net.SocketException: Network is unreachable` while Nextflow downloads `https://raw.githubusercontent.com/nf-core/configs/master/nfcore_custom.config`.
+- **Why:** The host has no default IPv4 route; the JVM prefers IPv4 by default and never attempts IPv6.
+- **Fix:** `--nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true`. To skip remote config fetches entirely (offline): `--nxf-env NXF_OFFLINE=true`.
+- **Dual Requirement on IPv6 Hosts:** On an IPv6-only host you usually need BOTH this *and* the Docker host-network config (next section) together: the JVM flag fixes Nextflow's own GitHub download, while host-network fixes DNS *inside* containers — neither alone is sufficient:
+  ```bash
+  nfclaw run <name> --nxf-env NXF_JVM_ARGS=-Djava.net.preferIPv6Addresses=true \
+                    --config host-net.config …
+  ```
 
 ### No network at run time — a tool downloads a database
-**Symptom:** a step (e.g. BUSCO) hangs then fails trying to fetch a database it needs.
-**Fix:** disable that step. Booleans work from the CLI now, e.g. `--skip-busco true` (or put
-`{"skip_busco": true}` in a JSON file and pass it as `--params-file params.json`).
+- **Symptom:** A step (e.g. BUSCO) hangs then fails trying to fetch a database it requires.
+- **Fix:** Disable that step via parameters. Booleans work from the CLI, e.g. `--skip-busco true` (or put `{"skip_busco": true}` in a JSON file and pass it as `--params-file params.json`).
 
 ### A process requests more memory than the host has — aborts before any work
-**Symptom:** a run aborts at scheduling time because a single step requests more RAM than the
-machine has, e.g. `Process requirement exceeds available memory -- req: 80 GB; avail: 62.8 GB`.
-Seen with `detaxizer` 1.3.0 run with `--classification_bbduk`: its `BBMAP_BBDUK` step carries
-nf-core's `process_high` label, which `conf/base.config` sizes at `80.GB * task.attempt` — more
-than a typical workstation or small VM has.
-**Why:** an nf-core `base.config` sizes each process by a resource *label*
-(`process_low/medium/high/high_memory`) tuned for an HPC cluster; one high-memory step can exceed
-a small host's physical RAM, and Nextflow refuses to schedule a task it knows can't fit.
-**Fix:** put a ceiling on the whole run with `--limit-cpus` / `--limit-memory` / `--limit-time`,
-sized to the machine:
-```bash
-nfclaw run rnaseq --input ss.csv --outdir results -profile docker \
-  --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h
-```
-nfclaw writes these as Nextflow's [`process.resourceLimits`](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources)
-and passes the generated config with `-c` — the mechanism nf-core prescribes, and the same one its
-own `test` profiles use (which is why `--demo` never hits this and a real run does). The ceiling
-applies to **every** process *and every retry*, so one flag covers whatever the pipeline asks for
-next; the generated config is kept in `<outdir>/provenance/resource_limits.config`, so
-`commands.sh` replays the run under the same ceiling.
-
-Do **not** cap by naming processes (`withName: 'STAR_GENOMEGENERATE' { memory = '15.GB' }`) unless
-you mean to re-size that one step: `withName` changes a single process's *initial* request, so you
-must name every step that might exceed the host — miss one and the run dies there instead
-(`STAR_GENOMEGENERATE`, then `BBMAP_BBSPLIT`, then the next). It also does not cap the retry, which
-asks for more. Use `withName` (via `--config`) only to tune one specific step, e.g. giving a tool
-*less* than its label implies:
-```groovy
-// tune-one-step.config
-process {
-    withName: 'BBMAP_BBDUK' { memory = '12.GB' }
-}
-```
-(Size any cap to the host *and* to what the tool actually needs — too low and the step itself fails
-or is OOM-killed.)
+- **Symptom:** A run aborts at scheduling time because a single step requests more RAM than the machine has, e.g. `Process requirement exceeds available memory -- req: 80 GB; avail: 62.8 GB`. Seen with `detaxizer` 1.3.0 run with `--classification_bbduk`: its `BBMAP_BBDUK` step carries nf-core's `process_high` label, which `conf/base.config` sizes at `80.GB * task.attempt` — more than a typical workstation or small VM has.
+- **Why:** An nf-core `base.config` sizes each process by a resource *label* (`process_low/medium/high/high_memory`) tuned for an HPC cluster; one high-memory step can exceed a small host's physical RAM, and Nextflow refuses to schedule a task it knows cannot fit.
+- **Fix:** Put a ceiling on the whole run with `--limit-cpus` / `--limit-memory` / `--limit-time`, sized to the host machine:
+  ```bash
+  nfclaw run rnaseq --input ss.csv --outdir results -profile docker \
+    --limit-cpus 4 --limit-memory 15.GB --limit-time 1.h
+  ```
+  nfclaw writes these as Nextflow's [`process.resourceLimits`](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources) and passes the generated config with `-c` — the mechanism nf-core prescribes, and the same one its own `test` profiles use (which is why `--demo` never hits this and a real run does). The ceiling applies to **every** process *and every retry*, so one flag covers whatever the pipeline asks for next; the generated config is kept in `<outdir>/provenance/resource_limits.config`, so `commands.sh` replays the run under the same ceiling.
+  
+  Do **not** cap by naming processes (`withName: 'STAR_GENOMEGENERATE' { memory = '15.GB' }`) unless you mean to re-size that one step: `withName` changes a single process's *initial* request, so you must name every step that might exceed the host — miss one and the run dies there instead (`STAR_GENOMEGENERATE`, then `BBMAP_BBSPLIT`, then the next). It also does not cap the retry, which asks for more. Use `withName` (via `--config`) only to tune one specific step, e.g. giving a tool *less* than its label implies:
+  ```groovy
+  // tune-one-step.config
+  process {
+      withName: 'BBMAP_BBDUK' { memory = '12.GB' }
+  }
+  ```
+  (Size any cap to the host *and* to what the tool actually needs — too low and the step itself fails or is OOM-killed.)
 
 ### Nextflow too new for an older release
-**Symptom:** `Unexpected input: ':'`, `Unexpected token`, `Invalid include source`, or
-`import ...` rejected — on Nextflow **26.x**, whose strict parser rejects older Groovy config
-syntax (typed declarations, functions with params, `manifest.*`/`validation.*` accessed at parse
-time, `import` in `.nf`). Many older releases hit this.
-**Fix:** pin an engine the release was written for: `--nxf-ver 25.10.2` (must still satisfy the
-pipeline's declared `nextflowVersion` minimum). If you hit it on most pipelines, set it once for the
-shell: `export NXF_VER=25.10.2` (nfclaw passes it through). See [`compatibility.md`](compatibility.md).
-Confirmed-affected releases that **do** run with `--nxf-ver 25.10.2` include `epitopeprediction`,
-`hgtseq`, `callingcards`, `coproid`, `denovotranscript` 1.2.1, `chipseq` 2.1.0,
-`fastqrepair` 1.0.0, `atacseq` 2.1.2, `circdna` 1.1.0, `genomeassembler` 1.1.0,
-`detaxizer` 1.3.0, `cutandrun` 3.2.2 and `marsseq` 1.0.3 (newer releases such as
-`fetchngs` 1.13.0, `sarek` 3.10.0, and `scrnaseq` 4.2.0 declare `!>=25.10.4`, so use `--nxf-ver 25.10.4`
-to avoid Nextflow 26 strict parser failures on them). Examples of what NF 26
-rejects: chipseq's **and** marsseq's `def check_max(obj, type)` in `nextflow.config` (marsseq 1.0.3
-declares only `!>=23.04.0`, so unpinned it parses under NF 26 and fails at launch with a
-`nextflow.cli.Launcher` error — `--nxf-ver 25.10.2` fixes it; note its `test` profile also sets
-`genome = 'mm10'`, which pulls the mm10 reference from AWS iGenomes and needs network); scrnaseq
-4.1.0's `Invalid include source: conf/test_multiome.config` (the `test_multiome` profile
-`includeConfig`s a file not committed at the tag — NF 26 validates it at parse time even though the
-profile is unused, while the legacy parser skips it and the `--demo` run completes); and cutandrun
-3.2.2's `Cannot invoke method optional() on null object`, from the deprecated output syntax
-`emit: html optional true` in `modules/local/for_patch/trimgalore/main.nf` (sibling modules already
-use the current `emit: …, optional: true`).
-**Exception — some releases need a _newer_ engine, not an older one:** `funcscan` 4.0.0 and
-`lsmquant` 1.0.2 declare `nextflowVersion = '!>=25.10.4'`, so `--nxf-ver 25.10.2` is rejected at the
-version gate (the symptom can read as a parameter/validation failure); use `--nxf-ver 25.10.4`.
-(`bactmap` 1.0.0 hits the parser issue *and* further bugs and can't run in demo here — see the
-upstream table.)
-**In a chain** (`nfclaw chain run`), pin the engine on that stage only — `"nxf_ver": "25.10.4"` in its
-spec entry — since the other stages may need a newer one (fetchngs 1.13.0 requires `>=25.10.4`, mag
-5.5.0 `>=26.04.0`). The chain parses every stage's config with its own engine (`nextflow config`)
-before the first stage launches, so this fails up front, not after the stages before it have run.
-Seen in chains on Nextflow 26.04.3: `atacseq` 2.1.2 (`def check_max`) and `viralrecon` 3.0.0
-(`Invalid include source: conf/test_full_sispa.config`, a profile file missing at the pinned
-commit) — both parse with `"nxf_ver": "25.10.4"`.
+- **Symptom:** `Unexpected input: ':'`, `Unexpected token`, `Invalid include source`, or `import ...` rejected — on Nextflow **26.x**, whose strict parser rejects older Groovy config syntax (typed declarations, functions with params, `manifest.*`/`validation.*` accessed at parse time, `import` in `.nf`). Many older releases hit this.
+- **Fix:** Pin an engine the release was written for: `--nxf-ver 25.10.2` (must still satisfy the pipeline's declared `nextflowVersion` minimum). If you hit it on most pipelines, set it once for the shell: `export NXF_VER=25.10.2` (nfclaw passes it through). See [`compatibility.md`](compatibility.md).
+  Confirmed-affected releases that **do** run with `--nxf-ver 25.10.2` include `epitopeprediction`, `hgtseq`, `callingcards`, `coproid`, `denovotranscript` 1.2.1, `chipseq` 2.1.0, `fastqrepair` 1.0.0, `atacseq` 2.1.2, `circdna` 1.1.0, `genomeassembler` 1.1.0, `detaxizer` 1.3.0, `cutandrun` 3.2.2 and `marsseq` 1.0.3 (newer releases such as `fetchngs` 1.13.0, `sarek` 3.10.0, and `scrnaseq` 4.2.0 declare `!>=25.10.4`, so use `--nxf-ver 25.10.4` to avoid Nextflow 26 strict parser failures on them).
+  
+  Examples of what NF 26 rejects:
+  - chipseq's **and** marsseq's `def check_max(obj, type)` in `nextflow.config` (marsseq 1.0.3 declares only `!>=23.04.0`, so unpinned it parses under NF 26 and fails at launch with a `nextflow.cli.Launcher` error — `--nxf-ver 25.10.2` fixes it; note its `test` profile also sets `genome = 'mm10'`, which pulls the mm10 reference from AWS iGenomes and needs network).
+  - scrnaseq 4.1.0's `Invalid include source: conf/test_multiome.config` (the `test_multiome` profile `includeConfig`s a file not committed at the tag — NF 26 validates it at parse time even though the profile is unused, while the legacy parser skips it and the `--demo` run completes).
+  - cutandrun 3.2.2's `Cannot invoke method optional() on null object`, from deprecated output syntax `emit: html optional true` in `modules/local/for_patch/trimgalore/main.nf` (sibling modules already use current `emit: …, optional: true`).
+- **Exception — some releases need a _newer_ engine:** `funcscan` 4.0.0 and `lsmquant` 1.0.2 declare `nextflowVersion = '!>=25.10.4'`, so `--nxf-ver 25.10.2` is rejected at the version gate (the symptom can read as a parameter/validation failure); use `--nxf-ver 25.10.4`. (`bactmap` 1.0.0 hits the parser issue *and* further bugs and can't run in demo here — see the upstream table).
+- **In a chain (`nfclaw chain run`):** Pin the engine on that stage only — `"nxf_ver": "25.10.4"` in its spec entry — since other stages may need a newer one (fetchngs 1.13.0 requires `>=25.10.4`, mag 5.5.0 `>=26.04.0`). The chain parses every stage's config with its own engine (`nextflow config`) before the first stage launches, so this fails up front, not after the stages before it have run. Seen in chains on Nextflow 26.04.3: `atacseq` 2.1.2 (`def check_max`) and `viralrecon` 3.0.0 (`Invalid include source: conf/test_full_sispa.config`, a profile file missing at the pinned commit) — both parse with `"nxf_ver": "25.10.4"`.
 
 ### BUSCO finishes, then the task hangs until its time limit (IPv6-only host)
-**Symptom:** a `BUSCO_BUSCO` task (mag, and any pipeline running BUSCO 6) is killed at its time limit
-— Nextflow reports `process hasn't exited` — although its `.command.log` shows BUSCO's results and
-"Total running time: 6 seconds" hours earlier.
-**Why:** BUSCO 6 sends anonymous run statistics when it ends ("You may opt out with
---opt-out-run-stats"); on a host without IPv4 that upload never completes, and the task waits on it.
-**Fix:** opt out through a config given with `--config` (in a chain: the stage's `"config"`):
-```groovy
-process {
-    withName: 'BUSCO_BUSCO' {
-        ext.args = { (params.busco_db ? '--offline ' : '') + '--opt-out-run-stats' }
-    }
-}
-```
-(mag's own `ext.args` is `--offline` when `--busco_db` is given; the closure keeps it.)
+- **Symptom:** A `BUSCO_BUSCO` task (mag, and any pipeline running BUSCO 6) is killed at its time limit — Nextflow reports `process hasn't exited` — although its `.command.log` shows BUSCO's results and "Total running time: 6 seconds" hours earlier.
+- **Why:** BUSCO 6 sends anonymous run statistics when it ends ("You may opt out with --opt-out-run-stats"); on a host without IPv4 that upload never completes, and the task waits on it.
+- **Fix:** Opt out through a config given with `--config` (in a chain: the stage's `"config"`):
+  ```groovy
+  process {
+      withName: 'BUSCO_BUSCO' {
+          ext.args = { (params.busco_db ? '--offline ' : '') + '--opt-out-run-stats' }
+      }
+  }
+  ```
+  (mag's own `ext.args` is `--offline` when `--busco_db` is given; the closure preserves it.)
 
 ### Docker bridge network has no DNS (IPv6-only host)
-**Symptom:** containers can't resolve hostnames; downloads inside a container fail even though the
-host has connectivity. Docker's bridge uses the IPv4 DNS `8.8.8.8`, unreachable on an IPv6-only host.
-**Fix:** give containers the host network via a config file, passed with `--config`. `docker.runOptions`
-is a single string that a `--config` **replaces** (it does not merge with the pipeline's value), so keep
-nf-core's default user mapping in the same string — otherwise the container reverts to running as root
-and its outputs become root-owned (see the next section):
-```groovy
-// host-net.config — one runOptions string: host network + nf-core's default user mapping
-docker { runOptions = "--network host -u $(id -u):$(id -g)" }
-```
-`nfclaw run <name> --config host-net.config …`. `--config` is repeatable, but two files that each set
-`docker.runOptions` do **not** combine — the last one wins — so put every option you need in one string.
-`--config` accepts any Nextflow config (also handy for custom resources, below).
+- **Symptom:** Containers cannot resolve hostnames; downloads inside a container fail even though the host has connectivity. Docker's default bridge uses IPv4 DNS `8.8.8.8`, unreachable on an IPv6-only host.
+- **Fix:** Give containers the host network via a config file passed with `--config`. `docker.runOptions` is a single string that a `--config` **replaces** (it does not merge with the pipeline's value), so preserve nf-core's default user mapping in the same string — otherwise the container reverts to running as root and outputs become root-owned:
+  ```groovy
+  // host-net.config — host network + nf-core's default user mapping
+  docker { runOptions = "--network host -u $(id -u):$(id -g)" }
+  ```
+  Run with `nfclaw run <name> --config host-net.config …`.
 
 ### A container creates root-owned files that block publishing
-**Symptom:** a step writes a file/dir owned by root with restrictive permissions, and Nextflow —
-running as your user — can't read or publish it. Examples: `CUSTOM_SRATOOLSNCBISETTINGS` and
-`macrel` (mode `600`), or STAR in `rnaseq` (`_STARgenome/` / `_STARpass1/` as `drwx------`,
-failing with `AccessDeniedException`).
-**Why:** nf-core's `docker` profile already maps your host user into the container
-(`docker.runOptions = '-u $(id -u):$(id -g)'`), which normally prevents this. The trap is that
-`docker.runOptions` is a single string: any `--config` that sets it (for example the host-network file
-above) **replaces** the pipeline's value instead of adding to it, so the mapping is dropped and the
-container falls back to root — its outputs then land in the work dir owned by root.
-**Fix:** keep the user mapping in your `--config`, folded into the same `runOptions` string as any other
-option you set. Use nf-core's own mapping — Nextflow writes it into the generated `.command.run`, where
-the shell evaluates `$(id -u)`/`$(id -g)` at launch:
-```groovy
-// run-as-user.config
-docker { runOptions = "-u $(id -u):$(id -g)" }
-```
-If your shell ever trips over the substitution (`syntax error near unexpected token ')'`), hardcode the
-numeric ids instead — find them with `id -u` / `id -g` (commonly `1000:1000`):
-`docker { runOptions = "-u 1000:1000" }`. `nfclaw run <name> --config run-as-user.config …`. (Or fix
-the file's permissions in the work dir and `--resume`.)
+- **Symptom:** A step writes a file/dir owned by root with restrictive permissions, and Nextflow — running as your user — cannot read or publish it. Examples: `CUSTOM_SRATOOLSNCBISETTINGS` and `macrel` (mode `600`), or STAR in `rnaseq` (`_STARgenome/` / `_STARpass1/` as `drwx------`, failing with `AccessDeniedException`).
+- **Why:** nf-core's `docker` profile maps your host user into the container (`docker.runOptions = '-u $(id -u):$(id -g)'`). Any `--config` that sets `docker.runOptions` **replaces** this value rather than adding to it, causing containers to fall back to root.
+- **Fix:** Keep the user mapping folded into the same `runOptions` string in your `--config`:
+  ```groovy
+  // run-as-user.config
+  docker { runOptions = "-u $(id -u):$(id -g)" }
+  ```
+  If your shell trips over substitution (`syntax error near unexpected token ')'`), hardcode numeric ids (`id -u` / `id -g`): `docker { runOptions = "-u 1000:1000" }`.
 
 ### `--resume` resumed the wrong session
-**Status: fixed.** `nfclaw run` now launches Nextflow **from the `--outdir`**, so each run owns its
-own `.nextflow/` history and cache. `--resume` resumes *this* outdir's session — it can no longer
-pick up another pipeline's run. Use a distinct `--outdir` per pipeline.
+- **Status: Fixed.** `nfclaw run` launches Nextflow **from the `--outdir`**, so each run owns its own `.nextflow/` history and cache. `--resume` resumes *this* outdir's session — it can no longer pick up another pipeline's run. Always use a distinct `--outdir` per pipeline.
 
 ### `--resume` fails with "Unable to acquire lock on session …"
-**Symptom:** after a run was interrupted (killed/timed out), re-running with `--resume` fails to
-acquire the session lock.
-**Why:** a hard kill leaves Nextflow's session lock behind; Nextflow refuses to resume because it
-can't tell the lock is stale rather than held by a live process (it never auto-clears it, by design,
-to avoid corrupting a concurrent run).
-**Fix:** make sure no Nextflow process for that `--outdir` is still running, then remove the stale
-lock under that outdir's state — `rm -f <outdir>/.nextflow/cache/*/LOCK` (or just start fresh in a
-new `--outdir`) — and `--resume` again. Because each run owns its `--outdir`'s `.nextflow/`, this only
-affects that one run.
+- **Symptom:** After a run was interrupted (killed/timed out), re-running with `--resume` fails to acquire the session lock.
+- **Why:** A hard kill leaves Nextflow's session lock behind; Nextflow refuses to resume because it cannot determine whether the lock is stale or held by a live process.
+- **Fix:** Ensure no Nextflow process for that `--outdir` is active, remove the stale lock under `<outdir>/.nextflow/cache/*/LOCK` (or start fresh in a new `--outdir`), and re-run with `--resume`.
 
 ### A run in the background: is it still going, and how did it end?
-**Symptom:** a run started with `nohup nfclaw run … &` — its `run.log` has no
-`==> nfclaw run finished …` last line, or you need its outcome without reading the log.
-**Fix:** `nfclaw status <outdir>` answers from the log alone: `running (nfclaw pid … on host …)` with
-the last output; the outcome it ended with and the recorded error; `refused before launch` (a
-relaunch nfclaw rejected — the cause is shown); or `stopped without an outcome` — nfclaw itself was
-killed with SIGKILL, ran out of memory, or the machine restarted. Then re-run the same command with
-`--resume`. On Linux Nextflow stops with nfclaw even then; elsewhere `nfclaw status` names a Nextflow
-still running so it can be stopped first (`kill <pid>`). Exit code: 0 success, 3 running, 1
-otherwise. Stop a background run with `kill <nfclaw pid>` — never `kill -9` — so the log records it.
+- **Symptom:** A run started with `nohup nfclaw run … &` — its `run.log` has no terminal line, or you need its outcome without opening the file.
+- **Fix:** `nfclaw status <outdir>` answers from the log alone: `running (nfclaw pid … on host …)` with the last output; the outcome it ended with and the recorded error; `refused before launch`; or `stopped without an outcome`. Re-run the command with `--resume`. Stop a background run cleanly with `kill <nfclaw pid>` — never `kill -9` — so logs and provenance are finalized.
 
 ### Launching several pipelines in parallel
-**Status: fixed.** Starting 2+ pipelines at once whose submodules were uninitialised used to race on
-`.git/config` (`could not lock config file`). `nfclaw run` now serialises submodule initialisation
-with a per-repo file lock (and re-checks under it), so concurrent first-time runs initialise each
-submodule exactly once. No action needed; for many pipelines you can also pre-init up front with
-`git submodule update --init`.
+- **Status: Fixed.** Starting 2+ pipelines simultaneously whose submodules were uninitialised previously raced on `.git/config`. `nfclaw run` serializes submodule initialization with a per-repo file lock, ensuring concurrent first-time runs initialize submodules cleanly.
 
 ### Replaying a run: `provenance/commands.sh` reproduces into a *fresh* directory
-**Status: fixed.** The replay script used to re-run into the original `--outdir` and failed on
-contact: an nf-core pipeline publishes into `--outdir`, and it cannot re-publish over a previous
-run's files. Nextflow refuses to overwrite the reports it is configured to write
-(`pipeline_info/execution_trace_*.txt`, and the report/timeline/DAG beside it), and a module that
-emits a fixed-name artefact — sarek's BCO `pipeline_info/manifest_*.bco.json` — collides outright.
-
-`commands.sh` now reproduces the run into a **new** directory, defaulting to `<outdir>.replay`:
-```bash
-./results/provenance/commands.sh                 # → results.replay/
-./results/provenance/commands.sh /tmp/check-it   # or name the target yourself
-```
-It refuses a target that already holds files (rather than half-overwriting one), launches Nextflow
-from the target so the engine's `.nextflow/` state never touches the original run, and passes
-`--outdir "$target"` — which overrides the value in the recorded params file, so one argument
-redirects the whole run. Everything else is byte-for-byte the recorded command, so the reproduction
-can be compared against the original bundle's `outputs.sha256`.
-
-A replay re-executes the pipeline: that *is* the reproduction. It is not a `--resume`, and it does
-not read the original run's cache unless the recorded command's work directory still exists.
+- **Status: Fixed.** The replay script reproduces the run into a **fresh** directory, defaulting to `<outdir>.replay`:
+  ```bash
+  ./results/provenance/commands.sh                 # → results.replay/
+  ./results/provenance/commands.sh /tmp/check-it   # or name the target yourself
+  ```
+  It refuses a target that already holds files, launches Nextflow from the target directory, and passes `--outdir "$target"`.
 
 ### `--check` never writes into `--outdir`
-**Status: fixed.** `--check` validates parameters and prints the command without launching, so it
-must leave the output directory exactly as it found it. It used to create `--outdir` and stage
-`provenance/params.json` in it, which then made the *next* real run fail preflight with
-`--outdir is not empty` — over a directory that held no results at all. The files `--check` stages
-now go to a temp directory instead (the printed command still runs as printed, since it names them
-by absolute path).
+- **Status: Fixed.** `--check` validates parameters and prints the command without launching, staging parameters in a temporary directory and leaving `--outdir` untouched.
 
 ### A replay produces the same files, but not the same bytes
-**Expected — and byte-equality is not the property to check.** nf-core outputs embed the moment they
-were made: the execution report and timeline carry durations and dates, gzip headers carry an mtime,
-zip entries (FastQC) carry timestamps, and MultiQC writes the run date into its HTML. Re-running the
-same pipeline on the same inputs therefore produces the same *files* with different *bytes*. No
-setting in nf-claw or Nextflow changes that; it is inside the tools.
-
-The property that **is** achievable, and that matters, is structural: did the replay produce the same
-set of files? Check it with:
-```bash
-nfclaw verify results.replay --against results
-```
-It compares the two bundles' `outputs.sha256` **by path** and reports `identical` / `changed` /
-`missing` / `extra`, exiting non-zero only when a file is missing or extra — that means the replay
-did different work. Differing bytes in a file both runs produced are reported, not failed.
-
-**Do not diff the two `outputs.sha256` files directly.** Each line is `hash  path`, so a file whose
-content merely changed has a different line in each bundle and shows up as *both* "missing" and
-"extra" — one changed report is counted twice, and a run whose reports simply carry a new timestamp
-reads as hundreds of missing and extra files. That is an artefact of the comparison, not a defect in
-the replay; `nfclaw verify` keys on the path precisely to separate the two questions.
+- **Expected Behavior:** nf-core outputs embed generation timestamps: execution traces, gzip headers, FastQC zip archives, and MultiQC HTML reports embed timestamps and run dates. Re-running on identical inputs produces identical *files* with differing *bytes*.
+- **Verification:** Check structural equivalence via:
+  ```bash
+  nfclaw verify results.replay --against results
+  ```
+  Compares `outputs.sha256` manifests **by path** and reports `identical` / `changed` / `missing` / `extra`. Nonzero exits occur only when files are missing or extra.
 
 ### Chains: `[handoff_failed]` — the next stage's input could not be prepared
-**Symptom:** `nfclaw chain run` stops after a stage succeeded, with `[handoff_failed]` and the chain
-log ending `failed at stage NN-<stage>: handoff`.
-**Why:** the rule (`handoffs/<upstream>/<downstream>.json`, or the stage's inline `handoff`) expected
-an output the upstream run did not produce — a file a pattern matches 0 or several times (rnaseq's
-merged counts sit under whichever quantifier ran), a column the upstream sheet lacks — or the
-samplesheet it prepared would be rejected by the next pipeline (the error lists the rows and names
-the snapshot under `<outdir>/chain/handoffs/`).
-**Fix:** inspect the snapshot and the upstream's results; set the parameter in the stage's own
-`params` (it wins over the handed-over value), give the stage an inline `handoff`, or change the
-upstream stage's options — then `nfclaw chain run spec.json --outdir DIR --resume` (the upstream is
-not re-run). See [`chaining.md`](chaining.md).
+- **Symptom:** `nfclaw chain run` stops after a stage succeeded, with `[handoff_failed]` and the chain log ending `failed at stage NN-<stage>: handoff`.
+- **Why:** The handoff rule expected an output the upstream run did not produce (or produced multiple matching files), or the generated samplesheet failed downstream schema checks.
+- **Fix:** Inspect the snapshot in `<outdir>/chain/handoffs/`; provide parameters directly in stage `params`, supply an inline handoff, and resume: `nfclaw chain run spec.json --outdir DIR --resume`.
 
 ### Concurrency: `another nfclaw run is active in …`
-**Symptom:** `nfclaw run` aborts immediately with `[environment] another nfclaw run is active in <outdir>`.
-**Why:** to prevent session corruption, race conditions, and interleaved logs, `runner/locking.py` holds
-an exclusive non-blocking sibling flock on `.{outdir.name}.nfclaw.lock` throughout workflow execution.
-**Fix:** wait for the active run to finish (`nfclaw status <outdir>`), or stop it (`kill <pid>`) before
-running or resuming in that directory.
+- **Symptom:** `nfclaw run` aborts immediately with `[environment] another nfclaw run is active in <outdir>`.
+- **Why:** To prevent session corruption, `runner/locking.py` holds an exclusive non-blocking sibling flock on `.{outdir.name}.nfclaw.lock` throughout workflow execution.
+- **Fix:** Wait for the active run to finish (`nfclaw status <outdir>`) or terminate it (`kill <pid>`) before launching or resuming in that directory.
 
 ### Chains: `another nfclaw chain is running in …`
-One `nfclaw chain` process per `--outdir`: a second would race on the same stages and state. Wait for
-the first (`tail -n 1 <outdir>/chain/logs/chain.log`) or stop it with `kill <pid>`; the lock is
-released when that process exits, however it exits.
+- **Symptom:** `nfclaw chain` aborts indicating another chain process is running.
+- **Why:** Only one chain process is permitted per `--outdir` to prevent race conditions on shared stage state (`chain/.lock`).
+- **Fix:** Wait for the active chain to complete (`tail -n 1 <outdir>/chain/logs/chain.log`) or stop it with `kill <pid>`.
 
 ### Replay dependency guard failures (`provenance/replay_guard.py`)
-**Symptom:** running `<outdir>/provenance/commands.sh` aborts with `nfclaw replay: dependency check failed: ...`
-before Nextflow is launched.
-**Why:** `commands.sh` executes `replay_guard.py` to ensure local input files (including paths referenced
-in samplesheets), external Nextflow configs (`-c`), and tracked pipeline source commits have not changed
-since the original run. If an input file was modified or deleted, the guard halts to prevent silent
-reproducibility divergence.
-**Fix:** restore the original input files or external configs to match the recorded checksums in
-`<outdir>/provenance/inputs.sha256` and `configs.sha256`. If intentional changes were made, launch a
-new run into a new `--outdir` instead of replaying.
+- **Symptom:** Running `<outdir>/provenance/commands.sh` aborts with `nfclaw replay: dependency check failed: ...` before Nextflow is launched.
+- **Why:** `commands.sh` executes `replay_guard.py` to ensure local input files (including paths referenced in samplesheets), external Nextflow configs (`-c`), and tracked pipeline source commits match their recorded SHA-256 manifests.
+- **Fix:** Restore the original input files or external configs to match the recorded checksums in `<outdir>/provenance/inputs.sha256` and `configs.sha256`. If intentional changes were made, launch a new run into a new `--outdir` instead of replaying.
+
+---
 
 ## Warnings a run prints that are not faults
 
-These appear in a **normal run and in its replay alike** — the replay executes the identical
-recorded command, so any warning the original printed, it prints too. None of them affects results,
-and none originates in nf-claw. They are catalogued here with their real cause so they are not
-re-investigated, and not mistaken for a defect in the run.
+These appear in a **normal run and in its replay alike** — the replay executes the identical recorded command, so any warning the original printed, it prints too. None affects analytical results, and none originates in nf-claw.
 
 ### `WARN: Unrecognized config option 'validation.defaultIgnoreParams'` / `'validation.monochromeLogs'`
-**Caused by running a Nextflow *newer* than the release targets. Harmless — and avoidable.**
+- **Cause:** Running a Nextflow engine *newer* than the release targets. Harmless and avoidable.
+  
+  | Nextflow Version | Output / Result |
+  |---|---|
+  | **25.10.4** (declared minimum `!>=25.10.4`) | **No warnings emitted** |
+  | **26.04.6** | `WARN: Unrecognized config option 'validation.defaultIgnoreParams'` + `'validation.monochromeLogs'` |
 
-Reproduced by running the same pinned `nf-core/scrnaseq` 4.2.0 tree twice, changing nothing but the
-engine:
-
-| Nextflow | result |
-|---|---|
-| **25.10.4** (the version the release declares, `!>=25.10.4`) | **no warning at all** |
-| **26.04.6** | `WARN: Unrecognized config option 'validation.defaultIgnoreParams'` + `'validation.monochromeLogs'` |
-
-Both options are set by the *pipeline's own* `nextflow.config` (scrnaseq 4.2.0 lines 361–364) inside
-the `validation` scope, which the `nf-schema` plugin it declares contributes. Nextflow 26's strict
-config parser validates config options against the scopes it knows *before* plugins are loaded, and
-nf-schema registers no `ConfigScope` for `validation` — so the parser reports the plugin's own scope
-as unrecognised. The plugin still reads the options correctly and the run is unaffected. Tracked
-upstream: [nextflow-io/nf-schema#117](https://github.com/nextflow-io/nf-schema/issues/117).
-
-**Fix:** run the engine the release was written against — each pipeline's `skill.md` names it under
-"Nextflow engine":
-```bash
-nfclaw run scrnaseq --input ss.csv --outdir results -profile docker --nxf-ver 25.10.4
-```
-The pin is recorded in `<outdir>/provenance/`, so the replay uses the same engine and stays quiet too.
+  Both options are set by the pipeline's own `nextflow.config` inside the `validation` scope contributed by `nf-schema`. Nextflow 26's strict parser checks config options before plugins load; because nf-schema registers no `ConfigScope` for `validation`, the parser warns. Tracked upstream in [nextflow-io/nf-schema#117](https://github.com/nextflow-io/nf-schema/issues/117).
+- **Fix:** Run the engine the release was authored for:
+  ```bash
+  nfclaw run scrnaseq --input ss.csv --outdir results -profile docker --nxf-ver 25.10.4
+  ```
 
 ### `WARN: Could not load / include the nf-core institutional config` (a host without network access)
-**Nextflow could not fetch nf-core's *optional* remote config — not a defect in the pipeline or in
-nf-claw, and it does not affect results.** Every nf-core release pulls a shared institutional-config
-file from GitHub at parse time. sarek 3.10.0 (and 3.9.0) does it in its own `nextflow.config` (line 322):
-
-```groovy
-includeConfig params.custom_config_base && (!System.getenv('NXF_OFFLINE') || !params.custom_config_base.startsWith('http'))
-    ? "${params.custom_config_base}/nfcore_custom.config" : "/dev/null"
-```
-
-`custom_config_base` defaults to `https://raw.githubusercontent.com/nf-core/configs/master`, so on a
-host that cannot reach GitHub (offline, IPv6-only, an air-gapped cluster) the remote `includeConfig`
-cannot be resolved and Nextflow warns. The file it holds is *optional* per-institution tuning
-(queue names, container settings); a run that does not need it is unaffected, which is why nf-core
-guards the include rather than failing on it. The warning appears in a normal run and in its replay
-alike, because both run the identical command on the same host.
-
-**Fix (removes the warning entirely):** the include is already written to skip the remote fetch when
-`NXF_OFFLINE` is set — set it, and sarek includes `/dev/null` instead of the URL:
-```bash
-nfclaw run sarek --input ss.csv --outdir results -profile docker --nxf-env NXF_OFFLINE=true
-```
-`nfclaw run` records the variable in `<outdir>/provenance/`, so the replay stays quiet too. This is
-the same `NXF_OFFLINE=true` that `CLAUDE.md` documents under "Tuning the Nextflow engine" for
-skipping remote config fetches; it is the general answer whenever a pinned release reaches out to
-`nf-core/configs` on a network-restricted host, not only for sarek.
+- **Cause:** Nextflow could not fetch nf-core's optional remote institutional configuration from GitHub at parse time. sarek 3.10.0 (and 3.9.0) includes it dynamically in `nextflow.config` (line 322):
+  ```groovy
+  includeConfig params.custom_config_base && (!System.getenv('NXF_OFFLINE') || !params.custom_config_base.startsWith('http'))
+      ? "${params.custom_config_base}/nfcore_custom.config" : "/dev/null"
+  ```
+  On air-gapped or IPv6-only hosts unable to reach GitHub, the remote file cannot be resolved. The configuration is purely optional tuning.
+- **Fix:** Set `NXF_OFFLINE=true` to skip remote includes cleanly:
+  ```bash
+  nfclaw run sarek --input ss.csv --outdir results -profile docker --nxf-env NXF_OFFLINE=true
+  ```
 
 ### `WARN: The following invalid input values have been detected: * --igenomes_base: …` (an institutional profile)
-**Set by the institutional profile, not by you, the pipeline or nf-claw — and it does not affect
-results.** Reproduced with `nfclaw run fetchngs --pipeline-version dev … -profile binac2` (fetchngs
-`dev` at f754e0a, Nextflow 25.10.4): nf-core/configs' `conf/binac2.config` sets
-`params.igenomes_base = '/pfs/10/project/db/igenomes'` for *every* pipeline, so the cluster's local
-iGenomes mirror is used by the pipelines that resolve references. A pipeline that declares no such
-parameter (fetchngs downloads reads; it never resolves a genome) does not have it in its
-`nextflow_schema.json`, and the profile's own `validation.ignoreParams` list does not name it — so
-nf-schema reports the profile's value as an unknown parameter. Nothing reads it, and the run proceeds.
-The same shape applies to any institutional profile that sets a parameter a given pipeline does not
-declare. It needs no fix; the lasting one is upstream — the profile adding the name to its
-`validation.ignoreParams` (report it to nf-core/configs).
+- **Cause:** Set by an institutional profile, not by the pipeline or nf-claw. For example, `binac2.config` sets `params.igenomes_base` for all pipelines; pipelines that do not resolve reference genomes (such as `fetchngs`) do not declare this parameter, causing nf-schema to flag it. It is benign and does not affect analysis.
 
 ### `ERROR org.pf4j.AbstractExtensionFinder - Different class loaders`
-**A plugin-cache condition on the host, not a defect in the pipeline or in nf-claw.** pf4j (the
-plugin framework Nextflow uses) raises this when it finds the same extension point loaded by two
-different class loaders — [its own troubleshooting guide](https://pf4j.org/doc/troubleshooting.html)
-describes it as "the same extension point in two different class loaders".
-
-**Not reproducible here**, and it is worth saying exactly what was tried, because the obvious
-explanation is wrong: `nf-core/scrnaseq` 4.2.0 was run on Nextflow **25.10.4** and **26.04.6**, in
-`-preview` and as a real containerised run, against a plugin cache that already held **three**
-nf-schema versions side by side (2.5.1, 2.6.1, 2.7.2 — the library pins eight different ones across
-its pipelines), and then against a cache seeded with a **duplicate** `nf-schema-2.5.1` entry. None of
-those produced the error: Nextflow loads only the version the pipeline requests.
-
-If you hit it, the state is in the host's plugin cache, so:
-- clear it and let Nextflow re-fetch exactly the pinned versions: `rm -rf "${NXF_HOME:-$HOME/.nextflow}/plugins"`;
-- pin the engine the release declares (`--nxf-ver`, see above) — plugin loading changed between
-  Nextflow majors;
-- the run's own `provenance/run_manifest.json` records the engine version and every `NXF_*` variable
-  the run saw (including `NXF_PLUGINS_DIR` / `NXF_PLUGINS_MODE` if they were exported), which is the
-  fastest way to tell which of the two it was.
+- **Cause:** A plugin-cache artifact on the host where pf4j discovers the same extension point loaded by two class loaders.
+- **Fix:** Clear the plugin cache and re-pin the declared engine:
+  ```bash
+  rm -rf "${NXF_HOME:-$HOME/.nextflow}/plugins"
+  ```
 
 ### `WARN: nf-core pipelines do not accept positional arguments. The positional argument \`nextflow\` has been detected.`
-**A bug in the pinned `nf-core-utils@0.4.0` plugin — not nf-claw, not the samplesheet, and not a shell
-alias.** sarek 3.10.0 (and 3.9.0) declares `nf-core-utils@0.4.0` (`nextflow.config`, `plugins {}` block). That
-plugin registers a pipeline observer (`NfcorePipelineObserver`) that runs on every launch and calls
-`NfcoreConfigValidator.checkProfileProvided(session.profile, session.commandLine, …)`.
-`checkProfileProvided` **splits its second argument on whitespace and reports the first token as a
-positional argument** — but it is handed `session.commandLine`, the whole command string, which always
-begins with the launcher word `nextflow`. So the first token is `nextflow`, every time, and the check
-mis-flags it. (The intended input is the pipeline's *positional argument list*, which is normally
-empty.)
-
-Reproduced with no sarek, no nf-claw, and no samplesheet — a two-line pipeline is enough:
-
-```groovy
-// main.nf
-workflow { }
-// nextflow.config
-plugins { id 'nf-core-utils@0.4.0' }
-```
-```console
-$ nextflow run main.nf -profile standard      # zero positional arguments
-$ grep positional .nextflow.log
-WARN  n.p.nfcore.NfcoreConfigValidator - nf-core pipelines do not accept positional arguments.
-The positional argument `nextflow` has been detected.
-```
-
-It is **inert** (`log.warn`, exit 0 — the run completes normally) and it is logged to `.nextflow.log`,
-not the console, which is why it surfaces only when the log file is read. `nfclaw run` cannot be the
-cause: it builds the command as an argv list handed to `Popen` **without a shell**, so no token is
-word-split or glob-expanded, and `tests/test_nextflow_command.py` pins that. The warning appears just
-the same on a plain `nextflow run nf-core/sarek` and on any other pipeline that loads this plugin
-version.
-
-sarek 3.10.0 is the latest release, so there is no fixed version to pin to; the fix belongs upstream in
-`nf-core-utils` (report it there). Because the misattribution keeps recurring, `nfclaw run` now prints
-an advisory before launching when a pinned release declares this plugin version, so the log warning
-arrives already explained.
+- **Cause:** A known defect in the pinned `nf-core-utils@0.4.0` plugin used by sarek 3.10.0 (and 3.9.0). The plugin's validator splits `session.commandLine` on whitespace and incorrectly inspects the launcher binary name `nextflow`. It is benign (`log.warn`, exit 0) and does not affect execution.
 
 ### `WARN: --validationSchemaIgnoreParams: genomes` is not a valid parameter (scrnaseq `--demo`)
-**A real bug — but in the pinned release, not in nf-claw.** `nf-core/scrnaseq` 4.2.0 declares
-`nf-schema@2.5.1`, yet three of its test profiles (`conf/test.config`, `conf/test_full.config`,
-`conf/test_cellranger_multi.config`) still set `validationSchemaIgnoreParams`, an **nf-validation
-1.x** parameter that nf-schema 2.x removed (its replacement is the `validation.defaultIgnoreParams`
-config option, which the same file already sets — see the
-[migration guide](https://nextflow-io.github.io/nf-schema/latest/migration_guide/)). The pipeline's
-own `nextflow_schema.json` does not declare it either, so nf-schema reports the parameter as invalid.
-The option is **inert**: it does nothing and results are unaffected.
-
-nf-claw wraps releases **unmodified**, so the release itself is not edited. Instead `nfclaw run`
-neutralises the warning at the config layer: when it detects a removed nf-validation 1.x parameter in
-a pinned nf-schema-2.x release, it writes a small generated config and passes it with `-c` —
-
-```groovy
-// <outdir>/provenance/nf_schema_compat.config
-validation { ignoreParams = ['validationSchemaIgnoreParams'] }
-```
-
-`validation.ignoreParams` is nf-schema's officially documented list of parameter names validation
-should skip ([configuration docs](https://nextflow-io.github.io/nf-schema/latest/configuration/)); it
-*adds* to the pipeline's own `validation.defaultIgnoreParams` rather than replacing it. The obsolete
-name is then ignored, so the warning does not appear — while the pinned release tree stays
-byte-identical (drift-check green) and results are unaffected (the option only changes what
-validation *warns about*). The generated config lives in the provenance bundle, so `commands.sh`
-replays the same run. `nfclaw run` also prints an advisory before launching, so the neutralisation is
-recorded and not mistaken for nf-claw hiding an upstream fault:
-
-```
-warning: the pinned release sets `validationSchemaIgnoreParams` in conf/test.config ... nf-claw
-neutralises the warning by adding `validationSchemaIgnoreParams` to nf-schema's
-`validation.ignoreParams` via a generated `-c` config, leaving the pinned release untouched.
-```
-
-The mechanism is deliberately narrow: a release that declares **nf-validation 1.x** is using that
-parameter *correctly* and is never touched (pinned releases that declare nf-validation 1.x include `chipseq`,
-`atacseq`, and `circdna`). Only the nf-schema-2.x-with-a-1.x-parameter combination — the actual defect — triggers
-it, and injecting the ignore for a parameter a real run never sets (the option lives only in the test
-profiles) is a harmless no-op. Today `scrnaseq` is the only pipeline in the library that hits it.
+- **Cause:** An upstream defect in `nf-core/scrnaseq` 4.2.0 test configurations referencing obsolete nf-validation 1.x parameters.
+- **nf-claw Mitigation:** `nfclaw run` automatically neutralizes this warning by generating a narrow `-c` compatibility configuration:
+  ```groovy
+  // <outdir>/provenance/nf_schema_compat.config
+  validation { ignoreParams = ['validationSchemaIgnoreParams'] }
+  ```
+  Pipelines declaring nf-validation 1.x correctly (e.g. `chipseq`, `atacseq`, `circdna`) are untouched.
 
 ### rnaseq `--demo`: `--gtf` with `--gff`, `--transcript_fasta`, and the `first` operator
-**The test dataset, not a misconfiguration.** rnaseq's own `conf/test.config` deliberately sets
-`gtf`, `gff` *and* `transcript_fasta` together (lines 22–24) so the test profile exercises those code
-paths; the pipeline then warns that it will prefer `--gtf` over `--gff`, and Nextflow warns about the
-`first` operator on a single-item channel. These come from the profile's parameters, which nf-claw
-passes through untouched — the same warnings appear in a plain `nextflow run nf-core/rnaseq -profile
-test`. A real run with your own reference does not set both, and does not warn.
+- **Cause:** rnaseq's bundled `conf/test.config` intentionally sets `gtf`, `gff`, and `transcript_fasta` simultaneously to exercise multiple code paths, prompting Nextflow to log preference for `--gtf`. A real production run specifying custom references does not set both and emits no warning.
+
+---
 
 ## Upstream pipeline bugs (documented, not patched)
 
-These are defects in a specific pinned release. The robust fix lives upstream in nf-core; below
-is the nf-claw-side workaround.
+These are defects in specific pinned releases. Workarounds are implemented via CLI flags and configurations without modifying upstream code:
 
-| pipeline @ version | symptom | why it happens | workaround |
+| Pipeline @ Version | Symptom | Underlying Defect | Recommended Workaround |
 |---|---|---|---|
-| `bamtofastq` (incl. 2.1.2 / 2.2.1) | `SAMTOOLS_FAIDX ([])` fails immediately | the `test` profile sets `genome = null` + `igenomes_ignore = true`, so `prepare_indices` routes an empty dummy channel into `SAMTOOLS_FAIDX` | provide a reference (`--fasta` / `--genome`); no fix in pure `--demo` mode — report upstream |
-| `bacass` 2.6.1 (Unicycler) | `SyntaxWarning: invalid escape sequence '\d'` then failure on Python 3.12 | the `unicycler:0.5.1` container ships Python code not updated for 3.12 | choose another assembler: `--assembler megahit` |
-| `hgtseq` 1.1.0 | `a column named input1 ... is mandatory!` | the release contradicts itself: its `assets/schema_input.json` (and the schema-valid demo CSV) use `sample,fastq_1[,fastq_2]`, but the custom parser `create_input_channel` in `workflows/hgtseq.nf` instead requires `sample` + `input1` (+ optional `input2`), where `input1`/`input2` hold the fastq/bam paths (the `group` column in its comment is vestigial — unused) | supply a `sample,input1[,input2]` sheet via `--input` — the bundled `assets/samplesheet_fastq.csv` is the correct shape; don't rely on `--demo` |
-| `funcscan` 2.1.0 – 4.0.0 (current pin), **DRAMP DB only** | `TypeError` in `ampcombi_download.py` when AMPcombi downloads the **DRAMP** database (`amp_ampcombi_db_id='DRAMP'`, the pipeline-wide default) — **not** hit by `--demo`, whose `test` profile overrides the id to `APD` (verified by source inspection through 4.0.0; funcscan 4.0.0 declares `!>=25.10.4`, so run it with `--nxf-ver 25.10.4` — `25.10.2` is rejected at the version gate) | the DRAMP loop in `bin/ampcombi_download.py` calls `valid_sequence_pattern.match(row['Sequence'])` with no NaN guard; rows with an empty `Sequence` are read as `NaN` (a float), so the regex match raises. The APD code path parses FASTA records (always strings), so it has no such call on a `NaN` | for a production DRAMP run, pre-build the DB with the NaN rows filtered and pass `--amp_ampcombi_db /path/to/amp_DRAMP_database` |
-| `taxprofiler` 2.x (MultiQC 1.34 container), reads its `test` MetaPhlAn database finds nothing in | `MULTIQC` fails: `AttributeError: module 'rich' has no attribute 'panel'` (seen chaining fetchngs → taxprofiler with a mouse gut metagenome on the `--demo` databases) | MultiQC's `metaphlan` module raises `IndexError` in `general_stats_cols` on an empty MetaPhlAn profile, and MultiQC's own error report then fails on `rich.panel` — the second traceback hides the first (`.command.log` of the MULTIQC task shows both) | profile reads the databases can classify, or skip the profiler whose result is empty — `--run_metaphlan false` (in a chain: `"params": {"run_metaphlan": false}` on the taxprofiler stage) |
-| `bactmap` 1.0.0 | won't run in `--demo` on any Nextflow here | three chained issues: NF 26 strict parser rejects `def check_max(obj, type)`; NF 25 treats `file("https://…", checkIfExists: true)` (bactmap.nf:13) as a local path → `No such file or directory: https://…`; NF 23's CAPSULE bootstrapper can't resolve Maven deps on this host | not runnable in demo — wait for an upstream fix / report; pin a different release with `--pipeline-version` if one works |
+| `bamtofastq` (incl. 2.1.2 / 2.2.1) | `SAMTOOLS_FAIDX ([])` fails immediately | The `test` profile sets `genome = null` + `igenomes_ignore = true`, routing an empty dummy channel into `SAMTOOLS_FAIDX`. | Provide an explicit reference (`--fasta` / `--genome`); demo mode without reference fails upstream. |
+| `bacass` 2.6.1 (Unicycler) | `SyntaxWarning: invalid escape sequence '\d'` then fails on Python 3.12 | The `unicycler:0.5.1` container ships legacy Python code not updated for Python 3.12. | Select Megahit assembler: `--assembler megahit`. |
+| `hgtseq` 1.1.0 | `a column named input1 ... is mandatory!` | Schema requires `sample,fastq_1[,fastq_2]`, but custom parser `workflows/hgtseq.nf` expects `sample,input1[,input2]`. | Supply a samplesheet matching `sample,input1[,input2]` using `--input`; avoid relying on `--demo`. |
+| `funcscan` 2.1.0 – 4.0.0 (DRAMP DB only) | `TypeError` in `ampcombi_download.py` when downloading DRAMP database | DRAMP download loop regex matches NaN float values when rows contain empty sequence fields. APD database unaffected. (Requires `--nxf-ver 25.10.4`). | Pre-build DRAMP database with NaN rows removed and pass `--amp_ampcombi_db /path/to/db`. |
+| `taxprofiler` 2.x (MultiQC 1.34) | `MULTIQC` fails: `AttributeError: module 'rich' has no attribute 'panel'` | MultiQC raises `IndexError` on empty MetaPhlAn profiles, followed by a secondary failure in error reporting. | Profile reads that match database content, or disable MetaPhlAn: `--run_metaphlan false`. |
+| `bactmap` 1.0.0 | Fails `--demo` execution across Nextflow versions | Chained defects: NF 26 parser rejects `def check_max`; NF 25 mishandles remote `file()` URLs; NF 23 fails Maven resolution. | Not runnable in demo mode; wait for upstream release fix or pin alternative version via `--pipeline-version`. |
 
-When a workaround relies on a different release, confirm the symptom is gone there before relying
-on it — `nfclaw show <name> --pipeline-version X.Y.Z` prints that release's docs.
+---
 
 ## Pipeline-specific run notes
 
-These are not bugs — just a flag or samplesheet value that a constrained environment or a strict
-schema requires:
+- **`fetchngs`** — If accessions lack ENA FTP links, the pipeline falls back to `SRATOOLS_PREFETCH` (requiring NCBI SRA Cloud access). In network-restricted environments, run metadata-only via `--skip_fastq_download`. (Accepts `.csv`, `.tsv`, or `.txt` accession lists at pinned 1.13.0 and `dev`).
+- **`coproid`** — Requires **two** samplesheets: `--input` (FASTQ sheet) and a separate required `--genome_sheet`. Each row in `--genome_sheet` requires `genome_name,taxid,genome_size` plus **exactly one** of `igenome` or `fasta` (mutually exclusive `oneOf` schema). `--kraken2_db` is mandatory and must point to a valid Kraken2 database.
+- **`crisprseq`** — The samplesheet `reference` column expects a **raw DNA sequence string** (pattern `^[ACTGNactgn]+$`), not a FASTA file path.
+- **`circdna`** — Two parameters are **required by schema** for non-demo runs: `--input_format` (`FASTQ` or `BAM`) and `--circle_identifier` (one or more of `circle_map_realign`, `circle_map_repeats`, `circle_finder`, `circexplorer2`, `ampliconarchitect`).
+- **`metapep`** — The `--demo` profile runs `DOWNLOAD_PROTEINS`, which fetches sequences from **NCBI Entrez** (`download_proteins_entrez.py --email $NCBI_EMAIL`) reading a Nextflow secret named `NCBI_EMAIL`. Set the secret prior to execution: `nextflow secrets set NCBI_EMAIL you@example.com`.
+- **`createtaxdb`** — Assign each sample a **non-numeric** `id` (e.g. `seq1`, `chr1`). Purely numeric strings (`"1"`) are coerced to integers by nf-schema, violating string constraints.
+- **`genomeassembler`** — Set at least one of `--ont true` or `--hifi true` (the pipeline aborts with `At least one of params.ont, params.hifi needs to be true.`).
+- **`funcscan`** — Pin `--nxf-ver 25.10.4` (declares `!>=25.10.4`). Demo profiles run all three screenings (AMP, ARG, CAZyme), which download multi-gigabyte models; pre-supply databases via `--amp_ampcombi_db` or disable heavy steps via `--run_cazyme_screening false` and `--arg_skip_deeparg true`.
+- **`sarek` 3.10.0 (`sarek` 3.9.0)** — Upstream examples for cache/index-only runs show `--build_only_index --input false`. In raw Nextflow, this causes an nf-schema validation error because `input` is declared as a string path. In `nfclaw run sarek --input false`, nfclaw intercepts `--input false` and leaves `input` unset in `params.json`, allowing index-only runs (`--build_only_index true --download_cache true`) to succeed cleanly without schema errors. For raw Nextflow runs, omit `--input` instead of passing `false`.
+- **`sarek` 3.10.0 (`sarek` 3.9.0)** — Do not use `--config pipelines/sarek/upstream/conf/test.config` to convert an analysis run into a test run with a custom samplesheet. Extra configs load after initial profile setup, causing validation of default S3 iGenomes paths. Run with `-profile test,docker` instead: `nfclaw run sarek --input samplesheet_sarek.csv --outdir results -profile test,docker`. For bundled test data, use `nfclaw run sarek --demo --outdir results`.
+- **`ampliseq`** — The `test` profile caps memory at 6 GB; export steps (e.g. `QIIME2_EXPORT_RELTAX`) may be OOM-killed (exit 137). In production, raise limits with `--max_memory '<N>.GB'` or `--limit-memory`.
 
-- **`fetchngs`** — if accessions have no ENA FTP URL, the pipeline falls back to `SRATOOLS_PREFETCH`
-  (needs NCBI SRA Cloud). With no such access, run metadata-only: `--skip_fastq_download`. On an
-  IPv6-only (NAT64) host, `prefetch` inside Docker failed with `cannot resolve remote location of
-  'SRR…'` (five attempts) for the pinned release and `dev` alike, while the ENA FTP downloads worked;
-  the `--demo` accession list includes runs that take this path. (The accession list may be `.csv`,
-  `.tsv` **or `.txt`** at the pinned 1.13.0 and at `dev` — pattern `^\S+\.(csv|tsv|txt)$`; a plain
-  `.txt` id list is accepted.)
-- **`coproid`** — needs **two** samplesheets: `--input` (the fastq sheet documented in `skill.md`)
-  and a separate, required `--genome_sheet`. Each `--genome_sheet` row needs
-  `genome_name,taxid,genome_size` plus **exactly one** of `igenome` or `fasta` — these are mutually
-  exclusive (`assets/schema_genomes.json` declares `oneOf`), so filling both fails with `Value
-  matches against more than one schema`; for a custom reference, leave `igenome` blank and give a
-  `fasta` path. `--kraken2_db` is also required and has no default — supply a real Kraken2 database.
-  Separately, `SAM2LCA_UPDATEDB` downloads the NCBI taxonomy over FTP/IPv4 at run time; on a
-  restricted host pre-build it and pass `--sam2lca_db /path/to/db`.
-- **`crisprseq`** — the samplesheet `reference` column is a **raw DNA sequence** (schema pattern
-  `^[ACTGNactgn]+$`), not a FASTA path as in most pipelines; put the sequence itself (e.g. `ACTG…`)
-  in that column.
-- **`circdna`** — two parameters are **required by the schema** for a real `--input` run:
-  `--input_format` (`FASTQ` or `BAM`) and `--circle_identifier` (one or more of
-  `circle_map_realign`, `circle_map_repeats`, `circle_finder`, `circexplorer2`,
-  `ampliconarchitect`, comma-separated). The `--demo`/`test` profile sets both, so a demo run needs
-  neither; a manual samplesheet run without them fails parameter validation at launch.
-- **`metapep`** — the `--demo`/`test` profile runs `DOWNLOAD_PROTEINS`, which fetches protein
-  sequences from **NCBI Entrez** at run time (`download_proteins_entrez.py --email $NCBI_EMAIL`) and
-  reads a Nextflow **secret** named `NCBI_EMAIL` (the module declares `secret "NCBI_EMAIL"`). Without
-  it the step fails with a `ProcessFailedException` in `DOWNLOAD_PROTEINS`. Set the secret once
-  before running and ensure outbound NCBI access: `nextflow secrets set NCBI_EMAIL you@example.com`
-  (and `nextflow secrets set NCBI_KEY <key>` for a higher NCBI rate limit). Secrets live in the
-  Nextflow store and are inherited by `nfclaw run`.
-- **`createtaxdb`** — give each sample a **non-numeric** `id` (e.g. `seq1`, `chr1`). nf-schema
-  coerces a purely numeric string (`"1"`) to an integer, which then fails the `id` column's
-  `type: string` (pattern `^\S+$`) validation.
-- **`genomeassembler`** — set at least one of `--ont true` / `--hifi true` (it aborts at start with
-  `At least one of params.ont, params.hifi needs to be true.`), even when you supply short reads.
-- **`funcscan`** — run it with `--nxf-ver 25.10.4` (it declares `!>=25.10.4`; `25.10.2` is rejected
-  at the version gate). The `--demo`/`test` profile turns on **all three** screenings
-  (`run_amp_screening`, `run_arg_screening`, `run_cazyme_screening`), each of which fetches a
-  database at run time: AMP/AMPcombi downloads **APD** from `aps.unmc.edu`, ARG/DeepARG downloads its
-  model from Zenodo, and CAZyme/dbCAN downloads a **~2.18 GB** database — slow downloads that can
-  appear to hang. On a constrained or slow network, pre-supply the AMP DB with
-  `--amp_ampcombi_db /path/to/db` (this also sidesteps the DRAMP bug in the table above) and skip the
-  heavy steps with `--run_cazyme_screening false` and `--arg_skip_deeparg true`.
-- **`sarek` 3.10.0 (`sarek` 3.9.0)** — upstream usage examples for cache/index-only runs show
-  `--build_only_index --input false`. In raw Nextflow, this causes an nf-schema validation failure
-  because `input` is declared as a string path. In `nfclaw run sarek --input false`, nfclaw
-  specifically intercepts `--input false` and leaves `input` unset in the generated `params.json`,
-  allowing cache- and index-only runs (e.g. `--build_only_index true --download_cache true`) to succeed
-  cleanly without schema validation errors. For raw Nextflow runs, omit `--input` instead of passing `false`.
-  Normal analysis runs should always pass a real samplesheet with `--input`.
-- **`sarek` 3.10.0 (`sarek` 3.9.0)** — do not use
-  `--config pipelines/sarek/upstream/conf/test.config` to turn a normal analysis run into a
-  test-data run with a custom samplesheet. Extra config files are loaded after Sarek's profile/config
-  initialisation wires iGenomes paths, so the run can still validate default S3 iGenomes paths before
-  the test config overrides them. Use the real test profile instead:
-  `nfclaw run sarek --input samplesheet_sarek.csv --outdir results -profile test,docker`. For the
-  bundled upstream test data, prefer `nfclaw run sarek --demo --outdir results`.
-- **`ampliseq`** — the `test` profile caps memory at 6 GB; visualisation/export steps (e.g.
-  `QIIME2_EXPORT_RELTAX`) may be OOM-killed (exit 137) without failing the pipeline. In production
-  raise it with `--max_memory '<N>.GB'` (or a custom `--config`).
+---
 
 ### Chains: what a `demo: true` stage hands over
-A chain stage on `demo: true` runs its release's `test` data — and that is what the next stage
-receives. Most test data chain fine; these do not without help (seen on the de.NBI instance):
-- **`detaxizer`** — its `test` profile filters `tax2filter = 'unclassified'` with a kraken2 database
-  that classifies nothing, so every read is removed and `filter/filtered/` holds empty FastQ files
-  (the next stage then fails on them). Give the stage real filtering: e.g.
-  `"params": {"classification_kraken2": false, "classification_bbduk": true, "fasta_bbduk": "<host fasta>"}`,
-  or a `tax2filter` your `--kraken2db` contains.
-- **`demultiplex`** — its `test` / `test_pe` flowcell is a *human amplicon panel* (BRCA1, MUTYH, …),
-  so a downstream stage on its own `test` references (yeast, a chr22 slice) aligns nothing. Give that
-  stage a human reference (`fasta`/`gtf`). Amplicon reads also need, for **atacseq**, `keep_dups`,
-  `clip_r1` (a ~40 nt prefix) and a `bamtools_filter_pe_config` without its soft-clip rule; for
-  **rnaseq** on auto strandedness, `fq subsample` panics on the small run — set demultiplex's own
-  `"strandedness": "unstranded"`. `sarek` takes paired-end reads only: use `"profile": "test_pe,docker"`.
-- **`taxprofiler`** on reads its test databases do not know: `ganon`, `kmcp`, krakentools'
-  `combine_kreports` and MultiQC's MetaPhlAn module fail on zero hits — run the profilers that
-  tolerate them (`run_kraken2`, `run_kaiju`) and `"run_profile_standardisation": false`.
+
+When a stage specifies `demo: true`, it executes with its bundled test profile dataset:
+- **`detaxizer`:** The test profile filters reads with an empty database, removing all reads and leaving empty FastQ files. For downstream chaining, provide active classification parameters: `"params": {"classification_kraken2": false, "classification_bbduk": true, "fasta_bbduk": "<host fasta>"}`.
+- **`demultiplex`:** Test data consists of human amplicon reads. Downstream stages requiring reference genomes need human references (`fasta`/`gtf`), and paired-end profiles: `"profile": "test_pe,docker"`.
+- **`taxprofiler`:** Test profiling on unrecognized reads fails in unhandled zero-hit modules; enable only resilient profilers (`run_kraken2`, `run_kaiju`) with `"run_profile_standardisation": false`.
