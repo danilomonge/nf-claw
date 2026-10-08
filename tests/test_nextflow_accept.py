@@ -22,6 +22,7 @@ def _accept(tmp_path, log, exit_code):
     fake.mkdir()
     _executable(fake / "git", "#!/bin/sh\n[ \"$1\" = submodule ] || exit 2\nexit 0\n")
     _executable(fake / "nextflow", '#!/bin/sh\nprintf "%s\\n" "$@" > "$FAKE_NXF_ARGS"\n'
+                '[ "$1" = -log ] && printf "engine cause\\n" > "$2"\n'
                 'cat "$FAKE_NXF_LOG"\nexit "$FAKE_NXF_EXIT"\n')
     source_log = tmp_path / "nextflow-output.txt"
     source_log.write_text(log)
@@ -29,6 +30,7 @@ def _accept(tmp_path, log, exit_code):
     env = {**os.environ, "PATH": f"{fake}{os.pathsep}{os.environ['PATH']}",
            "RUNNER_TEMP": str(tmp_path), "GITHUB_STEP_SUMMARY": str(tmp_path / "summary.md"),
            "NFCLAW_RESULT_FILE": str(result), "NFCLAW_KEEP_SUBMODULES": "1",
+           "NFCLAW_LOG_DIR": str(tmp_path / "retained-logs"),
            "FAKE_NXF_LOG": str(source_log), "FAKE_NXF_EXIT": str(exit_code),
            "FAKE_NXF_ARGS": str(tmp_path / "nextflow-args.txt")}
     process = subprocess.run(["bash", str(ROOT / "scripts" / "nextflow_accept.sh"), "mini"],
@@ -65,6 +67,17 @@ def test_successful_preview_is_accepted(tmp_path):
     # The gate invokes preview mode, which Nextflow defines as skipping every process.
     args = (tmp_path / "nextflow-args.txt").read_text().splitlines()
     assert "-preview" in args and "-stub-run" not in args
+
+
+def test_failed_preview_retains_console_and_engine_evidence_after_cleanup(tmp_path):
+    console = "ERROR ~ Invalid sample metadata\n"
+    process, verdict = _accept(tmp_path, console, 1)
+    assert process.returncode != 0
+    assert verdict == "mini\trejected\n"
+    logs = tmp_path / "retained-logs"
+    assert (logs / "mini.console.log").read_text() == console
+    assert (logs / "mini.nextflow.log").read_text() == "engine cause\n"
+    assert not list(tmp_path.glob("nfclaw-accept.*"))
 
 
 def test_acceptance_uses_private_scratch_and_preserves_unrelated_temp_files(tmp_path):

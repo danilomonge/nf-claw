@@ -86,7 +86,7 @@ def test_parallel_acceptance_checks_every_pipeline_exactly_once(tmp_path):
     count = int(re.search(r'SHARD_COUNT: "(\d+)"', text).group(1))
     shards = [int(n) for n in re.search(r"shard: \[([^]]+)\]", text).group(1).split(",")]
     assert shards == list(range(count))
-    raw = text.split("- name: Preview every pipeline", 1)[1].split("        run: |\n", 1)[1]
+    raw = text.split("- name: Preview every pipeline", 1)[1].split("        run: |\n", 1)[1].split("\n      - name:", 1)[0]
     script = "\n".join(line[10:] for line in raw.splitlines())
     fake = tmp_path / "bin"
     fake.mkdir()

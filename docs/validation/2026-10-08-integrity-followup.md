@@ -59,6 +59,8 @@ the final comparison excludes run metadata consistently with the output manifest
   Its result matches Python's independently computed SHA-256 oracle. Its relocated
   replay is byte-identical; changing the original input prevents execution. This is
   now a committed integration test, also exercised by a dedicated GitHub Actions job.
+  A real two-stage chain also matches an independently computed compound digest,
+  verifies its handoff, and detects mutation of the upstream output.
 - Website: TypeScript check and Next.js production export passed; 109 pages generated.
   `npm audit --package-lock-only` reported zero known vulnerabilities.
 - Python dependency audit: zero known vulnerabilities after upgrading pip in the
@@ -74,10 +76,10 @@ the final comparison excludes run metadata consistently with the output manifest
   generated-document/catalog/handoff drift check passed. All 91 demo commands passed
   real wrapper preflight with Docker running (`check_only=True`); these checks did not
   execute analysis tasks or validate their Nextflow configs at runtime.
-- Full local suite after the fixes: 883 passed, 2 skipped (Linux `/proc` and
-  `PR_SET_PDEATHSIG` tests). A subsequent six-test workflow regression run also passed,
-  including the newly added partial-inventory case. Statement coverage: 90.19%;
-  branch coverage: 85.38%; combined coverage: 88.85%. Coverage is a measurement of
+- Full local suite at `9e65baa`: 904 passed, 2 skipped (Linux `/proc` and
+  `PR_SET_PDEATHSIG` tests). The subsequent acceptance-log retention change passed
+  all 25 acceptance/workflow tests. Statement coverage at `9e65baa`: 90.37%;
+  branch coverage: 85.71%; combined coverage: 89.07%. Coverage is a measurement of
   exercised code, not a correctness guarantee; subprocess execution of the copied
   replay guard is checked by behavior but is not counted in parent-process coverage.
 
@@ -86,6 +88,40 @@ and a website dependency audit/typecheck/build job before merge. The complete en
 acceptance workflow partitions the independent pipeline checks into eight bounded
 jobs; a regression verifies that all 91 pipelines are selected exactly once and a
 failed inventory cannot produce a green check.
+The Linux/macOS matrix, integration job, website job and drift check passed on
+`9e65baa` in [PR 119](https://github.com/danilomonge/nf-claw/pull/119).
+
+## Acceptance failures under investigation
+
+The fresh [eight-shard acceptance run](https://github.com/danilomonge/nf-claw/actions/runs/37814228020)
+at `aede646` has failed; it is not a passing release gate. Completed failures include:
+
+- `bactmap` 1.0.0, Nextflow 24.10.5: missing bundled reference URL. Independent
+  HTTP inspection returned 404, and the test-datasets branch contains no genome
+  directory. The older known-issues explanation that the URL became a local path
+  was unsupported and has been corrected.
+- `marsseq` 1.0.3, Nextflow 23.04.0: required local references absent in a fresh
+  output directory. A separate reference-building preview using the schema's
+  `build_references=true` parameter passed on Nextflow 25.10.4. It exercises the
+  reference-building DAG only; it does not validate the failed analysis DAG.
+- `createpanelrefs` 1.0.0 (Nextflow 26.04.0), `proteinfamilies` 2.6.0
+  (Nextflow 26.04.0), and `multiplesequencealign` 1.1.1 (Nextflow 25.04.2):
+  previews did not finish within 900 seconds (exit 124). Their consoles do not
+  establish the underlying causes.
+
+All eight shards completed: three jobs passed and five failed. The workflow now retains
+console logs, individual engine logs and a verdict table after scratch cleanup,
+including failures and timeouts, to make subsequent diagnosis possible. No failure
+is converted to acceptance, and no placeholder input is substituted to satisfy a
+path check. All upstream gitlinks and source trees remain unchanged.
+
+A real Docker `demo` run on macOS arm64 completed after a timeout and resume,
+publishing 45 files and a MultiQC HTML report. It does not establish complete
+component success: MultiQC's Chromium image-export subprocesses failed under QEMU
+(0/36 exports completed), while MultiQC itself returned zero. The initial failed
+attempt and the successful resumed attempt remain in the run log. A fresh run and
+replay are being checked separately; the resumed run is not reported as a clean
+reproduction or as validation of all exported plots.
 
 ## Scientific limits
 

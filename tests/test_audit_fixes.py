@@ -56,7 +56,8 @@ def test_nextflow_accept_timeout_is_portable():
     assert "_run_with_timeout()" in text
     assert "command -v timeout" in text
     assert "command -v gtimeout" in text
-    assert "NXF_VER=\"$ver\" _run_with_timeout 900 nextflow run" in text
+    # Global engine options such as -log may precede the run subcommand.
+    assert "NXF_VER=\"$ver\" _run_with_timeout 900 nextflow " in text
 
 
 def test_auto_update_validates_changed_releases_before_merge():

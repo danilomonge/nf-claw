@@ -15,6 +15,7 @@
 # Env:
 #   NFCLAW_RESULT_FILE      if set, write "<name>\t(accepted|staging-unverified|rejected)" per line
 #   NFCLAW_KEEP_SUBMODULES  if "1", do not deinit submodules after checking
+#   NFCLAW_LOG_DIR         if set, retain console and engine logs per pipeline
 #
 # Exits non-zero unless every pipeline completed its preview successfully.
 set -uo pipefail
@@ -54,6 +55,10 @@ trap 'rm -rf -- "$tmp"' EXIT
 summary="${GITHUB_STEP_SUMMARY:-/dev/null}"
 result="${NFCLAW_RESULT_FILE:-/dev/null}"
 : > "$result" || exit 1
+logs="${NFCLAW_LOG_DIR:-}"
+if [ -n "$logs" ]; then
+  mkdir -p -- "$logs" || exit 1
+fi
 
 cfg="$tmp/no-reports.config"
 # -preview builds the DAG but produces no trace; disable the report/timeline/
@@ -79,6 +84,9 @@ for name in "${names[@]}"; do
   work="$tmp/work-$name"
   if ! git submodule update --init --depth 1 "$up" >"$tmp/$name-submodule.out" 2>&1; then
     cat "$tmp/$name-submodule.out"
+    if [ -n "$logs" ]; then
+      cp -- "$tmp/$name-submodule.out" "$logs/$name-submodule.log" || exit 1
+    fi
     echo "::error::Could not initialize $name submodule"
     echo "| \`$name\` | n/a | ❌ |" >> "$summary"
     printf '%s\trejected\n' "$name" >> "$result"
@@ -93,8 +101,14 @@ for name in "${names[@]}"; do
   fi
   echo "::group::$name (nextflow $ver)"
   log="$tmp/$name.out"
-  NXF_VER="$ver" _run_with_timeout 900 nextflow run "$up" -profile test,docker \
+  NXF_VER="$ver" _run_with_timeout 900 nextflow -log "$tmp/$name.nextflow.log" run "$up" -profile test,docker \
     -c "$cfg" --outdir "$out" -work-dir "$work" -preview > "$log" 2>&1 && rc=0 || rc=$?
+  if [ -n "$logs" ]; then
+    cp -- "$log" "$logs/$name.console.log" || exit 1
+    if [ -f "$tmp/$name.nextflow.log" ]; then
+      cp -- "$tmp/$name.nextflow.log" "$logs/$name.nextflow.log" || exit 1
+    fi
+  fi
   if [ "$rc" = 0 ]; then
     tail -6 "$log"
     echo "| \`$name\` | $ver | ✅ |" >> "$summary"
