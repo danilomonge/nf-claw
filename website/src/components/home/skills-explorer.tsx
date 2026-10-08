@@ -15,21 +15,22 @@ import {
   SlidersHorizontal,
   Table2,
 } from "lucide-react";
-import type { SkillSummary } from "@/lib/derive";
+import type { ParamHit, SkillCard } from "@/lib/derive";
 import { CATEGORIES, OTHER_CATEGORY, colorForCategory } from "@/lib/derive";
 import { CodeBlock } from "@/components/ui/code-block";
 import { Highlight } from "@/components/ui/highlight";
 import { InlineMarkdown } from "@/components/ui/inline-markdown";
 import { SearchField, DomainChips } from "@/components/ui/filters";
+import { useParamIndex } from "@/lib/param-index";
 import { cn, formatDate, humanize } from "@/lib/utils";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const ORDER = [...CATEGORIES.map((c) => c.name), OTHER_CATEGORY.name];
 const MOBILE_PAGE = 8;
 
-type Result = { skill: SkillSummary; matchedParams: SkillSummary["params"] };
+type Result = { skill: SkillCard; matchedParams: ParamHit[] };
 
-export function SkillsExplorer({ skills }: { skills: SkillSummary[] }) {
+export function SkillsExplorer({ skills }: { skills: SkillCard[] }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
   const [selected, setSelected] = useState<string | null>(skills.find((s) => s.name === "rnaseq")?.name ?? skills[0]?.name ?? null);
@@ -46,14 +47,20 @@ export function SkillsExplorer({ skills }: { skills: SkillSummary[] }) {
   }, [skills]);
 
   const q = query.trim().toLowerCase();
+  // Parameters are not in the page: they load the first time the search box is used.
+  const [warm, setWarm] = useState(false);
+  const { index, failed } = useParamIndex(warm || q.length > 0);
 
   const results = useMemo<Result[]>(() => {
     return skills
       .filter((s) => category === "All" || s.category === category)
       .map((s) => {
-        const matchedParams = q
-          ? s.params.filter((p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q))
-          : [];
+        const matchedParams: ParamHit[] =
+          q && index
+            ? (index[s.name] ?? [])
+                .filter(([name, , description]) => name.toLowerCase().includes(q) || description.toLowerCase().includes(q))
+                .map(([name, group, description]) => ({ name, group, description }))
+            : [];
         const textMatch =
           !q ||
           s.name.toLowerCase().includes(q) ||
@@ -63,7 +70,7 @@ export function SkillsExplorer({ skills }: { skills: SkillSummary[] }) {
       })
       .filter((r) => r.visible)
       .sort((a, b) => (q ? a.rank - b.rank || b.matchedParams.length - a.matchedParams.length : 0) || a.skill.name.localeCompare(b.skill.name));
-  }, [skills, category, q]);
+  }, [skills, category, q, index]);
 
   // Keep the selection inside the visible results.
   useEffect(() => {
@@ -99,19 +106,29 @@ export function SkillsExplorer({ skills }: { skills: SkillSummary[] }) {
   return (
     <div className="mt-12">
       <div className="glass flex flex-col gap-3 p-3 sm:p-4">
-        <SearchField value={query} onChange={setQuery} placeholder="Search skills, descriptions and every parameter (e.g. “aligner”, “strandedness”)…" label="Search skills and parameters" />
+        <SearchField
+          value={query}
+          onChange={setQuery}
+          onFocus={() => setWarm(true)}
+          placeholder="Search skills, descriptions and every parameter (e.g. “aligner”, “strandedness”)…"
+          label="Search skills and parameters"
+        />
         <DomainChips domains={categories} total={skills.length} value={category} onChange={setCategory} wrapFrom="lg" />
       </div>
 
       <p className="mt-3 px-1 text-xs text-fog-dim" aria-live="polite">
         {results.length} skill{results.length !== 1 ? "s" : ""}
+        {q && !index && !failed && " · searching parameters…"}
+        {q && failed && " · parameter search unavailable"}
         {q && totalParamHits > 0 && ` · ${totalParamHits} matching parameter${totalParamHits !== 1 ? "s" : ""}`}
       </p>
 
       {results.length === 0 ? (
         <div className="glass mt-4 flex flex-col items-center gap-3 py-16 text-center">
           <Search className="h-6 w-6 text-fog-faint" />
-          <p className="text-sm text-fog-muted">No skill or parameter matches “{query}”.</p>
+          <p className="text-sm text-fog-muted">
+            {index || failed ? `No skill or parameter matches “${query}”.` : "Searching parameters…"}
+          </p>
           <button onClick={() => { setQuery(""); setCategory("All"); }} className="pill pill-off">
             Reset filters
           </button>

@@ -154,6 +154,28 @@ export interface SkillSummary {
   params: ParamLite[];
 }
 
+/**
+ * A skill as the home page ships it: no parameters (they load on demand from /search/params.json),
+ * group titles left to the client (humanize(name)) and a short commit.
+ */
+export type SkillCard = Omit<SkillSummary, "params" | "groups"> & { groups: { name: string; count: number }[] };
+
+/** One parameter as the skills search shows it. */
+export interface ParamHit {
+  name: string;
+  group: string;
+  description: string;
+}
+
+/** pipeline name → [parameter, group, description] for every parameter (served as /search/params.json). */
+export type ParamIndex = Record<string, [string, string, string][]>;
+
+export function toSkillCard(p: Pipeline): SkillCard {
+  const { params: _params, groups, commit, ...card } = toSkill(p);
+  void _params;
+  return { ...card, commit: commit.slice(0, 7), groups: groups.map(({ name, count }) => ({ name, count })) };
+}
+
 export function toSkill(p: Pipeline): SkillSummary {
   return {
     name: p.name,

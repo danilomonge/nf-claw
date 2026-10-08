@@ -637,12 +637,10 @@ def test_status_of_a_failed_run_prints_the_recorded_error(tmp_path, monkeypatch,
     assert "[execution_failed] Nextflow execution failed (exit status 1)." in out
 
 
-def test_status_of_a_running_run_exits_3(tmp_path, monkeypatch, capsys):
+def test_status_of_a_running_run_exits_3(tmp_path, monkeypatch, capsys, named_process):
     import socket
-    import subprocess
-    import sys
     monkeypatch.setattr(cli, "_repo_root", lambda: tmp_path)
-    proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)", "nfclaw"])
+    proc = named_process("nfclaw")
     try:
         _write_run_log(tmp_path / "out", "==> nfclaw run started 2026-10-06T10:00:00+00:00\n"
                        f"    host: {socket.gethostname()}\n    pid: {proc.pid}\n"

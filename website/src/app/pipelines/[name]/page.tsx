@@ -27,6 +27,7 @@ import { InlineMarkdown } from "@/components/ui/inline-markdown";
 import { ParameterExplorer } from "@/components/pipeline/parameter-explorer";
 import { Reveal } from "@/components/ui/reveal";
 import { SectionNav, type SectionLink } from "@/components/ui/section-nav";
+import { OG_IMAGE, siteUrl } from "@/lib/site";
 import { cn, formatDate } from "@/lib/utils";
 
 export function generateStaticParams() {
@@ -37,9 +38,13 @@ export async function generateMetadata({ params }: { params: Promise<{ name: str
   const { name } = await params;
   const p = getPipeline(name);
   if (!p) return { title: "Pipeline not found" };
+  const title = `${p.name} ${p.version}`;
   return {
-    title: `${p.name} ${p.version}`,
+    title,
     description: p.description,
+    // absolute: Next does not add the base path to metadata URLs
+    alternates: { canonical: siteUrl(`/pipelines/${p.name}/`) },
+    openGraph: { title: `${title} · nf-claw`, description: p.description, type: "article", images: [OG_IMAGE] },
   };
 }
 
