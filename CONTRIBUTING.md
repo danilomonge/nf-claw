@@ -1,12 +1,12 @@
 # Contributing to nf-claw
 
-Welcome! nf-claw provides AI agents and bioinformaticians with a token-minimal, deterministic, and drift-free interface to nf-core workflows. Contributions are welcome across pipeline curation, chaining rules, runtime features, and documentation.
+Welcome! nf-claw provides AI agents and bioinformaticians with a token-minimal, deterministic, and drift-free interface to nf-core workflows. Contributions are welcome across pipeline curation, chaining rules, runtime features, testing, and documentation.
 
 ---
 
 ### Navigation
 
-[Core Tenets](#core-development-tenets) • [Adding Pipelines](#adding-a-new-pipeline) • [Chaining Handoff Rules](#adding-a-chaining-handoff-rule) • [Code Quality & Testing](#development--code-quality) • [Makefile Targets](#makefile-targets) • [Agent Sync](#agent-guidance-sync)
+[Core Tenets](#core-development-tenets) • [Repository Structure](#repository-structure) • [Reporting Bugs](#reporting-bugs) • [Proposing New Features](#proposing-new-features) • [Fixing Inconsistencies](#fixing-inconsistencies--schema-drift) • [Contribution Workflow](#contribution-workflow) • [Coding Standards](#coding-standards--implementation-guidelines) • [Adding Pipelines](#adding-a-new-pipeline) • [Chaining Handoff Rules](#adding-a-chaining-handoff-rule) • [Testing & Quality](#testing-requirements--quality-assurance) • [Agent Guidance Sync](#agent-guidance-sync)
 
 ---
 
@@ -20,6 +20,175 @@ All contributions must uphold four architectural invariants:
 | **2. Deterministic Outputs** | Generated markdown and JSON documents must remain bit-identical across repeated runs on the same commits. Timestamps are forbidden in generated context; git commit hashes serve as immutable version anchors. |
 | **3. Test-Driven Development (TDD)** | Every bugfix or new feature must be paired with regression tests. Write the failing test first, implement the minimal fix, and verify with `make test`. |
 | **4. Zero-Drift Invariant** | Committed context (`skill.md`, `reference.md`, `catalog.*`) must always match pinned submodule code. Any discrepancy between context files and pinned submodules is rejected by the drift gate (`python3 -m librarian.check_drift`). |
+
+---
+
+## Repository Structure
+
+The repository is structured into four distinct, decoupled functional zones:
+
+```
+                          ┌────────────────────────────────────────┐
+                          │             nf-claw Core               │
+                          └────────────────────────────────────────┘
+                                              │
+             ┌──────────────────┬─────────────┴────────────┬──────────────────┐
+             ▼                  ▼                          ▼                  ▼
+       ┌──────────────┐   ┌──────────────┐          ┌──────────────┐   ┌────────────────┐
+       │  pipelines/  │   │   handoffs/  │          │   runner/    │   │   librarian/   │
+       │ (Submodules  │   │  (Chaining   │          │ (CLI, Engine │   │ (Drift Gate,   │
+       │  & Skills)   │   │    Rules)    │          │  & Runtime)  │   │  Generators)   │
+       └──────────────┘   └──────────────┘          └──────────────┘   └────────────────┘
+```
+
+| Path | Zone | Function & Responsibility |
+|---|---|---|
+| `pipelines/<name>/` | **Library Content** | Contains `upstream/` (pinned git submodule pointing to an official release tag) plus generated `skill.md` (agent instructions) and `reference.md` (schema parameter reference). |
+| `runner/` | **Execution Engine** | Python runtime (`nfclaw` CLI) providing preflight schema validation, execution locking, signal trapping, provenance capture, and multi-stage chaining. |
+| `librarian/` | **Maintenance Automation** | Tools for building context files (`write_skill.py`, `write_catalog.py`), checking schema drift (`check_drift.py`), and tracking upstream releases. |
+| `handoffs/` | **Chaining Rules** | Declarative JSON specifications (`handoffs/<upstream>/<downstream>.json`) defining output-to-input mappings between sequential stages. |
+| `sources.tsv` | **Manifest Registry** | Tab-separated manifest mapping pipeline names to upstream git remotes and version tracking policies (`latest-release`). |
+| `catalog.md` / `.json` | **Pipeline Catalog** | Auto-compiled catalog detailing inputs, conditional outputs, upstream descriptions, and tool citations. |
+| `docs/` | **Documentation** | Deep architectural guides, chaining manuals, engine compatibility matrices, known issues, and update automation docs. |
+| `website/` | **Live Portal** | Next.js 15 static digital interface and documentation hub rebuilt continuously from repository data. |
+
+---
+
+## Reporting Bugs
+
+Before opening a bug report, determine which category the issue falls into:
+
+### 1. Categorizing the Issue
+
+| Category | Typical Symptoms | Resolution Path |
+|---|---|---|
+| **Host / Environment Issue** | Spaces in directory path, missing Python packages, IPv6 JVM socket timeouts, Docker permissions, workstation OOMs. | Consult [`docs/known-issues.md`](docs/known-issues.md). Fix via flags (`--nxf-env`, `--limit-*`, `--config`) or system configuration. |
+| **Upstream Pipeline Defect** | A task failure inside an nf-core process (`.command.err`), container image bugs, or conflicting test profiles. | Pinned releases are wrapped **unmodified**. Document the workaround in `docs/known-issues.md` and report the bug upstream to the respective [nf-core repository](https://github.com/nf-core). |
+| **nf-claw Runtime Defect** | Preflight parameter validation falsely rejecting valid values, locking deadlocks, broken provenance bundles, or chaining errors. | File a bug report on [GitHub Issues](https://github.com/danilomonge/nf-claw/issues). |
+
+### 2. How to File an Issue
+
+When filing a bug report on GitHub:
+1. **Title:** Clear, concise summary including component (e.g. `[runner]`, `[chain]`, `[librarian]`).
+2. **Context:**
+   - Operating system and architecture (`uname -a`).
+   - Python version (`python3 --version`).
+   - Nextflow version (`nextflow -version`).
+   - Container runtime (`docker --version` or `apptainer --version`).
+3. **Reproduction Steps:**
+   - Exact command line executed.
+   - Pinned pipeline name and version (`nfclaw versions <name>`).
+   - Minimal samplesheet or parameters required to reproduce the behavior.
+4. **Logs & Diagnostics:**
+   - Attach `<outdir>/provenance/logs/run.log` and `<outdir>/provenance/run_manifest.json`.
+   - Relevant excerpts from Nextflow's log (`<outdir>/.nextflow.log`) and task `.command.err`.
+
+---
+
+## Proposing New Features
+
+We welcome ideas that enhance nf-claw's reliability, ergonomics, and scientific rigor.
+
+### Feature Alignment Guidelines
+- **Zero Hardcoding:** Features must remain strictly pipeline-agnostic. Any pipeline-specific behavior must be driven by data files (`handoffs/`) or upstream schemas.
+- **Token Efficiency:** Context and outputs must remain concise and token-minimal for AI agents.
+- **Deterministic Execution:** Features must produce predictable, verifiable results across environments.
+
+### Process
+1. **Open an Issue / Discussion:** Describe the proposed feature, user workflow, and technical rationale before submitting large PRs.
+2. **Design Review:** Discuss integration points (`runner/`, `librarian/`, or CLI).
+3. **Implementation:** Pair the feature with comprehensive unit tests and documentation updates.
+
+---
+
+## Fixing Inconsistencies & Schema Drift
+
+nf-claw maintains strict bidirectional synchronization between pinned code and documentation.
+
+### 1. Schema Drift (`librarian/check_drift.py`)
+If `python3 -m librarian.check_drift` reports drift:
+- **Missing or stale skills/catalog:** Run `make build` to regenerate context files from pinned submodules.
+- **Manifest mismatch:** Ensure `sources.tsv`, `.gitmodules`, and filesystem directories in `pipelines/` define the exact same pipeline set and remote URLs.
+- **Handoff rule incompatibility:** If an upstream pipeline renamed an output file or a downstream pipeline modified its samplesheet schema, update the mapping in `handoffs/<upstream>/<downstream>.json` to fit both schemas.
+
+### 2. Upstream Defects vs. Local Workarounds
+- **Never edit files inside `pipelines/<name>/upstream/` directly.** Git submodules point to upstream release commits and must remain vendor-clean.
+- Workarounds for upstream defects are implemented via narrow runtime mechanisms (such as `-c` compatibility configs or documentation in `docs/known-issues.md`).
+
+---
+
+## Contribution Workflow
+
+### 1. Fork, Clone, and Setup
+
+> [!IMPORTANT]
+> **Use a Space-Free Path:**
+> Clone the repository into a filesystem path **without spaces** (e.g. `/home/user/nf-claw`). Many bioinformatics tools and Nextflow work directories fail when spaces are present. On macOS, avoid iCloud-synced folders.
+
+```bash
+# 1. Clone your fork
+git clone https://github.com/<your-username>/nf-claw.git
+cd nf-claw
+
+# 2. Initialize submodules
+git submodule update --init
+
+# 3. Create virtual environment (Python 3.11+)
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 4. Install in editable mode
+pip install -e .
+```
+
+### 2. Branching & Commit Conventions
+Create a descriptive branch for your work:
+```bash
+git checkout -b feat/my-new-feature
+# or
+git checkout -b fix/resolve-locking-issue
+```
+
+We follow [Conventional Commits](https://www.conventionalcommits.org/):
+- `feat:` New features or capabilities (e.g. `feat(runner): add strict memory limit flag`).
+- `fix:` Bugfixes and error corrections (e.g. `fix(chain): resolve POSIX flock race condition`).
+- `docs:` Documentation improvements and guide refinements (e.g. `docs: polish contribution guide`).
+- `test:` Test additions or regression test enhancements (e.g. `test: add preflight samplesheet test`).
+- `chore:` Maintenance, dependency updates, and workflow changes.
+
+### 3. Submitting Pull Requests
+Before opening a PR:
+1. Ensure all tests pass: `make test`.
+2. Verify zero schema drift: `python3 -m librarian.check_drift`.
+3. Check code formatting: `ruff check runner librarian`.
+4. If documentation or data files were modified, verify the static site build:
+   ```bash
+   npm --prefix website run typecheck
+   npm --prefix website run build
+   ```
+
+When submitting the PR on GitHub:
+- Provide a clear description of the problem solved and the implementation approach.
+- Reference any relevant GitHub issues (`Fixes #...`).
+- Verify that automated CI checks (`tests/pytest`, `drift-check/drift`) pass.
+
+---
+
+## Coding Standards & Implementation Guidelines
+
+### Python Standards (3.11+)
+- **Modern Typing:** Use Python 3.11+ type annotations (`from __future__ import annotations`, `str | None`, `list[str]`, `dict[str, Any]`).
+- **Path Handling:** Always use `pathlib.Path` for filesystem operations. Do not concatenate strings for paths.
+- **Subprocess Execution:** Never invoke bare shell strings (`shell=True`). Use `subprocess.Popen` or `subprocess.run` with discrete argument lists (`list[str]`) to prevent word splitting and shell injection vulnerabilities.
+- **Process Signals:** Ensure background processes cleanly trap `SIGINT` and `SIGTERM` and shut down child tasks.
+- **Space-Free Path Invariant:** Use `runner/paths.py` checks to validate that user-provided paths do not contain unquoted spaces.
+
+### Code Style & Linting
+We enforce Ruff configuration defined in `pyproject.toml`:
+```bash
+ruff check runner librarian
+```
+Keep code clean, readable, and free of extraneous dependencies.
 
 ---
 
@@ -123,32 +292,23 @@ nfclaw chain run spec.json --outdir /tmp/test-chain --check
 
 ---
 
-## Development & Code Quality
+## Testing Requirements & Quality Assurance
 
-### Environment Setup
-Install the repository in editable mode within a Python 3.11+ virtual environment located on a space-free path:
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e .
-```
+### Test-Driven Development (TDD)
+We require regression tests for every bugfix:
+1. Write a test in `tests/` that reproduces the bug or asserts the new behavior.
+2. Verify that the test fails on existing code.
+3. Implement the minimal necessary change to fix the issue.
+4. Verify that the test passes.
 
-### Running Tests
+### Running Test Commands
 ```bash
 make test                      # Run full pytest test suite
 pytest tests/test_chain.py     # Run focused test module
 pytest -k "test_verify"        # Run tests matching an expression
 ```
 
-### Static Analysis & Linting
-We enforce Ruff for code formatting and linting:
-```bash
-ruff check runner librarian
-```
-
----
-
-## Makefile Targets
+### Makefile Targets Summary
 
 | Target | Command | Description |
 |---|---|---|
