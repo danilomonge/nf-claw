@@ -265,6 +265,22 @@ def test_the_probe_parses_each_stage_config_with_its_own_engine(library, monkeyp
     assert "NXF_VER" not in seen[0][1]                 # the first stage keeps the default engine
 
 
+def test_the_probe_passes_extra_configs_to_the_launcher(library, monkeypatch, tmp_path):
+    # `nextflow config` takes -c only as the launcher's option: `nextflow -c x config <pipeline>`.
+    import subprocess
+    root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})
+    cfg = tmp_path / "extra.config"
+    cfg.write_text("process {}\n")
+    spec = chain.parse_spec({"stages": [{"pipeline": "mini_up", "config": [str(cfg)]}]})
+    planned = chain.plan(spec, repo_root=root)
+    seen = []
+    monkeypatch.setattr(chain.shutil, "which", lambda name: "/usr/bin/nextflow")
+    monkeypatch.setattr(chain.subprocess, "run", lambda cmd, **kw: seen.append(cmd)
+                        or subprocess.CompletedProcess(cmd, 0, stdout="", stderr=""))
+    assert chain._probe_config(spec, planned[0]) == []
+    assert seen[0][:4] == ["nextflow", "-c", str(cfg), "config"]
+
+
 def test_the_probe_suggests_the_engine_the_release_declares(library, monkeypatch):
     import subprocess
     root = library("mini_up", "mini", rules={("mini_up", "mini"): RULE})

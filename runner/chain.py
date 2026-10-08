@@ -445,10 +445,13 @@ def _probe_config(spec: ChainSpec, p: Planned) -> list[str]:
     overlay = dict(opts.nxf_env)
     if opts.nxf_ver:
         overlay["NXF_VER"] = opts.nxf_ver
-    cmd = ["nextflow", "config", str(p.tree.path),
-           "-profile", nextflow_command.compose_profile(opts.profile, demo=p.stage.demo)]
+    # `-c` is the launcher's own option for `nextflow config` (`nextflow -c x.config config …`);
+    # after the command it is rejected as unknown, unlike `nextflow run … -c x.config`.
+    cmd = ["nextflow"]
     for cfg in opts.configs:
         cmd += ["-c", cfg]
+    cmd += ["config", str(p.tree.path),
+            "-profile", nextflow_command.compose_profile(opts.profile, demo=p.stage.demo)]
     with tempfile.TemporaryDirectory(prefix="nfclaw-probe-") as scratch:
         try:
             r = subprocess.run(cmd, cwd=scratch, env={**os.environ, **overlay},
