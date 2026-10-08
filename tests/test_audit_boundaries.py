@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from runner import handoff, parameters, provenance, verify
+from runner import chain, handoff, parameters, provenance, verify
 from runner.errors import NfclawError
 from test_handoff import _rule, _trees
 
@@ -132,3 +132,22 @@ def test_unchanged_reference_directory_has_complete_handoff_lineage(
     assert record["directory_reference"] == str(reference)
     key = "derived_from" if internal else "input_dependencies"
     assert len(record[key]) == 1
+
+
+@pytest.mark.parametrize("options", [
+    {"demo": "false"}, {"demo": 0}, {"params": False}, {"params": []},
+    {"retries": False}, {"retries": 0.0}, {"retries": ""},
+    {"config": False}, {"config": ""}, {"limits": False}, {"limits": []},
+])
+def test_chain_stage_rejects_falsey_values_of_the_wrong_shape(options):
+    with pytest.raises(NfclawError):
+        chain.parse_spec({"stages": [{"pipeline": "fixture", **options}]})
+
+
+@pytest.mark.parametrize("options", [
+    {"allow_spaces": "false"}, {"allow_spaces": 0},
+    {"config": False}, {"config": ""}, {"limits": False}, {"limits": []},
+])
+def test_chain_run_options_reject_values_of_the_wrong_shape(options):
+    with pytest.raises(NfclawError):
+        chain.parse_spec({"stages": [{"pipeline": "fixture"}], **options})

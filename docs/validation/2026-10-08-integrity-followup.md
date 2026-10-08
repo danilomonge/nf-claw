@@ -25,6 +25,10 @@ the historical Linux/cloud evidence in [the earlier audit](2026-10-08-audit.md).
   checksums, record every dependency, and recheck inventory during chain status and
   resume. Empty or unrecorded reference inventories cannot establish historical
   identity and are refused.
+- Chain parsing treated `"demo": "false"` as true and discarded falsey values of
+  the wrong shape in params, retries, config and resource limits. Validate boolean,
+  integer, map and list types before applying defaults. The string `"false"` can no
+  longer activate the bundled test profile or bypass space checks.
 - Recursive glob enumeration could hide unreadable output directories on Python 3.13,
   and dangling result links disappeared from checksums. Use one explicit, error-propagating
   result walker for reporting and verification. Follow published directory symlinks,
@@ -70,7 +74,10 @@ the final comparison excludes run metadata consistently with the output manifest
   replay guard is checked by behavior but is not counted in parent-process coverage.
 
 The PR adds Linux/macOS tests on Python 3.11 and 3.13, a real Nextflow integration job,
-and a website dependency audit/typecheck/build job before merge.
+and a website dependency audit/typecheck/build job before merge. The complete engine
+acceptance workflow partitions the independent pipeline checks into eight bounded
+jobs; a regression verifies that all 91 pipelines are selected exactly once and a
+failed inventory cannot produce a green check.
 
 ## Scientific limits
 

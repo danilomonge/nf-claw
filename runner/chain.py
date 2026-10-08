@@ -128,14 +128,14 @@ def _parse_options(raw: dict, where: str) -> dict:
             raise _bad(f"{where}: 'profile' must be a profile name such as \"docker\"")
         out["profile"] = raw["profile"]
     if "limits" in raw:
-        limits = raw["limits"] or {}
+        limits = {} if raw["limits"] is None else raw["limits"]
         if not isinstance(limits, dict) or set(limits) - _LIMIT_KEYS:
             raise _bad(f"{where}: 'limits' takes only: {', '.join(sorted(_LIMIT_KEYS))}")
         cpus = limits.get("cpus")
         if cpus is not None and (not isinstance(cpus, int) or isinstance(cpus, bool)):
             raise _bad(f"{where}: 'limits.cpus' must be a whole number")
     if "config" in raw:
-        configs = raw["config"] or []
+        configs = [] if raw["config"] is None else raw["config"]
         if not isinstance(configs, list) or not all(isinstance(c, str) for c in configs):
             raise _bad(f"{where}: 'config' must list Nextflow config file paths")
         out["configs"] = tuple(_abs(c) for c in configs)
@@ -194,12 +194,17 @@ def parse_spec(data: dict) -> ChainSpec:
         if sid in seen:
             raise _bad(f"duplicate stage id '{sid}' (give one of them its own 'id')")
         seen.add(sid)
-        retries = raw.get("retries") or 0
+        retries = raw.get("retries", 0)
         if not isinstance(retries, int) or isinstance(retries, bool) or retries < 0:
             raise _bad(f"stage '{sid}': 'retries' must be a whole number >= 0")
-        params = raw.get("params") or {}
+        params = raw.get("params", {})
+        if params is None:
+            params = {}
         if not isinstance(params, dict):
             raise _bad(f"stage '{sid}': 'params' must be an object of pipeline parameters")
+        demo = raw.get("demo", False)
+        if not isinstance(demo, bool):
+            raise _bad(f"stage '{sid}': 'demo' must be true or false")
         version = raw.get("pipeline_version")
         if version is not None and not isinstance(version, str):
             raise _bad(f"stage '{sid}': 'pipeline_version' must be a string such as \"3.27.0\"")
@@ -221,14 +226,17 @@ def parse_spec(data: dict) -> ChainSpec:
             params=params,
             params_file=Path(_abs(params_file)) if params_file else None,
             pipeline_version=version or None, retries=retries,
-            demo=bool(raw.get("demo", False)),
+            demo=demo,
             handoff=Path(_abs(hand)) if isinstance(hand, str) else hand,
             options=_parse_options(raw, f"stage '{sid}'")))
     chain_opts = _parse_options(data, "chain")
+    allow_spaces = data.get("allow_spaces", False)
+    if not isinstance(allow_spaces, bool):
+        raise _bad("'allow_spaces' must be true or false")
     return ChainSpec(stages=tuple(stages), profile=chain_opts.get("profile", "docker"),
                      nxf_ver=chain_opts.get("nxf_ver"), nxf_env=chain_opts.get("nxf_env", {}),
                      configs=chain_opts.get("configs", ()), limits=chain_opts.get("limits"),
-                     allow_spaces=bool(data.get("allow_spaces", False)))
+                     allow_spaces=allow_spaces)
 
 
 # --- the plan: every stage and handoff resolved and checked before anything runs ------------
