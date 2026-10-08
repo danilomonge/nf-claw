@@ -1,14 +1,14 @@
 ---
 name: magmap
 pipeline: nf-core/magmap
-version: 1.2.0
-commit: 20c6dda92b52ad9788dfcc7eebc6330ac48f2fcd
-description: nf-core/magmap is a bioinformatics best-practice analysis pipeline for mapping reads to a (large) collections of genomes.
+version: 1.3.0
+commit: 7cd374473c4118859b655e627ced6a80c0cf5c60
+description: nf-core/magmap is a bioinformatics best-practice analysis pipeline for mapping reads to (large) collections of genomes.
 summary: nf-core/magmap is a bioinformatics best-practice analysis pipeline that maps reads to (large) collections of genomes. Its main output are tables with quantification of features (genes) in genomes which can be analyzed in R, Python or by other pipelines such as nf-core/differentialabundance. It is mainly meant for metatranscriptomes and metagenomes, but can be used for other types of samples where mapping to contigs is relevant. The nf-core/rnaseq pipeline is similar in purpose, but meant for single organisms with reference genomes and annotations, in practice eukaryotic model organisms.
 has_samplesheet: true
 input: samplesheet (sample, fastq_1, fastq_2)
 output: --outdir/ (per-module results); pipeline_info/ (reports, versions); MultiQC report
-tools: ["FastQC", "Trim Galore!", "sourmash", "Prokka", "Bakta", "BBmap", "samtools", "gtdbtk", "checkm", "FeatureCounts", "R", "Tidyverse", "data.table", "DuckDB", "MultiQC"]
+tools: ["FastQC", "Trim Galore!", "sourmash", "Prokka", "Bakta", "gffread", "BBmap", "samtools", "gtdbtk", "checkm", "FeatureCounts", "R", "Tidyverse", "data.table", "DuckDB", "MultiQC"]
 ---
 # magmap
 
@@ -79,14 +79,14 @@ nfclaw run magmap ... --nxf-ver 26.04.0
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). A MultiQC HTML report aggregates QC across steps. `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/magmap/blob/1.2.0/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/magmap/blob/1.3.0/docs/output.md
 
 Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
 
 ## Tools this pipeline runs
-The tools/methods this pipeline runs, per the authors' own list: FastQC, Trim Galore!, sourmash, Prokka, Bakta, BBmap, samtools, gtdbtk, checkm, FeatureCounts, R, Tidyverse, data.table, DuckDB, MultiQC.
+The tools/methods this pipeline runs, per the authors' own list: FastQC, Trim Galore!, sourmash, Prokka, Bakta, gffread, BBmap, samtools, gtdbtk, checkm, FeatureCounts, R, Tidyverse, data.table, DuckDB, MultiQC.
 
-Full list with references: https://github.com/nf-core/magmap/blob/1.2.0/CITATIONS.md
+Full list with references: https://github.com/nf-core/magmap/blob/1.3.0/CITATIONS.md
 
 ## Demo
 ```bash
@@ -94,6 +94,6 @@ nfclaw run magmap --demo --outdir results   # adds the upstream test profile (-p
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/magmap/blob/1.2.0/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/magmap/blob/1.3.0/docs/usage.md
 
-<!-- Generated from nf-core/magmap@20c6dda92b52ad9788dfcc7eebc6330ac48f2fcd. Do not edit by hand. -->
+<!-- Generated from nf-core/magmap@7cd374473c4118859b655e627ced6a80c0cf5c60. Do not edit by hand. -->

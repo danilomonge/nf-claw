@@ -1,8 +1,8 @@
 ---
 name: pixelator
 pipeline: nf-core/pixelator
-version: 5.0.2
-commit: 751307268d51ef1cb5cf559562b2ca0437fc4726
+version: 5.0.3
+commit: d7376a8bca8b262b858ed440b6dd49c1853911e8
 description: Pipeline for analysis of Proximity Network Assay data
 summary: nf-core/pixelator is a bioinformatics best-practice analysis pipeline for analysis of data from the Proximity Network (PNA) assay. It takes a samplesheet as input and will process your data using pixelator to produce a PXL file containing single-cell protein abundance and protein interactomics data.
 has_samplesheet: true
@@ -92,14 +92,14 @@ nfclaw run pixelator ... --nxf-ver 25.10.4
 ## Outputs
 Results land in `--outdir`, organised into one sub-directory per pipeline step/module; standardized run metadata in `<outdir>/pipeline_info/` (execution report, software versions). `nfclaw run` also writes `<outdir>/provenance/` with the exact params file and the run log, `<outdir>/provenance/logs/run.log` — the whole launch, whose last line states the outcome (Nextflow's own log is `<outdir>/.nextflow.log`); unless `--no-provenance` it adds a run manifest (pinned version, commit and exact command), input/output SHA-256 checksums, and a replayable `commands.sh`.
 
-The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/pixelator/blob/5.0.2/docs/output.md
+The exact output files and directory layout for this release are documented upstream: https://github.com/nf-core/pixelator/blob/5.0.3/docs/output.md
 
 Check a run — in the foreground or the background — with `nfclaw status <outdir>`: success, still running, how it ended (with the error), or stopped without an outcome; exit 0 success, 3 running, 1 otherwise.
 
 ## Tools this pipeline runs
 The tools/methods this pipeline runs, per the authors' own list: pixelator, cutadapt, fastp.
 
-Full list with references: https://github.com/nf-core/pixelator/blob/5.0.2/CITATIONS.md
+Full list with references: https://github.com/nf-core/pixelator/blob/5.0.3/CITATIONS.md
 
 ## Demo
 ```bash
@@ -107,6 +107,6 @@ nfclaw run pixelator --demo --outdir results   # adds the upstream test profile 
 ```
 
 ## Full reference
-Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/pixelator/blob/5.0.2/docs/usage.md
+Every parameter — name, type, required, hidden, allowed values, constraints, default and description — is in [reference.md](reference.md). Use it as the source of truth; do not guess flags. Nextflow's nf-schema validates every parameter against this schema at runtime, so an unknown or invalid value fails fast. Upstream usage: https://github.com/nf-core/pixelator/blob/5.0.3/docs/usage.md
 
-<!-- Generated from nf-core/pixelator@751307268d51ef1cb5cf559562b2ca0437fc4726. Do not edit by hand. -->
+<!-- Generated from nf-core/pixelator@d7376a8bca8b262b858ed440b6dd49c1853911e8. Do not edit by hand. -->

@@ -1,7 +1,7 @@
 ---
 name: magmap
-version: 1.2.0
-commit: 20c6dda92b52ad9788dfcc7eebc6330ac48f2fcd
+version: 1.3.0
+commit: 7cd374473c4118859b655e627ced6a80c0cf5c60
 ---
 
 # magmap — full parameter reference
@@ -107,4 +107,4 @@ nf-core/magmap pipeline parameters. Every parameter from the pinned `nextflow_sc
 | `--three-prime-clip-r2` | string |  |  |  |  |  | Instructs Trim Galore to remove bp from the 3' end of read 2 AFTER adapter/quality trimming has been performed. |
 | `--trim-reads` | string |  |  |  |  |  | Instructs Trim Galore to apply the --nextseq=X option, to trim based on quality after removing poly-G tails. |
 
-<!-- Generated from nf-core/magmap@20c6dda92b52ad9788dfcc7eebc6330ac48f2fcd. Do not edit by hand. -->
+<!-- Generated from nf-core/magmap@7cd374473c4118859b655e627ced6a80c0cf5c60. Do not edit by hand. -->
