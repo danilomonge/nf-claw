@@ -225,7 +225,7 @@ export default async function PipelinePage({ params }: { params: Promise<{ name:
       <SectionNav sections={sections} className="mt-8" />
 
       {/* run it */}
-      <section id="run" className="mt-10 scroll-mt-14">
+      <section id="run" data-progress="Run it" className="mt-10 scroll-mt-14">
         <SectionTitle icon={Terminal}>Run it</SectionTitle>
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           <CodeBlock code={pipeline.runCommand} label="nfclaw" />
@@ -240,7 +240,7 @@ export default async function PipelinePage({ params }: { params: Promise<{ name:
 
       {/* samplesheet */}
       {pipeline.samplesheet.length > 0 && (
-        <section id="samplesheet" className="mt-16 scroll-mt-14">
+        <section id="samplesheet" data-progress="Samplesheet" className="mt-16 scroll-mt-14">
           <SectionTitle icon={Table2}>Samplesheet</SectionTitle>
           <p className="mt-2 max-w-3xl text-sm leading-relaxed text-fog-muted">
             {sheetIntro} Fill each value per the constraints below
@@ -298,7 +298,7 @@ export default async function PipelinePage({ params }: { params: Promise<{ name:
 
       {/* required params */}
       {pipeline.requiredParams.length > 0 && (
-        <section id="required" className="mt-16 scroll-mt-14">
+        <section id="required" data-progress="Required" className="mt-16 scroll-mt-14">
           <SectionTitle icon={ListChecks}>Required parameters</SectionTitle>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             {pipeline.requiredParams.map((r) => (
@@ -331,7 +331,7 @@ export default async function PipelinePage({ params }: { params: Promise<{ name:
       )}
 
       {/* parameter explorer */}
-      <section id="parameters" className="mt-16 scroll-mt-14">
+      <section id="parameters" data-progress="Parameters" className="mt-16 scroll-mt-14">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <SectionTitle icon={Boxes}>Parameter explorer</SectionTitle>
           <span className="text-sm text-fog-dim">
@@ -349,7 +349,7 @@ export default async function PipelinePage({ params }: { params: Promise<{ name:
 
       {/* outputs */}
       {pipeline.outputs && (
-        <section id="outputs" className="mt-16 scroll-mt-14">
+        <section id="outputs" data-progress="Outputs" className="mt-16 scroll-mt-14">
           <SectionTitle icon={PackageOpen}>Outputs</SectionTitle>
           <div className="glass mt-5 p-6">
             <p className="text-pretty leading-relaxed text-fog-muted">

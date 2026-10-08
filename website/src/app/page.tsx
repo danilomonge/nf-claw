@@ -60,7 +60,7 @@ export default async function HomePage() {
       <Manifesto pipelines={summaries} />
 
       {quickstart && (
-        <section id="how" className="section container-site">
+        <section id="how" data-progress="How it works" className="section container-site">
           <SectionHeading
             eyebrow="How an agent uses it"
             title="Find it. Read it. Run it."
@@ -70,7 +70,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      <section id="pipelines" className="section container-site">
+      <section id="pipelines" data-progress="Pipelines" className="section container-site">
         <SectionHeading
           eyebrow="The collection"
           title="Pipeline universe"
@@ -79,7 +79,7 @@ export default async function HomePage() {
         <PipelineUniverse pipelines={summaries} />
       </section>
 
-      <section id="skills" className="section container-site">
+      <section id="skills" data-progress="Skills" className="section container-site">
         <SectionHeading
           eyebrow="What an agent reads"
           title="Skills explorer"
@@ -96,7 +96,7 @@ export default async function HomePage() {
         repo={meta.remote}
       />
 
-      <section id="releases" className="section container-site">
+      <section id="releases" data-progress="Releases" className="section container-site">
         <SectionHeading
           eyebrow="Versioned history"
           title="Release timeline"
