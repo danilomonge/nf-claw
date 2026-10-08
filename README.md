@@ -26,7 +26,6 @@ Version and engine compatibility (DSL2-only; parser compatibility): [`docs/compa
 Pipeline chaining and multi-stage handoffs: [`docs/chaining.md`](docs/chaining.md).  
 Known issues and runtime troubleshooting: [`docs/known-issues.md`](docs/known-issues.md).  
 Maintenance automation and drift checks: [`docs/updating.md`](docs/updating.md).  
-Scientific readiness and verification audit: [`docs/validation/2026-10-08-audit.md`](docs/validation/2026-10-08-audit.md).  
 
 ## Quickstart
 ```bash
@@ -131,8 +130,7 @@ filenames alone do not establish biological or analytical accuracy.
 Before relying on results for scientific research:
 - Validate the selected pipeline, parameters, and reference data using appropriate domain-specific truth datasets.
 - Use `nfclaw verify ... --strict` to check byte agreement; use format-aware tools to inspect differences in scientific outputs.
-- Review the [release audit](docs/validation/2026-10-08-audit.md) for tested scope, known-truth benchmarks,
-  upstream bug workarounds, and reproducibility boundaries.
+- Review [known issues](docs/known-issues.md) for documented engine boundaries, upstream bug workarounds, and runtime guidance.
 
 ## Citation & Attribution
 **The pipelines themselves are the work of the [nf-core](https://nf-co.re) community** — the heart of the library — and are wrapped **unmodified** as pinned git submodules; each maintains its own authors, license, and citations.
