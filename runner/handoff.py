@@ -372,7 +372,7 @@ def _direct(src: Source, root: Path, sheet_schema, dest: Path, downstream: str
     sheet = _one_match(root, src.spec["samplesheet"])
     try:
         with sheet.open(newline="", encoding="utf-8-sig") as fh:
-            reader = csv.DictReader(fh, delimiter=samplesheet.delimiter_for(sheet))
+            reader = csv.DictReader(fh, delimiter=samplesheet.delimiter_for(sheet), strict=True)
             header, rows = list(reader.fieldnames or []), list(reader)
     except (OSError, UnicodeDecodeError, csv.Error) as exc:
         raise _Unresolved(f"cannot read {sheet}: {exc}") from exc

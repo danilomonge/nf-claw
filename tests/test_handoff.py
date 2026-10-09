@@ -131,6 +131,38 @@ def test_direct_samplesheet_is_snapshotted_validated_and_traced(library, finishe
     assert hand.record["upstream_params"] == {"nf_core_pipeline": "mini"}
 
 
+def test_direct_handoff_cannot_merge_samples_inside_an_unclosed_quoted_field(
+        library, finished_run, tmp_path):
+    _, down = _trees(library("mini_up", "mini"))
+    malformed = ('sample,fastq_1,fastq_2,description\n'
+                 'A,fastq/A_1.fastq.gz,fastq/A_2.fastq.gz,"unterminated\n'
+                 'B,fastq/B_1.fastq.gz,fastq/B_2.fastq.gz,second sample\n')
+    up = finished_run(tmp_path / "up", {"samplesheet/samplesheet.csv": malformed,
+                                        **FASTQS, "fastq/B_1.fastq.gz": "b1",
+                                        "fastq/B_2.fastq.gz": "b2"})
+    with pytest.raises(NfclawError, match="cannot read") as error:
+        handoff.materialize(_rule(DIRECT), upstream_outdir=up, downstream_tree=down,
+                            dest=tmp_path / "h")
+    assert error.value.code is ErrorCode.HANDOFF_FAILED
+    assert not (tmp_path / "h/input.csv").exists()
+
+
+def test_direct_handoff_preserves_valid_multiline_and_escaped_quoted_fields(
+        library, finished_run, tmp_path):
+    _, down = _trees(library("mini_up", "mini"))
+    sheet = ('sample,fastq_1,fastq_2,description\n'
+             'A,fastq/A_1.fastq.gz,fastq/A_2.fastq.gz,"line one\nline ""two"""\n'
+             'B,fastq/B_1.fastq.gz,fastq/B_2.fastq.gz,second sample\n')
+    up = finished_run(tmp_path / "up", {"samplesheet/samplesheet.csv": sheet, **FASTQS,
+                                        "fastq/B_1.fastq.gz": "b1", "fastq/B_2.fastq.gz": "b2"})
+    handoff.materialize(_rule(DIRECT), upstream_outdir=up, downstream_tree=down,
+                        dest=tmp_path / "h")
+    rows = _rows(tmp_path / "h/input.csv")
+    assert [row["sample"] for row in rows] == ["A", "B"]
+    assert rows[0]["description"] == 'line one\nline "two"'
+    assert rows[1]["description"] == "second sample"
+
+
 def test_rename_set_and_relative_paths(library, finished_run, tmp_path):
     _, down = _trees(library("mini_up", "mini"))
     up = finished_run(tmp_path / "up", {

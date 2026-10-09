@@ -49,7 +49,7 @@ def samplesheet_input_paths(path: Path, schema: InputSchema) -> list[Path]:
     columns = [column.name for column in schema.columns if column.fmt in PATH_FORMATS]
     paths: set[Path] = set()
     with path.open(newline="", encoding="utf-8-sig") as stream:
-        for row in csv.DictReader(stream, delimiter=delimiter_for(path)):
+        for row in csv.DictReader(stream, delimiter=delimiter_for(path), strict=True):
             for column in columns:
                 value = (row.get(column) or "").strip()
                 if value and "://" not in value:

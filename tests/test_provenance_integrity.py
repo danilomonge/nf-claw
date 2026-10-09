@@ -125,6 +125,18 @@ def test_samplesheet_data_paths_are_part_of_input_identity(tmp_path):
     assert provenance.samplesheet_input_paths(sheet, schema) == [reads]
 
 
+def test_input_identity_reader_refuses_malformed_quoting_instead_of_omitting_samples(tmp_path):
+    import csv
+    sheet = tmp_path / "samples.csv"
+    sheet.write_text('sample,fastq,description\nA,/abs/A.fastq,"open\nB,/abs/B.fastq,second\n')
+    schema = InputSchema(columns=(
+        Column("sample", "string", True, None),
+        Column("fastq", "string", True, None, fmt="file-path"),
+    ))
+    with pytest.raises(csv.Error):
+        provenance.samplesheet_input_paths(sheet, schema)
+
+
 def test_unchanged_dependencies_allow_replay(tmp_path):
     reads = tmp_path / "reads.fastq"
     reads.write_bytes(b"reads")
