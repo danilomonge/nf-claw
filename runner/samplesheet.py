@@ -1,13 +1,78 @@
 from __future__ import annotations
 
 import csv
+import json
 import math
 import re
+import unicodedata
 from collections import Counter
-from collections.abc import Iterable
+from collections.abc import Hashable, Iterable
 from pathlib import Path
 
-from runner.schema import InputSchema
+from runner.schema import InputSchema, PATH_FORMATS, json_scalar
+
+
+def _unique_json_keys(pairs):
+    row = {}
+    for key, value in pairs:
+        if key in row:
+            raise ValueError(f"duplicate key {key!r}")
+        row[key] = value
+    return row
+
+
+def serialized_rows(path: Path) -> list[dict] | None:
+    """Flat JSON/YAML sample records; other structures remain nf-schema's responsibility."""
+    suffix = path.suffix.lower()
+    if suffix not in (".json", ".yaml", ".yml"):
+        return None
+    text = path.read_text(encoding="utf-8-sig")
+    if suffix == ".json":
+        try:
+            data = json.loads(text, object_pairs_hook=_unique_json_keys)
+        except (ValueError, RecursionError) as exc:
+            raise csv.Error(f"invalid JSON: {exc}") from exc
+    else:
+        try:
+            import yaml
+        except ImportError as exc:
+            raise csv.Error("YAML preflight requires PyYAML; install nfclaw[yaml]") from exc
+        try:
+            class UniqueKeySafeLoader(yaml.SafeLoader):
+                def construct_mapping(self, node, deep=False):
+                    seen = set()
+                    for key_node, _ in node.value:
+                        # Explicit merge overrides are deliberate YAML semantics, not duplicate
+                        # source fields. Check explicit fields before SafeLoader flattens merges.
+                        if key_node.tag == "tag:yaml.org,2002:merge":
+                            continue
+                        key = self.construct_object(key_node, deep=deep)
+                        if not isinstance(key, Hashable):
+                            raise yaml.constructor.ConstructorError(
+                                None, None, "unhashable mapping key", key_node.start_mark)
+                        if key in seen:
+                            raise yaml.constructor.ConstructorError(
+                                None, None, f"duplicate key {key!r}", key_node.start_mark)
+                        seen.add(key)
+                    return super().construct_mapping(node, deep=deep)
+
+            loader = UniqueKeySafeLoader(text)
+            try:
+                data = loader.get_single_data()
+            finally:
+                loader.dispose()
+        except (yaml.YAMLError, RecursionError) as exc:
+            raise csv.Error(f"invalid YAML: {exc}") from exc
+    return data if isinstance(data, list) and all(isinstance(row, dict) for row in data) else None
+
+
+def _identity_issues(row_num: int, col, raw: str) -> list[str]:
+    if col.is_identifier and raw and not _safe_identifier(raw):
+        return [f"row {row_num}: '{col.name}' identifier {raw!r} must start with a "
+                "letter, digit or underscore and contain only letters, digits, "
+                "combining marks, dots, underscores or hyphens; use an explicit "
+                "safe alias (identifiers become shell arguments and filenames)"]
+    return []
 
 
 def validate(path: Path, input_schema: InputSchema) -> list[str]:
@@ -37,9 +102,23 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
             return [] if values else ["input file has no values"]
         if path.suffix.lower() not in (".csv", ".tsv"):
             # Some nf-core pipelines (notably Sarek) accept JSON/YAML inputs while also shipping a
-            # tabular schema_input.json. We cannot parse those formats with DictReader, so only the
-            # existence check above is local; nf-schema performs the format-specific validation.
-            return []
+            # tabular schema_input.json. Flat records get identity and local-path guards; full
+            # format-specific and nested-structure validation stays with nf-schema.
+            data = serialized_rows(path)
+            if data is None:
+                return []
+            for i, row in enumerate(data, start=1):
+                for col in named:
+                    value = row.get(col.name)
+                    if col.is_identifier and value is not None and not isinstance(value, (str, int, float, bool)):
+                        issues.append(f"row {i}: '{col.name}' identifier must be a literal scalar; "
+                                      "quote YAML identifiers to preserve their text")
+                    else:
+                        raw = "" if value is None else json_scalar(value)
+                        issues.extend(_identity_issues(i, col, raw))
+                    if col.fmt in PATH_FORMATS and isinstance(value, str) and value:
+                        issues.extend(_path_issues(i, col, value))
+            return issues
         with path.open(newline="", encoding="utf-8-sig") as fh:
             reader = csv.DictReader(fh, delimiter=delimiter, strict=True)
             fields = reader.fieldnames or []
@@ -53,37 +132,34 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
             rows = list(reader)
     except UnicodeDecodeError:
         return [f"samplesheet is not valid UTF-8 text: {path} "
-                "(is it a real .csv/.tsv, not a binary file such as .xlsx?)"]
+                "(is it a text samplesheet, not a binary file such as .xlsx?)"]
     except OSError as exc:
         # It exists and is a file (checked above) but cannot be read — e.g. another user's sheet.
         return [f"samplesheet cannot be read: {exc.strerror or exc}: {path}"]
     except csv.Error as exc:
         # The parser gave up on the file's structure — in practice an unbalanced quote, which makes
         # the rest of the file one field until it exceeds the csv module's field size limit.
-        return [f"samplesheet is not parseable as {kind}: {exc} "
-                f"(check for an unbalanced quote): {path}"]
+        kind = {".json": "JSON", ".yaml": "YAML", ".yml": "YAML"}.get(path.suffix.lower(), kind)
+        hint = " (check for an unbalanced quote)" if kind in ("CSV", "TSV") else ""
+        return [f"samplesheet is not parseable as {kind}: {exc}{hint}: {path}"]
     if not rows:
         issues.append("samplesheet has no data rows")
     for i, row in enumerate(rows, start=2):
         if None in row:
             issues.append(f"row {i}: extra values beyond the samplesheet header")
         for col in named:
-            val = (row.get(col.name) or "").strip()
+            raw = row.get(col.name) or ""
+            val = raw.strip()
             if col.required and not val:
                 issues.append(f"row {i}: empty required '{col.name}'")
+            issues.extend(_identity_issues(i, col, raw))
             if val:
                 issues.extend(_value_issues(i, col, val))
-            if col.is_path and val and "://" not in val:
+            if col.fmt in PATH_FORMATS and val:
                 # nf-schema resolves a relative path against Nextflow's launch directory — which
                 # nfclaw sets to --outdir — not against the samplesheet's folder, and it does not
                 # expand `~`. A relative path cannot mean what it says, so require an absolute one.
-                p = Path(val)
-                if not p.is_absolute():
-                    issues.append(f"row {i}: '{col.name}' is a relative path: {val} — use an "
-                                  "absolute path (Nextflow resolves samplesheet paths against its "
-                                  "launch directory, which nfclaw sets to --outdir)")
-                elif not p.exists():
-                    issues.append(f"row {i}: file not found for '{col.name}': {val}")
+                issues.extend(_path_issues(i, col, val))
         values = {col.name: (row.get(col.name) or "").strip() for col in named}
         for trigger, required in input_schema.dependent_required:
             if values.get(trigger):
@@ -94,6 +170,27 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
         if branches and not _any_branch_satisfied(values, branches):
             issues.append(f"row {i}: {_any_of_message(branches)}")
     return issues
+
+
+def _safe_identifier(value: str) -> bool:
+    # Do not normalize or rename: distinct scientific sample identities must remain distinct.
+    # Unicode letters and their combining marks are literal shell-word characters, too.
+    return (bool(value) and (value[0].isalnum() or value[0] == "_")
+            and all(char.isalnum() or char in "._-" or unicodedata.category(char).startswith("M")
+                    for char in value))
+
+
+def _path_issues(row_num: int, col, value: str) -> list[str]:
+    if "://" in value:
+        return []
+    path = Path(value)
+    if not path.is_absolute():
+        return [f"row {row_num}: '{col.name}' is a relative path: {value} — use an "
+                "absolute path (Nextflow resolves samplesheet paths against its "
+                "launch directory, which nfclaw sets to --outdir)"]
+    if col.fmt != "file-path-pattern" and not path.exists():
+        return [f"row {row_num}: file not found for '{col.name}': {value}"]
+    return []
 
 
 def delimiter_for(path: Path) -> str:

@@ -41,6 +41,9 @@ pip install -e .
 > [!TIP]
 > **Absolute Paths in Samplesheets:** Write **absolute paths inside a samplesheet**: Nextflow resolves them against its launch directory, which `nfclaw run` sets to `--outdir`, so a relative one cannot mean what it says — `nfclaw run` rejects it before launching. `--input` itself may be relative (nfclaw makes it absolute), and it is not always a samplesheet: the pipeline's schema decides — a directory or tarball (rangeland), an SDRF file or PRIDE accession (mhcquant), or `--input false` where a pipeline documents running without one (sarek — nfclaw intercepts it and leaves `input` unset in the params file, avoiding nf-schema type errors). The `Inputs` section of `skill.md` says which.
 
+> [!IMPORTANT]
+> **Sample identities:** Metadata identifiers (`meta.id`, patient/sample IDs and legacy sample/patient columns) must start with a letter, digit or underscore and contain only letters, digits, combining marks, dots, underscores or hyphens. Upstream tasks use these values in shell commands and filenames. Choose explicit safe aliases for other identifiers; nfclaw never silently renames scientific samples. This preflight applies to CSV/TSV and flat JSON/YAML records; YAML requires `pip install -e ".[yaml]"`. Local path fields in these records must be absolute, including glob patterns, and their content is included in replay dependency checks. Nested input structures remain subject to the pinned nf-schema validation.
+
 ---
 
 ## Where a run is logged — and how to check one

@@ -523,3 +523,27 @@ def test_stopped_replay_terminates_descendants_and_releases_writer_lock(tmp_path
         if proc.poll() is None:
             proc.kill()
         proc.communicate(timeout=5)
+
+
+@pytest.mark.parametrize("extension", ["json", "yaml"])
+def test_serialized_samplesheet_data_changes_refuse_replay_before_launch(tmp_path, extension):
+    reads = tmp_path / "reads.fastq"
+    reads.write_bytes(b"original scientific input")
+    sheet = tmp_path / f"samples.{extension}"
+    data = [{"sample": "A", "fastq": str(reads), "remote": "s3://bucket/remote.fastq"}]
+    if extension == "json":
+        sheet.write_text(json.dumps(data))
+    else:
+        yaml = pytest.importorskip("yaml")
+        sheet.write_text(yaml.safe_dump(data))
+    schema = InputSchema(columns=(Column("sample", "string", True, None),
+                                 Column("fastq", "string", True, None, fmt="file-path"),
+                                 Column("remote", "string", False, None, fmt="file-path")))
+    dependencies = provenance.samplesheet_input_paths(sheet, schema)
+    assert dependencies == [reads]
+    prov = _write(tmp_path / "out", input_paths=[sheet, *dependencies])
+    reads.write_bytes(b"changed scientific input")
+    result = subprocess.run([str(prov / "commands.sh"), str(tmp_path / "fresh")],
+                            capture_output=True, text=True)
+    assert result.returncode != 0 and "REPLAY_RAN" not in result.stdout
+    assert "reads.fastq" in result.stderr
