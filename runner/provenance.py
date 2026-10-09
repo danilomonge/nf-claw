@@ -19,7 +19,7 @@ from runner.replay_guard import (MissingInputSource as MissingInputSource,
                                  hash_inputs, hash_pipeline as hash_pipeline,
                                  input_files as input_files,
                                  read_checksums as read_checksums)
-from runner.samplesheet import delimiter_for
+from runner.samplesheet import delimiter_for, serialized_rows
 from runner.schema import InputSchema, PATH_FORMATS
 from runner.submodule import SubmoduleStatus
 
@@ -41,15 +41,20 @@ def _sha256(path: Path) -> str:
 
 
 def samplesheet_input_paths(path: Path, schema: InputSchema) -> list[Path]:
-    """Local data sources in schema-declared CSV/TSV path columns.
+    """Local data sources in schema-declared CSV/TSV or flat JSON/YAML path fields.
 
-    Remote URLs and non-tabular inputs need pipeline-specific identity handling and are not guessed.
+    Remote URLs and nested or pipeline-specific inputs need separate identity handling and are not guessed.
     The sheet has already been validated by the runner, including its absolute-path requirement.
     """
-    if path.suffix.lower() not in (".csv", ".tsv"):
-        return []
     columns = [column.name for column in schema.columns if column.fmt in PATH_FORMATS]
     paths: set[Path] = set()
+    if path.suffix.lower() not in (".csv", ".tsv"):
+        for row in serialized_rows(path) or []:
+            for column in columns:
+                value = row.get(column)
+                if isinstance(value, str) and value and "://" not in value:
+                    paths.add(Path(value))
+        return sorted(paths)
     with path.open(newline="", encoding="utf-8-sig") as stream:
         for row in csv.DictReader(stream, delimiter=delimiter_for(path), strict=True):
             for column in columns:

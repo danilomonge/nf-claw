@@ -1,4 +1,4 @@
-from runner.schema import Column, InputSchema
+from runner.schema import Column, InputSchema, load_input_schema
 from runner import samplesheet
 import pytest
 
@@ -6,6 +6,88 @@ SCH = InputSchema(columns=(
     Column("sample", "string", True, None, None),
     Column("fastq_1", "string", True, None, "file-path"),
 ))
+
+
+@pytest.mark.parametrize("identifier", ["safe$(touch${IFS}MARKER)", "`touch${IFS}MARKER`",
+                                      "../other", "/absolute", "-option", ".hidden",
+                                      "A;touch${IFS}MARKER", "A*", "A\nB", "   "])
+def test_schema_declared_identifier_rejects_code_paths_and_glob_expansion(tmp_path, identifier):
+    import csv
+    import json
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets/schema_input.json").write_text(json.dumps({"items": {"properties": {
+        "specimen_label": {"type": "string", "meta": ["id"]},
+        "description": {"type": "string"}}, "required": ["specimen_label"]}}))
+    schema = load_input_schema(tmp_path)
+    sheet = tmp_path / "samples.csv"
+    with sheet.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["specimen_label", "description"])
+        writer.writerow([identifier, "unrestricted $(annotation); free text"])
+    issues = samplesheet.validate(sheet, schema)
+    assert any("identifier" in issue and "specimen_label" in issue for issue in issues)
+
+
+@pytest.mark.parametrize("identifier", ["Sample1", "_control", "α-sample.2", "e\u0301chantillon"])
+def test_identifier_guard_preserves_safe_names_and_descriptive_text(tmp_path, identifier):
+    import csv
+    import json
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets/schema_input.json").write_text(json.dumps({"items": {"properties": {
+        "specimen_label": {"type": "string", "meta": "id"},
+        "description": {"type": "string"}}}}))
+    sheet = tmp_path / "samples.csv"
+    with sheet.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["specimen_label", "description"])
+        writer.writerow([identifier, "annotation $x; 'quotes'\nand newlines"])
+    assert samplesheet.validate(sheet, load_input_schema(tmp_path)) == []
+
+
+def test_legacy_named_sample_identifier_is_protected_without_meta_annotation(tmp_path):
+    sheet = tmp_path / "samples.csv"
+    sheet.write_text('sample\nsafe$(touch${IFS}MARKER)\n')
+    assert any("identifier" in issue for issue in samplesheet.validate(sheet, InputSchema(columns=(
+        Column("sample", "string", True, None),))))
+
+
+@pytest.mark.parametrize("extension", ["json", "yaml", "yml"])
+def test_serialized_sample_identity_cannot_bypass_the_guard(tmp_path, extension):
+    import json
+    data = [{"sample": "safe$(touch${IFS}MARKER)"}]
+    sheet = tmp_path / f"samples.{extension}"
+    if extension == "json":
+        sheet.write_text(json.dumps(data))
+    else:
+        yaml = pytest.importorskip("yaml")
+        sheet.write_text(yaml.safe_dump(data))
+    assert any("identifier" in issue for issue in samplesheet.validate(sheet, SCH))
+
+
+@pytest.mark.parametrize("extension,content", [
+    ("json", '[{"sample":"A","sample":"B"}]'),
+    ("yaml", '- sample: A\n  sample: B\n'),
+])
+def test_serialized_samplesheet_duplicate_keys_cannot_silently_change_identity(tmp_path, extension, content):
+    if extension == "yaml":
+        pytest.importorskip("yaml")
+    sheet = tmp_path / f"samples.{extension}"
+    sheet.write_text(content)
+    assert any("duplicate" in issue for issue in samplesheet.validate(sheet, SCH))
+
+
+def test_relative_glob_paths_cannot_bind_to_a_different_launch_directory(tmp_path):
+    schema = InputSchema(columns=(Column("reads", "string", True, None, "file-path-pattern"),))
+    sheet = tmp_path / "samples.csv"
+    sheet.write_text('reads\nreads/*.fastq.gz\n')
+    assert any("relative path" in issue for issue in samplesheet.validate(sheet, schema))
+
+
+def test_absolute_glob_paths_are_not_treated_as_literal_filenames(tmp_path):
+    schema = InputSchema(columns=(Column("reads", "string", True, None, "file-path-pattern"),))
+    sheet = tmp_path / "samples.csv"
+    sheet.write_text(f'reads\n{tmp_path}/reads/*.fastq.gz\n')
+    assert samplesheet.validate(sheet, schema) == []
 
 
 @pytest.mark.parametrize("extension,delimiter", [("csv", ","), ("tsv", "\t")])
@@ -285,3 +367,55 @@ def test_header_issues_requires_one_column_group():
     assert samplesheet.header_issues(["sample", "fastq_1"], sheet) == []
     assert samplesheet.header_issues(["sample"], sheet) == [
         "needs one of these column sets: sampleID, forwardReads; sample, fastq_1"]
+
+
+@pytest.mark.parametrize("content", [
+    '- ? [sample, other]\n  : A\n',
+    '- sample: !!python/object/apply:os.system ["touch UNEXPECTED"]\n',
+    '- sample: 2026-10-09\n',
+    '- sample: &recursive [*recursive]\n',
+])
+def test_yaml_invalid_keys_tags_and_nonliteral_identity_are_refused(tmp_path, content):
+    pytest.importorskip("yaml")
+    sheet = tmp_path / "samples.yaml"
+    sheet.write_text(content)
+    assert samplesheet.validate(sheet, SCH)
+    assert not (tmp_path / "UNEXPECTED").exists()
+
+
+def test_yaml_merge_overrides_and_quoted_identity_preserve_valid_records(tmp_path):
+    pytest.importorskip("yaml")
+    sheet = tmp_path / "samples.yaml"
+    sheet.write_text('- &base\n  sample: A\n  description: free text $x\n'
+                     '- <<: *base\n  sample: "2026-10-09"\n')
+    assert samplesheet.validate(sheet, SCH) == []
+    assert [row["sample"] for row in samplesheet.serialized_rows(sheet)] == ["A", "2026-10-09"]
+
+
+def test_yaml_without_optional_parser_fails_closed(tmp_path, monkeypatch):
+    import sys
+    sheet = tmp_path / "samples.yaml"
+    sheet.write_text('- sample: A\n')
+    monkeypatch.setitem(sys.modules, "yaml", None)
+    assert any("nfclaw[yaml]" in issue for issue in samplesheet.validate(sheet, SCH))
+
+
+@pytest.mark.parametrize("extension", ["json", "yaml"])
+def test_serialized_local_paths_cannot_rebind_against_launch_directory(tmp_path, extension):
+    import json
+    sheet = tmp_path / f"samples.{extension}"
+    data = [{"sample": "A", "fastq_1": "relative.fastq.gz"}]
+    if extension == "json":
+        sheet.write_text(json.dumps(data))
+    else:
+        yaml = pytest.importorskip("yaml")
+        sheet.write_text(yaml.safe_dump(data))
+    assert any("relative path" in issue for issue in samplesheet.validate(sheet, SCH))
+
+
+def test_nested_legacy_named_field_keeps_its_schema_contract(tmp_path):
+    import json
+    sheet = tmp_path / "samples.json"
+    sheet.write_text(json.dumps([{"sample": {"description": "free text $x"}}]))
+    schema = InputSchema(columns=(Column("sample", "object", True, None),))
+    assert samplesheet.validate(sheet, schema) == []

@@ -70,13 +70,31 @@ class Column:
     min_length: int | None = None
     max_length: int | None = None
     deprecated: bool = False
+    meta: tuple[str, ...] = ()
 
     @property
     def is_path(self) -> bool:
         """Any filesystem path (a file, a directory, or nf-schema's `path` for either) — these values
         must be absolute and get an existence check. A glob (`file-path-pattern`) cannot be checked
-        for existence, so it is left to nf-schema."""
+        for literal existence; glob matching is left to nf-schema, but the runner still requires
+        an absolute local pattern."""
         return self.fmt in ("file-path", "directory-path", "path")
+
+    @property
+    def is_identifier(self) -> bool:
+        """Schema-declared identity metadata, plus legacy sample/patient column names.
+
+        Paths and descriptive annotations keep their own contracts; identity values are often
+        interpolated into upstream shell scripts and output filenames without escaping.
+        """
+        if self.fmt in PATH_FORMATS:
+            return False
+        name = self.name.casefold().replace("_", "").replace(" ", "")
+        return (self.type not in {"object", "array"}
+                and name in {"id", "sample", "sampleid", "samplename", "patient", "patientid"}
+                or any(key in {"id", "sample", "patient", "sample_name", "sample_alias",
+                               "tumour_sample", "normal_sample", "paternal", "maternal"}
+                       or key.endswith("_id") for key in self.meta))
 
 
 @dataclass(frozen=True)
@@ -210,6 +228,9 @@ def load_input_schema(repo: Path, rel: str = "assets/schema_input.json") -> Inpu
             if not isinstance(cobj, dict):
                 continue
             enum = cobj.get("enum")
+            meta = cobj.get("meta", [])
+            if isinstance(meta, str):
+                meta = [meta]
             cols.append(Column(
                 name=str(cname),
                 type=_type_of(cobj),
@@ -222,6 +243,7 @@ def load_input_schema(repo: Path, rel: str = "assets/schema_input.json") -> Inpu
                 min_length=cobj.get("minLength"),
                 max_length=cobj.get("maxLength"),
                 deprecated=bool(cobj.get("deprecated", False)),
+                meta=tuple(key for key in meta if isinstance(key, str)) if isinstance(meta, list) else (),
             ))
     return InputSchema(
         columns=tuple(cols),
