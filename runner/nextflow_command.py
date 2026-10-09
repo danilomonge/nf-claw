@@ -50,4 +50,5 @@ def shell_line(command: str, env: dict[str, str] | None = None) -> str:
     with (`--nxf-ver`, `--nxf-env`). Without it a copy of the command runs whatever engine the shell
     defaults to, not the one the run used. Sensitive values are shown redacted, as in provenance."""
     shown, _ = provenance.safe_env(env)
-    return "".join(f"{key}={shlex.quote(value)} " for key, value in shown.items()) + command
+    return "".join(f"{shlex.quote(key)}={shlex.quote(value)} "
+                   for key, value in shown.items()) + command

@@ -7,6 +7,19 @@ from runner import runlog
 FIXTURES = Path(__file__).parent / "fixtures" / "nextflow_console"
 
 
+def test_executed_engine_version_survives_split_colored_chunks_and_large_console_output(tmp_path):
+    log = runlog.RunLog(tmp_path / "run.log")
+    try:
+        log.write(b"\x1b[32mN E X T F L O W  ~  version 25.1")
+        assert log.nextflow_version is None
+        log.write(b"0.4\x1b[0m\n")
+        log.write(b"analysis output\n" * 30000)
+        log.write(b"N E X T F L O W  ~  version 26.04.0\n")
+        assert log.nextflow_version == "nextflow version 25.10.4"
+    finally:
+        log.finish()
+
+
 def _console(name: str) -> str:
     # Real console output captured from Nextflow 26.04.3 (stdout of `nextflow run`, not a TTY).
     return (FIXTURES / name).read_text(encoding="utf-8")

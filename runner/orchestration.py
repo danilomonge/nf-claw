@@ -330,7 +330,8 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                          chain=chain_link, input_checksums=input_snapshot,
                          config_paths=replay_configs, config_checksums=config_snapshot,
                          pipeline_checksums=pipeline_snapshot,
-                         unverified_local_paths=unverified_paths)
+                         unverified_local_paths=unverified_paths,
+                         nextflow_version=run_log.nextflow_version or "")
 
     # Launch from the outdir so each run owns its `.nextflow/` history and cache: `-resume` then
     # resumes THIS run, never another pipeline's session. Paths in the command are absolute, so

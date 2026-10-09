@@ -9,6 +9,33 @@ import pytest
 from runner import engine_version, provenance
 
 
+@pytest.mark.parametrize("probe", [provenance._nextflow_version, engine_version._installed_raw])
+def test_failed_version_probe_cannot_supply_version_evidence_or_diagnostic_secrets(monkeypatch, probe):
+    module = provenance if probe is provenance._nextflow_version else engine_version
+    monkeypatch.setattr(module, "capture", lambda *a, **k: subprocess.CompletedProcess(
+                            ["nextflow", "-version"], 1, "nextflow version 25.10.4 build 11033\n",
+                            "failed download https://private-credential@host.invalid/engine\n"))
+    assert not probe(), "a failed metadata command does not establish the installed engine"
+
+
+@pytest.mark.parametrize("probe", [provenance._nextflow_version, engine_version._installed_raw])
+def test_version_evidence_contains_only_a_validated_version_line(monkeypatch, probe):
+    module = provenance if probe is provenance._nextflow_version else engine_version
+    line = "nextflow version 25.10.4 build 11033"
+    monkeypatch.setattr(module, "capture", lambda *a, **k: subprocess.CompletedProcess(
+        ["nextflow", "-version"], 0, "bootstrap https://private-credential@host.invalid/engine\n",
+        line + "\nLast modified: diagnostic metadata\n"))
+    assert probe() == line
+
+
+@pytest.mark.parametrize("output", ["unverified version 25.10.4", "",
+                                   "nextflow version 25.10.4\nnextflow version 26.04.0\n"])
+def test_missing_or_conflicting_version_lines_are_unknown(monkeypatch, output):
+    monkeypatch.setattr(provenance, "capture", lambda *a, **k: subprocess.CompletedProcess(
+        ["nextflow", "-version"], 0, output, ""))
+    assert provenance._nextflow_version() == ""
+
+
 def _alive(pid):
     result = subprocess.run(["ps", "-p", str(pid), "-o", "stat="],
                             capture_output=True, text=True, timeout=2)

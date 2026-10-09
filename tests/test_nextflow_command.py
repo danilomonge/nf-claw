@@ -1,5 +1,14 @@
 from runner import nextflow_command as nc
 
+
+def test_displayed_environment_names_cannot_become_shell_instructions():
+    import subprocess
+    line = nc.shell_line("echo COMMAND_RAN", {"NXF_X; printf ENV_NAME_INJECTION;#": "value"})
+    result = subprocess.run(["bash", "-c", line], capture_output=True, text=True)
+    assert "ENV_NAME_INJECTION" not in result.stdout
+    assert "COMMAND_RAN" not in result.stdout
+    assert result.returncode != 0
+
 def test_compose_profile_orders_test_first_modifiers_last():
     assert nc.compose_profile("docker", demo=True, modifiers=("arm64",)) == "test,docker,arm64"
 

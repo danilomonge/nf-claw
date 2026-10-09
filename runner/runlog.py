@@ -52,6 +52,10 @@ _MAX_CAUSE_LINES = 6         # continuation lines kept per cause message
 _STACK_FRAME = re.compile(r"^\s+(at |\.\.\. \d+ (common frames omitted|more))")
 
 _ANSI = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]|\x1b[@-_]")
+_ENGINE_BANNER = re.compile(
+    r"^[ \t]*N E X T F L O W[ \t]*~[ \t]*version[ \t]+"
+    r"(\d+(?:\.\d+)+(?:-[A-Za-z0-9.-]+)?)[ \t]*\r?\n", re.MULTILINE)
+_ENGINE_HEAD_BYTES = 64 * 1024
 # Lines that end the context above `ERROR ~`: Nextflow's banner and launch line, and the end (or
 # start) of an earlier report — Nextflow re-renders a report when stdout is not a terminal.
 _CONTEXT_STOP = re.compile(r"N E X T F L O W|^Launching `|^\s*-- Check |^ERROR ~")
@@ -259,6 +263,8 @@ class RunLog:
         self._fh = path.open("ab")
         self._lock = threading.Lock()
         self._tails = {"out": bytearray(), "err": bytearray()}
+        self._engine_heads = {"out": bytearray(), "err": bytearray()}
+        self.nextflow_version: str | None = None
         self._finished = False
 
     @classmethod
@@ -295,6 +301,14 @@ class RunLog:
     def _write(self, data: bytes, *, stream: str | None) -> None:
         with self._lock:
             if stream is not None:
+                if (self.nextflow_version is None
+                        and len(self._engine_heads[stream]) < _ENGINE_HEAD_BYTES):
+                    head = self._engine_heads[stream]
+                    head += data[:max(0, _ENGINE_HEAD_BYTES - len(head))]
+                    text = _ANSI.sub("", head.decode("utf-8", errors="replace"))
+                    if banner := _ENGINE_BANNER.search(text):
+                        self.nextflow_version = f"nextflow version {banner[1]}"
+                        self._engine_heads.clear()
                 tail = self._tails[stream]
                 tail += data
                 del tail[:-_TAIL_BYTES]
