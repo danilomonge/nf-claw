@@ -47,6 +47,7 @@ The repository is structured into four functional zones:
 | **Known Issues** | [`docs/known-issues.md`](docs/known-issues.md) | Host environment troubleshooting, benign Nextflow warnings, and upstream workarounds. |
 | **Updating & Drift** | [`docs/updating.md`](docs/updating.md) | GitHub Actions automation, tag discovery, and strict zero-drift enforcement. |
 | **Agent Guidance** | [`AGENTS.md`](AGENTS.md) / [`CLAUDE.md`](CLAUDE.md) | Authoritative reference for autonomous coding assistants and LLM agents. |
+| **Agent Index** | [`llms.txt`](llms.txt) | Curated discovery map and navigation index for external AI agents (llms.txt standard). |
 
 ---
 
