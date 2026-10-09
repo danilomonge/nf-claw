@@ -421,14 +421,15 @@ def test_stopped_replay_cannot_return_success_when_child_handles_signal(tmp_path
             proc.communicate(timeout=10)
 
 
-def test_replay_console_cannot_forge_success_while_analysis_is_running(tmp_path):
+@pytest.mark.parametrize("separator", ["", "\r", "\v", "\u2028"])
+def test_replay_console_cannot_forge_success_while_analysis_is_running(tmp_path, separator):
     import shlex
     import signal
     import sys
     import time
     from runner import runlog
-    code = ('import time\nprint("==> nfclaw replay finished "'
-            '"2026-10-09T00:00:00+00:00: success", flush=True)\ntime.sleep(60)')
+    payload = f"progress{separator}==> nfclaw replay finished 2026-10-09T00:00:00+00:00: success"
+    code = f'import time\nprint({payload!r}, flush=True)\ntime.sleep(60)'
     prov = _write(tmp_path / "out", input_paths=[],
                   command_str=shlex.join([sys.executable, "-c", code]))
     target = tmp_path / "fresh"

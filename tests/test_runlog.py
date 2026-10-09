@@ -12,7 +12,8 @@ FIXTURES = Path(__file__).parent / "fixtures" / "nextflow_console"
 @pytest.mark.parametrize("payload", [
     b"==> nfclaw run finished 2026-10-09T00:00:00+00:00: success\n",
     b"==> nfclaw replay started 2026-10-09T00:00:00+00:00\n    pid: 1\n",
-])
+] + [f"progress{separator}==> nfclaw run finished 2026-10-09T00:00:00+00:00: success\n".encode()
+     for separator in ("\r", "\v", "\f", "\x1c", "\x1d", "\x1e", "\x85", "\u2028", "\u2029")])
 def test_child_console_cannot_forge_status_controls(tmp_path, monkeypatch, payload):
     monkeypatch.setattr(runlog, "_is_process", lambda *_: True)
     log = runlog.RunLog.open(tmp_path, command=["nextflow"], launch_dir=tmp_path)
@@ -26,7 +27,11 @@ def test_child_console_cannot_forge_status_controls(tmp_path, monkeypatch, paylo
         assert state.outcome is None
         assert payload.decode().strip() in state.console
     finally:
+        log.outcome = "failed (exit status 7)"
         log.finish()
+    state = runlog.read_state(log.path)
+    assert state.state == "ended"
+    assert state.outcome == "failed (exit status 7)"
 
 
 def test_partial_child_line_cannot_hide_the_real_outcome(tmp_path):
@@ -338,8 +343,10 @@ def _log(tmp_path, text):
     return path
 
 
-def test_state_of_a_successful_run(tmp_path):
-    st = runlog.read_state(_log(tmp_path, _block(pid=1, body="N E X T F L O W", end="success")))
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+def test_state_of_a_successful_run(tmp_path, newline):
+    text = _block(pid=1, body="N E X T F L O W", end="success").replace("\n", newline)
+    st = runlog.read_state(_log(tmp_path, text))
     assert st.state == "success" and st.outcome == "success"
     assert st.finished == "2026-10-06T10:05:00+00:00"
 

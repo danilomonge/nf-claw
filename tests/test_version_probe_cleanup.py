@@ -97,7 +97,8 @@ def test_timed_out_chain_config_probe_stops_children_before_scratch_cleanup(
     planned = chain.plan(spec, repo_root=root)
     launcher = tmp_path / "nextflow"
     marker = tmp_path / "config-child.pid"
-    launcher.write_text('#!/bin/sh\nsleep 60 &\necho $! >"$CHILD_PID_FILE"\nwait\n')
+    # A slow launcher must still reach the child-cleanup behavior under test.
+    launcher.write_text('#!/bin/sh\nsleep 1.1\nsleep 60 &\necho $! >"$CHILD_PID_FILE"\nwait\n')
     launcher.chmod(0o755)
     monkeypatch.setenv("PATH", f"{tmp_path}:{os.environ['PATH']}")
     monkeypatch.setenv("CHILD_PID_FILE", str(marker))

@@ -467,6 +467,15 @@ def _is_process(pid: int | None, names: tuple[str, ...]) -> bool:
     return any(a in names or os.path.basename(a) in names for a in argv)
 
 
+def _physical_lines(data: bytes) -> list[str]:
+    # Control records use LF, matching quote_console. splitlines() would turn child
+    # carriage returns or Unicode separators into unquoted status controls.
+    lines = data.decode("utf-8", errors="replace").split("\n")
+    if lines[-1] == "":
+        lines.pop()
+    return [line.removesuffix("\r") for line in lines]  # retain legacy CRLF logs
+
+
 def read_state(log: Path) -> RunState:
     """The state of the last launch in `log`, deterministically: its last line if it has one,
     otherwise whether the nfclaw that wrote it is still running. Reads the launch's header and the
@@ -483,10 +492,10 @@ def read_state(log: Path) -> RunState:
         if start is None:
             return RunState(log, "missing")
         fh.seek(start)
-        head = fh.read(_HEAD_BYTES).decode("utf-8", errors="replace").splitlines()
+        head = _physical_lines(fh.read(_HEAD_BYTES))
         tail_from = max(start, offset - _STATE_TAIL_BYTES)
         fh.seek(tail_from)
-        tail = fh.read().decode("utf-8", errors="replace").splitlines()
+        tail = _physical_lines(fh.read())
     if tail_from > start and tail:
         tail = tail[1:]                                  # the first line may be cut mid-way
 
