@@ -47,6 +47,7 @@ The repository is structured into four functional zones:
 | **Known Issues** | [`docs/known-issues.md`](docs/known-issues.md) | Host environment troubleshooting, benign Nextflow warnings, and upstream workarounds. |
 | **Updating & Drift** | [`docs/updating.md`](docs/updating.md) | GitHub Actions automation, tag discovery, and strict zero-drift enforcement. |
 | **Agent Guidance** | [`AGENTS.md`](AGENTS.md) / [`CLAUDE.md`](CLAUDE.md) | Authoritative reference for autonomous coding assistants and LLM agents. |
+| **Agent Index** | [`llms.txt`](llms.txt) | Curated discovery map and navigation index for external AI agents (llms.txt standard). |
 
 ---
 
@@ -206,7 +207,7 @@ Detailed contributor standards, naming constraints, and test procedures are prov
 
 ## How It Stays Current
 
-Five automated GitHub Actions workflows keep the library and website synchronized with upstream releases:
+Automated GitHub Actions workflows keep the library, test suites, and website synchronized with upstream releases:
 
 ```
 ┌────────────────────────┐      ┌───────────────────────────┐      ┌─────────────────────────┐
@@ -221,14 +222,22 @@ Five automated GitHub Actions workflows keep the library and website synchronize
                       │    Continuous Verification    │
                       │  • smoke.yml (preflight)      │
                       │  • nextflow-validate.yml (DAG)│
+                      │  • tests.yml (matrix & run)   │
+                      │  • drift-check.yml (schemas)  │
+                      │  • demo-validation.yml (demo) │
+                      │  • pipeline-execution.yml(PR) │
                       └───────────────────────────────┘
 ```
 
 - **`auto-update.yml`** (Daily): Discovers new upstream release tags via `git ls-remote --tags`, checks out new versions, regenerates context files, verifies Nextflow acceptance (`nextflow -preview`), runs the test suite and drift gate, and auto-merges the update.
 - **`discover-pipelines.yml`** (Weekly): Identifies newly published **DSL2** nf-core pipelines, scaffolds submodules, enforces strict exit code 0 acceptance, and merges validated pipelines.
 - **`deploy-pages.yml`** (Push to `main`): Rebuilds and publishes the interactive static portal to GitHub Pages.
-- **`smoke.yml`** (Weekly & on changes): Validates command synthesis, schema parsing, and CLI arguments across all pipelines (`nfclaw run --check --demo`).
-- **`nextflow-validate.yml`** (Nightly & on changes): Executes `nextflow -preview` under pinned minimum Nextflow versions to verify pipeline compilation, profile resolution, schema validation, and DAG construction.
+- **`smoke.yml`** (Weekly & on changes): Validates command synthesis, schema parsing, and CLI arguments across all pipelines (`nfclaw run --check --demo`), as well as registered registry chains.
+- **`nextflow-validate.yml`** (Nightly & on changes): Executes `nextflow -preview` under pinned minimum Nextflow versions across parallel shards to verify pipeline compilation, profile resolution, schema validation, and DAG construction.
+- **`tests.yml`** (Push & PR): Executes the complete pytest test matrix across Python 3.11–3.13 on Ubuntu and macOS, deterministic Nextflow execution/replay/chaining, and static site validation.
+- **`drift-check.yml`** (Push & PR): Re-audits the repository to guarantee zero schema drift between submodules, skills, references, manifests, and handoff rules.
+- **`demo-validation.yml`** (PR & manual): Executes the pinned demo on native Linux amd64, replays it into a fresh directory, and independently validates FastQC metrics, scientific replay, and static plot exports.
+- **`pipeline-execution.yml`** (PR & manual): Executes selected pinned pipelines on native Linux amd64 under bounded resources, exercising complete execution, replay, and structural/strict verification (`nfclaw verify`).
 
 Further details on drift prevention and update automation: [`docs/updating.md`](docs/updating.md).
 

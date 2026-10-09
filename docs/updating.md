@@ -32,7 +32,7 @@ The `.github/workflows/auto-update.yml` workflow executes daily:
                                                                                │
                                 ┌───────────────────────────┐                  ▼
                                 │ 5. Automated Merge        │ ◄── ┌─────────────────────────┐
-                                │ Fast-forward to main      │     │ 4. Validation Gate      │
+                                │ Squash merge into main    │     │ 4. Validation Gate      │
                                 └───────────────────────────┘     │ Nextflow + Tests + Drift│
                                                                   └─────────────────────────┘
 ```
@@ -44,7 +44,7 @@ The `.github/workflows/auto-update.yml` workflow executes daily:
    - Runs `scripts/nextflow_accept.sh` (`nextflow -preview`) to verify pipeline compilation, profile resolution, and parameter validation.
    - Executes the complete pytest suite.
    - Runs the drift gate (`python3 -m librarian.check_drift`).
-5. **Automated Merging:** Only when all validation checks pass with exit code 0 is the PR automatically merged into `main`, which dispatches `deploy-pages.yml` to refresh the live site.
+5. **Automated Merging:** Only when all validation checks pass with exit code 0 is the PR automatically squash-merged into `main`, which dispatches `deploy-pages.yml` to refresh the live site.
 6. **Error Reporting:** The maintenance scan attempts every source and returns failure after the scan if any remote could not be reached, rather than reporting that failure as "no new releases."
 
 ---
