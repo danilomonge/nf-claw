@@ -312,6 +312,7 @@ pytest -k "test_verify"        # Run tests matching an expression
 
 | Target | Command | Description |
 |---|---|---|
+| `make add`   | `add_pipeline` | Register and onboard a new nf-core pipeline to the library. |
 | `make build` | `write_skill --all && write_catalog` | Regenerate skills, references, and catalog files from pinned submodules. |
 | `make update`| `update_pipelines && make build` | Discover newest release tags, bump submodules, and rebuild context. |
 | `make check` | `check_drift && pytest` | Run schema drift verification followed by the complete pytest suite. |
