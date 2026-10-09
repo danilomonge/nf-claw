@@ -155,7 +155,9 @@ def test_failed_run_log_ends_with_the_outcome_after_the_error(tmp_path):
         execution.run([PY, "-c", "import sys; print('ERROR ~ boom'); sys.exit(4)"], cwd=tmp_path,
                       logs_dir=tmp_path / "logs", timeout_seconds=30)
     log = (tmp_path / "logs" / "run.log").read_text()
-    assert str(exc.value) in log                         # the exact error the terminal showed
+    from runner.runlog import read_state
+    # Quoting protects controls in the log; status reconstructs the exact terminal error.
+    assert "\n".join(read_state(tmp_path / "logs" / "run.log").error) == str(exc.value)
     assert log.rstrip().splitlines()[-1].endswith(": failed (exit status 4)")
 
 
@@ -409,11 +411,11 @@ def test_run_log_header_records_who_runs_it(tmp_path):
     execution.run([PY, "-c", "import os; print('CHILD', os.getpid())"], cwd=tmp_path,
                   logs_dir=tmp_path / "logs", timeout_seconds=30)
     log = (tmp_path / "logs" / "run.log").read_text()
-    child = int(log.split("\nCHILD ")[1].split()[0])
+    child = int((tmp_path / "logs" / "stdout.txt").read_text().split("CHILD ")[1].split()[0])
     assert f"    pid: {os.getpid()}\n" in log
     assert f"    host: {socket.gethostname()}\n" in log
     assert f"    nextflow pid: {child}\n" in log
-    assert log.index("    nextflow pid:") < log.index("\nCHILD ")     # before any console output
+    assert log.index("    nextflow pid:") < log.index("\n| CHILD ")   # before any console output
 
 
 def test_recorded_error_is_marked_in_the_run_log(tmp_path):
@@ -421,7 +423,9 @@ def test_recorded_error_is_marked_in_the_run_log(tmp_path):
         execution.run([PY, "-c", "import sys; print('ERROR ~ boom'); sys.exit(2)"], cwd=tmp_path,
                       logs_dir=tmp_path / "logs", timeout_seconds=30)
     log = (tmp_path / "logs" / "run.log").read_text()
-    assert f"==> nfclaw error:\n{exc.value}\n" in log
+    from runner.runlog import read_state
+    assert "==> nfclaw error:\n| " in log
+    assert "\n".join(read_state(tmp_path / "logs" / "run.log").error) == str(exc.value)
 
 
 @pytest.mark.skipif(not sys.platform.startswith("linux"), reason="PR_SET_PDEATHSIG is Linux-only")

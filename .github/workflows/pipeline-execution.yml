@@ -70,6 +70,14 @@ jobs:
           nfclaw run "$PIPELINE" --demo --outdir "$RUNNER_TEMP/analysis" --nxf-ver "$NXF_VER" \
             --limit-cpus 2 --limit-memory 6.GB --limit-time 30.min --timeout 1800
           nfclaw status "$RUNNER_TEMP/analysis"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          manifest = json.loads((Path(os.environ["RUNNER_TEMP"]) / "analysis/provenance/run_manifest.json").read_text())
+          if manifest["nextflow"] != f"nextflow version {os.environ['NXF_VER']}":
+              raise SystemExit(f"Executed engine identity was not recorded correctly: {manifest['nextflow']!r}")
+          PY
       - name: Retain execution evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

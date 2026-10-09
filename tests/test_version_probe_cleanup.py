@@ -101,6 +101,17 @@ def test_timed_out_chain_config_probe_stops_children_before_scratch_cleanup(
     launcher.chmod(0o755)
     monkeypatch.setenv("PATH", f"{tmp_path}:{os.environ['PATH']}")
     monkeypatch.setenv("CHILD_PID_FILE", str(marker))
+    communicate = subprocess.Popen.communicate
+
+    def timeout_after_child_started(self, input=None, timeout=None):
+        if timeout == 1:
+            # The regression is about stopping a running child, not OS scheduling latency.
+            deadline = time.monotonic() + 10
+            while not marker.exists() and self.poll() is None and time.monotonic() < deadline:
+                time.sleep(0.02)
+        return communicate(self, input=input, timeout=timeout)
+
+    monkeypatch.setattr(subprocess.Popen, "communicate", timeout_after_child_started)
     child = None
     try:
         issues = chain._probe_config(spec, planned[0], timeout_seconds=1)

@@ -53,6 +53,9 @@ jobs:
           from runner.outputs import result_files
           original = Path(os.environ["RUNNER_TEMP"]) / "demo"
           replay = original.with_name("demo-replay")
+          manifest = json.loads((original / "provenance/run_manifest.json").read_text())
+          if manifest["nextflow"] != "nextflow version 25.10.4":
+              raise SystemExit(f"Executed engine identity was not recorded correctly: {manifest['nextflow']!r}")
           inventories = [{p.relative_to(root).as_posix() for p in result_files(root)}
                          for root in (original, replay)]
           missing, extra = inventories[0] - inventories[1], inventories[1] - inventories[0]

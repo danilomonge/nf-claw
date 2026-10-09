@@ -11,12 +11,41 @@ import hashlib
 import json
 import os
 import re
+import select
 import signal
+import socket
 import stat
 import subprocess
 import sys
+import threading
 import time
+from datetime import datetime, timezone
 from pathlib import Path
+
+
+def quote_console(data: bytes, at_line_start: bool) -> tuple[bytes, bool]:
+    """Prefix each physical child-output line without depending on stream chunk boundaries."""
+    if not data:
+        return data, at_line_start
+    quoted = (b"| " if at_line_start else b"") + data.replace(b"\n", b"\n| ")
+    at_line_start = data.endswith(b"\n")
+    return (quoted[:-2] if at_line_start else quoted), at_line_start
+
+
+def start_replay_log(log: Path, original: str, pid: str) -> None:
+    """Write trusted replay controls independently of arbitrary path text."""
+    stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    original = original.replace("\r", "\\r").replace("\n", "\\n")
+    host = socket.gethostname().replace("\r", "\\r").replace("\n", "\\n")
+    lines = [f"==> nfclaw replay started {stamp}", "    console format: prefixed",
+             f"    replay of: {original}", f"    host: {host}"]
+    if identity := host_identity():
+        lines.append(f"    host id: {identity}")
+    if not pid.isdigit():
+        raise ValueError("invalid replay pid")
+    lines.append(f"    pid: {pid}")
+    with log.open("a", encoding="utf-8") as handle:
+        handle.write("\n" + "\n".join(lines) + "\n")
 
 
 def host_identity() -> str | None:
@@ -256,29 +285,79 @@ def run_replay_command(command: list[str], *, log: Path) -> int:
     handlers = {sig: signal.signal(sig, request_stop)
                 for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)}
     proc = None
+    reader = None
+    console_log = None
+    reader_done = threading.Event()
+    reader_errors = []
+    status = 1
+
+    def copy_output():
+        at_line_start = True
+        while True:
+            readable, _, _ = select.select([proc.stdout], [], [], 0.1)
+            if not readable:
+                if reader_done.is_set():
+                    break
+                continue
+            chunk = os.read(proc.stdout.fileno(), 64 * 1024)
+            if not chunk:
+                break
+            quoted, at_line_start = quote_console(chunk, at_line_start)
+            for handle, content in ((console_log, quoted), (sys.stdout.buffer, chunk)):
+                try:
+                    handle.write(content)
+                    handle.flush()
+                except OSError as exc:
+                    if not reader_errors:
+                        reader_errors.append(str(exc))
+        if not at_line_start:
+            try:
+                console_log.write(b"\n")
+                console_log.flush()
+            except OSError as exc:
+                if not reader_errors:
+                    reader_errors.append(str(exc))
+
     try:
         # Write the header before launching anything that can produce console output.
         with log.open("a", encoding="utf-8") as handle:
             handle.write(f"    replay supervisor pid: {os.getpid()}\n")
+        if requested_stop is None:
+            console_log = log.open("ab")
+            proc = subprocess.Popen(command, start_new_session=True,
+                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            reader = threading.Thread(target=copy_output, daemon=True)
+            reader.start()
+            while requested_stop is None:
+                try:
+                    status = proc.wait(timeout=0.1)
+                    break
+                except subprocess.TimeoutExpired:
+                    continue
         if requested_stop is not None:
-            return 128 + requested_stop
-        proc = subprocess.Popen(command, start_new_session=True)
-        while requested_stop is None:
-            try:
-                status = proc.wait(timeout=0.1)
-                break
-            except subprocess.TimeoutExpired:
-                continue
-        if requested_stop is not None:
-            return 128 + requested_stop
-        return status if status >= 0 else 128 - status
+            status = 128 + requested_stop
+        elif status < 0:
+            status = 128 - status
     finally:
         try:
             if proc is not None:
                 _stop_replay_group(proc)
         finally:
+            reader_done.set()
+            if reader is not None:
+                reader.join(timeout=5)
+                if reader.is_alive():
+                    reader_errors.append("console forwarding did not stop")
+            if console_log is not None and (reader is None or not reader.is_alive()):
+                console_log.close()
             for sig, handler in handlers.items():
                 signal.signal(sig, handler)
+    if requested_stop is not None:
+        status = 128 + requested_stop
+    if reader_errors:
+        print("nfclaw replay: could not retain or forward console output", file=sys.stderr)
+        return status or 1
+    return status
 
 
 def lock_replay(target: Path, script: Path) -> None:
@@ -343,6 +422,8 @@ if __name__ == "__main__":
     try:
         if sys.argv[1] == "--host-id":
             print(host_identity() or "")
+        elif sys.argv[1] == "--log-start":
+            start_replay_log(Path(sys.argv[2]), sys.argv[3], sys.argv[4])
         elif sys.argv[1] == "--lock":
             lock_replay(Path(sys.argv[2]), Path(sys.argv[3]))
         elif sys.argv[1] == "--check-lock":

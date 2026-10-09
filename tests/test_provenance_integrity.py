@@ -421,6 +421,54 @@ def test_stopped_replay_cannot_return_success_when_child_handles_signal(tmp_path
             proc.communicate(timeout=10)
 
 
+def test_replay_console_cannot_forge_success_while_analysis_is_running(tmp_path):
+    import shlex
+    import signal
+    import sys
+    import time
+    from runner import runlog
+    code = ('import time\nprint("==> nfclaw replay finished "'
+            '"2026-10-09T00:00:00+00:00: success", flush=True)\ntime.sleep(60)')
+    prov = _write(tmp_path / "out", input_paths=[],
+                  command_str=shlex.join([sys.executable, "-c", code]))
+    target = tmp_path / "fresh"
+    proc = subprocess.Popen([str(prov / "commands.sh"), str(target)],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    log = target / "provenance/logs/run.log"
+    try:
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            if log.exists() and "2026-10-09T00:00:00+00:00: success" in log.read_text():
+                break
+            time.sleep(0.02)
+        else:
+            pytest.fail("child output did not reach the run log")
+        state = runlog.read_state(log)
+        assert state.state == "running"
+        assert state.outcome is None
+        assert state.supervisor_alive
+    finally:
+        if proc.poll() is None:
+            proc.send_signal(signal.SIGTERM)
+        proc.communicate(timeout=15)
+
+
+def test_replay_stop_during_cleanup_cannot_return_success(tmp_path, monkeypatch):
+    import signal
+    import sys
+    from runner import replay_guard
+    stop_group = replay_guard._stop_replay_group
+
+    def interrupt_cleanup(proc):
+        signal.raise_signal(signal.SIGTERM)
+        stop_group(proc, grace=0.1)
+
+    monkeypatch.setattr(replay_guard, "_stop_replay_group", interrupt_cleanup)
+    status = replay_guard.run_replay_command([sys.executable, "-c", "print('completed child')"],
+                                             log=tmp_path / "replay.log")
+    assert status == 143
+
+
 def test_stopped_replay_terminates_descendants_and_releases_writer_lock(tmp_path):
     import fcntl
     import os

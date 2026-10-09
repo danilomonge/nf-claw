@@ -55,7 +55,7 @@ Prints `status: success`, `running (…)`, the outcome it ended with (`failed (e
 
 ### Log Files Overview
 
-- **`<outdir>/provenance/logs/run.log`** — The whole launch in order: nfclaw's header (command, launch directory, Nextflow log path, host and pids, advisories), everything Nextflow printed, and on failure nfclaw's error. Once nfclaw is done — the provenance bundle included — its **last line** is:
+- **`<outdir>/provenance/logs/run.log`** — The whole launch in order: nfclaw's header (command, launch directory, Nextflow log path, host and pids, advisories), everything Nextflow printed, and on failure nfclaw's error. Child-output lines are prefixed with `| ` so printed text cannot forge nfclaw's status markers; `nfclaw status` removes that prefix when displaying the output, and `stdout.txt` / `stderr.txt` preserve the raw run streams. Once nfclaw is done — the provenance bundle included — its **last line** is:
   ```
   ==> nfclaw run finished <time>: <outcome>
   ```

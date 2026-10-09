@@ -3,7 +3,8 @@
 `nfclaw run` launches Nextflow from `--outdir`, so everything a reader needs after the fact sits at
 paths that do not depend on where they are standing:
 
-- `<outdir>/provenance/logs/run.log` — the whole launch as it appeared on the terminal: nfclaw's
+- `<outdir>/provenance/logs/run.log` — the whole launch, with child-output lines prefixed by `| `
+  to distinguish them from nfclaw's status controls: nfclaw's
   header (command, launch dir, Nextflow log, advisories), Nextflow's stdout and stderr interleaved as
   produced, and a last line stating the outcome. A relaunch (`--resume`) appends, so the attempt that
   failed is never overwritten by the one that fixes it.
@@ -27,7 +28,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from runner import nextflow_command
-from runner.replay_guard import host_identity
+from runner.replay_guard import host_identity, quote_console
 
 RUN_LOG_NAME = "run.log"
 ERROR_MARK = "==> nfclaw error:"          # precedes the error nfclaw records, up to the last line
@@ -266,6 +267,8 @@ class RunLog:
         self._engine_heads = {"out": bytearray(), "err": bytearray()}
         self.nextflow_version: str | None = None
         self._finished = False
+        self._console_line_start = True
+        self._needs_separator = self._fh.tell() > 0
 
     @classmethod
     def open(cls, logs_dir: Path, *, command: list[str], launch_dir: Path,
@@ -292,10 +295,17 @@ class RunLog:
 
     def note(self, text: str) -> None:
         """A line of nfclaw's own (header, error, outcome) — not part of the console tails."""
-        self._write((text.rstrip("\n") + "\n").encode("utf-8"), stream=None)
+        text = text.rstrip("\n")
+        if text.startswith("    "):
+            text = text.replace("\r", "\\r").replace("\n", "\\n")
+        else:
+            text = text.replace("\n", "\n| ")
+        if _STARTED.fullmatch(text):
+            text += "\n    console format: prefixed"
+        self._write((text + "\n").encode("utf-8"), stream=None)
 
     def write(self, chunk: bytes, stream: str = "out") -> None:
-        """Bytes of the child's console, verbatim; `stream` is "out" or "err"."""
+        """Child bytes; retain raw tails and quote log lines so they cannot forge controls."""
         self._write(chunk, stream=stream)
 
     def _write(self, data: bytes, *, stream: str | None) -> None:
@@ -305,13 +315,21 @@ class RunLog:
                         and len(self._engine_heads[stream]) < _ENGINE_HEAD_BYTES):
                     head = self._engine_heads[stream]
                     head += data[:max(0, _ENGINE_HEAD_BYTES - len(head))]
-                    text = _ANSI.sub("", head.decode("utf-8", errors="replace"))
+                    text = "\n".join(_clean(head.decode("utf-8", errors="replace")))
                     if banner := _ENGINE_BANNER.search(text):
                         self.nextflow_version = f"nextflow version {banner[1]}"
                         self._engine_heads.clear()
                 tail = self._tails[stream]
                 tail += data
                 del tail[:-_TAIL_BYTES]
+                data, self._console_line_start = quote_console(data, self._console_line_start)
+            else:
+                if not self._console_line_start:
+                    data = b"\n" + data
+                self._console_line_start = data.endswith(b"\n")
+            if self._needs_separator:
+                data = b"\n" + data
+                self._needs_separator = False
             try:
                 self._fh.write(data)
                 self._fh.flush()
@@ -332,7 +350,7 @@ class RunLog:
         self.outcome = outcome
         if error:
             self.note(ERROR_MARK)
-            self.note(error)
+            self.note("| " + error)
 
     def finish(self) -> None:
         """Close the record with its last line — `==> nfclaw run finished <time>: <outcome>` (or
@@ -354,12 +372,14 @@ def record_unlaunched(log: Path, *, command: str, outcome: str, error: str) -> N
     *previous* attempt's outcome as the log's last line — read by anyone polling a background run as
     the result of the new one. Only ever appended to a run log that already exists: a fresh
     --outdir is left untouched, so the next attempt is not refused as "not empty"."""
-    lines = [f"==> nfclaw run started {now()}", f"    command: {command}",
+    command = command.replace("\r", "\\r").replace("\n", "\\n")
+    error = "| " + error.rstrip("\n").replace("\n", "\n| ")
+    lines = [f"==> nfclaw run started {now()}", "    console format: prefixed", f"    command: {command}",
              *host_header(), f"    pid: {os.getpid()}",
-             ERROR_MARK, error.rstrip("\n"), f"==> nfclaw run finished {now()}: {outcome}"]
+             ERROR_MARK, error, f"==> nfclaw run finished {now()}: {outcome}"]
     try:
         with log.open("a", encoding="utf-8") as fh:
-            fh.write("\n".join(lines) + "\n")
+            fh.write("\n" + "\n".join(lines) + "\n")
     except OSError:
         pass                                             # never mask the refusal itself
 
@@ -369,7 +389,7 @@ def record_unlaunched(log: Path, *, command: str, outcome: str, error: str) -> N
 _STARTED = re.compile(r"^==> nfclaw (run|replay|chain) started (\S+)")
 _FINISHED = re.compile(r"^==> nfclaw (run|replay|chain) finished (\S+): (.*)$")
 _HEADER = re.compile(r"^    (command|launch dir|nextflow log|replay of|host|host id|pid|nextflow pid|"
-                     r"replay supervisor pid|warning): (.*)$")
+                     r"replay supervisor pid|warning|console format): (.*)$")
 _HEAD_BYTES = 64 * 1024
 _STATE_TAIL_BYTES = 512 * 1024
 _LAST_OUTPUT_LINES = 5
@@ -473,13 +493,16 @@ def read_state(log: Path) -> RunState:
     m = _STARTED.match(head[0])
     st = RunState(log, "missing", kind=m.group(1), started=m.group(2))
     header_lines = 1
+    prefixed_console = False
     for line in head[1:]:
         h = _HEADER.match(line)
         if not h:
             break
         header_lines += 1
         key, value = h.group(1), h.group(2).strip()
-        if key == "host":
+        if key == "console format":
+            prefixed_console = value == "prefixed"
+        elif key == "host":
             st.host = value
         elif key == "host id":
             st.host_id = value
@@ -499,6 +522,9 @@ def read_state(log: Path) -> RunState:
     if ERROR_MARK in body:
         at = len(body) - 1 - body[::-1].index(ERROR_MARK)
         st.error, body = body[at + 1:], body[:at]
+    if prefixed_console:
+        body = [line[2:] if line.startswith("| ") else line for line in body]
+        st.error = [line[2:] if line.startswith("| ") else line for line in st.error]
     st.console = "\n".join(body)
     st.last_output = [line for line in _clean(st.console) if line][-_LAST_OUTPUT_LINES:]
     if st.outcome is not None:
