@@ -2,6 +2,7 @@
 import os
 import re
 import subprocess
+import pytest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -109,3 +110,29 @@ def test_parallel_acceptance_checks_every_pipeline_exactly_once(tmp_path):
                             env={**env, "SHARD_INDEX": "0", "LIST_EXIT": "1"},
                             capture_output=True)
     assert result.returncode != 0 and not checked.exists()
+
+
+@pytest.mark.parametrize("step", ["Build + preflight the demo command for every pipeline",
+                                   "Check every registry chain"])
+def test_smoke_rejects_failed_partial_inventories_before_checking_subset(tmp_path, step):
+    raw = _text("smoke.yml").split(f"- name: {step}", 1)[1].split("        run: |\n", 1)[1]
+    raw = raw.split("\n      - ", 1)[0]
+    script = "\n".join(line[10:] for line in raw.splitlines())
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    (fake / "nfclaw").write_text(
+        '#!/bin/sh\ncase "$1 $2" in\n'
+        '"list ") printf "mini\\tmetadata\\n"; exit 1 ;;\n'
+        '"chain edges") printf "mini\\tmini2\\tpartial edge\\n"; exit 1 ;;\n'
+        '*) echo "$*" >> "$CHECKED"; exit 0 ;;\nesac\n')
+    (fake / "git").write_text('#!/bin/sh\nexit 0\n')
+    for path in fake.iterdir():
+        path.chmod(0o755)
+    checked = tmp_path / "checked"
+    env = {**os.environ, "PATH": f"{fake}{os.pathsep}{os.environ['PATH']}",
+           "CHECKED": str(checked), "RUNNER_TEMP": str(tmp_path),
+           "GITHUB_STEP_SUMMARY": str(tmp_path / "summary")}
+    result = subprocess.run(["/bin/bash", "-c", script], cwd=tmp_path, env=env,
+                            capture_output=True, text=True)
+    assert result.returncode != 0, "a partial subset is not a completed smoke check"
+    assert not checked.exists(), "do not validate a subset from a failed inventory command"

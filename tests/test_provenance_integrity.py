@@ -327,3 +327,33 @@ def test_replay_lock_checks_descriptor_identity_and_ownership(tmp_path, monkeypa
         assert not replay_lock_held(target, "456")
         with pytest.raises(BlockingIOError):
             fcntl.flock(contender, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+def test_stopped_replay_cannot_return_success_when_child_handles_signal(tmp_path):
+    import shlex
+    import signal
+    import time
+    marker = tmp_path / "ready"
+    launcher = tmp_path / "graceful-child"
+    launcher.write_text('#!/bin/sh\ntrap "exit 0" TERM\ntouch "$1"\n'
+                        'while :; do sleep 0.05; done\n')
+    launcher.chmod(0o755)
+    prov = _write(tmp_path / "out", input_paths=[],
+                  command_str=f"{shlex.quote(str(launcher))} {shlex.quote(str(marker))}")
+    target = tmp_path / "fresh"
+    proc = subprocess.Popen([str(prov / "commands.sh"), str(target)],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        deadline = time.monotonic() + 10
+        while not marker.exists() and time.monotonic() < deadline:
+            time.sleep(0.02)
+        assert marker.exists()
+        proc.send_signal(signal.SIGTERM)
+        proc.communicate(timeout=10)
+        assert proc.returncode != 0, "a stopped reproduction must not signal success to its caller"
+        assert (target / "provenance/logs/run.log").read_text().splitlines()[-1].endswith(
+            ": terminated by SIGTERM")
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.communicate(timeout=10)

@@ -164,14 +164,16 @@ mkfifo -- "$console"
 tee -a "$log" <"$console" &
 tee_pid=$!
 stopped_by=""
+stopped_status=""
 nextflow_pid=""
 stop() {
   stopped_by="$1"
+  stopped_status="$2"
   if [ -n "$nextflow_pid" ]; then kill -TERM "$nextflow_pid" 2>/dev/null; fi
 }
-trap 'stop "terminated by SIGTERM"' TERM
-trap 'stop "terminated by SIGHUP"' HUP
-trap 'stop "interrupted"' INT
+trap 'stop "terminated by SIGTERM" 143' TERM
+trap 'stop "terminated by SIGHUP" 129' HUP
+trap 'stop "interrupted" 130' INT
 set +e
 __COMMAND__ --outdir "$target" >"$console" 2>&1 &
 nextflow_pid=$!
@@ -187,6 +189,7 @@ rm -f -- "$console"
 set -e
 if [ -n "$stopped_by" ]; then
   outcome="$stopped_by"
+  status="$stopped_status"
 elif [ "$status" -eq 0 ]; then
   outcome=success
 else

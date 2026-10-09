@@ -60,7 +60,7 @@ def test_malformed_original_checksums_fail_explicitly(tmp_path, content):
         verify.compare(original, replay)
 
 
-def test_timestamp_normalization_preserves_multiple_metadata_files(tmp_path):
+def test_inventory_preserves_multiple_metadata_files(tmp_path):
     first = "pipeline_info/params_2026-10-08_10-00-00.json"
     second = "pipeline_info/params_2026-10-08_11-00-00.json"
     original = _run(tmp_path, "original", {first: b"attempt 1", second: b"attempt 2"})
@@ -85,3 +85,30 @@ def test_report_does_not_assume_all_changes_are_timestamps(tmp_path):
     report = verify.report(verify.compare(original, replay))
     assert "scientific" in report.lower()
     assert "Differing bytes are expected" not in report
+
+
+@pytest.mark.parametrize("prefix", ["pipeline_info/params_", "pipeline_info/sample_",
+                                    "pipeline_info/nested/sample_"])
+def test_dated_path_changes_cannot_claim_identical_output_inventory(tmp_path, prefix):
+    first = prefix + "2026-10-08_10-00-00.json"
+    second = prefix + "2026-10-09_10-00-00.json"
+    original = _run(tmp_path, "original", {first: b"same bytes"})
+    replay = _run(tmp_path, "replay", {second: b"same bytes"})
+    comparison = verify.compare(original, replay)
+    assert comparison.missing == [first]
+    assert comparison.extra == [second]
+    assert not comparison.byte_identical
+    assert "same set of files as the original" not in verify.report(comparison)
+
+
+@pytest.mark.parametrize("strict", [False, True])
+def test_cli_refuses_dated_inventory_changes_even_with_identical_bytes(tmp_path, capsys, strict):
+    from runner import cli
+    original = _run(tmp_path, "original", {
+        "pipeline_info/params_2026-10-08_10-00-00.json": b"unchanged"})
+    replay = _run(tmp_path, "replay", {
+        "pipeline_info/params_2026-10-09_10-00-00.json": b"unchanged"})
+    args = ["verify", str(replay), "--against", str(original)] + (["--strict"] if strict else [])
+    assert cli.main(args) == 1
+    output = capsys.readouterr().out
+    assert "missing" in output and "extra" in output

@@ -1,10 +1,28 @@
 from runner.schema import Column, InputSchema
 from runner import samplesheet
+import pytest
 
 SCH = InputSchema(columns=(
     Column("sample", "string", True, None, None),
     Column("fastq_1", "string", True, None, "file-path"),
 ))
+
+
+@pytest.mark.parametrize("extension,delimiter", [("csv", ","), ("tsv", "\t")])
+def test_incomplete_quoted_record_cannot_silently_change_sample_metadata(tmp_path, extension, delimiter):
+    schema = InputSchema(columns=(Column("sample", "string", True, None, None),
+                                  Column("description", "string", False, None, None)))
+    sheet = tmp_path / f"samples.{extension}"
+    sheet.write_text(f'sample{delimiter}description\nA{delimiter}"unfinished\nB{delimiter}other\n')
+    assert any("not parseable" in issue for issue in samplesheet.validate(sheet, schema))
+
+
+def test_valid_quoted_multiline_field_remains_supported(tmp_path):
+    schema = InputSchema(columns=(Column("sample", "string", True, None, None),
+                                  Column("description", "string", False, None, None)))
+    sheet = tmp_path / "samples.csv"
+    sheet.write_text('sample,description\nA,"two\nlines"\nB,"quoted ""word"""\n')
+    assert samplesheet.validate(sheet, schema) == []
 
 def test_missing_required_column(tmp_path):
     ss = tmp_path / "ss.csv"

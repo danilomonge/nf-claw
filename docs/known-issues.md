@@ -197,7 +197,11 @@ the replay; `nfclaw verify` keys on the path precisely to separate the two quest
 
 ## Warnings a run prints that are not faults
 
-These appear in a **normal run and in its replay alike** — the replay executes the identical recorded command, so any warning the original printed, it prints too. None affects analytical results, and none originates in nf-claw.
+These messages originate in upstream configurations, plugins or tools. Some have
+been observed during successful runs, but a warning or an exit-zero process alone
+does not establish analytical correctness. Interpret each message in the context
+of its documented version and cause. A replay can reproduce the same message;
+cache, network and environment changes can also change what it prints.
 
 ### `WARN: Unrecognized config option 'validation.defaultIgnoreParams'` / `'validation.monochromeLogs'`
 - **Cause:** Running a Nextflow engine *newer* than the release targets. Harmless and avoidable.

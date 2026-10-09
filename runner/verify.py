@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -57,31 +56,6 @@ def _read(outdir: Path, *, recorded: bool) -> dict[str, str]:
             fix="Make every file of both runs readable, then retry.") from exc
 
 
-# `yyyy-MM-dd_HH-mm-ss`, the format nf-core stamps into the names of its run-metadata files.
-_TIMESTAMP = re.compile(r"\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}")
-
-
-def _key(path: str) -> str:
-    """The identity of an output file for comparison purposes.
-
-    `pipeline_info/` holds the run's own metadata, and nf-core stamps the moment the run started
-    into some of those *filenames*. `params_<timestamp>.json` is the stubborn one: the nf-core
-    template writes it with a `new java.util.Date()` evaluated inline
-    (`utils_nextflow_pipeline/main.nf`), so unlike the execution report — whose suffix nfclaw pins
-    through `trace_report_suffix` — there is no parameter to pin, and nf-claw wraps releases
-    unmodified. Its name therefore differs in every run, for every pipeline.
-
-    Compared literally, that one file shows up as *missing* from the replay and *extra* in it, so
-    **every** replay would be reported as structurally different and `nfclaw verify` would always
-    fail. Masking the timestamp inside `pipeline_info/` pairs the two up: the file is then compared
-    like any other, and only its bytes are reported as changed. The mask is confined to that
-    directory so a real result that happens to carry a date in its name is never folded together.
-    """
-    if path.startswith("pipeline_info/"):
-        return _TIMESTAMP.sub("<timestamp>", path)
-    return path
-
-
 def compare(original: Path, replay: Path) -> Comparison:
     """Compare a replay's outputs against the run it reproduces, by path.
 
@@ -94,19 +68,10 @@ def compare(original: Path, replay: Path) -> Comparison:
     before = _read(original, recorded=True)
     after = _read(replay, recorded=False)
     identical, changed = [], []
-    # Match exact paths first. Then pair timestamp variants without collapsing several attempts'
-    # metadata into one dictionary entry: every surplus file must remain missing or extra.
+    # File paths are part of the inventory. Metadata renames are reported for explicit
+    # classification, never silently equated with an identical directory structure.
     for path in sorted(before.keys() & after.keys()):
         (identical if after.pop(path) == before.pop(path) else changed).append(path)
-    before_groups: dict[str, list[str]] = {}
-    after_groups: dict[str, list[str]] = {}
-    for path in sorted(before):
-        before_groups.setdefault(_key(path), []).append(path)
-    for path in sorted(after):
-        after_groups.setdefault(_key(path), []).append(path)
-    for key in before_groups.keys() & after_groups.keys():
-        for path, replay_path in zip(before_groups[key], after_groups[key]):
-            (identical if before.pop(path) == after.pop(replay_path) else changed).append(path)
     return Comparison(
         identical=sorted(identical),
         changed=sorted(changed),
