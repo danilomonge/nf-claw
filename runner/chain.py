@@ -30,6 +30,7 @@ from runner import (discovery, engine_version, execution, handoff, inputs, nextf
                     orchestration, parameters, preflight, provenance, resources, runlog, versions)
 from runner import schema as schema_mod
 from runner.errors import ErrorCode, NfclawError
+from runner.probes import capture
 from runner.submodule import SubmoduleStatus
 
 try:
@@ -488,9 +489,7 @@ def _probe_config(spec: ChainSpec, p: Planned, *, timeout_seconds: float | None 
                      if timeout_seconds is not None else _PROBE_TIMEOUT)
     with tempfile.TemporaryDirectory(prefix="nfclaw-probe-") as scratch:
         try:
-            r = subprocess.run(cmd, cwd=scratch, env={**os.environ, **overlay},
-                               capture_output=True, text=True,
-                               timeout=probe_timeout)
+            r = capture(cmd, cwd=scratch, env={**os.environ, **overlay}, timeout=probe_timeout)
         except subprocess.TimeoutExpired:
             return [f"{label}: configuration could not be verified — {engine} did not finish "
                     f"its configuration probe within {probe_timeout:g} seconds"]
