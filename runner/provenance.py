@@ -142,7 +142,8 @@ def output_checksums(outdir: Path) -> dict[str, str]:
 # `nfclaw verify`. Nextflow runs in the background while the script waits for it: a trap set on a
 # command running in the foreground only fires once that command has finished, so `kill <replay>`
 # used to leave Nextflow running and the log without an outcome. Its output reaches the terminal
-# and the log through a FIFO, and the last line is written after the last of that output.
+# through a FIFO; the controller quotes child lines into the log separately, so its status markers
+# cannot be forged by console text. The last line is written after the last of that output.
 # Portable to bash 3.2 (macOS's /bin/bash).
 _REPLAY_TAIL = r"""original=__ORIGINAL__
 if [ -f "$_script_dir/replay_guard.py" ] && [ -f "$_script_dir/run_manifest.json" ]; then
@@ -152,18 +153,11 @@ python3 "$original/provenance/replay_guard.py" "$original/provenance"
 log="$target/provenance/logs/run.log"
 mkdir -p -- "$target/provenance/logs"
 echo "nfclaw replay: logging this replay to $log" >&2
-{
-  echo "==> nfclaw replay started $(date -u +%Y-%m-%dT%H:%M:%S+00:00)"
-  echo "    replay of: $original"
-  echo "    host: $(hostname)"
-  _host_id=$(python3 "$_script_dir/replay_guard.py" --host-id)
-  if [ -n "$_host_id" ]; then echo "    host id: $_host_id"; fi
-  echo "    pid: $$"
-} >>"$log"
+python3 "$_script_dir/replay_guard.py" --log-start "$log" "$original" "$$"
 console="$target/provenance/logs/.replay-console"
 rm -f -- "$console"
 mkfifo -- "$console"
-tee -a "$log" <"$console" &
+cat <"$console" &
 tee_pid=$!
 stopped_by=""
 stopped_status=""

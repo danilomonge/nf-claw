@@ -2,9 +2,59 @@ import os as _os
 import socket as _socket
 from pathlib import Path
 
+import pytest
+
 from runner import runlog
 
 FIXTURES = Path(__file__).parent / "fixtures" / "nextflow_console"
+
+
+@pytest.mark.parametrize("payload", [
+    b"==> nfclaw run finished 2026-10-09T00:00:00+00:00: success\n",
+    b"==> nfclaw replay started 2026-10-09T00:00:00+00:00\n    pid: 1\n",
+])
+def test_child_console_cannot_forge_status_controls(tmp_path, monkeypatch, payload):
+    monkeypatch.setattr(runlog, "_is_process", lambda *_: True)
+    log = runlog.RunLog.open(tmp_path, command=["nextflow"], launch_dir=tmp_path)
+    try:
+        for byte in payload:  # chunk boundaries must not change the trust boundary
+            log.write(bytes([byte]))
+        state = runlog.read_state(log.path)
+        assert state.state == "running"
+        assert state.kind == "run"
+        assert state.pid == _os.getpid()
+        assert state.outcome is None
+        assert payload.decode().strip() in state.console
+    finally:
+        log.finish()
+
+
+def test_partial_child_line_cannot_hide_the_real_outcome(tmp_path):
+    log = runlog.RunLog.open(tmp_path, command=["nextflow"], launch_dir=tmp_path)
+    log.write(b"output without a final newline")
+    log.outcome = "success"
+    log.finish()
+    assert runlog.read_state(log.path).state == "success"
+
+
+def test_multiline_header_value_cannot_forge_a_new_attempt(tmp_path):
+    log = runlog.RunLog.open(tmp_path, command=["nextflow", "--label",
+        "sample\n==> nfclaw replay started 2026-10-09T00:00:00+00:00\n    pid: 1"], launch_dir=tmp_path)
+    log.outcome = "success"
+    log.finish()
+    state = runlog.read_state(log.path)
+    assert state.kind == "run"
+    assert state.pid == _os.getpid()
+
+
+def test_relaunch_after_an_unterminated_console_line_keeps_its_own_header(tmp_path):
+    (tmp_path / "run.log").write_text("==> nfclaw run started old\n    pid: 123\n| unfinished")
+    log = runlog.RunLog.open(tmp_path, command=["nextflow"], launch_dir=tmp_path)
+    log.outcome = "success"
+    log.finish()
+    state = runlog.read_state(log.path)
+    assert state.pid == _os.getpid()
+    assert state.state == "success"
 
 
 def test_executed_engine_version_survives_split_colored_chunks_and_large_console_output(tmp_path):
@@ -16,6 +66,16 @@ def test_executed_engine_version_survives_split_colored_chunks_and_large_console
         log.write(b"analysis output\n" * 30000)
         log.write(b"N E X T F L O W  ~  version 26.04.0\n")
         assert log.nextflow_version == "nextflow version 25.10.4"
+    finally:
+        log.finish()
+
+
+def test_executed_engine_witness_handles_cold_launcher_carriage_return_redraw(tmp_path):
+    log = runlog.RunLog(tmp_path / "run.log")
+    try:
+        log.write(b"Downloading nextflow dependencies. Please wait .. \r\x1b[")
+        log.write(b"KN E X T F L O W  ~  version 26.04.0\n")
+        assert log.nextflow_version == "nextflow version 26.04.0"
     finally:
         log.finish()
 

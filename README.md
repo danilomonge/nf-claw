@@ -156,7 +156,7 @@ External dependencies must remain available: the bundle does not archive every i
 
 | Artifact | File Path | Function & Role |
 |---|---|---|
-| **Run Log** | `logs/run.log` | Complete launch record (host, PID, Nextflow stdout/stderr) ending with terminal outcome line: `==> nfclaw run finished <time>: <outcome>`. |
+| **Run Log** | `logs/run.log` | Complete launch record (host, PID, Nextflow stdout/stderr) ending with terminal outcome line: `==> nfclaw run finished <time>: <outcome>`. Child output is prefixed with `\| ` so it cannot forge status markers; raw streams are in `logs/stdout.txt` and `logs/stderr.txt`. |
 | **Replay Script** | `commands.sh` | Replays the recorded analysis into a fresh directory (default `<outdir>.replay`), with dependency guards and a fixed engine version; it does not resume the original attempt. |
 | **Dependency Guard** | `replay_guard.py` | Pre-flight validator executed by `commands.sh` verifying that pipeline commits, inputs, samplesheets, and configs match recorded SHA-256 digests. |
 | **Run Manifest** | `run_manifest.json` | Pipeline version, commit SHA, command, recording timestamp, outcome, observed engine version and environment settings. |
