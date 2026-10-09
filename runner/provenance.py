@@ -165,24 +165,23 @@ tee -a "$log" <"$console" &
 tee_pid=$!
 stopped_by=""
 stopped_status=""
-nextflow_pid=""
+supervisor_pid=""
 stop() {
   stopped_by="$1"
   stopped_status="$2"
-  if [ -n "$nextflow_pid" ]; then kill -TERM "$nextflow_pid" 2>/dev/null; fi
+  if [ -n "$supervisor_pid" ]; then kill -TERM "$supervisor_pid" 2>/dev/null; fi
 }
 trap 'stop "terminated by SIGTERM" 143' TERM
 trap 'stop "terminated by SIGHUP" 129' HUP
 trap 'stop "interrupted" 130' INT
 set +e
-__COMMAND__ --outdir "$target" >"$console" 2>&1 &
-nextflow_pid=$!
-echo "    nextflow pid: $nextflow_pid" >>"$log"
-if [ -n "$stopped_by" ]; then kill -TERM "$nextflow_pid" 2>/dev/null; fi
+python3 "$_script_dir/replay_guard.py" --run "$log" bash -c __COMMAND_SCRIPT__ nfclaw-replay "$_script_dir" "$target" >"$console" 2>&1 &
+supervisor_pid=$!
+if [ -n "$stopped_by" ]; then kill -TERM "$supervisor_pid" 2>/dev/null; fi
 while :; do
-  wait "$nextflow_pid"
+  wait "$supervisor_pid"
   status=$?
-  kill -0 "$nextflow_pid" 2>/dev/null || break
+  kill -0 "$supervisor_pid" 2>/dev/null || break
 done
 wait "$tee_pid"
 rm -f -- "$console"
@@ -347,6 +346,8 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         "cd -- \"$target\"\n"
         f"{env_exports}"
         + _REPLAY_TAIL.replace("__ORIGINAL__", shlex.quote(str(outdir)))
-                      .replace("__COMMAND__", replay_command), mode=0o755)
+                      .replace("__COMMAND_SCRIPT__", shlex.quote(
+                          '_script_dir="$1"\ntarget="$2"\n' + replay_command + ' --outdir "$target"')),
+        mode=0o755)
     _atomic_text(manifest_path, json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     return prov

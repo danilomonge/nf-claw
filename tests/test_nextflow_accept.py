@@ -14,13 +14,15 @@ def _executable(path, text):
     path.chmod(0o755)
 
 
-def _accept(tmp_path, log, exit_code):
+def _accept(tmp_path, log, exit_code, *, timeout_available=True):
     up = tmp_path / "pipelines" / "mini" / "upstream"
     up.mkdir(parents=True)
     (up / "nextflow.config").write_text("manifest { nextflowVersion = '!>=25.10.4' }\n")
     fake = tmp_path / "bin"
     fake.mkdir()
     _executable(fake / "git", "#!/bin/sh\n[ \"$1\" = submodule ] || exit 2\nexit 0\n")
+    _executable(fake / "timeout", '#!/bin/sh\n[ "$1" = --kill-after=10s ] || exit 2\n'
+                'shift\nshift\nexec "$@"\n')
     _executable(fake / "nextflow", '#!/bin/sh\nprintf "%s\\n" "$@" > "$FAKE_NXF_ARGS"\n'
                 '[ "$1" = -log ] && printf "engine cause\\n" > "$2"\n'
                 'cat "$FAKE_NXF_LOG"\nexit "$FAKE_NXF_EXIT"\n')
@@ -33,6 +35,12 @@ def _accept(tmp_path, log, exit_code):
            "NFCLAW_LOG_DIR": str(tmp_path / "retained-logs"),
            "FAKE_NXF_LOG": str(source_log), "FAKE_NXF_EXIT": str(exit_code),
            "FAKE_NXF_ARGS": str(tmp_path / "nextflow-args.txt")}
+    if not timeout_available:
+        startup = tmp_path / "bash-startup"
+        startup.write_text('command() {\ncase "$*" in\n'
+                           '"-v timeout"|"-v gtimeout") return 1 ;;\n'
+                           '*) builtin command "$@" ;;\nesac\n}\n')
+        env["BASH_ENV"] = str(startup)
     process = subprocess.run(["bash", str(ROOT / "scripts" / "nextflow_accept.sh"), "mini"],
                              cwd=tmp_path, env=env, capture_output=True, text=True)
     return process, result.read_text()
@@ -67,6 +75,14 @@ def test_successful_preview_is_accepted(tmp_path):
     # The gate invokes preview mode, which Nextflow defines as skipping every process.
     args = (tmp_path / "nextflow-args.txt").read_text().splitlines()
     assert "-preview" in args and "-stub-run" not in args
+
+
+def test_unavailable_timeout_cannot_launch_an_unbounded_preview(tmp_path):
+    process, verdict = _accept(tmp_path, "* PREVIEW *\n", 0, timeout_available=False)
+    assert process.returncode != 0, "a bounded acceptance gate must not silently run unbounded"
+    assert verdict == "mini\trejected\n"
+    assert not (tmp_path / "nextflow-args.txt").exists()
+    assert "timeout" in process.stdout.lower()
 
 
 def test_failed_preview_retains_console_and_engine_evidence_after_cleanup(tmp_path):

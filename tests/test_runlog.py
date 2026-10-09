@@ -323,6 +323,29 @@ def test_a_dead_run_reports_a_nextflow_still_running(tmp_path, named_process):
         nextflow.wait()
 
 
+def test_dead_replay_reports_its_supervisor_without_claiming_its_pid_is_nextflow(
+        tmp_path, named_process):
+    from runner import cli
+    gone = named_process("commands.sh")
+    gone.kill()
+    gone.wait()
+    supervisor = named_process("replay_guard.py")
+    try:
+        text = _block(pid=gone.pid, kind="replay").replace(
+            f"    pid: {gone.pid}\n", f"    pid: {gone.pid}\n    replay supervisor pid: {supervisor.pid}\n")
+        state = runlog.read_state(_log(tmp_path, text))
+        assert state.state == "dead" and state.supervisor_alive
+        assert state.supervisor_pid == supervisor.pid
+        assert state.nextflow_pid is None and not state.nextflow_alive
+        message = cli._status_report(state)
+        assert f"Replay supervisor (pid {supervisor.pid})" in message
+        assert f"kill {supervisor.pid}" in message
+        assert f"Nextflow (pid {supervisor.pid})" not in message
+    finally:
+        supervisor.kill()
+        supervisor.wait()
+
+
 def test_an_unfinished_run_on_another_host_is_not_judged_here(tmp_path):
     st = runlog.read_state(_log(tmp_path, _block(pid=1, host="some-other-node")))
     assert st.state == "elsewhere" and st.host == "some-other-node"

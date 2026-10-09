@@ -69,6 +69,11 @@ The repository validates engine and workflow compatibility using automated GitHu
 ### Strict Exit Code Gating
 Automated discovery and update workflows require **strict exit code 0** from Nextflow validation. Pipelines with a recognized remote-input staging error are labelled `staging-unverified`; other errors and timeouts are `rejected`. Both block automated merging. Some upstream completion handlers wait for task results that preview never produces, so a compiled DAG can still fail the preview gate. Reduced-output previews and actual test executions must be reported separately from default-profile acceptance.
 
+Running `scripts/nextflow_accept.sh` locally requires GNU `timeout` (`gtimeout`
+from Homebrew coreutils on macOS). Each preview gets 15 minutes, followed by a
+10-second shutdown grace period before surviving process-group members are killed. The
+script refuses to launch a preview when neither timeout utility is available.
+
 > [!NOTE]
 > Successful preview and smoke verification confirms syntactic correctness and DAG construction within the tested environment; it does not constitute execution or biological verification on experimental datasets.
 

@@ -24,11 +24,12 @@ _run_with_timeout() {
   seconds="$1"
   shift
   if command -v timeout >/dev/null 2>&1; then
-    timeout "$seconds" "$@"
+    timeout --kill-after=10s "$seconds" "$@"
   elif command -v gtimeout >/dev/null 2>&1; then
-    gtimeout "$seconds" "$@"
+    gtimeout --kill-after=10s "$seconds" "$@"
   else
-    "$@"
+    echo "nfclaw acceptance: install GNU timeout (gtimeout on macOS); an unbounded preview is refused" >&2
+    return 127
   fi
 }
 
