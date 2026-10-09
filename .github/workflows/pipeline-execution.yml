@@ -1,0 +1,82 @@
+name: pipeline-execution
+on:
+  workflow_dispatch:
+    inputs:
+      pipeline:
+        description: Pinned pipeline to execute with its bundled test profile
+        required: true
+        default: demo
+        type: string
+      nextflow_version:
+        description: Optional concrete engine version; default is the release's declared minimum
+        required: false
+        type: string
+  pull_request:
+    paths:
+      - ".github/workflows/pipeline-execution.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  native-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      PIPELINE: ${{ inputs.pipeline || 'demo' }}
+      ENGINE_OVERRIDE: ${{ inputs.nextflow_version }}
+      NXF_ANSI_LOG: "false"
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.11"
+      - run: pip install -e .
+      - name: Validate selection and initialize the pinned source
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+          from runner.discovery import discover
+          from runner.engine_version import required_spec
+          name = os.environ["PIPELINE"]
+          root = Path.cwd()
+          if name not in {pipeline.name for pipeline in discover(root / "pipelines")}:
+              raise SystemExit("Unknown pipeline; select a name from nfclaw list")
+          upstream = root / "pipelines" / name / "upstream"
+          subprocess.run(["git", "submodule", "update", "--init", "--depth", "1", str(upstream)], check=True)
+          version = os.environ.get("ENGINE_OVERRIDE", "")
+          if not version:
+              match = re.fullmatch(r"!?\s*>=?\s*(\d+\.\d+\.\d+)", required_spec(upstream / "nextflow.config") or "")
+              if not match:
+                  raise SystemExit("A concrete nextflow_version is required for this release")
+              version = match[1]
+          if not re.fullmatch(r"\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?", version):
+              raise SystemExit("nextflow_version must be a concrete release version")
+          with open(os.environ["GITHUB_ENV"], "a") as env:
+              env.write(f"NXF_VER={version}\n")
+          PY
+      - uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5.5.0
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: ./.github/actions/setup-nextflow
+      - name: Execute the bundled analysis on native amd64
+        run: |
+          nfclaw run "$PIPELINE" --demo --outdir "$RUNNER_TEMP/analysis" --nxf-ver "$NXF_VER" \
+            --limit-cpus 2 --limit-memory 6.GB --limit-time 30.min --timeout 1800
+          nfclaw status "$RUNNER_TEMP/analysis"
+      - name: Retain execution evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-pipeline-evidence
+          path: |
+            ${{ runner.temp }}/analysis
+            work/**/.command.*
+          include-hidden-files: true
+          retention-days: 14
