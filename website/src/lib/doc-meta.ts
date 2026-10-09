@@ -38,8 +38,8 @@ export function slugify(text: string): string {
   return text
     .toLowerCase()
     .replace(/<[^>]+>/g, "")
-    .replace(/[`*_~[\]()]/g, "")
-    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .replace(/[`*~[\]()]/g, "")
+    .replace(/[^\p{L}\p{N}\s_-]/gu, "")
     .trim()
     .replace(/\s/g, "-");
 }
@@ -69,12 +69,19 @@ export function docHeadings(md: string): DocHeading[] {
     if (fence !== null) continue;
     const m = line.match(/^(#{2,3})\s+(.+?)\s*#*\s*$/);
     if (!m) continue;
+    // Keep code spans intact while removing emphasis from the surrounding heading.
+    const code: string[] = [];
     const text = m[2]
-      .replace(/`([^`]*)`/g, "$1")
+      .replace(/(`+)(.*?)\1/g, (_match, _ticks, value: string) => {
+        code.push(value);
+        return String.fromCharCode(0) + (code.length - 1) + String.fromCharCode(0);
+      })
       .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/(?<![\p{L}\p{N}_])__(\S(?:.*?\S)?)__(?![\p{L}\p{N}_])/gu, "$1")
       .replace(/\*([^*\s][^*]*)\*/g, "$1") // *emphasis*
       .replace(/(^|\s)_([^_\s][^_]*)_(?=\s|$)/g, "$1$2") // _emphasis_ (not snake_case)
-      .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+      .replace(/\u0000(\d+)\u0000/g, (_match, index: string) => code[Number(index)]);
     out.push({ depth: m[1].length as 2 | 3, text, id: uniqueId(slugify(text), seen), line: i + 1 });
   }
   return out;
