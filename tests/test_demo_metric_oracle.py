@@ -1,6 +1,7 @@
 """Check that the independent demo FastQC oracle detects changed scientific statistics."""
 import gzip
 import importlib.util
+import sys
 import zipfile
 from pathlib import Path
 
@@ -66,3 +67,47 @@ def test_comparison_refuses_missing_or_duplicate_report_identities(tmp_path):
         oracle.compare_metrics([], [row])
     with pytest.raises(ValueError, match="duplicate report identities"):
         oracle.compare_metrics([row, row], [row])
+
+
+def _completed_demo(tmp_path, *, duplicate=False):
+    run = tmp_path / "run"
+    run.mkdir()
+    work = tmp_path / "archived-work"
+    lines = []
+    for index in range(3):
+        relative = Path(f"{index:02x}") / (f"{index:030x}")
+        folder = work / relative
+        folder.mkdir(parents=True)
+        for mate in range(2):
+            report = _report(folder)
+            name = f"sample{0 if duplicate else index}_{mate}_fastqc.zip"
+            report.rename(folder / name)
+        lines.append("Task completed > TaskHandler[name: NFCORE_DEMO:DEMO:FASTQC "
+                     f"(sample{index}); status: COMPLETED; exit: 0; error: -; "
+                     f"workDir: /unavailable/runner/work/{relative}]\n")
+    (run / ".nextflow.log").write_text("".join(lines))
+    return run, work
+
+
+def test_oracle_recalculates_archived_reports_without_original_runner_paths(tmp_path):
+    run, work = _completed_demo(tmp_path)
+    reports = oracle.collect_reports(run, work_root=work)
+    assert len(reports) == 6
+    assert all(oracle.check_report(report)["matches"] for report in reports)
+
+
+def test_original_check_refuses_duplicate_report_identities(tmp_path, monkeypatch):
+    run, work = _completed_demo(tmp_path, duplicate=True)
+    log = run / ".nextflow.log"
+    log.write_text(log.read_text().replace("/unavailable/runner/work", str(work)))
+    monkeypatch.setattr(sys, "argv", [str(SCRIPT), str(run), "--output", str(tmp_path / "metrics.json")])
+    with pytest.raises(ValueError, match="duplicate report identities"):
+        oracle.main()
+
+
+def test_archive_mapping_refuses_non_hash_task_paths(tmp_path):
+    run, work = _completed_demo(tmp_path)
+    log = run / ".nextflow.log"
+    log.write_text(log.read_text().replace("00/" + "0" * 30, "../escape"))
+    with pytest.raises(ValueError, match="unexpected Nextflow task path"):
+        oracle.collect_reports(run, work_root=work)

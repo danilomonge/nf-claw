@@ -101,6 +101,30 @@ jobs:
           print("Scientific data match; both runs produced all 36 valid plot exports.")
           print(f"Timestamped parameter reports differ by filename: {missing} -> {extra}")
           PY
+      - name: Retain and recalculate portable FastQC source evidence
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import shutil
+          from pathlib import Path
+          from scripts.check_demo_fastqc_metrics import collect_reports, check_report, compare_metrics
+          temp = Path(os.environ["RUNNER_TEMP"])
+          work = Path(os.environ["GITHUB_WORKSPACE"]) / "work"
+          archive = temp / "demo-fastqc-work"
+          for name in ("demo", "demo-replay"):
+              run = temp / name
+              for report in collect_reports(run):
+                  record = check_report(report)
+                  target = archive / report.relative_to(work)
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  shutil.copy2(report, target)
+                  # Dereference staged-read symlinks while the runner's cache still exists.
+                  shutil.copy2(report.parent / record["input"], target.parent / record["input"])
+              recalculated = [check_report(report) for report in collect_reports(run, work_root=archive)]
+              compare_metrics(recalculated, json.loads((temp / f"{name}-metrics.json").read_text())["results"])
+          print("Retained FastQC reports and read bytes reproduce both runs' scientific evidence.")
+          PY
       - name: Retain native execution evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -112,5 +136,6 @@ jobs:
             ${{ runner.temp }}/demo-replay
             ${{ runner.temp }}/demo-replay-metrics.json
             work/**/.command.*
+            ${{ runner.temp }}/demo-fastqc-work
           include-hidden-files: true
           retention-days: 14
