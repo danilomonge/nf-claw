@@ -357,3 +357,59 @@ def test_stopped_replay_cannot_return_success_when_child_handles_signal(tmp_path
         if proc.poll() is None:
             proc.kill()
             proc.communicate(timeout=10)
+
+
+def test_stopped_replay_terminates_descendants_and_releases_writer_lock(tmp_path):
+    import fcntl
+    import os
+    import shlex
+    import signal
+    import sys
+    import time
+
+    marker = tmp_path / "child.pid"
+    child_script = tmp_path / "child.py"
+    child_script.write_text(
+        'import os, signal, sys, time\nfrom pathlib import Path\n'
+        'signal.signal(signal.SIGTERM, signal.SIG_IGN)\n'
+        'Path(sys.argv[1]).write_text(str(os.getpid()))\ntime.sleep(60)\n')
+    launcher = tmp_path / "launcher"
+    launcher.write_text('#!/bin/sh\ntrap "exit 0" TERM\n' +
+                        shlex.join([sys.executable, str(child_script), str(marker)]) + ' &\nwait\n')
+    launcher.chmod(0o755)
+    prov = _write(tmp_path / "out", input_paths=[], command_str=shlex.quote(str(launcher)))
+    target = tmp_path / "fresh"
+    proc = subprocess.Popen([str(prov / "commands.sh"), str(target)],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    child = None
+    try:
+        deadline = time.monotonic() + 10
+        while not marker.exists() and time.monotonic() < deadline:
+            time.sleep(0.02)
+        assert marker.exists()
+        child = int(marker.read_text())
+        from runner import runlog
+        state = runlog.read_state(target / "provenance/logs/run.log")
+        assert state.state == "running"
+        assert state.supervisor_pid and state.supervisor_alive
+        assert state.nextflow_pid is None, "the controller PID must not be labelled as Nextflow"
+        proc.send_signal(signal.SIGTERM)
+        proc.communicate(timeout=20)
+        assert proc.returncode == 143
+        state = subprocess.run(["ps", "-p", str(child), "-o", "stat="],
+                               capture_output=True, text=True, timeout=2).stdout.strip()
+        assert not state or state.startswith("Z"), "a stopped replay left its task running"
+        assert (target / "provenance/logs/run.log").read_text().splitlines()[-1].endswith(
+            ": terminated by SIGTERM")
+        assert not (target / "provenance/logs/.replay-console").exists()
+        with (tmp_path / ".fresh.nfclaw.lock").open("r+") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    finally:
+        if child:
+            try:
+                os.kill(child, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        if proc.poll() is None:
+            proc.kill()
+        proc.communicate(timeout=5)

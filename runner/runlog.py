@@ -355,7 +355,7 @@ def record_unlaunched(log: Path, *, command: str, outcome: str, error: str) -> N
 _STARTED = re.compile(r"^==> nfclaw (run|replay|chain) started (\S+)")
 _FINISHED = re.compile(r"^==> nfclaw (run|replay|chain) finished (\S+): (.*)$")
 _HEADER = re.compile(r"^    (command|launch dir|nextflow log|replay of|host|host id|pid|nextflow pid|"
-                     r"warning): (.*)$")
+                     r"replay supervisor pid|warning): (.*)$")
 _HEAD_BYTES = 64 * 1024
 _STATE_TAIL_BYTES = 512 * 1024
 _LAST_OUTPUT_LINES = 5
@@ -384,6 +384,8 @@ class RunState:
     pid: int | None = None
     nextflow_pid: int | None = None
     nextflow_alive: bool = False
+    supervisor_pid: int | None = None
+    supervisor_alive: bool = False
     nextflow_log: str | None = None
     error: list[str] = field(default_factory=list)
     console: str = ""                                    # the tail of the launch's console output
@@ -471,6 +473,8 @@ def read_state(log: Path) -> RunState:
             st.pid = int(value)
         elif key == "nextflow pid" and value.isdigit():
             st.nextflow_pid = int(value)
+        elif key == "replay supervisor pid" and value.isdigit():
+            st.supervisor_pid = int(value)
         elif key == "nextflow log":
             st.nextflow_log = value
     body = tail[header_lines:] if tail_from == start else tail
@@ -490,5 +494,7 @@ def read_state(log: Path) -> RunState:
         st.state = "elsewhere"
     else:
         st.nextflow_alive = _is_process(st.nextflow_pid, ("nextflow", "java"))
+        st.supervisor_alive = st.kind == "replay" and _is_process(
+            st.supervisor_pid, ("replay_guard.py",))
         st.state = "running" if _is_process(st.pid, _RUN_NAMES[st.kind]) else "dead"
     return st
