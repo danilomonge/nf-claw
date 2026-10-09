@@ -84,6 +84,17 @@ def samplesheet_schema(repo: Path, param: str = "input") -> str | None:
     return _legacy_samplesheet(repo, obj) if param == "input" else None
 
 
+def samplesheet_parameters(repo: Path) -> tuple[str, ...]:
+    """Parameters with an explicit samplesheet schema in a supported schema branch."""
+    data = json.loads((repo / "nextflow_schema.json").read_text(encoding="utf-8"))
+    names = []
+    for _, group in iter_param_groups(data):
+        for name, obj in (group.get("properties") or {}).items():
+            if isinstance(obj, dict) and any(_schema_ref(part) for part in (obj, *_branches(obj))):
+                names.append(name)
+    return tuple(dict.fromkeys(names))
+
+
 def _satisfies(sub: object, value: str) -> bool | None:
     """Whether `value` satisfies an `if` subschema — True/False, or None when it cannot be decided.
 
@@ -138,7 +149,7 @@ def _applicable(param: dict, value: str) -> list[dict] | None:
     return parts
 
 
-def resolve(raw: Any, repo: Path) -> ResolvedInput | None:
+def resolve(raw: Any, repo: Path, *, param_name: str = "input") -> ResolvedInput | None:
     """Interpret an `--input` value the way the pipeline's schema declares it.
 
     The value is the `--input` flag or, without one, the params-file `input` — the same value means
@@ -166,14 +177,14 @@ def resolve(raw: Any, repo: Path) -> ResolvedInput | None:
         return ResolvedInput(text, None, None)           # "not set": never the caller's directory
     if "://" in text:
         return ResolvedInput(text, None, None)
-    if text.strip().lower() == "false":
+    if param_name == "input" and text.strip().lower() == "false":
         return ResolvedInput(False, None, None)
-    param = input_param(repo) or {}
+    param = input_param(repo, param_name) or {}
     parts = _applicable(param, text) if param else []
     sheet = None
     if parts is not None:
         sheet = next((ref for ref in map(_schema_ref, parts) if ref), None)
-        if sheet is None and param:
+        if sheet is None and param and param_name == "input":
             sheet = _legacy_samplesheet(repo, param)
     declared = parts or []
     path_like = sheet is not None or any(p.get("format") in PATH_FORMATS for p in declared)

@@ -93,7 +93,8 @@ class Column:
         return (self.type not in {"object", "array"}
                 and name in {"id", "sample", "sampleid", "samplename", "patient", "patientid"}
                 or any(key in {"id", "sample", "patient", "sample_name", "sample_alias",
-                               "tumour_sample", "normal_sample", "paternal", "maternal"}
+                               "tumour_sample", "normal_sample", "paternal", "maternal",
+                               "genome_name", "db_name"}
                        or key.endswith("_id") for key in self.meta))
 
 

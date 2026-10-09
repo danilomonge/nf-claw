@@ -171,3 +171,23 @@ def test_samplesheet_schema_for_a_named_parameter(tmp_path):
     assert inputs.samplesheet_schema(tmp_path) == "assets/schema_input.json"   # legacy convention
     assert inputs.samplesheet_schema(tmp_path, param="fasta") is None          # ...is input-only
     assert inputs.samplesheet_schema(tmp_path, param="missing") is None
+
+
+def test_auxiliary_conditional_schema_and_primary_only_legacy_convention(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    repo = _pipeline(tmp_path, SAREK)
+    data = json.loads((repo / "nextflow_schema.json").read_text())
+    props = data["$defs"]["input_output_options"]["properties"]
+    props["references"] = {"type": "string", "if": {"pattern": r"\.csv$"},
+                           "then": {"schema": "assets/schema_input.json", "format": "file-path"},
+                           "else": {"type": "string"}}
+    props["other_file"] = {"type": "string", "format": "file-path"}
+    (repo / "nextflow_schema.json").write_text(json.dumps(data))
+    assert inputs.samplesheet_parameters(repo) == ("input", "references")
+    sheet = inputs.resolve("reference.csv", repo, param_name="references")
+    assert sheet.samplesheet_schema == "assets/schema_input.json"
+    assert sheet.local_path == tmp_path / "reference.csv"
+    assert inputs.resolve("ACCESSION", repo, param_name="references").local_path is None
+    assert inputs.resolve("other.csv", repo, param_name="other_file").samplesheet_schema is None
+    # The string filename "false" is not the primary --input false sentinel for another parameter.
+    assert inputs.resolve("false", repo, param_name="other_file").value == str(tmp_path / "false")
