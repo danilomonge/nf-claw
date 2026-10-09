@@ -143,6 +143,12 @@ When a run fails, nfclaw's error diagnostic quotes Nextflow's own error report (
   ```
   It refuses a target that already holds files, launches Nextflow from the target directory, and passes `--outdir "$target"`.
 
+  Stop it with `kill <replay pid>`. New bundles run the command in its own process
+  group, allow ten seconds for shutdown, then kill surviving group members before
+  closing the log and releasing the writer lock. A stopped replay returns a
+  nonzero exit status even if the command handles the signal with exit zero.
+  Tasks or containers detached from that group still require executor cleanup.
+
 ### `--check` never writes into `--outdir`
 - **Status: Fixed.** `--check` validates parameters and prints the command without launching, staging parameters in a temporary directory and leaving `--outdir` untouched.
 

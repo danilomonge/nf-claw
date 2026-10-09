@@ -11,9 +11,11 @@ import hashlib
 import json
 import os
 import re
+import signal
 import stat
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 
@@ -207,6 +209,72 @@ def verify_dependencies(bundle: Path) -> None:
                 raise ValueError(f"recorded {kind} content changed: {name}")
 
 
+def _stop_replay_group(proc: subprocess.Popen, grace: float = 10) -> None:
+    """Give the replay's tasks a shutdown grace period, then stop all survivors."""
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        proc.wait()
+        return
+    deadline = time.monotonic() + grace
+    try:
+        while time.monotonic() < deadline:
+            proc.poll()  # Reap the leader without assuming its tasks have also exited.
+            try:
+                os.killpg(proc.pid, 0)
+            except ProcessLookupError:
+                break
+            time.sleep(0.05)
+    finally:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        proc.wait(timeout=2)
+
+
+def run_replay_command(command: list[str], *, log: Path) -> int:
+    """Run a replay in its own process group while the outer shell holds its lock.
+
+    The shell signals this controller. Recording the signal before polling avoids
+    exceptions between process creation and ownership registration. Descendants
+    are stopped even when the leader exits first or handles SIGTERM with exit zero.
+    """
+    requested_stop = None
+
+    def request_stop(signum, _frame):
+        nonlocal requested_stop
+        if requested_stop is None:
+            requested_stop = signum
+
+    handlers = {sig: signal.signal(sig, request_stop)
+                for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)}
+    proc = None
+    try:
+        # Write the header before launching anything that can produce console output.
+        with log.open("a", encoding="utf-8") as handle:
+            handle.write(f"    replay supervisor pid: {os.getpid()}\n")
+        if requested_stop is not None:
+            return 128 + requested_stop
+        proc = subprocess.Popen(command, start_new_session=True)
+        while requested_stop is None:
+            try:
+                status = proc.wait(timeout=0.1)
+                break
+            except subprocess.TimeoutExpired:
+                continue
+        if requested_stop is not None:
+            return 128 + requested_stop
+        return status if status >= 0 else 128 - status
+    finally:
+        try:
+            if proc is not None:
+                _stop_replay_group(proc)
+        finally:
+            for sig, handler in handlers.items():
+                signal.signal(sig, handler)
+
+
 def lock_replay(target: Path, script: Path) -> None:
     """Hold the runner's sibling flock across exec of the replay shell, with no extra parent.
 
@@ -273,6 +341,8 @@ if __name__ == "__main__":
             lock_replay(Path(sys.argv[2]), Path(sys.argv[3]))
         elif sys.argv[1] == "--check-lock":
             sys.exit(0 if replay_lock_held(Path(sys.argv[2]), sys.argv[3]) else 1)
+        elif sys.argv[1] == "--run":
+            sys.exit(run_replay_command(sys.argv[3:], log=Path(sys.argv[2])))
         else:
             verify_dependencies(Path(sys.argv[1]))
     except (OSError, ValueError, IndexError) as exc:

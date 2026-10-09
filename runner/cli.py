@@ -161,6 +161,9 @@ def _status_report(st: runlog.RunState) -> str:
     if st.state in ("dead", "elsewhere") and st.nextflow_alive:
         lines.append(f"Nextflow (pid {st.nextflow_pid}) is still running — stop it with: "
                      f"kill {st.nextflow_pid}")
+    if st.state == "dead" and st.supervisor_alive:
+        lines.append(f"Replay supervisor (pid {st.supervisor_pid}) is still running — "
+                     f"stop its command and tasks with: kill {st.supervisor_pid}")
     if st.state == "running":
         lines += ["last output:", *(f"  {line}" for line in st.last_output)]
     elif st.state != "success":
