@@ -841,6 +841,44 @@ def test_samplesheet_input_is_still_prechecked(tmp_path, monkeypatch):
     assert exc.value.code == ErrorCode.SAMPLESHEET_INVALID
 
 
+@pytest.mark.parametrize("change", ["malformed", "missing"])
+def test_input_snapshot_refuses_a_sheet_changed_after_validation_before_launch(
+        tmp_path, monkeypatch, change):
+    from runner.errors import ErrorCode, NfclawError
+    root = _make_pipeline_with_input(tmp_path, {
+        "type": "string", "format": "file-path", "schema": "assets/schema_input.json"})
+    reads = tmp_path / "reads.fastq.gz"
+    reads.write_text("reads")
+    sheet = tmp_path / "samples.csv"
+    sheet.write_text(f"sample,fastq_1,description\nA,{reads},valid\n")
+    validate = orchestration.samplesheet.validate
+
+    def changed_after_validation(path, schema):
+        issues = validate(path, schema)
+        assert not issues
+        if change == "missing":
+            path.unlink()
+        else:
+            path.write_text(f'sample,fastq_1,description\nA,{reads},"unterminated\nB,{reads},second\n')
+        return issues
+
+    launched = []
+    monkeypatch.setattr(orchestration.samplesheet, "validate", changed_after_validation)
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: launched.append(True))
+    monkeypatch.setattr(orchestration.provenance, "_nextflow_version", lambda *a, **k: "")
+    with pytest.raises(NfclawError) as error:
+        orchestration.run_pipeline(
+            "inp", repo_root=root, input_path=str(sheet), outdir=tmp_path / "out",
+            profile="docker", params_file=None, cli_overrides={}, resume=False,
+            demo=False, check_only=False, write_provenance=True, timeout_seconds=10)
+    expected = ErrorCode.ENVIRONMENT if change == "missing" else ErrorCode.SAMPLESHEET_INVALID
+    assert error.value.code is expected
+    assert str(sheet) in str(error.value)
+    assert not launched
+    assert not (tmp_path / "out").exists()
+
+
 def test_local_input_without_a_path_format_is_still_hashed_into_provenance(tmp_path, monkeypatch):
     # mhcquant's --input has no top-level `format`, so the reference-path scan alone would skip it.
     root = _make_pipeline_with_input(tmp_path, {

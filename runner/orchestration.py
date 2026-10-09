@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 import os
 import tempfile
@@ -201,6 +202,25 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
         for w in warnings:
             on_warning(w)
 
+    # Read dependencies before creating or modifying the output directory. The sheet
+    # can become unreadable or malformed after its earlier validation; do not launch
+    # with a silently truncated dependency inventory or leak an unclassified error.
+    sheet_dependencies = []
+    if not check_only and input_schema is not None and resolved_input is not None:
+        try:
+            sheet_dependencies = provenance.samplesheet_input_paths(
+                resolved_input.local_path, input_schema)
+        except (csv.Error, UnicodeDecodeError) as exc:
+            raise NfclawError(
+                ErrorCode.SAMPLESHEET_INVALID,
+                f"Cannot parse samplesheet dependencies: {resolved_input.local_path}: {exc}",
+                fix="Restore a valid samplesheet before launching the pipeline.") from exc
+        except OSError as exc:
+            raise NfclawError(
+                ErrorCode.ENVIRONMENT,
+                f"Cannot read samplesheet dependencies: {resolved_input.local_path}: {exc}",
+                fix="Restore the samplesheet and make it readable before launching.") from exc
+
     # Where the files nfclaw generates for the run (params file, resource-limits config) are staged.
     # A real run stages them in its own provenance bundle. `--check` must not: it validates and
     # prints the command *without launching*, so it has to leave `--outdir` exactly as it found it —
@@ -280,10 +300,7 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # A local --input is an input whatever its declared format (mhcquant's carries none).
     if resolved_input is not None and resolved_input.local_path is not None:
         prov_inputs = list(dict.fromkeys([resolved_input.local_path, *prov_inputs]))
-        if input_schema is not None:
-            prov_inputs = list(dict.fromkeys([
-                *prov_inputs,
-                *provenance.samplesheet_input_paths(resolved_input.local_path, input_schema)]))
+        prov_inputs = list(dict.fromkeys([*prov_inputs, *sheet_dependencies]))
     # Capture the local dependency content the launch sees, before a long analysis can change it.
     # The replay guard uses these snapshots, rather than hashing a potentially changed input only
     # after the run has finished. Remote references and runtime downloads remain upstream inputs.
