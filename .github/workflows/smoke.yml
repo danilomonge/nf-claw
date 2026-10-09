@@ -45,7 +45,11 @@ jobs:
             echo "| pipeline | result |"
             echo "|---|---|"
           } >> "$GITHUB_STEP_SUMMARY"
-          names=$(nfclaw list | cut -f1)
+          if ! inventory=$(nfclaw list); then
+            echo "::error::could not list pipelines — partial output is not a complete inventory"
+            exit 1
+          fi
+          names=$(printf '%s\n' "$inventory" | cut -f1)
           if [ -z "$names" ]; then
             echo "::error::nfclaw list returned no pipelines — nothing would be checked"
             exit 1
@@ -87,8 +91,13 @@ jobs:
             fi
             echo "$ver"
           }
-          # not `nfclaw chain edges | while`: the pipe's subshell would lose fail=1
+          if ! edges=$(nfclaw chain edges); then
+            echo "::error::could not list chain edges — partial output is not a complete registry"
+            exit 1
+          fi
+          # Read only the completed inventory; process substitution hides a failing producer.
           while IFS=$'\t' read -r up down _; do
+            [ -n "$up" ] || continue
             spec="$RUNNER_TEMP/chain-$up-$down.json"
             # submodules are initialised on demand by nfclaw; the declared engine needs the tree
             git submodule update --init --depth 1 "pipelines/$up/upstream" "pipelines/$down/upstream" >/dev/null 2>&1 || true
@@ -103,5 +112,5 @@ jobs:
               echo "| \`$up\` → \`$down\` | ❌ |" >> "$GITHUB_STEP_SUMMARY"
               fail=1
             fi
-          done < <(nfclaw chain edges)
+          done <<< "$edges"
           exit $fail

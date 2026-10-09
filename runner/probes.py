@@ -4,10 +4,12 @@ from __future__ import annotations
 import os
 import signal
 import subprocess
+from pathlib import Path
 
 
 def capture(command: list[str], *, timeout: float,
-            env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+            env: dict[str, str] | None = None,
+            cwd: str | Path | None = None) -> subprocess.CompletedProcess[str]:
     """Capture a probe and stop its process group on timeout or interruption.
 
     A Nextflow launcher can spawn curl or Java even for ``-version``. The standard
@@ -16,7 +18,7 @@ def capture(command: list[str], *, timeout: float,
     """
     grouped = hasattr(os, "killpg")
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            text=True, env=env, start_new_session=grouped)
+                            text=True, env=env, cwd=cwd, start_new_session=grouped)
     try:
         try:
             stdout, stderr = proc.communicate(timeout=timeout)

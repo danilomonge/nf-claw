@@ -41,7 +41,7 @@ def validate(path: Path, input_schema: InputSchema) -> list[str]:
             # existence check above is local; nf-schema performs the format-specific validation.
             return []
         with path.open(newline="", encoding="utf-8-sig") as fh:
-            reader = csv.DictReader(fh, delimiter=delimiter)
+            reader = csv.DictReader(fh, delimiter=delimiter, strict=True)
             fields = reader.fieldnames or []
             duplicates = sorted(name for name, count in Counter(fields).items() if count > 1)
             if duplicates:

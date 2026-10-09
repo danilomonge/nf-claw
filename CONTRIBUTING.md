@@ -16,7 +16,7 @@ All contributions must uphold four architectural invariants:
 
 | Tenet | Rule & Invariant |
 |---|---|
-| **1. Pipeline-Agnostic Design** | Neither `runner/` (execution runtime) nor `librarian/` (maintenance) may hardcode pipeline names, parameter keys, or samplesheet column headers. All schema logic is derived dynamically from `nextflow_schema.json` and `assets/schema_input.json`. Pipeline-specific relationships exist solely as declarative data in `handoffs/*.json`. |
+| **1. Pipeline-Agnostic Design** | Neither `runner/` (execution runtime) nor `librarian/` (maintenance) may hardcode pipeline names or biological assumptions about parameter values and samplesheet columns. The documented `input`/`outdir` interface and narrowly detected schema/plugin compatibility mechanisms are shared runtime contracts. Other parameter and column logic comes from the pinned schemas; pipeline-specific relationships are declarative data in `handoffs/*.json`. |
 | **2. Deterministic Outputs** | Generated markdown and JSON documents must remain bit-identical across repeated runs on the same commits. Timestamps are forbidden in generated context; git commit hashes serve as immutable version anchors. |
 | **3. Test-Driven Development (TDD)** | Every bugfix or new feature must be paired with regression tests. Write the failing test first, implement the minimal fix, and verify with `make test`. |
 | **4. Zero-Drift Invariant** | Committed context (`skill.md`, `reference.md`, `catalog.*`) must always match pinned submodule code. Any discrepancy between context files and pinned submodules is rejected by the drift gate (`python3 -m librarian.check_drift`). |
@@ -90,7 +90,7 @@ When filing a bug report on GitHub:
 We welcome ideas that enhance nf-claw's reliability, ergonomics, and scientific rigor.
 
 ### Feature Alignment Guidelines
-- **Zero Hardcoding:** Features must remain strictly pipeline-agnostic. Any pipeline-specific behavior must be driven by data files (`handoffs/`) or upstream schemas.
+- **Schema-Driven Behavior:** Features must remain pipeline-agnostic. Interpret scientific inputs and parameters through upstream schemas and declarative handoff rules, rather than assumptions about a pipeline's name.
 - **Token Efficiency:** Context and outputs must remain concise and token-minimal for AI agents.
 - **Deterministic Execution:** Features must produce predictable, verifiable results across environments.
 

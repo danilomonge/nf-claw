@@ -254,7 +254,7 @@ def test_the_probe_parses_each_stage_config_with_its_own_engine(library, monkeyp
             if bad else "process {}\n"), stderr="")
 
     monkeypatch.setattr(chain.shutil, "which", lambda name: "/usr/bin/nextflow")
-    monkeypatch.setattr(chain.subprocess, "run", fake_run)
+    monkeypatch.setattr(chain, "capture", fake_run)
     assert chain._probe_config(spec, planned[0]) == []
     [issue] = chain._probe_config(spec, planned[1])
     assert "02-mini (mini): Nextflow 25.10.4 cannot parse its configuration" in issue
@@ -275,7 +275,7 @@ def test_the_probe_passes_extra_configs_to_the_launcher(library, monkeypatch, tm
     planned = chain.plan(spec, repo_root=root)
     seen = []
     monkeypatch.setattr(chain.shutil, "which", lambda name: "/usr/bin/nextflow")
-    monkeypatch.setattr(chain.subprocess, "run", lambda cmd, **kw: seen.append(cmd)
+    monkeypatch.setattr(chain, "capture", lambda cmd, **kw: seen.append(cmd)
                         or subprocess.CompletedProcess(cmd, 0, stdout="", stderr=""))
     assert chain._probe_config(spec, planned[0]) == []
     assert seen[0][:4] == ["nextflow", "-c", str(cfg), "config"]
@@ -288,7 +288,7 @@ def test_the_probe_suggests_the_engine_the_release_declares(library, monkeypatch
         "manifest {\n    nextflowVersion = '!>=23.04.0'\n}\n")
     planned = chain.plan(_spec(), repo_root=root)
     monkeypatch.setattr(chain.shutil, "which", lambda name: "/usr/bin/nextflow")
-    monkeypatch.setattr(chain.subprocess, "run", lambda cmd, **kw: subprocess.CompletedProcess(
+    monkeypatch.setattr(chain, "capture", lambda cmd, **kw: subprocess.CompletedProcess(
         cmd, 1, stdout="ERROR ~ Config parsing failed\n", stderr=""))
     [issue] = chain._probe_config(_spec(), planned[1])
     assert 'the release declares Nextflow 23.04.0: try "nxf_ver": "23.04.0"' in issue
@@ -304,7 +304,7 @@ def test_the_probe_tells_an_engine_that_cannot_start_from_a_config_it_rejects(li
                                         {"pipeline": "mini", "nxf_ver": "23.04.0"}]})
     planned = chain.plan(spec, repo_root=root)
     monkeypatch.setattr(chain.shutil, "which", lambda name: "/usr/bin/nextflow")
-    monkeypatch.setattr(chain.subprocess, "run", lambda cmd, **kw: subprocess.CompletedProcess(
+    monkeypatch.setattr(chain, "capture", lambda cmd, **kw: subprocess.CompletedProcess(
         cmd, 1, stdout="", stderr="CAPSULE EXCEPTION: Error resolving dependencies.\n"
                                    "Unable to initialize nextflow environment\n"))
     [issue] = chain._probe_config(spec, planned[1])
@@ -324,7 +324,7 @@ def test_a_probe_that_cannot_run_reports_unverified_configuration(library, monke
     def slow(cmd, **kw):
         raise subprocess.TimeoutExpired(cmd, 300)
 
-    monkeypatch.setattr(chain.subprocess, "run", slow)
+    monkeypatch.setattr(chain, "capture", slow)
     [issue] = chain._probe_config(_spec(), planned[0])
     assert "could not be verified" in issue and "300" in issue
 
@@ -353,7 +353,7 @@ def test_an_inconclusive_config_probe_cannot_certify_or_start_a_chain(
         raise OSError("engine could not execute")
 
     monkeypatch.setattr(chain.orchestration, "run_pipeline", fake_pipeline)
-    monkeypatch.setattr(chain.subprocess, "run", unavailable)
+    monkeypatch.setattr(chain, "capture", unavailable)
     with pytest.raises(NfclawError) as err:
         chain.run_chain(spec, repo_root=root, outdir=tmp_path / "c", check_only=check_only)
     assert "could not be verified" in str(err.value.details)
