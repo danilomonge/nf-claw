@@ -149,6 +149,41 @@ def test_unchanged_dependencies_allow_replay(tmp_path):
     assert "REPLAY_RAN" in result.stdout
 
 
+def test_unobserved_unpinned_engine_cannot_silently_replay_on_a_moving_default(tmp_path, monkeypatch):
+    monkeypatch.setattr(provenance, "_nextflow_version", lambda env_extra=None: "")
+    prov = _write(tmp_path / "out", input_paths=[])
+    result = subprocess.run([str(prov / "commands.sh"), str(tmp_path / "fresh")],
+                            capture_output=True, text=True)
+    assert result.returncode != 0
+    assert "REPLAY_RAN" not in result.stdout
+    assert "engine" in result.stderr.lower()
+
+
+@pytest.mark.parametrize("key", ["NXF_X; printf ENV_NAME_INJECTION;#",
+                                 "NXF_AUTH\nprintf ENV_NAME_INJECTION\n#"])
+def test_environment_names_cannot_execute_shell_code_during_replay(tmp_path, key):
+    prov = _write(tmp_path / "out", input_paths=[], env_extra={key: "value"})
+    result = subprocess.run([str(prov / "commands.sh"), str(tmp_path / "fresh")],
+                            capture_output=True, text=True)
+    assert "ENV_NAME_INJECTION" not in result.stdout
+    assert "REPLAY_RAN" not in result.stdout
+    assert result.returncode != 0
+
+
+def test_fresh_replay_does_not_keep_an_attempts_resume_flag(tmp_path):
+    import shlex
+    launcher = tmp_path / "nextflow"
+    launcher.write_text('#!/bin/sh\nfor arg do [ "$arg" != -resume ] || exit 42; done\n'
+                        'echo FRESH_REPLAY_RAN\n')
+    launcher.chmod(0o755)
+    prov = _write(tmp_path / "out", input_paths=[],
+                  command_str=f"{shlex.quote(str(launcher))} run pipeline -resume")
+    result = subprocess.run([str(prov / "commands.sh"), str(tmp_path / "fresh")],
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert "FRESH_REPLAY_RAN" in result.stdout
+
+
 def test_recorded_params_file_is_a_guarded_replay_dependency(tmp_path):
     out = tmp_path / "out"
     (out / "provenance").mkdir(parents=True)
@@ -214,6 +249,21 @@ def test_default_engine_is_pinned_for_replay_without_falsifying_recorded_environ
                   command_str="sh -c 'printf %s \"$NXF_VER\"'")
     manifest = json.loads((prov / "run_manifest.json").read_text())
     assert "NXF_VER" not in manifest["nextflow_env"]
+    result = subprocess.run([str(prov / "commands.sh"), str(tmp_path / "fresh")],
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "25.10.4"
+
+
+@pytest.mark.parametrize("selector", ["latest", "25.10.+"])
+def test_replay_pins_observed_engine_even_when_original_environment_used_a_moving_selector(
+        tmp_path, monkeypatch, selector):
+    monkeypatch.setattr(provenance, "_nextflow_version",
+                        lambda env_extra=None: "nextflow version 25.10.4 build 11033")
+    prov = _write(tmp_path / "out", input_paths=[], env_extra={"NXF_VER": selector},
+                  command_str="sh -c 'printf %s \"$NXF_VER\"'")
+    manifest = json.loads((prov / "run_manifest.json").read_text())
+    assert manifest["nextflow_env"]["NXF_VER"] == selector
     result = subprocess.run([str(prov / "commands.sh"), str(tmp_path / "fresh")],
                             capture_output=True, text=True)
     assert result.returncode == 0, result.stderr

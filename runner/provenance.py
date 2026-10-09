@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from runner.outputs import result_files
+from runner.engine_version import version_text
 from runner.probes import capture
 from runner.replay_guard import (MissingInputSource as MissingInputSource,
                                  hash_inputs, hash_pipeline as hash_pipeline,
@@ -28,6 +29,7 @@ _SENSITIVE_KEY_PARTS = ("TOKEN", "SECRET", "PASSWORD", "CREDENTIAL", "API_KEY",
 _SENSITIVE_VALUE_RE = re.compile(
     r"(?i)(?:token|secret|password|credential|api[_-]?key|access[_-]?key|private[_-]?key)\s*[=:]"
 )
+_URI_CREDENTIALS_RE = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*://[^/\s?#]*@")
 
 
 def _sha256(path: Path) -> str:
@@ -82,16 +84,16 @@ def _nextflow_version(env_extra: dict[str, str] | None = None) -> str:
     env = {**os.environ, **env_extra} if env_extra else None
     try:
         r = capture(["nextflow", "-version"], timeout=30, env=env)
-        return (r.stdout or r.stderr).strip()
+        return version_text(r) or ""
     except (subprocess.SubprocessError, FileNotFoundError, OSError):
         return ""
 
 
 def _sensitive_env(key: str, value: str) -> bool:
     upper = key.upper()
-    return any(part in upper for part in _SENSITIVE_KEY_PARTS) or bool(
-        _SENSITIVE_VALUE_RE.search(value)
-    )
+    return (any(part in upper for part in _SENSITIVE_KEY_PARTS)
+            or bool(_SENSITIVE_VALUE_RE.search(value))
+            or bool(_URI_CREDENTIALS_RE.search(value)))
 
 
 def safe_env(env: dict[str, str] | None) -> tuple[dict[str, str], list[str]]:
@@ -208,7 +210,8 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
           config_paths: tuple[Path, ...] = (),
           config_checksums: dict[str, str] | None = None,
           pipeline_checksums: dict[str, str] | None = None,
-          unverified_local_paths: dict[str, str] | None = None) -> Path:
+          unverified_local_paths: dict[str, str] | None = None,
+          nextflow_version: str | None = None) -> Path:
     prov = outdir / "provenance"
     prov.mkdir(parents=True, exist_ok=True)
     manifest_path = prov / "run_manifest.json"
@@ -226,11 +229,17 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
         "outcome": outcome,
         "outdir": str(outdir.absolute()),
         "ran_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "nextflow": _nextflow_version(env_extra),
+        "nextflow": _nextflow_version(env_extra) if nextflow_version is None else nextflow_version,
         "nextflow_env": recorded_env,
         "redacted_nextflow_env": redacted_env,
         "os": platform.platform(),
     }
+    concrete_pin = (isinstance(nxf_env.get("NXF_VER"), str) and re.fullmatch(
+        r"\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?", nxf_env["NXF_VER"]))
+    if not manifest["nextflow"] and not concrete_pin:
+        manifest["unverified_engine"] = True
+    if invalid_names := [key for key in nxf_env if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", key)]:
+        manifest["unreplayable_environment_names"] = sorted(invalid_names)
     # A stage of a chain records which chain it belongs to and which run (and handoff) fed it, so
     # the whole chain can be reconstructed from any one stage. A plain run's manifest is unchanged.
     if chain:
@@ -296,29 +305,32 @@ def write(*, outdir: Path, pipeline: str, command_str: str,
     #    mode would not reproduce unless the script carries them — the manifest alone is not enough.
     # `--config` files and the params file are absolute in `command_str`, so they replay as-is.
     env_exports = "".join(
-        f"export {key}={shlex.quote(value)}\n"
+        f"export {shlex.quote(key)}={shlex.quote(value)}\n"
         for key, value in sorted(nxf_env.items())
         if key not in redacted_env
     )
     # Preserve the original effective environment in the manifest, but remove the launcher's
     # moving default from the replay: its actual observed version is an explicit replay pin.
-    if "NXF_VER" not in nxf_env and isinstance(manifest["nextflow"], str):
+    if isinstance(manifest["nextflow"], str):
         if match := re.search(r"\bversion\s+(\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?)", manifest["nextflow"]):
             env_exports += f"export NXF_VER={shlex.quote(match[1])}\n"
     if redacted_env:
-        names = " ".join(redacted_env)
+        names = " ".join(name.encode("unicode_escape").decode("ascii") for name in redacted_env)
         env_exports += ("# Sensitive values were omitted from provenance. Export these before "
                         f"replay: {names}\n")
     default_target = shlex.quote(f"{outdir}.replay")
     commands = prov / "commands.sh"
     # Relocate arguments inside this bundle; external dependencies keep their recorded paths.
     replay_command = command_str
+    command_args = shlex.split(command_str)
+    if command_args and Path(command_args[0]).name == "nextflow" and command_args[-1] == "-resume":
+        replay_command = shlex.join(command_args[:-1])
     bundle_prefix = str(prov.absolute()) + "/"
-    if bundle_prefix in command_str:
+    if bundle_prefix in replay_command:
         replay_command = " ".join(
             '"$_script_dir"/' + shlex.quote(arg[len(bundle_prefix):])
             if arg.startswith(bundle_prefix) else shlex.quote(arg)
-            for arg in shlex.split(command_str))
+            for arg in shlex.split(replay_command))
     _atomic_text(commands,
         "#!/usr/bin/env bash\n"
         "set -euo pipefail\n"

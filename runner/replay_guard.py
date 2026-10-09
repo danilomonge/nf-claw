@@ -169,6 +169,12 @@ def verify_dependencies(bundle: Path) -> None:
     manifest = json.loads((bundle / "run_manifest.json").read_text(encoding="utf-8"))
     if not isinstance(manifest, dict) or not isinstance(manifest.get("outcome"), str):
         raise ValueError(f"provenance bundle is incomplete: {bundle}")
+    if manifest.get("unverified_engine"):
+        raise ValueError("the engine version was neither observed nor pinned; "
+                         "replay on a moving default is refused")
+    if manifest.get("unreplayable_environment_names"):
+        raise ValueError("recorded environment names are not valid shell identifiers; "
+                         "restore a valid environment and start a fresh run")
     if pipeline_path := manifest.get("pipeline_path"):
         repo = Path(pipeline_path)
         if (expected_head := manifest.get("pipeline_git_head")) is not None \

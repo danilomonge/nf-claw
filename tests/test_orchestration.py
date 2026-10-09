@@ -60,6 +60,29 @@ def test_full_run_invokes_execution(tmp_path, monkeypatch):
     assert called.get("ran") and not res.checked_only
 
 
+def test_engine_provenance_uses_the_executed_banner_without_probing_a_changed_launcher(
+        tmp_path, monkeypatch):
+    import json
+    root = _make_pipeline(tmp_path, "mini")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k:
+                        k["run_log"].write(b"N E X T F L O W  ~  version 25.10.4\n"))
+
+    def changed_launcher(*args, **kwargs):
+        raise AssertionError("the launcher after execution is not evidence of the engine that ran")
+
+    monkeypatch.setattr(orchestration.provenance, "_nextflow_version", changed_launcher)
+    orchestration.run_pipeline(
+        "mini", repo_root=root, input_path=None, outdir=tmp_path / "out",
+        profile="docker", params_file=None, cli_overrides={}, resume=False,
+        demo=True, check_only=False, write_provenance=True, timeout_seconds=10)
+    prov = tmp_path / "out/provenance"
+    manifest = json.loads((prov / "run_manifest.json").read_text())
+    assert manifest["nextflow"] == "nextflow version 25.10.4"
+    assert "NXF_VER" not in manifest["nextflow_env"]
+    assert "export NXF_VER=25.10.4" in (prov / "commands.sh").read_text()
+
+
 def test_failed_run_still_writes_the_provenance_bundle(tmp_path, monkeypatch):
     # The replay script matters most after a failure — that is when the run gets fixed and retried.
     import json

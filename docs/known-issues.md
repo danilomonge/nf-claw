@@ -199,6 +199,17 @@ the replay; `nfclaw verify` keys on the path precisely to separate the two quest
 - **Why:** `commands.sh` executes `replay_guard.py` to ensure local input files (including paths referenced in samplesheets), external Nextflow configs (`-c`), and tracked pipeline source commits match their recorded SHA-256 manifests.
 - **Fix:** Restore the original input files or external configs to match the recorded checksums in `<outdir>/provenance/inputs.sha256` and `configs.sha256`. If intentional changes were made, launch a new run into a new `--outdir` instead of replaying.
 
+### Replay refuses an unobserved engine or malformed environment names
+- **Why:** New bundles pin replays to the engine version observed in the executed
+  Nextflow banner, even when the original environment selected `latest` or another
+  moving selector. If no version was observed and no concrete `NXF_VER` was set,
+  the bundle cannot select that engine faithfully. Environment names that cannot
+  be represented as shell identifiers are also refused.
+- **Fix:** Start a fresh run with a valid environment and an explicit `--nxf-ver`
+  from the pinned pipeline's documented engine requirement. Do not guess which
+  engine an earlier unobserved run used. Private URI credentials are omitted from
+  exported replay values; supply any needed credentials through your environment.
+
 ---
 
 ## Warnings a run prints that are not faults

@@ -216,6 +216,31 @@ def test_sensitive_nxf_env_is_redacted_and_omitted_from_replay(tmp_path):
     assert "Export these before replay: NXF_GITHUB_TOKEN NXF_JVM_ARGS" in replay
 
 
+def test_uri_userinfo_credentials_are_redacted_without_a_sensitive_variable_name(tmp_path):
+    overlay = {"NXF_JVM_ARGS": "-Dhttps.proxy=http://alice:private-value@proxy.example:8080",
+               "NXF_ASSETS": "https://opaque-credential@source.example/repository"}
+    prov = provenance.write(outdir=tmp_path / "out", pipeline="mini", command_str="nextflow run x",
+                            submodule=_st(tmp_path / "up"), input_paths=[], env_extra=overlay)
+    manifest = json.loads((prov / "run_manifest.json").read_text())
+    assert manifest["nextflow_env"] == {name: "<redacted>" for name in overlay}
+    assert manifest["redacted_nextflow_env"] == sorted(overlay)
+    replay = (prov / "commands.sh").read_text()
+    assert "private-value" not in replay and "opaque-credential" not in replay
+    assert not any(f"export {name}=" in replay for name in overlay)
+    from runner.nextflow_command import shell_line
+    displayed = shell_line("nextflow run x", overlay)
+    assert "private-value" not in displayed and "opaque-credential" not in displayed
+
+
+def test_public_urls_and_noncredential_at_signs_remain_replayable(tmp_path):
+    overlay = {"NXF_ASSETS": "https://source.example/repository", "NXF_CUSTOM": "owner@example.org"}
+    prov = provenance.write(outdir=tmp_path / "out", pipeline="mini", command_str="nextflow run x",
+                            submodule=_st(tmp_path / "up"), input_paths=[], env_extra=overlay)
+    manifest = json.loads((prov / "run_manifest.json").read_text())
+    assert manifest["nextflow_env"] == overlay
+    assert not manifest.get("redacted_nextflow_env")
+
+
 def test_commands_sh_has_no_exports_without_env_or_observed_engine(tmp_path, monkeypatch):
     # No environment or observed engine version → no invented export lines.
     monkeypatch.setattr(provenance, "_nextflow_version", lambda env_extra=None: "")

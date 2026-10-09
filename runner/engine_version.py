@@ -14,6 +14,22 @@ from runner.probes import capture
 _REQUIRED_RE = re.compile(r"""nextflowVersion\s*=\s*['"]([^'"]+)['"]""")
 _SPEC_RE = re.compile(r"^\s*!?\s*(>=?)\s*(\d+(?:\.\d+)*)\s*$")
 _INSTALLED_RE = re.compile(r"version\s+(\d+(?:\.\d+)+)")
+_VERSION_LINE = re.compile(
+    r"^nextflow[ \t]+version[ \t]+\d+(?:\.\d+)+(?:-[A-Za-z0-9.-]+)?"
+    r"(?:[ \t]+build[ \t]+\d+)?[ \t\r]*$", re.MULTILINE | re.IGNORECASE)
+
+
+def version_text(result: subprocess.CompletedProcess[str]) -> str | None:
+    """Accept one unambiguous version line from a successful metadata probe.
+
+    Bootstrap diagnostics are not engine identity and can contain private URLs.
+    Do not retain them in provenance or treat a failed probe as version evidence.
+    """
+    if result.returncode != 0:
+        return None
+    lines = {match.group().strip() for output in (result.stdout, result.stderr)
+             for match in _VERSION_LINE.finditer(output or "")}
+    return next(iter(lines)) if len(lines) == 1 else None
 
 
 def required_spec(config_path: Path) -> str | None:
@@ -42,7 +58,7 @@ def _installed_raw() -> str | None:
         r = capture(["nextflow", "-version"], timeout=30)
     except (subprocess.SubprocessError, FileNotFoundError, OSError):
         return None
-    return (r.stdout or r.stderr) or None
+    return version_text(r)
 
 
 def _tuple(v: str) -> tuple[int, ...]:
