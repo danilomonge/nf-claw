@@ -130,10 +130,12 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
                  else input_path if input_path is not None else file_params.get("input"))
     resolved_input = inputs.resolve(raw_input, st.path)
     input_schema = None
+    sheet_inputs = []
     if resolved_input is not None and resolved_input.local_path is not None:
         input_schema = (schema_mod.load_input_schema(st.path, resolved_input.samplesheet_schema)
                         if resolved_input.samplesheet_schema else None)
         if input_schema is not None:
+            sheet_inputs.append((resolved_input.local_path, input_schema))
             problems = samplesheet.validate(resolved_input.local_path, input_schema)
             if problems:
                 raise NfclawError(ErrorCode.SAMPLESHEET_INVALID,
@@ -152,6 +154,26 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # Coerce CLI strings to their schema scalar type (e.g. `--skip-busco true` → real boolean)
     # before validating and writing the params-file, so nf-schema sees correctly-typed values.
     merged = parameters.coerce_to_schema(merged, param_schema)
+    # Auxiliary sample/reference/database tables declare their own schemas, too. Validate only
+    # the schema branch applicable to an explicitly supplied value, leaving profile/config values
+    # and future chain handoffs to Nextflow instead of guessing what they will provide.
+    for name_param in inputs.samplesheet_parameters(st.path):
+        if name_param == "input" or name_param in deferred_params or name_param not in merged:
+            continue
+        auxiliary = inputs.resolve(merged[name_param], st.path, param_name=name_param)
+        if auxiliary is None or auxiliary.local_path is None or auxiliary.samplesheet_schema is None:
+            continue
+        sheet_schema = schema_mod.load_input_schema(st.path, auxiliary.samplesheet_schema)
+        if sheet_schema is None:
+            continue
+        problems = samplesheet.validate(auxiliary.local_path, sheet_schema)
+        if problems:
+            raise NfclawError(ErrorCode.SAMPLESHEET_INVALID,
+                              f"Samplesheet for --{name_param.replace('_', '-')} failed validation.",
+                              details={"issues": problems})
+        merged[name_param] = auxiliary.value
+        sheet_inputs.append((auxiliary.local_path, sheet_schema))
+
     # Fix the report/timeline/trace/DAG filenames for this run instead of letting the pipeline
     # re-evaluate `now()` on every launch, so replaying the bundle reproduces the run's outputs
     # rather than writing a second, differently-named set of reports beside them.
@@ -206,19 +228,18 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # can become unreadable or malformed after its earlier validation; do not launch
     # with a silently truncated dependency inventory or leak an unclassified error.
     sheet_dependencies = []
-    if not check_only and input_schema is not None and resolved_input is not None:
+    for sheet_path, sheet_schema in ([] if check_only else sheet_inputs):
         try:
-            sheet_dependencies = provenance.samplesheet_input_paths(
-                resolved_input.local_path, input_schema)
+            sheet_dependencies.extend(provenance.samplesheet_input_paths(sheet_path, sheet_schema))
         except (csv.Error, UnicodeDecodeError) as exc:
             raise NfclawError(
                 ErrorCode.SAMPLESHEET_INVALID,
-                f"Cannot parse samplesheet dependencies: {resolved_input.local_path}: {exc}",
+                f"Cannot parse samplesheet dependencies: {sheet_path}: {exc}",
                 fix="Restore a valid samplesheet before launching the pipeline.") from exc
         except OSError as exc:
             raise NfclawError(
                 ErrorCode.ENVIRONMENT,
-                f"Cannot read samplesheet dependencies: {resolved_input.local_path}: {exc}",
+                f"Cannot read samplesheet dependencies: {sheet_path}: {exc}",
                 fix="Restore the samplesheet and make it readable before launching.") from exc
 
     # Where the files nfclaw generates for the run (params file, resource-limits config) are staged.
@@ -300,7 +321,8 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # A local --input is an input whatever its declared format (mhcquant's carries none).
     if resolved_input is not None and resolved_input.local_path is not None:
         prov_inputs = list(dict.fromkeys([resolved_input.local_path, *prov_inputs]))
-        prov_inputs = list(dict.fromkeys([*prov_inputs, *sheet_dependencies]))
+    prov_inputs = list(dict.fromkeys([*prov_inputs, *(path for path, _ in sheet_inputs),
+                                    *sheet_dependencies]))
     # Capture the local dependency content the launch sees, before a long analysis can change it.
     # The replay guard uses these snapshots, rather than hashing a potentially changed input only
     # after the run has finished. Remote references and runtime downloads remain upstream inputs.

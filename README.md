@@ -79,7 +79,7 @@ nfclaw status results
 nfclaw run rnaseq --input samplesheet.csv --outdir results -profile docker --check
 ```
 
-Sample and patient identifiers become upstream shell arguments and filenames. They must start with a letter, digit or underscore and use only letters, digits, combining marks, dots, underscores or hyphens; choose explicit safe aliases for other names. The runner preserves accepted identities exactly. CSV/TSV and flat JSON/YAML records receive these guards, duplicate-field checks and absolute local-path checks (including globs). YAML preflight requires the optional `pip install -e ".[yaml]"` dependency. Declared local data paths in these records are hashed for replay; nested input structures still rely on the pinned nf-schema validation.
+Sample, patient, genome and database identifiers become upstream shell arguments and filenames. They must start with a letter, digit or underscore and use only letters, digits, combining marks, dots, underscores or hyphens; choose explicit safe aliases for other names. The runner preserves accepted identities exactly. CSV/TSV and flat JSON/YAML records receive these guards, duplicate-field checks and absolute local-path checks (including globs). YAML preflight requires the optional `pip install -e ".[yaml]"` dependency. Explicitly supplied auxiliary tables (for example `--genome-sheet` and `--databases`) receive their own declared schema checks too. Declared local data paths in these records are hashed for replay; nested input structures still rely on the pinned nf-schema validation.
 
 ### 3. Provenance Replay & Verification
 

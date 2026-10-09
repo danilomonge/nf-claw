@@ -419,3 +419,11 @@ def test_nested_legacy_named_field_keeps_its_schema_contract(tmp_path):
     sheet.write_text(json.dumps([{"sample": {"description": "free text $x"}}]))
     schema = InputSchema(columns=(Column("sample", "object", True, None),))
     assert samplesheet.validate(sheet, schema) == []
+
+
+@pytest.mark.parametrize("key", ["genome_name", "db_name"])
+def test_auxiliary_resource_identity_cannot_inject_into_task_prefixes(tmp_path, key):
+    sheet = tmp_path / "resources.csv"
+    sheet.write_text(f"{key}\nsafe$(touch${{IFS}}MARKER)\n")
+    schema = InputSchema(columns=(Column(key, "string", True, None, meta=(key,)),))
+    assert any("identifier" in issue for issue in samplesheet.validate(sheet, schema))

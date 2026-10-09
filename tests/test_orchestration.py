@@ -1261,3 +1261,89 @@ def test_chain_link_lands_in_the_run_manifest(tmp_path, monkeypatch):
         write_provenance=True, timeout_seconds=None, chain_link=link)
     manifest = json.loads((tmp_path / "out/provenance/run_manifest.json").read_text())
     assert manifest["chain"] == link
+
+
+def _pipeline_with_auxiliary_sheet(tmp_path):
+    import json
+    root = _make_pipeline_with_input(tmp_path, {"type": "string"})
+    up = root / "pipelines/inp/upstream"
+    schema_path = up / "nextflow_schema.json"
+    schema = json.loads(schema_path.read_text())
+    schema["$defs"]["io"]["properties"]["references"] = {
+        "type": "string", "format": "file-path", "schema": "assets/references.json"}
+    schema_path.write_text(json.dumps(schema))
+    (up / "assets/references.json").write_text(json.dumps({"items": {
+        "properties": {"label": {"type": "string", "meta": ["id"]},
+                       "fasta": {"type": "string", "format": "file-path"}},
+        "required": ["label", "fasta"]}}))
+    return root
+
+
+@pytest.mark.parametrize("record", ["label\nA\n", "label,fasta\nA,relative.fa\n",
+                                   "label,fasta\nsafe$(touch${IFS}MARKER),{fasta}\n"])
+def test_auxiliary_samplesheet_is_validated_before_output_or_execution(tmp_path, monkeypatch, record):
+    from runner.errors import ErrorCode, NfclawError
+    root = _pipeline_with_auxiliary_sheet(tmp_path)
+    fasta = tmp_path / "reference.fa"
+    fasta.write_text(">chr\nACGT\n")
+    sheet = tmp_path / "references.csv"
+    sheet.write_text(record.replace("{fasta}", str(fasta)))
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    called = []
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: called.append(True))
+    with pytest.raises(NfclawError) as error:
+        orchestration.run_pipeline(
+            "inp", repo_root=root, input_path=None, outdir=tmp_path / "out", profile="docker",
+            params_file=None, cli_overrides={"references": str(sheet)}, resume=False,
+            demo=True, check_only=False, write_provenance=True, timeout_seconds=10)
+    assert error.value.code == ErrorCode.SAMPLESHEET_INVALID
+    assert not called and not (tmp_path / "out").exists()
+
+
+def test_auxiliary_samplesheet_data_enters_replay_identity(tmp_path, monkeypatch):
+    import json
+    import hashlib
+    root = _pipeline_with_auxiliary_sheet(tmp_path)
+    fasta = tmp_path / "reference.fa"
+    fasta.write_bytes(b">chr\nACGT\n")
+    sheet = tmp_path / "references.csv"
+    sheet.write_text(f"label,fasta\nA,{fasta}\n")
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    monkeypatch.setattr(orchestration.execution, "run", lambda *a, **k: None)
+    monkeypatch.setattr(orchestration.provenance, "_nextflow_version", lambda **k: "test engine")
+    orchestration.run_pipeline(
+        "inp", repo_root=root, input_path=None, outdir=tmp_path / "out", profile="docker",
+        params_file=None, cli_overrides={"references": str(sheet)}, resume=False,
+        demo=True, check_only=False, write_provenance=True, timeout_seconds=10)
+    checksums = (tmp_path / "out/provenance/inputs.sha256").read_text()
+    assert f"{hashlib.sha256(fasta.read_bytes()).hexdigest()}  {fasta}" in checksums
+    assert str(sheet) in checksums
+    params = json.loads((tmp_path / "out/provenance/params.json").read_text())
+    assert params["references"] == str(sheet)
+
+
+def test_auxiliary_check_resolves_relative_sheet_and_leaves_output_untouched(tmp_path, monkeypatch):
+    root = _pipeline_with_auxiliary_sheet(tmp_path)
+    fasta = tmp_path / "reference.fa"
+    fasta.write_text(">chr\nACGT\n")
+    sheet = tmp_path / "references.csv"
+    sheet.write_text(f"label,fasta\nA,{fasta}\n")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    result = orchestration.run_pipeline(
+        "inp", repo_root=root, input_path=None, outdir=tmp_path / "out", profile="docker",
+        params_file=None, cli_overrides={"references": sheet.name}, resume=False,
+        demo=True, check_only=True, write_provenance=True, timeout_seconds=10)
+    assert _staged_params(result)["references"] == str(sheet)
+    assert not (tmp_path / "out").exists()
+
+
+def test_auxiliary_chain_check_defers_future_handoff_table(tmp_path, monkeypatch):
+    root = _pipeline_with_auxiliary_sheet(tmp_path)
+    monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **k: [])
+    result = orchestration.run_pipeline(
+        "inp", repo_root=root, input_path=None, outdir=tmp_path / "out", profile="docker",
+        params_file=None, cli_overrides={"references": str(tmp_path / "future.csv")}, resume=False,
+        demo=True, check_only=True, write_provenance=False, timeout_seconds=10,
+        deferred_params=frozenset({"references"}))
+    assert result.checked_only and not (tmp_path / "out").exists()
