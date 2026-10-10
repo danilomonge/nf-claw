@@ -326,3 +326,11 @@ def test_path_resolution_cannot_reintroduce_unsafe_symlink_target_name(tmp_path)
     alias = tmp_path / "safe.fa"
     alias.symlink_to(target)
     assert parameters.validate_params({"fasta": str(alias)}, schema.load_param_schema(tmp_path))
+
+
+def test_schema_declared_local_file_uri_must_use_a_recordable_filesystem_path(tmp_path):
+    (tmp_path / "nextflow_schema.json").write_text(json.dumps({"$defs": {"io": {"properties": {
+        "fasta": {"type": "string", "format": "file-path"}}}}}))
+    problems = parameters.validate_params({"fasta": "file:///tmp/ref$(>MARKER).fa"},
+                                          schema.load_param_schema(tmp_path))
+    assert any("absolute filesystem path" in issue for issue in problems)

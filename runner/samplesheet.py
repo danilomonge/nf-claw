@@ -183,7 +183,8 @@ def _safe_identifier(value: str) -> bool:
 
 def _path_issues(row_num: int, col, value: str) -> list[str]:
     if "://" in value:
-        return []
+        return [f"row {row_num}: '{col.name}': {issue}"
+                for issue in local_name_issues(value, col.fmt)]
     path = Path(value)
     if not path.is_absolute():
         return [f"row {row_num}: '{col.name}' is a relative path: {value} — use an "

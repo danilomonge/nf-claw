@@ -494,3 +494,22 @@ def test_declared_glob_keeps_literal_safe_matches_and_nested_paths(tmp_path):
     sheet.write_text(f"reads\n{parent}/reads_*.fastq.gz\n")
     schema = InputSchema(columns=(Column("reads", "string", True, None, "file-path-pattern"),))
     assert samplesheet.validate(sheet, schema) == []
+
+
+@pytest.mark.parametrize("uri", ["file:///tmp/reads$(>MARKER).fastq.gz",
+                                "file:///tmp/reads%24%28%3EMARKER%29.fastq.gz",
+                                "FILE:///tmp/safe.fastq.gz"])
+def test_local_file_uri_cannot_be_treated_as_unchecked_remote_data(tmp_path, uri):
+    import csv
+    sheet = tmp_path / "samples.csv"
+    with sheet.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["sample", "fastq_1"])
+        writer.writerow(["A", uri])
+    assert any("absolute filesystem path" in issue for issue in samplesheet.validate(sheet, SCH))
+
+
+def test_real_remote_data_and_local_colon_names_remain_supported(tmp_path):
+    from runner.inputs import local_name_issues
+    assert local_name_issues("https://example.org/reads.fastq.gz", "file-path") == []
+    assert local_name_issues(str(tmp_path / "file:reads.fastq.gz"), "file-path") == []
