@@ -7,7 +7,7 @@ import pytest
 from scripts.check_fastqrepair_pairs import EXPECTED, READS, check_run, write_fixture
 
 
-def _run(tmp_path):
+def _run(tmp_path, *, compressed=False):
     run = tmp_path / "run"
     (run / "repaired").mkdir(parents=True)
     (run / "pipeline_info").mkdir()
@@ -22,10 +22,35 @@ def _run(tmp_path):
         _write(run / "repaired" / name, ids)
     reports = run / "repaired/reports/paired_probe"
     reports.mkdir(parents=True)
-    for mate in ("left", "right"):
+    for mate in (("paired_probe_recovered_1", "paired_probe_recovered_2") if compressed else ("left", "right")):
         (reports / f"{mate}.report").write_text("Total lines: 12\nClean reads: 3\n")
     (run / "repaired/paired_probe.repair.sh.log").write_text("paired and singleton diagnostics\n")
     return run
+
+
+def test_gzip_fixture_contains_the_exact_known_source_records(tmp_path):
+    from scripts.check_fastqrepair_pairs import read_fastq
+    source = tmp_path / "source"
+    write_fixture(source, compressed=True)
+    recovered = {}
+    for path in source.glob("*.fastq.gz"):
+        recovered.update(read_fastq(path))
+    assert recovered == READS
+    assert str(source / "left.fastq.gz") in (source / "samples.csv").read_text()
+
+
+@pytest.mark.parametrize("status", ["COMPLETED", "CACHED", "FAILED", "missing"])
+def test_gzip_oracle_requires_actual_successful_recovery_and_conserves_every_read(tmp_path, status):
+    run = _run(tmp_path, compressed=True)
+    trace = run / "pipeline_info/execution_trace.txt"
+    if status != "missing":
+        with trace.open("a") as handle:
+            handle.write(f"NFCORE_FASTQREPAIR:FASTQREPAIR:GZRT (paired_probe)\t{status}\t0\n")
+    if status == "COMPLETED":
+        assert sum(check_run(run, compressed=True).values()) == 6
+    else:
+        with pytest.raises(ValueError, match="GZRT"):
+            check_run(run, compressed=True)
 
 
 @pytest.mark.parametrize("problem", [None, "failed", "wrong_engine", "wrong_origin"])

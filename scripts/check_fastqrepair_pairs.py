@@ -32,21 +32,27 @@ EXPECTED = {
 }
 
 
-def write_fixture(directory: Path) -> None:
+def write_fixture(directory: Path, *, compressed: bool = False) -> None:
     directory.mkdir(parents=True, exist_ok=False)
     for name, ids in (("left", ("pairA/1", "orphanLeft/1", "pairB/1")),
                       ("right", ("pairB/2", "pairA/2", "orphanRight/2"))):
         text = "".join(f"@{key}\n{READS[key][0]}\n+\n{READS[key][1]}\n" for key in ids)
-        (directory / f"{name}.fastq").write_text(text, encoding="ascii")
+        path = directory / f"{name}.fastq{'.gz' if compressed else ''}"
+        if compressed:
+            with gzip.open(path, "wt", encoding="ascii") as handle:
+                handle.write(text)
+        else:
+            path.write_text(text, encoding="ascii")
     with (directory / "samples.csv").open("w", newline="") as handle:
         writer = csv.writer(handle)
         writer.writerow(["sample", "fastq_1", "fastq_2"])
-        writer.writerow(["paired_probe", str((directory / "left.fastq").resolve()),
-                         str((directory / "right.fastq").resolve())])
+        suffix = ".fastq.gz" if compressed else ".fastq"
+        writer.writerow(["paired_probe", str((directory / f"left{suffix}").resolve()),
+                         str((directory / f"right{suffix}").resolve())])
     # Deliberately perturb task arrival order: completion order must not determine mate identity.
     (directory / "arrival.config").write_text(
         "process {\n    withName: '.*:WIPERTOOLS_FASTQGATHER' {\n"
-        "        beforeScript = { meta.id == 'left' ? 'sleep 3' : '' }\n    }\n}\n")
+        "        beforeScript = { meta.id in ['left', 'paired_probe_recovered_1'] ? 'sleep 3' : '' }\n    }\n}\n")
 
 
 def read_fastq(path: Path) -> dict[str, tuple[str, str]]:
@@ -67,7 +73,7 @@ def read_fastq(path: Path) -> dict[str, tuple[str, str]]:
     return records
 
 
-def check_run(run: Path, *, source_run: Path | None = None) -> dict[str, int]:
+def check_run(run: Path, *, source_run: Path | None = None, compressed: bool = False) -> dict[str, int]:
     # A commands.sh replay supervises Nextflow directly; identity remains in the
     # guarded source bundle, while the replay records its own engine log/outcome.
     identity = source_run or run
@@ -100,7 +106,9 @@ def check_run(run: Path, *, source_run: Path | None = None) -> dict[str, int]:
             raise ValueError(f"read identities, mate orientation, sequences or qualities changed: {filename}")
         counts[filename] = len(records)
     reports = outputs / "reports/paired_probe"
-    if {path.name for path in reports.glob("*.report")} != {"left.report", "right.report"}:
+    expected_reports = ({"paired_probe_recovered_1.report", "paired_probe_recovered_2.report"}
+                        if compressed else {"left.report", "right.report"})
+    if {path.name for path in reports.glob("*.report")} != expected_reports:
         raise ValueError("both mate repair reports must be retained separately")
     for path in reports.glob("*.report"):
         text = path.read_text()
@@ -118,21 +126,28 @@ def check_run(run: Path, *, source_run: Path | None = None) -> dict[str, int]:
     repair = [row for row in tasks if ":BBMAP_REPAIR " in row.get("name", "")]
     if len(repair) != 1 or repair[0].get("status") != "COMPLETED" or repair[0].get("exit") != "0":
         raise ValueError("BBMAP_REPAIR must execute successfully; stubs or skipped pairing are insufficient")
+    recovery = [row for row in tasks if ":GZRT " in row.get("name", "")]
+    if compressed and (len(recovery) != 1 or recovery[0].get("status") != "COMPLETED"
+                       or recovery[0].get("exit") != "0"):
+        raise ValueError("GZRT must execute successfully for the gzip source control")
     return counts
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("fixture").add_argument("directory", type=Path)
+    fixture = sub.add_parser("fixture")
+    fixture.add_argument("directory", type=Path)
+    fixture.add_argument("--gzip", action="store_true", dest="compressed")
     check = sub.add_parser("check")
     check.add_argument("run", type=Path)
     check.add_argument("--source-run", type=Path)
+    check.add_argument("--gzip", action="store_true", dest="compressed")
     args = parser.parse_args()
     if args.command == "fixture":
-        write_fixture(args.directory)
+        write_fixture(args.directory, compressed=args.compressed)
     else:
-        print(check_run(args.run, source_run=args.source_run))
+        print(check_run(args.run, source_run=args.source_run, compressed=args.compressed))
         print("Two pairs and both orphans retain their exact sequences, qualities and mate identity.")
 
 
