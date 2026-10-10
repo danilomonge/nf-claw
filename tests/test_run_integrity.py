@@ -164,7 +164,7 @@ def test_optional_existing_source_with_broken_member_is_refused(
     source = root / "pipelines/mini/upstream/nextflow_schema.json"
     schema = json.loads(source.read_text())
     schema["definitions"]["reference_genome_options"]["properties"]["reference_cache"] = {
-        "type": "string", "format": "directory-path"}
+        "type": "string", "format": "file-path-pattern" if kind == "glob" else "directory-path"}
     source.write_text(json.dumps(schema))
     cache = tmp_path / "existing-cache"
     cache.mkdir()
@@ -177,8 +177,13 @@ def test_optional_existing_source_with_broken_member_is_refused(
     monkeypatch.setattr(orchestration.preflight, "check_environment", lambda **kwargs: [])
     monkeypatch.setattr(orchestration.engine_version, "check", lambda *args, **kwargs: [])
     monkeypatch.setattr(orchestration.execution, "run", lambda *args, **kwargs: pytest.fail("launched"))
-    with pytest.raises(NfclawError, match="cannot snapshot local run dependencies"):
+    # Explicit patterns now inspect staged filenames before the dependency snapshot.
+    # A broken member must remain fatal and must never reach pipeline execution.
+    reason = "cannot inspect local input filenames" if kind == "glob" else "cannot snapshot local run dependencies"
+    with pytest.raises(NfclawError, match=reason):
         orchestration.run_pipeline(
             "mini", repo_root=root, input_path=None, outdir=tmp_path / "results",
             profile="docker", params_file=None, cli_overrides={"reference_cache": str(value)},
             resume=False, demo=True, check_only=False, write_provenance=True, timeout_seconds=None)
+    if kind == "glob":
+        assert not (tmp_path / "results").exists()

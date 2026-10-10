@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -93,6 +94,42 @@ def samplesheet_parameters(repo: Path) -> tuple[str, ...]:
             if isinstance(obj, dict) and any(_schema_ref(part) for part in (obj, *_branches(obj))):
                 names.append(name)
     return tuple(dict.fromkeys(names))
+
+
+def local_name_issues(value: str, fmt: str) -> list[str]:
+    """Literal local names passed into task shell scripts, including resolved glob matches.
+
+    Parent directories are not staged under their original names; this guards the basename.
+    Also check resolved symlink targets because path-parameter resolution follows symlinks.
+    Missing glob matches remain the runtime schema's responsibility.
+    """
+    if "://" in value:
+        return []
+    from runner.replay_guard import MissingInputSource, input_files
+
+    def safe_name(name: str, *, pattern=False) -> bool:
+        extra = "._-+@%=,:~" + ("*?[]{}" if pattern else "")
+        return (not name.startswith(("-", "~"))
+                and all(char.isalnum() or char in extra
+                        or unicodedata.category(char).startswith("M") for char in name))
+
+    path = Path(value).expanduser()
+    pattern = fmt == "file-path-pattern"
+    try:
+        names = [(path.name, pattern), (path.resolve().name, pattern)]
+        if pattern:
+            try:
+                names.extend((item.name, False) for item in input_files([path]))
+            except MissingInputSource:
+                pass
+    except (OSError, RuntimeError) as exc:
+        return [f"cannot inspect local input filenames for {value!r}: {exc}"]
+    for name, is_pattern in names:
+        if not safe_name(name, pattern=is_pattern):
+            return [f"unsafe local input filename {name!r} in {value!r}; use a renamed or copied "
+                    "input with literal filename characters (letters, digits, combining marks, "
+                    "dots, underscores, hyphens, plus, @, %, =, commas, colons or interior ~)"]
+    return []
 
 
 def _satisfies(sub: object, value: str) -> bool | None:

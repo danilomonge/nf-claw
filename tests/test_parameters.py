@@ -309,3 +309,20 @@ def test_a_required_param_the_pipeline_config_sets_is_not_missing():
     for unset in ("null", "''", '""'):                    # assigned, but to nothing
         assert any("--input" in e for e in parameters.missing_required_params(
             merged, ps, configured={"input": unset}))
+
+
+def test_declared_local_reference_filename_cannot_reach_unescaped_task_scripts(tmp_path):
+    (tmp_path / "nextflow_schema.json").write_text(json.dumps({"$defs": {"io": {"properties": {
+        "fasta": {"type": "string", "format": "file-path"}}}}}))
+    ps = schema.load_param_schema(tmp_path)
+    assert parameters.validate_params({"fasta": str(tmp_path / "ref$(>MARKER).fa")}, ps)
+
+
+def test_path_resolution_cannot_reintroduce_unsafe_symlink_target_name(tmp_path):
+    (tmp_path / "nextflow_schema.json").write_text(json.dumps({"$defs": {"io": {"properties": {
+        "fasta": {"type": "string", "format": "file-path"}}}}}))
+    target = tmp_path / "ref$(>MARKER).fa"
+    target.write_text(">chr\nACGT\n")
+    alias = tmp_path / "safe.fa"
+    alias.symlink_to(target)
+    assert parameters.validate_params({"fasta": str(alias)}, schema.load_param_schema(tmp_path))

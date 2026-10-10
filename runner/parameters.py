@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Any
 
 from runner.errors import ErrorCode, NfclawError
-from runner.schema import Param, ParamSchema, json_scalar
+from runner.inputs import local_name_issues
+from runner.schema import PATH_FORMATS, Param, ParamSchema, json_scalar
 
 # The nf-core template parameter that suffixes the execution report/timeline/trace/DAG filenames.
 _REPORT_SUFFIX = "trace_report_suffix"
@@ -72,6 +73,9 @@ def validate_params(cli_overrides: dict[str, Any], schema: ParamSchema) -> list[
             continue
         else:
             param = schema.params[key]
+            if key != "outdir" and param.fmt in PATH_FORMATS and isinstance(value, str) and value.strip():
+                errors.extend(f"parameter '{flag}': {issue}"
+                              for issue in local_name_issues(value, param.fmt))
             if param.enum and json_scalar(value) not in param.enum:
                 errors.append(f"parameter '{flag}={value}' is not allowed; "
                               f"must be one of: {', '.join(param.enum)}")

@@ -427,3 +427,70 @@ def test_auxiliary_resource_identity_cannot_inject_into_task_prefixes(tmp_path, 
     sheet.write_text(f"{key}\nsafe$(touch${{IFS}}MARKER)\n")
     schema = InputSchema(columns=(Column(key, "string", True, None, meta=(key,)),))
     assert any("identifier" in issue for issue in samplesheet.validate(sheet, schema))
+
+
+@pytest.mark.parametrize("filename", ["reads$(>MARKER).fastq.gz", "reads`id`.fastq.gz",
+                                     "reads;true.fastq.gz", "reads*.fastq.gz", "-reads.fastq.gz",
+                                     "reads with spaces.fastq.gz", "reads\nnext.fastq.gz"])
+def test_existing_local_file_names_cannot_become_shell_syntax(tmp_path, filename):
+    import csv
+    reads = tmp_path / filename
+    reads.write_bytes(b"reads")
+    sheet = tmp_path / "samples.csv"
+    with sheet.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["sample", "fastq_1"])
+        writer.writerow(["A", str(reads)])
+    assert any("filename" in issue for issue in samplesheet.validate(sheet, SCH))
+
+
+def test_glob_matching_cannot_hide_a_shell_active_file_name(tmp_path):
+    reads = tmp_path / "reads$(>MARKER).fastq.gz"
+    reads.write_bytes(b"reads")
+    sheet = tmp_path / "samples.csv"
+    sheet.write_text(f"reads\n{tmp_path}/*.fastq.gz\n")
+    schema = InputSchema(columns=(Column("reads", "string", True, None, "file-path-pattern"),))
+    assert any("filename" in issue for issue in samplesheet.validate(sheet, schema))
+
+
+@pytest.mark.parametrize("extension", ["json", "yaml"])
+def test_serialized_data_names_have_the_same_shell_safety_guard(tmp_path, extension):
+    import json
+    reads = tmp_path / "reads$(>MARKER).fastq.gz"
+    reads.write_bytes(b"reads")
+    data = [{"sample": "A", "fastq_1": str(reads)}]
+    sheet = tmp_path / f"samples.{extension}"
+    if extension == "json":
+        sheet.write_text(json.dumps(data))
+    else:
+        yaml = pytest.importorskip("yaml")
+        sheet.write_text(yaml.safe_dump(data))
+    assert any("filename" in issue for issue in samplesheet.validate(sheet, SCH))
+
+
+@pytest.mark.parametrize("filename", ["muestra_é-1.fastq.gz", "sample_e\u0301.fastq.gz",
+                                     "reads+lane@run%=1,part:2~copy.fastq.gz"])
+def test_literal_unicode_names_and_parent_directories_with_spaces_remain_valid(tmp_path, filename):
+    import csv
+    parent = tmp_path / "parent with spaces"
+    parent.mkdir()
+    reads = parent / filename
+    reads.write_bytes(b"reads")
+    sheet = tmp_path / "samples.csv"
+    with sheet.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["sample", "fastq_1"])
+        writer.writerow(["A", str(reads)])
+    assert samplesheet.validate(sheet, SCH) == []
+    assert reads.exists()
+
+
+def test_declared_glob_keeps_literal_safe_matches_and_nested_paths(tmp_path):
+    parent = tmp_path / "parent with spaces"
+    parent.mkdir()
+    for name in ("reads_A.fastq.gz", "reads_é.fastq.gz"):
+        (parent / name).write_bytes(b"reads")
+    sheet = tmp_path / "paths.csv"
+    sheet.write_text(f"reads\n{parent}/reads_*.fastq.gz\n")
+    schema = InputSchema(columns=(Column("reads", "string", True, None, "file-path-pattern"),))
+    assert samplesheet.validate(sheet, schema) == []
