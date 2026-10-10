@@ -19,6 +19,11 @@ def _run(tmp_path):
         "name\tstatus\texit\nNFCORE_FASTQREPAIR:FASTQREPAIR:BBMAP_REPAIR (paired_probe)\tCOMPLETED\t0\n")
     for name, ids in EXPECTED.items():
         _write(run / "repaired" / name, ids)
+    reports = run / "repaired/reports/paired_probe"
+    reports.mkdir(parents=True)
+    for mate in ("left", "right"):
+        (reports / f"{mate}.report").write_text("Total lines: 12\nClean reads: 3\n")
+    (run / "repaired/paired_probe.repair.sh.log").write_text("paired and singleton diagnostics\n")
     return run
 
 
@@ -35,7 +40,8 @@ def test_fixture_and_valid_outputs_preserve_all_six_input_reads(tmp_path):
     assert sum(check_run(_run(tmp_path)).values()) == 6
 
 
-@pytest.mark.parametrize("problem", ["swapped", "missing", "duplicate", "mutated", "skipped", "wrong_engine"])
+@pytest.mark.parametrize("problem", ["swapped", "missing", "duplicate", "mutated", "skipped", "wrong_engine",
+                                     "overwritten_report", "wrong_count", "empty_log"])
 def test_pair_oracle_refuses_false_scientific_success(tmp_path, problem):
     run = _run(tmp_path)
     first = run / "repaired/paired_probe_1.fastq.gz"
@@ -50,6 +56,12 @@ def test_pair_oracle_refuses_false_scientific_success(tmp_path, problem):
             handle.write("@pairA/1\nAAAA\n+\nIIII\n")
     elif problem == "wrong_engine":
         (run / "provenance/run_manifest.json").write_text("{}")
+    elif problem == "overwritten_report":
+        (run / "repaired/reports/paired_probe/left.report").unlink()
+    elif problem == "wrong_count":
+        (run / "repaired/reports/paired_probe/left.report").write_text("Total lines: 13\nClean reads: 2\n")
+    elif problem == "empty_log":
+        (run / "repaired/paired_probe.repair.sh.log").write_text("")
     else:
         (run / "pipeline_info/execution_trace.txt").write_text("name\tstatus\texit\n")
     with pytest.raises(ValueError):

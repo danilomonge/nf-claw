@@ -11,6 +11,7 @@ import argparse
 import csv
 import gzip
 import json
+import re
 from pathlib import Path
 
 # Distinct sequences and qualities expose mate swaps even if a tool rewrites headers.
@@ -81,6 +82,17 @@ def check_run(run: Path) -> dict[str, int]:
         if records != expected:
             raise ValueError(f"read identities, mate orientation, sequences or qualities changed: {filename}")
         counts[filename] = len(records)
+    reports = outputs / "reports/paired_probe"
+    if {path.name for path in reports.glob("*.report")} != {"left.report", "right.report"}:
+        raise ValueError("both mate repair reports must be retained separately")
+    for path in reports.glob("*.report"):
+        text = path.read_text()
+        if (re.search(r"(?m)^Total lines: 12$", text) is None
+                or re.search(r"(?m)^Clean reads: 3$", text) is None):
+            raise ValueError("mate repair report disagrees with the known input inventory")
+    log = outputs / "paired_probe.repair.sh.log"
+    if not log.is_file() or not log.read_text().strip():
+        raise ValueError("BBMap repair diagnostics must be retained separately from singleton reads")
     traces = list((run / "pipeline_info").glob("execution_trace*.txt"))
     if len(traces) != 1:
         raise ValueError("expected one fresh execution trace")
