@@ -10,6 +10,16 @@ import pytest
 from runner import inputs
 
 
+@pytest.mark.parametrize("value", ["file:///tmp/reads.fastq", "FILE:///tmp/reads.fastq",
+                                   "file:/tmp/reads.fastq", "file://user:secret@host/reads.fastq"])
+def test_local_file_uri_cannot_bypass_preflight_or_dependency_recording(tmp_path, value):
+    from runner.errors import NfclawError
+    repo = _pipeline(tmp_path, SAREK)
+    with pytest.raises(NfclawError, match="absolute filesystem path") as error:
+        inputs.resolve(value, repo)
+    assert "secret" not in str(error.value)
+
+
 def _pipeline(tmp_path, input_param, *, samplesheet_schema=True):
     repo = tmp_path / "upstream"
     repo.mkdir()

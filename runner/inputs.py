@@ -23,6 +23,8 @@ from typing import Any
 from runner.schema import PATH_FORMATS, iter_param_groups
 
 DEFAULT_SAMPLESHEET_SCHEMA = "assets/schema_input.json"
+_FILE_URI_ISSUE = ("file: URI inputs are local dependencies; use an absolute filesystem path "
+                   "so staged filenames and local data can be validated and recorded for replay")
 # Keywords that describe a value without constraining it; anything else in an `if` is not decided.
 _ANNOTATIONS = ("description", "errorMessage", "title", "$comment", "help_text", "fa_icon")
 
@@ -103,6 +105,8 @@ def local_name_issues(value: str, fmt: str) -> list[str]:
     Also check resolved symlink targets because path-parameter resolution follows symlinks.
     Missing glob matches remain the runtime schema's responsibility.
     """
+    if value.strip().lower().startswith("file:"):
+        return [_FILE_URI_ISSUE]
     if "://" in value:
         return []
     from runner.replay_guard import MissingInputSource, input_files
@@ -195,7 +199,8 @@ def resolve(raw: Any, repo: Path, *, param_name: str = "input") -> ResolvedInput
     - any other non-string value is forwarded unchanged, for parameter validation to report;
     and a string is interpreted as follows:
     - an empty value is forwarded unchanged, so a required `--input` is reported missing;
-    - a URL is forwarded unchanged (Nextflow stages it, nf-schema validates it);
+    - a remote URL is forwarded unchanged (Nextflow stages it, nf-schema validates it);
+      local `file:` URIs must instead use an absolute filesystem path;
     - `false` means "no input" — sarek's documented way to run without a samplesheet. It is returned
       as the value `False`, which `parameters.merge` turns into an unset `input`: a boolean false is
       rejected by nf-schema 2.7 for a string `input`, an unset one passes every version;
@@ -210,6 +215,9 @@ def resolve(raw: Any, repo: Path, *, param_name: str = "input") -> ResolvedInput
     if not isinstance(raw, (str, Path)):
         return ResolvedInput(raw, None, None)
     text = str(raw)
+    if text.strip().lower().startswith("file:"):
+        from runner.errors import ErrorCode, NfclawError
+        raise NfclawError(ErrorCode.PARAMS_INVALID, _FILE_URI_ISSUE)
     if not text.strip():
         return ResolvedInput(text, None, None)           # "not set": never the caller's directory
     if "://" in text:
