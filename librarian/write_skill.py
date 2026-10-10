@@ -6,7 +6,7 @@ import json
 import re
 from pathlib import Path
 
-from runner import engine_version, handoff, inputs, versions
+from runner import engine_version, fastqrepair_compat, handoff, inputs, versions
 from runner import schema as schema_mod
 from runner import submodule as submod
 from runner.schema import InputSchema, Param, ParamSchema, json_scalar
@@ -606,6 +606,17 @@ def _render_skill(name: str, st: SubmoduleStatus, ps: ParamSchema,
                         f"provenance (`nfclaw show {name} --pipeline-version {versions.DEV_BRANCH}` "
                         "prints the docs generated from it). Use it only for changes not yet "
                         "released.\n\n")
+    if name == "fastqrepair" and st.commit == fastqrepair_compat.SUPPORTED_COMMIT:
+        raw_comment = "# direct upstream execution (omits nfclaw's recorded runtime corrections):"
+        version_note += (
+            "**Runtime corrections.** For this exact commit, `nfclaw run` preserves complete "
+            "FASTQ records when splitting, passes the declared quality offset to BBMap, and "
+            "publishes singleton reads, repair logs and mate reports separately. The pinned "
+            "source remains unchanged; the generated task corrections and complete splitter "
+            "are recorded in `provenance/fastqrepair_compat.config` and reused by replay. "
+            "The direct Nextflow command above omits these corrections and can lose valid "
+            "reads or overwrite singleton output. Use `nfclaw run` for this release.\n\n"
+        )
     reference = _reference_section(ps)
     reference_block = f"## Reference genome\n{reference}\n" if reference else ""
     # The committed skill.md is pipelines/<name>/skill.md; a version's docs are written beside its

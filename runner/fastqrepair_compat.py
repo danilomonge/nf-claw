@@ -139,7 +139,7 @@ process {
     withName: 'BBMAP_REPAIR' {
         beforeScript = REPAIR_HOOK
         ext.prefix = { "${meta.id}__nfclaw_RECIPE" }
-        publishDir = [path: { "${params.outdir}/repaired" }, mode: params.publish_dir_mode,
+        publishDir = [path: { "${params.outdir}/repaired" }, mode: { params.publish_dir_mode },
             overwrite: true, saveAs: { filename ->
                 if (filename == 'versions.yml') return null
                 if (filename.endsWith('.repair.sh.log')) return "${meta.id}.repair.sh.log"
@@ -150,18 +150,18 @@ process {
             }]
     }
     withName: 'WIPERTOOLS_REPORTGATHER' {
-        publishDir = [path: { "${params.outdir}/repaired" }, mode: params.publish_dir_mode,
+        publishDir = [path: { "${params.outdir}/repaired" }, mode: { params.publish_dir_mode },
             overwrite: true, saveAs: { filename ->
                 if (filename == 'versions.yml') return null
                 return meta.single_end ? "${meta.sample_id}.report" : "reports/${meta.sample_id}/${meta.id}.report"
             }]
     }
     withName: 'FASTQC' {
-        publishDir = [path: { "${params.outdir}/QC/fastqc" }, mode: params.publish_dir_mode,
+        publishDir = [path: { "${params.outdir}/QC/fastqc" }, mode: { params.publish_dir_mode },
             overwrite: true, saveAs: { filename -> filename == 'versions.yml' ? null : filename }]
     }
     withName: 'MULTIQC' {
-        publishDir = [path: { "${params.outdir}/QC/multiqc" }, mode: params.publish_dir_mode,
+        publishDir = [path: { "${params.outdir}/QC/multiqc" }, mode: { params.publish_dir_mode },
             overwrite: true, saveAs: { filename -> filename == 'versions.yml' ? null : filename }]
     }
 }
