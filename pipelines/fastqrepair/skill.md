@@ -18,11 +18,13 @@ nf-core/fastqrepair is a bioinformatics pipeline that can be used to recover cor
 ```bash
 git submodule update --init pipelines/fastqrepair/upstream   # first time only
 nfclaw run fastqrepair --input samplesheet.csv --outdir results -profile docker
-# raw equivalent (the submodule is already pinned to this release, so no -r is needed):
+# direct upstream execution (omits nfclaw's recorded runtime corrections):
 nextflow run pipelines/fastqrepair/upstream -profile docker --input samplesheet.csv --outdir results
 ```
 
 This is the pinned latest release. To run a different one, list the available releases with `nfclaw versions fastqrepair` and add `--pipeline-version X.Y.Z` to the command above (`nfclaw show fastqrepair --pipeline-version X.Y.Z` prints that release's docs). To run unreleased development code instead, add `--pipeline-version dev`: nfclaw resolves nf-core's `dev` branch to its current head commit at run time and records that commit in provenance (`nfclaw show fastqrepair --pipeline-version dev` prints the docs generated from it). Use it only for changes not yet released.
+
+**Runtime corrections.** For this exact commit, `nfclaw run` preserves complete FASTQ records when splitting, passes the declared quality offset to BBMap, and publishes singleton reads, repair logs and mate reports separately. The pinned source remains unchanged; the generated task corrections and complete splitter are recorded in `provenance/fastqrepair_compat.config` and reused by replay. The direct Nextflow command above omits these corrections and can lose valid reads or overwrite singleton output. Use `nfclaw run` for this release.
 
 ## Inputs
 | column | type | required | allowed values | constraints |

@@ -2,11 +2,25 @@ import shutil
 from pathlib import Path
 
 from librarian import write_skill
-from runner import versions
+from runner import fastqrepair_compat, versions
 from runner.schema import Param, ParamSchema
 from runner.submodule import SubmoduleStatus
 
 FIX = Path(__file__).parent / "fixtures"
+
+
+def test_affected_fastqrepair_docs_distinguish_corrected_runs_from_direct_source(tmp_path):
+    pdir = _seed(tmp_path, "mini")
+    st = SubmoduleStatus("fastqrepair", pdir / "mini" / "upstream", True, True,
+                         "1.1.1", fastqrepair_compat.SUPPORTED_COMMIT, ())
+    for version in (None, "1.1.1", "dev"):
+        text, _ = write_skill.render_status(st, pipeline_version=version)
+        assert "# raw equivalent" not in text
+        assert "can lose valid reads" in text
+        assert "provenance/fastqrepair_compat.config" in text
+    other = SubmoduleStatus("fastqrepair", st.path, True, True, "1.2.0", "different", ())
+    text, _ = write_skill.render_status(other)
+    assert "**Runtime corrections.**" not in text
 
 
 def _seed(tmp_path, name):

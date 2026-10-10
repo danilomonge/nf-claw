@@ -12,7 +12,7 @@
 
 # nf-claw
 
-A self-maintaining, token-minimal library of [nf-core](https://nf-co.re) pipelines curated for AI agents and bioinformaticians. Each pipeline is wrapped unmodified as a pinned git submodule accompanied by an auto-generated `skill.md` describing its declared inputs, parameters, and run commands. The pinned release validates and executes the analysis with zero manual wrapping overhead.
+A self-maintaining, token-minimal library of [nf-core](https://nf-co.re) pipelines curated for AI agents and bioinformaticians. Each pipeline source is kept unchanged as a pinned git submodule accompanied by an auto-generated `skill.md` describing its declared inputs, parameters, and run commands. Documented runtime corrections are recorded in provenance configs; for the affected fastqrepair 1.1.1 commit they correct record splitting, quality-offset forwarding and publication without editing the pinned source tree.
 
 **🌐 Live Portal: [danilomonge.github.io/nf-claw](https://danilomonge.github.io/nf-claw/)** — an interactive digital interface to the entire library (pipeline explorer, parameters, architecture documentation, and live automation status), rebuilt continuously from the repository.
 
@@ -258,7 +258,7 @@ Further details on drift prevention and update automation: [`docs/updating.md`](
 
 ## Citation & Attribution
 
-**The pipelines themselves are the work of the [nf-core](https://nf-co.re) community** — the heart of this library. Pipelines are wrapped **unmodified** as pinned git submodules; each maintains its own authors, license, and citations.
+**The pipelines themselves are the work of the [nf-core](https://nf-co.re) community** — the heart of this library. Pipeline source trees remain **unmodified** as pinned git submodules; each maintains its own authors, license, and citations. Recorded runtime corrections are documented separately from those upstream sources.
 
 **nf-claw** was created by **Danilo Monge** (Eberhard Karls Universität Tübingen) and adapts architectural concepts and repository structures from [ClawBio](https://clawbio.ai) — created by **Manuel Corpas** (MIT; copyright retained in [`LICENSE`](LICENSE), provenance in [`NOTICE`](NOTICE)).
 

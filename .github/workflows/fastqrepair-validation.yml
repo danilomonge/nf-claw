@@ -1,0 +1,59 @@
+name: fastqrepair-validation
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "runner/**"
+      - "pipelines/fastqrepair/upstream"
+      - "scripts/check_fastqrepair_pairs.py"
+      - "tests/test_fastqrepair_pairs.py"
+      - ".github/workflows/fastqrepair-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  native-pairs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NXF_ANSI_LOG: "false"
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.11"
+      - run: pip install -e .
+      - uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5.5.0
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: ./.github/actions/setup-nextflow
+      - run: git submodule update --init --depth 1 pipelines/fastqrepair/upstream
+      - name: Create known pairs, reordered mates and singleton controls
+        run: python scripts/check_fastqrepair_pairs.py fixture "$RUNNER_TEMP/paired-fixture"
+      - name: Execute the pinned repair with perturbed task arrival order
+        run: |
+          nfclaw run fastqrepair --input "$RUNNER_TEMP/paired-fixture/samples.csv" \
+            --outdir "$RUNNER_TEMP/paired-run" -profile docker --nxf-ver 25.10.4 \
+            --config "$RUNNER_TEMP/paired-fixture/arrival.config" \
+            --num-splits 2 --limit-cpus 2 --limit-memory 2.GB --limit-time 15.min --timeout 900
+          python scripts/check_fastqrepair_pairs.py check "$RUNNER_TEMP/paired-run"
+      - name: Re-execute and verify exact read conservation and mate identity
+        run: |
+          "$RUNNER_TEMP/paired-run/provenance/commands.sh" "$RUNNER_TEMP/paired-replay"
+          python scripts/check_fastqrepair_pairs.py check "$RUNNER_TEMP/paired-replay" --source-run "$RUNNER_TEMP/paired-run"
+      - name: Retain source reads, task commands, outputs and provenance
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fastqrepair-pair-evidence
+          path: |
+            ${{ runner.temp }}/paired-fixture
+            ${{ runner.temp }}/paired-run
+            ${{ runner.temp }}/paired-replay
+            work/**/.command.*
+          include-hidden-files: true
+          retention-days: 14

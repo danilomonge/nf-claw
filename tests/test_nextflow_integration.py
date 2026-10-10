@@ -82,3 +82,36 @@ workflow {
     (chain_out / "01-fixture/result/digest.txt").write_bytes(b"changed upstream result\n")
     state, problems = chain.status(chain_out)
     assert problems and chain.status_exit_code(state, problems) == 1
+@pytest.mark.skipif(shutil.which("nextflow") is None, reason="requires a real Nextflow engine")
+def test_recorded_repair_publishers_preserve_mates_and_honor_runtime_mode(tmp_path):
+    import os
+    from runner import fastqrepair_compat
+
+    fastqrepair_compat.write_config(tmp_path / "compat.config")
+    (tmp_path / "nextflow.config").write_text("params.publish_dir_mode = 'copy'\nparams.outdir = 'wrong'\n")
+    (tmp_path / "main.nf").write_text('''process WIPERTOOLS_REPORTGATHER {
+ input:
+ val meta
+ output:
+ path '*.report'
+ path 'versions.yml'
+ script:
+ """
+ echo 'Clean reads: 3' > ${meta.id}.report
+ echo 'tool: original' > versions.yml
+ """
+}
+workflow {
+ WIPERTOOLS_REPORTGATHER(channel.of([id:'left',sample_id:'paired_probe',single_end:false],
+                                  [id:'right',sample_id:'paired_probe',single_end:false]))
+}
+''')
+    result = subprocess.run(["nextflow", "run", "main.nf", "-c", "compat.config", "-ansi-log", "false",
+                             "--outdir", "results", "--publish_dir_mode", "symlink"],
+                            cwd=tmp_path, env={**os.environ, "NXF_VER": "25.10.4"},
+                            capture_output=True, text=True, timeout=120)
+    assert result.returncode == 0, result.stdout + result.stderr
+    published = tmp_path / "results/repaired/reports/paired_probe"
+    assert sorted(path.name for path in published.iterdir()) == ["left.report", "right.report"]
+    assert all(path.is_symlink() and path.read_text() == "Clean reads: 3\n" for path in published.iterdir())
+    assert not (tmp_path / "wrong").exists()
