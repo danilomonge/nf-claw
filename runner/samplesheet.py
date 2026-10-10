@@ -9,6 +9,7 @@ from collections import Counter
 from collections.abc import Hashable, Iterable
 from pathlib import Path
 
+from runner.inputs import local_name_issues
 from runner.schema import InputSchema, PATH_FORMATS, json_scalar
 
 
@@ -188,6 +189,8 @@ def _path_issues(row_num: int, col, value: str) -> list[str]:
         return [f"row {row_num}: '{col.name}' is a relative path: {value} — use an "
                 "absolute path (Nextflow resolves samplesheet paths against its "
                 "launch directory, which nfclaw sets to --outdir)"]
+    if issues := local_name_issues(value, col.fmt):
+        return [f"row {row_num}: '{col.name}': {issue}" for issue in issues]
     if col.fmt != "file-path-pattern" and not path.exists():
         return [f"row {row_num}: file not found for '{col.name}': {value}"]
     return []

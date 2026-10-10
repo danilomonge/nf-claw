@@ -18,6 +18,8 @@ A self-maintaining, token-minimal library of [nf-core](https://nf-co.re) pipelin
 
 ---
 
+Explicit local input filenames are validated before launch because pinned task scripts can interpret shell-active names. Unsafe basenames, symlink targets and matched filenames are refused without silently renaming scientific samples. See [the input rules](AGENTS.md) for supported names and the scope of these checks.
+
 ### Navigation
 
 [Repository Layout](#layout) • [Quickstart](#quickstart) • [Provenance, Replay & Verification](#provenance-replay--verification) • [Maintenance](#maintain) • [Adding Pipelines](#adding-pipelines) • [Continuous Automation](#how-it-stays-current) • [Scientific Validation](#scientific-validation--limitations) • [Citations](#citation--attribution)
