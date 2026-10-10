@@ -14,6 +14,10 @@ permissions:
 
 jobs:
   native-pairs:
+    strategy:
+      fail-fast: false
+      matrix:
+        source: [plain, gzip]
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -33,23 +37,30 @@ jobs:
       - uses: ./.github/actions/setup-nextflow
       - run: git submodule update --init --depth 1 pipelines/fastqrepair/upstream
       - name: Create known pairs, reordered mates and singleton controls
-        run: python scripts/check_fastqrepair_pairs.py fixture "$RUNNER_TEMP/paired-fixture"
+        run: |
+          source_args=()
+          if [ '${{ matrix.source }}' = gzip ]; then source_args+=(--gzip); fi
+          python scripts/check_fastqrepair_pairs.py fixture "$RUNNER_TEMP/paired-fixture" "${source_args[@]}"
       - name: Execute the pinned repair with perturbed task arrival order
         run: |
           nfclaw run fastqrepair --input "$RUNNER_TEMP/paired-fixture/samples.csv" \
             --outdir "$RUNNER_TEMP/paired-run" -profile docker --nxf-ver 25.10.4 \
             --config "$RUNNER_TEMP/paired-fixture/arrival.config" \
             --num-splits 2 --limit-cpus 2 --limit-memory 2.GB --limit-time 15.min --timeout 900
-          python scripts/check_fastqrepair_pairs.py check "$RUNNER_TEMP/paired-run"
+          source_args=()
+          if [ '${{ matrix.source }}' = gzip ]; then source_args+=(--gzip); fi
+          python scripts/check_fastqrepair_pairs.py check "$RUNNER_TEMP/paired-run" "${source_args[@]}"
       - name: Re-execute and verify exact read conservation and mate identity
         run: |
           "$RUNNER_TEMP/paired-run/provenance/commands.sh" "$RUNNER_TEMP/paired-replay"
-          python scripts/check_fastqrepair_pairs.py check "$RUNNER_TEMP/paired-replay" --source-run "$RUNNER_TEMP/paired-run"
+          source_args=()
+          if [ '${{ matrix.source }}' = gzip ]; then source_args+=(--gzip); fi
+          python scripts/check_fastqrepair_pairs.py check "$RUNNER_TEMP/paired-replay" --source-run "$RUNNER_TEMP/paired-run" "${source_args[@]}"
       - name: Retain source reads, task commands, outputs and provenance
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: fastqrepair-pair-evidence
+          name: fastqrepair-pair-evidence-${{ matrix.source }}
           path: |
             ${{ runner.temp }}/paired-fixture
             ${{ runner.temp }}/paired-run
