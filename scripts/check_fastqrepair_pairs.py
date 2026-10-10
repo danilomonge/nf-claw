@@ -23,8 +23,8 @@ READS = {
     "orphanRight/2": ("TTGGCCAA" * 9, "D" * 72),
 }
 EXPECTED = {
-    "paired_probe_1_repaired.fastq.gz": {"pairA/1", "pairB/1"},
-    "paired_probe_2_repaired.fastq.gz": {"pairA/2", "pairB/2"},
+    "paired_probe_1.fastq.gz": {"pairA/1", "pairB/1"},
+    "paired_probe_2.fastq.gz": {"pairA/2", "pairB/2"},
     "paired_probe_singleton.fastq.gz": {"orphanLeft/1", "orphanRight/2"},
 }
 

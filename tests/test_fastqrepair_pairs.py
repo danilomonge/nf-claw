@@ -38,7 +38,7 @@ def test_fixture_and_valid_outputs_preserve_all_six_input_reads(tmp_path):
 @pytest.mark.parametrize("problem", ["swapped", "missing", "duplicate", "mutated", "skipped", "wrong_engine"])
 def test_pair_oracle_refuses_false_scientific_success(tmp_path, problem):
     run = _run(tmp_path)
-    first = run / "repaired/paired_probe_1_repaired.fastq.gz"
+    first = run / "repaired/paired_probe_1.fastq.gz"
     if problem == "swapped":
         _write(first, ["pairA/2", "pairB/2"])
     elif problem == "missing":

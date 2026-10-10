@@ -8,7 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from runner import (discovery, engine_version, execution, inputs, nextflow_command,
+from runner import (discovery, engine_version, execution, fastqrepair_compat, inputs, nextflow_command,
                     outputs, parameters, plugin_compat, preflight, provenance,
                     resources, runlog, samplesheet, versions)
 from runner import schema as schema_mod
@@ -218,6 +218,13 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     # spurious "positional argument `nextflow`" logged on every sarek run). Surfaced up front so the
     # log message arrives explained rather than re-investigated as a wrapper or samplesheet fault.
     warnings += plugin_compat.known_plugin_warnings(st.path)
+    repair_compat = name == "fastqrepair" and st.commit == fastqrepair_compat.SUPPORTED_COMMIT
+    if repair_compat:
+        warnings.append("Applying recorded corrections for fastqrepair 1.1.1: preserve FASTQ "
+                        "record boundaries, pass the declared quality offset to BBMap, and keep "
+                        "singleton reads, logs and mate reports in distinct publications. "
+                        "Pinned source stays unchanged; generated task recipes and the complete "
+                        "splitter implementation are recorded in the compatibility config.")
     # Say them now, before Nextflow starts: a run can take hours, and one that fails never returns
     # its RunResult — an advisory that only arrives with the result arrives too late, or not at all.
     if on_warning is not None:
@@ -270,6 +277,10 @@ def run_pipeline(name: str, *, repo_root: Path, input_path: "Path | str | None",
     if limits is not None and not limits.is_empty():
         extra_configs.insert(0, resources.write_config(
             limits, staging / "resource_limits.config"))
+
+    if repair_compat:
+        extra_configs.insert(0, fastqrepair_compat.write_config(
+            staging / "fastqrepair_compat.config"))
 
     # If the pinned release still sets an nf-validation 1.x param that nf-schema 2.x removed (the
     # `plugin_compat` advisory above), add those names to nf-schema's `validation.ignoreParams` via a
