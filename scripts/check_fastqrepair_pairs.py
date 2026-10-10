@@ -14,6 +14,8 @@ import json
 import re
 from pathlib import Path
 
+from runner import runlog
+
 # Distinct sequences and qualities expose mate swaps even if a tool rewrites headers.
 READS = {
     "pairA/1": ("ACGT" * 19, "I" * 76),
@@ -65,12 +67,27 @@ def read_fastq(path: Path) -> dict[str, tuple[str, str]]:
     return records
 
 
-def check_run(run: Path) -> dict[str, int]:
-    manifest = json.loads((run / "provenance/run_manifest.json").read_text())
+def check_run(run: Path, *, source_run: Path | None = None) -> dict[str, int]:
+    # A commands.sh replay supervises Nextflow directly; identity remains in the
+    # guarded source bundle, while the replay records its own engine log/outcome.
+    identity = source_run or run
+    manifest = json.loads((identity / "provenance/run_manifest.json").read_text())
     expected_identity = {"pipeline": "fastqrepair", "version": "1.1.1",
+                         "commit": "70a38209407b9367a9ff7ab8b26d84cb1983ea18",
                          "nextflow": "nextflow version 25.10.4", "outcome": "success"}
     if any(manifest.get(key) != value for key, value in expected_identity.items()):
         raise ValueError("unvalidated pipeline, engine or run outcome")
+    if source_run is not None:
+        log = run / "provenance/logs/run.log"
+        if runlog.read_state(log).state != "success":
+            raise ValueError("replay must record its own successful outcome")
+        recorded_origin = f"    replay of: {manifest['outdir']}"
+        if recorded_origin not in log.read_text().split("\n"):
+            raise ValueError("replay origin disagrees with the validated source bundle")
+        engine_log = (run / ".nextflow.log").read_text()
+        versions = re.findall(r"nextflow.cli.CmdRun - N E X T F L O W\s+~\s+version (\S+)", engine_log)
+        if versions != ["25.10.4"]:
+            raise ValueError("replay engine differs from the validated engine")
     outputs = run / "repaired"
     inventory = {path.name for path in outputs.glob("*.fastq.gz")}
     if inventory != set(EXPECTED):
@@ -108,12 +125,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("fixture").add_argument("directory", type=Path)
-    sub.add_parser("check").add_argument("run", type=Path)
+    check = sub.add_parser("check")
+    check.add_argument("run", type=Path)
+    check.add_argument("--source-run", type=Path)
     args = parser.parse_args()
     if args.command == "fixture":
         write_fixture(args.directory)
     else:
-        print(check_run(args.run))
+        print(check_run(args.run, source_run=args.source_run))
         print("Two pairs and both orphans retain their exact sequences, qualities and mate identity.")
 
 

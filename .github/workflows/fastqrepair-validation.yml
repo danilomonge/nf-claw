@@ -44,7 +44,7 @@ jobs:
       - name: Re-execute and verify exact read conservation and mate identity
         run: |
           "$RUNNER_TEMP/paired-run/provenance/commands.sh" "$RUNNER_TEMP/paired-replay"
-          python scripts/check_fastqrepair_pairs.py check "$RUNNER_TEMP/paired-replay"
+          python scripts/check_fastqrepair_pairs.py check "$RUNNER_TEMP/paired-replay" --source-run "$RUNNER_TEMP/paired-run"
       - name: Retain source reads, task commands, outputs and provenance
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

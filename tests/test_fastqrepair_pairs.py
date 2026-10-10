@@ -14,6 +14,7 @@ def _run(tmp_path):
     (run / "provenance").mkdir()
     (run / "provenance/run_manifest.json").write_text(json.dumps(
         {"pipeline": "fastqrepair", "version": "1.1.1",
+         "commit": "70a38209407b9367a9ff7ab8b26d84cb1983ea18", "outdir": str(run),
          "nextflow": "nextflow version 25.10.4", "outcome": "success"}))
     (run / "pipeline_info/execution_trace.txt").write_text(
         "name\tstatus\texit\nNFCORE_FASTQREPAIR:FASTQREPAIR:BBMAP_REPAIR (paired_probe)\tCOMPLETED\t0\n")
@@ -25,6 +26,30 @@ def _run(tmp_path):
         (reports / f"{mate}.report").write_text("Total lines: 12\nClean reads: 3\n")
     (run / "repaired/paired_probe.repair.sh.log").write_text("paired and singleton diagnostics\n")
     return run
+
+
+@pytest.mark.parametrize("problem", [None, "failed", "wrong_engine", "wrong_origin"])
+def test_replay_uses_validated_source_identity_and_its_own_observed_outcome(tmp_path, problem):
+    import shutil
+    source = _run(tmp_path)
+    replay = tmp_path / "replay"
+    shutil.copytree(source, replay)
+    (replay / "provenance/run_manifest.json").unlink()
+    logs = replay / "provenance/logs"
+    logs.mkdir()
+    origin = source if problem != "wrong_origin" else tmp_path / "other"
+    outcome = "success" if problem != "failed" else "failed (exit status 1)"
+    (logs / "run.log").write_text(
+        "==> nfclaw replay started 2026-10-10T19:35:43+00:00\n"
+        f"    replay of: {origin}\n"
+        f"==> nfclaw replay finished 2026-10-10T19:36:06+00:00: {outcome}\n")
+    engine = "25.10.4" if problem != "wrong_engine" else "26.04.0"
+    (replay / ".nextflow.log").write_text(f"INFO nextflow.cli.CmdRun - N E X T F L O W  ~  version {engine}\n")
+    if problem is None:
+        assert sum(check_run(replay, source_run=source).values()) == 6
+    else:
+        with pytest.raises(ValueError):
+            check_run(replay, source_run=source)
 
 
 def _write(path, ids):
