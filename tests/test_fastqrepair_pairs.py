@@ -53,10 +53,14 @@ def test_gzip_oracle_requires_actual_successful_recovery_and_conserves_every_rea
             check_run(run, compressed=True)
 
 
-@pytest.mark.parametrize("problem", [None, "failed", "wrong_engine", "wrong_origin"])
+@pytest.mark.parametrize("problem", [None, "relocated", "failed", "wrong_engine", "wrong_origin"])
 def test_replay_uses_validated_source_identity_and_its_own_observed_outcome(tmp_path, problem):
     import shutil
     source = _run(tmp_path)
+    if problem == "relocated":
+        archive = tmp_path / "archive"
+        source.rename(archive)
+        source = archive
     replay = tmp_path / "replay"
     shutil.copytree(source, replay)
     (replay / "provenance/run_manifest.json").unlink()
@@ -70,7 +74,7 @@ def test_replay_uses_validated_source_identity_and_its_own_observed_outcome(tmp_
         f"==> nfclaw replay finished 2026-10-10T19:36:06+00:00: {outcome}\n")
     engine = "25.10.4" if problem != "wrong_engine" else "26.04.0"
     (replay / ".nextflow.log").write_text(f"INFO nextflow.cli.CmdRun - N E X T F L O W  ~  version {engine}\n")
-    if problem is None:
+    if problem in (None, "relocated"):
         assert sum(check_run(replay, source_run=source).values()) == 6
     else:
         with pytest.raises(ValueError):

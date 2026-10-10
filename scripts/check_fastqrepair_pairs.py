@@ -87,8 +87,10 @@ def check_run(run: Path, *, source_run: Path | None = None, compressed: bool = F
         log = run / "provenance/logs/run.log"
         if runlog.read_state(log).state != "success":
             raise ValueError("replay must record its own successful outcome")
-        recorded_origin = f"    replay of: {manifest['outdir']}"
-        if recorded_origin not in log.read_text().split("\n"):
+        # Archived evidence retains the original absolute origin; a relocated
+        # source bundle records its new physical origin when commands.sh runs.
+        origins = {f"    replay of: {manifest['outdir']}", f"    replay of: {source_run.resolve()}"}
+        if not origins.intersection(log.read_text().split("\n")):
             raise ValueError("replay origin disagrees with the validated source bundle")
         engine_log = (run / ".nextflow.log").read_text()
         versions = re.findall(r"nextflow.cli.CmdRun - N E X T F L O W\s+~\s+version (\S+)", engine_log)
